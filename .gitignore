@@ -23,3 +23,6 @@ tmp/
 planning/.chrome-*/
 .DS_Store
 Thumbs.db
+
+# Keep the original proposal on this machine only.
+/FYP Proposal Alex Hospital Visitor and Pass Management System with Blockchain Technology.pdf
