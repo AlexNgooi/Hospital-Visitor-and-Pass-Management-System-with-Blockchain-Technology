@@ -1,0 +1,24 @@
+{
+  "schemaVersion": 1,
+  "ok": true,
+  "command": "deliver",
+  "type": "sequence",
+  "input": "C:\\Users\\alexy\\Documents\\FYP Dev\\planning\\diagrams\\v3\\06-async-delivery-sequence.archify.json",
+  "output": "C:\\Users\\alexy\\Documents\\FYP Dev\\planning\\diagrams\\v3\\06-async-delivery-sequence.html",
+  "specification": {
+    "sha256": "9aac9ad6e078210f53fbf90f6ac27d6ddff52158cf5f8fc41cc207327da2bb62",
+    "bytes": 3631
+  },
+  "artifact": {
+    "sha256": "8c13576c52729e9f481469b05691c7f9aaebd17030d12a9e6e4a2383d6527c95",
+    "bytes": 805048
+  },
+  "validation": {
+    "checksPassed": 9,
+    "checkCount": 9,
+    "compositionProfile": "showcase",
+    "compositionStatus": "pass",
+    "errors": 0,
+    "warnings": 0
+  }
+}

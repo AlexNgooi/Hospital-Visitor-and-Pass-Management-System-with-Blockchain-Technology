@@ -1,0 +1,252 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "HSAAS · v3 目标系统架构",
+    "locale": "zh-CN",
+    "quality_profile": "showcase",
+    "viewBox": [
+      1385,
+      680
+    ]
+  },
+  "components": [
+    {
+      "id": "browsers",
+      "type": "external",
+      "label": "访客 / 职员 / 管理员",
+      "sublabel": "三类浏览器 · 权限隔离",
+      "pos": [
+        30,
+        300
+      ],
+      "size": [
+        200,
+        76
+      ]
+    },
+    {
+      "id": "react_web",
+      "type": "frontend",
+      "label": "React Web",
+      "sublabel": "Vercel · 同源 /api 转发",
+      "pos": [
+        310,
+        300
+      ],
+      "size": [
+        200,
+        76
+      ]
+    },
+    {
+      "id": "spring_api",
+      "type": "backend",
+      "label": "Spring Boot API",
+      "sublabel": "会话 / CSRF / 业务事务",
+      "pos": [
+        590,
+        300
+      ],
+      "size": [
+        200,
+        76
+      ]
+    },
+    {
+      "id": "mysql_store",
+      "type": "database",
+      "label": "MySQL",
+      "sublabel": "业务数据 / 扫描任务 / Outbox",
+      "pos": [
+        870,
+        300
+      ],
+      "size": [
+        200,
+        76
+      ]
+    },
+    {
+      "id": "mrn_adapter",
+      "type": "external",
+      "label": "MRN 适配器",
+      "sublabel": "mock / 人工；医院 API 待接入",
+      "pos": [
+        590,
+        60
+      ],
+      "size": [
+        200,
+        76
+      ]
+    },
+    {
+      "id": "notification_poller",
+      "type": "backend",
+      "label": "单次消息任务",
+      "sublabel": "Backend 内独立异步轮询",
+      "pos": [
+        870,
+        60
+      ],
+      "size": [
+        200,
+        76
+      ]
+    },
+    {
+      "id": "whatsapp_gateway",
+      "type": "external",
+      "label": "WhatsApp Provider",
+      "sublabel": "默认 mock · 实际通道待批准",
+      "pos": [
+        1150,
+        60
+      ],
+      "size": [
+        200,
+        76
+      ]
+    },
+    {
+      "id": "usb_reader",
+      "type": "external",
+      "label": "NFC 读卡器",
+      "sublabel": "USB PC/SC · 型号待验证",
+      "pos": [
+        310,
+        540
+      ],
+      "size": [
+        200,
+        76
+      ]
+    },
+    {
+      "id": "windows_agent",
+      "type": "backend",
+      "label": "Windows Reader Agent",
+      "sublabel": "Java 21 · 出站 HTTPS",
+      "pos": [
+        590,
+        540
+      ],
+      "size": [
+        200,
+        76
+      ]
+    },
+    {
+      "id": "sui_poller",
+      "type": "backend",
+      "label": "Sui Worker",
+      "sublabel": "TypeScript · 租约与对账",
+      "pos": [
+        870,
+        540
+      ],
+      "size": [
+        200,
+        76
+      ]
+    },
+    {
+      "id": "testnet_move",
+      "type": "cloud",
+      "label": "Sui Testnet",
+      "sublabel": "Move · 最小化审计承诺",
+      "pos": [
+        1150,
+        540
+      ],
+      "size": [
+        200,
+        76
+      ]
+    }
+  ],
+  "connections": [
+    {
+      "from": "browsers",
+      "to": "react_web",
+      "label": "HTTPS",
+      "variant": "emphasis"
+    },
+    {
+      "from": "react_web",
+      "to": "spring_api",
+      "label": "REST / JSON",
+      "variant": "emphasis"
+    },
+    {
+      "from": "spring_api",
+      "to": "mysql_store",
+      "label": "原子事务",
+      "variant": "emphasis"
+    },
+    {
+      "from": "spring_api",
+      "to": "mrn_adapter",
+      "label": "MRN / ward",
+      "variant": "dashed"
+    },
+    {
+      "from": "windows_agent",
+      "to": "spring_api",
+      "label": "领任务 / 传结果",
+      "variant": "security"
+    },
+    {
+      "from": "windows_agent",
+      "to": "usb_reader",
+      "label": "PC/SC",
+      "variant": "default"
+    },
+    {
+      "from": "mysql_store",
+      "to": "notification_poller",
+      "label": "领取消息任务",
+      "variant": "dashed"
+    },
+    {
+      "from": "notification_poller",
+      "to": "whatsapp_gateway",
+      "label": "一次组合消息",
+      "variant": "dashed"
+    },
+    {
+      "from": "mysql_store",
+      "to": "sui_poller",
+      "label": "领取审计任务",
+      "variant": "dashed",
+      "labelDy": 24
+    },
+    {
+      "from": "sui_poller",
+      "to": "testnet_move",
+      "label": "gRPC 锚定 / 对账",
+      "variant": "dashed",
+      "labelAt": [
+        1110,
+        630
+      ]
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "实施设计 · 尚未部署",
+      "items": [
+        "浏览器仅调用 API；读卡器通过设备认证访问 API。MySQL 是业务状态的唯一事实来源。"
+      ]
+    },
+    {
+      "dot": "rose",
+      "title": "独立故障边界",
+      "items": [
+        "链上或 WhatsApp 故障不阻断发卡 / 归还。链上仅存随机事件 ID、承诺哈希和最少元数据。"
+      ]
+    }
+  ]
+}

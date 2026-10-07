@@ -1,0 +1,24 @@
+{
+  "schemaVersion": 1,
+  "ok": true,
+  "command": "deliver",
+  "type": "sequence",
+  "input": "C:\\Users\\alexy\\Documents\\FYP Dev\\planning\\diagrams\\v3\\05-scan-issue-sequence.archify.json",
+  "output": "C:\\Users\\alexy\\Documents\\FYP Dev\\planning\\diagrams\\v3\\05-scan-issue-sequence.html",
+  "specification": {
+    "sha256": "f3acb7b38ab1442c2870084337453e3f293aee673e75fc45dcb6ef5ce170a64d",
+    "bytes": 3560
+  },
+  "artifact": {
+    "sha256": "7e6afd895bef1f765e589d060008cecda565ac52a6cea35a75b1fed3cbde2980",
+    "bytes": 805471
+  },
+  "validation": {
+    "checksPassed": 9,
+    "checkCount": 9,
+    "compositionProfile": "showcase",
+    "compositionStatus": "pass",
+    "errors": 0,
+    "warnings": 0
+  }
+}

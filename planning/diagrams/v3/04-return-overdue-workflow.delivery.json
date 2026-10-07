@@ -1,0 +1,24 @@
+{
+  "schemaVersion": 1,
+  "ok": true,
+  "command": "deliver",
+  "type": "workflow",
+  "input": "C:\\Users\\alexy\\Documents\\FYP Dev\\planning\\diagrams\\v3\\04-return-overdue-workflow.archify.json",
+  "output": "C:\\Users\\alexy\\Documents\\FYP Dev\\planning\\diagrams\\v3\\04-return-overdue-workflow.html",
+  "specification": {
+    "sha256": "4de3f321e5f4db5494e898b6ea85e111551c2348e76b4b925a08e9a32240555e",
+    "bytes": 5227
+  },
+  "artifact": {
+    "sha256": "efc8ff5b21e7cc34636274bbbebcbb89adfea6611c4e68de3e3f196be786f857",
+    "bytes": 813640
+  },
+  "validation": {
+    "checksPassed": 9,
+    "checkCount": 9,
+    "compositionProfile": "showcase",
+    "compositionStatus": "pass",
+    "errors": 0,
+    "warnings": 0
+  }
+}

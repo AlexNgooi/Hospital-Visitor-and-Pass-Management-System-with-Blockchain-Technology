@@ -1,0 +1,9 @@
+spring:
+  config:
+    import: "optional:file:./.env[.properties]"
+  application:
+    name: hsaas-backend
+  datasource:
+    url: jdbc:mysql://localhost:3306/hsaas_dev
+    username: hsaas_app
+    password: ${HSAAS_DB_PASSWORD}

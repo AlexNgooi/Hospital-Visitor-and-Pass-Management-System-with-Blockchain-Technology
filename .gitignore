@@ -1,0 +1,25 @@
+# Local secrets; only sanitized examples belong in Git.
+.env
+.env.*
+!.env.example
+application-local.yaml
+application-local.yml
+application-local.properties
+
+# Dependencies and generated build outputs.
+node_modules/
+dist/
+dist-ssr/
+target/
+*.tsbuildinfo
+__pycache__/
+*.py[cod]
+
+# Local tools, logs, and temporary verification files.
+.idea/
+.vscode/
+tmp/
+*.log
+planning/.chrome-*/
+.DS_Store
+Thumbs.db

@@ -1,0 +1,226 @@
+{
+  "schema_version": 2,
+  "diagram_type": "workflow",
+  "meta": {
+    "title": "HSAAS · 登记、审核与实体发卡",
+    "locale": "zh-CN",
+    "quality_profile": "showcase"
+  },
+  "lanes": [
+    {
+      "id": "visitor_lane",
+      "label": "访客"
+    },
+    {
+      "id": "counter_lane",
+      "label": "柜台职员"
+    },
+    {
+      "id": "async_lane",
+      "label": "异步任务"
+    },
+    {
+      "id": "exception_lane",
+      "label": "例外与恢复",
+      "variant": "exception"
+    }
+  ],
+  "mainPath": [
+    "qr_entry",
+    "submit_form",
+    "review_submission",
+    "approve_registration",
+    "scan_physical_card",
+    "commit_issue",
+    "show_issue"
+  ],
+  "nodes": [
+    {
+      "id": "qr_entry",
+      "lane": "visitor_lane",
+      "col": 0,
+      "type": "external",
+      "label": "扫描公共 QR",
+      "sublabel": "四类访客 · 无账号",
+      "width": 132
+    },
+    {
+      "id": "submit_form",
+      "lane": "visitor_lane",
+      "col": 1,
+      "type": "frontend",
+      "label": "提交登记",
+      "sublabel": "字段校验 · 可选消息同意",
+      "width": 132
+    },
+    {
+      "id": "review_submission",
+      "lane": "counter_lane",
+      "col": 1,
+      "type": "backend",
+      "label": "核实登记",
+      "sublabel": "Penjaga 核实 MRN / ward",
+      "width": 132
+    },
+    {
+      "id": "approve_registration",
+      "lane": "counter_lane",
+      "col": 2,
+      "type": "backend",
+      "label": "批准登记",
+      "sublabel": "VERIFIED · 尚未分配卡",
+      "width": 132
+    },
+    {
+      "id": "scan_physical_card",
+      "lane": "counter_lane",
+      "col": 3,
+      "type": "backend",
+      "label": "扫描实体卡",
+      "sublabel": "设备任务 · 核实可用与类别",
+      "width": 132
+    },
+    {
+      "id": "commit_issue",
+      "lane": "counter_lane",
+      "col": 4,
+      "type": "database",
+      "label": "确认交付并提交",
+      "sublabel": "卡 / 借用 / 事件 / 任务",
+      "width": 132
+    },
+    {
+      "id": "show_issue",
+      "lane": "counter_lane",
+      "col": 5,
+      "type": "frontend",
+      "label": "显示发卡结果",
+      "sublabel": "Pass ID · 截止时间",
+      "width": 132
+    },
+    {
+      "id": "deliver_combined",
+      "lane": "async_lane",
+      "col": 4,
+      "type": "messagebus",
+      "label": "单条 WhatsApp",
+      "sublabel": "仅发卡成功且有同意",
+      "width": 132
+    },
+    {
+      "id": "anchor_issue",
+      "lane": "async_lane",
+      "col": 5,
+      "type": "cloud",
+      "label": "Sui 异步锚定",
+      "sublabel": "持久化承诺 · 可重试",
+      "width": 132
+    },
+    {
+      "id": "reject_registration",
+      "lane": "exception_lane",
+      "col": 2,
+      "type": "security",
+      "label": "拒绝登记",
+      "sublabel": "原因必填 · 不发送消息",
+      "width": 132
+    },
+    {
+      "id": "recover_scan",
+      "lane": "exception_lane",
+      "col": 3,
+      "type": "security",
+      "label": "扫描例外",
+      "sublabel": "重连 / 换卡 · 保留批准",
+      "width": 132
+    }
+  ],
+  "edges": [
+    {
+      "from": "qr_entry",
+      "to": "submit_form",
+      "label": "登记",
+      "role": "main",
+      "variant": "default"
+    },
+    {
+      "from": "submit_form",
+      "to": "review_submission",
+      "label": "进入队列",
+      "role": "main",
+      "variant": "default"
+    },
+    {
+      "from": "review_submission",
+      "to": "approve_registration",
+      "label": "核实通过",
+      "role": "main",
+      "variant": "default"
+    },
+    {
+      "from": "review_submission",
+      "to": "reject_registration",
+      "label": "核实不通过",
+      "role": "error",
+      "variant": "security"
+    },
+    {
+      "from": "approve_registration",
+      "to": "scan_physical_card",
+      "label": "开始扫描",
+      "role": "main",
+      "variant": "default"
+    },
+    {
+      "from": "scan_physical_card",
+      "to": "commit_issue",
+      "label": "核验并交付",
+      "role": "main",
+      "variant": "default"
+    },
+    {
+      "from": "scan_physical_card",
+      "to": "recover_scan",
+      "label": "无效 / 冲突",
+      "role": "error",
+      "variant": "security"
+    },
+    {
+      "from": "recover_scan",
+      "to": "scan_physical_card",
+      "label": "重新扫描",
+      "role": "return",
+      "variant": "default"
+    },
+    {
+      "from": "commit_issue",
+      "to": "show_issue",
+      "label": "事务已提交",
+      "role": "main",
+      "variant": "default"
+    },
+    {
+      "from": "commit_issue",
+      "to": "deliver_combined",
+      "label": "有同意",
+      "role": "async",
+      "variant": "dashed"
+    },
+    {
+      "from": "commit_issue",
+      "to": "anchor_issue",
+      "label": "ISSUED 事件",
+      "role": "async",
+      "variant": "dashed"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "amber",
+      "title": "故障与同意",
+      "items": [
+        "MRN 不可用时保留登记并由职员核实。未同意不创建消息任务；拒绝、逾期、归还均无 WhatsApp。"
+      ]
+    }
+  ]
+}

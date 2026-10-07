@@ -1,0 +1,155 @@
+{
+  "schema_version": 1,
+  "diagram_type": "sequence",
+  "meta": {
+    "title": "HSAAS · 发卡后的两条独立异步路径",
+    "locale": "zh-CN",
+    "quality_profile": "showcase",
+    "viewBox": [
+      1400,
+      758
+    ],
+    "column_fit": "spread"
+  },
+  "participants": [
+    {
+      "id": "job_store",
+      "type": "database",
+      "label": "MySQL"
+    },
+    {
+      "id": "chain_worker",
+      "type": "backend",
+      "label": "Sui Worker"
+    },
+    {
+      "id": "sui_chain",
+      "type": "cloud",
+      "label": "Sui Testnet"
+    },
+    {
+      "id": "message_worker",
+      "type": "backend",
+      "label": "消息轮询器"
+    },
+    {
+      "id": "message_provider",
+      "type": "external",
+      "label": "WhatsApp"
+    }
+  ],
+  "messages": [
+    {
+      "id": "m1",
+      "from": "chain_worker",
+      "to": "job_store",
+      "y": 180,
+      "label": "领取审计租约与版本化承诺",
+      "variant": "emphasis"
+    },
+    {
+      "id": "m2",
+      "from": "job_store",
+      "to": "chain_worker",
+      "y": 224,
+      "label": "eventId / hash / 最少元数据",
+      "variant": "return"
+    },
+    {
+      "id": "m3",
+      "from": "chain_worker",
+      "to": "sui_chain",
+      "y": 268,
+      "label": "按 eventId 核实已有证明",
+      "variant": "default"
+    },
+    {
+      "id": "m4",
+      "from": "sui_chain",
+      "to": "chain_worker",
+      "y": 312,
+      "label": "已有证明 / 不存在 / 未知",
+      "variant": "return"
+    },
+    {
+      "id": "m5",
+      "from": "chain_worker",
+      "to": "sui_chain",
+      "y": 356,
+      "label": "仅确认不存在时提交 Move",
+      "variant": "emphasis"
+    },
+    {
+      "id": "m6",
+      "from": "sui_chain",
+      "to": "chain_worker",
+      "y": 400,
+      "label": "执行状态与交易 digest",
+      "variant": "return"
+    },
+    {
+      "id": "m7",
+      "from": "chain_worker",
+      "to": "job_store",
+      "y": 444,
+      "label": "匹配承诺后 CONFIRMED；未知则对账",
+      "variant": "emphasis"
+    },
+    {
+      "id": "m8",
+      "from": "message_worker",
+      "to": "job_store",
+      "y": 488,
+      "label": "领取一次组合消息任务",
+      "variant": "emphasis"
+    },
+    {
+      "id": "m9",
+      "from": "job_store",
+      "to": "message_worker",
+      "y": 532,
+      "label": "同意凭据 / issued assignment",
+      "variant": "return"
+    },
+    {
+      "id": "m10",
+      "from": "message_worker",
+      "to": "message_provider",
+      "y": 576,
+      "label": "提交唯一组合消息",
+      "variant": "dashed"
+    },
+    {
+      "id": "m11",
+      "from": "message_provider",
+      "to": "message_worker",
+      "y": 620,
+      "label": "受理 ID / 已知失败 / 超时未知",
+      "variant": "return"
+    },
+    {
+      "id": "m12",
+      "from": "message_worker",
+      "to": "job_store",
+      "y": 664,
+      "label": "保存状态；UNKNOWN 不盲目重发",
+      "variant": "emphasis"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "时序示意 · 两路径互不等待",
+      "items": [
+        "消息与审计可并行；图中按路径分段。已确认或未知消息禁止人工重发；Sui 依据链上幂等规则恢复。"
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": "回调另由 API 接收",
+      "items": [
+        "签名验证的 WhatsApp 回调仅更新同一任务；SENT / DELIVERED 与 provider ACCEPTED 分开显示。"
+      ]
+    }
+  ]
+}

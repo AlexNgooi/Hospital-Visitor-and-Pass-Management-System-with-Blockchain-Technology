@@ -1,0 +1,151 @@
+{
+  "date": "2026-10-05",
+  "evidence_kind": "supplementary-perceptual-image-review",
+  "automated_receipts_unchanged": false,
+  "browser_measurement_viewports": [
+    "1440x900",
+    "1600x1000",
+    "1920x1080",
+    "2048x1320"
+  ],
+  "scope": "Perceptual inspection of the listed artifact-bound screenshots; dimensions/behavior from official visual-check receipts. No claim of manually exercising exports or integrations.",
+  "diagrams": [
+    {
+      "name": "01-architecture",
+      "diagram_type": "architecture",
+      "artifact_sha256": "48e8ab6d8008307b027122331c1697e71678cd2cebffcdc9781ca9328684d986",
+      "artifact_bytes": 811412,
+      "specification_sha256": "b5663fcdd7f950d3db46c393ff78bb1c61053cca47949f946e079c3191070958",
+      "validation": "9/9 showcase, 0 errors, 0 warnings",
+      "browser_evidence": "passed",
+      "visual_review": "passed",
+      "correction_rounds": 0,
+      "reviewer": "Codex image-capable screenshot review",
+      "inspected_images": [
+        "01-architecture.visual-check.1440x900.light.png",
+        "01-architecture.visual-check.2048x1320.dark.png",
+        "01-architecture.visual-check.2048x1320.light.png"
+      ],
+      "observations": [
+        "Default READ/Still composition checked in light and dark themes",
+        "No visible node/label obstruction, clipping or ambiguous routes",
+        "Smaller desktop view and large desktop balance checked; diagram and conclusion cards fit",
+        "Folder diagram describes navigation; actual parent-child tree is in 09 and the hub"
+      ]
+    },
+    {
+      "name": "02-folder-structure",
+      "diagram_type": "architecture",
+      "artifact_sha256": "466a078084ca6413aab7c59faca89902f25a717fcc04b5f9c9dd56f07c94c191",
+      "artifact_bytes": 808026,
+      "specification_sha256": "67b3b3a5486ccdec1fdc4c48abaad389e17c3e97d6c074d7a8dcfb94ca89a05d",
+      "validation": "9/9 showcase, 0 errors, 0 warnings",
+      "browser_evidence": "passed",
+      "visual_review": "passed",
+      "correction_rounds": 2,
+      "reviewer": "Codex image-capable screenshot review",
+      "inspected_images": [
+        "02-folder-structure.visual-check.1440x900.light.png",
+        "02-folder-structure.visual-check.2048x1320.dark.png",
+        "02-folder-structure.visual-check.2048x1320.light.png"
+      ],
+      "observations": [
+        "Default READ/Still composition checked in light and dark themes",
+        "No visible node/label obstruction, clipping or ambiguous routes",
+        "Smaller desktop view and large desktop balance checked; diagram and conclusion cards fit",
+        "Implementation is visibly separated from planning/output; actual parent-child tree and ../../planning contracts are in 09"
+      ]
+    },
+    {
+      "name": "03-registration-issue-workflow",
+      "diagram_type": "workflow",
+      "artifact_sha256": "bb1442069a06a94c13daaa31e04fa7fc77ff89dab3dbbe53f6da6e824997bd9c",
+      "artifact_bytes": 814856,
+      "specification_sha256": "c92b54bc1e3e8fe93745dd90e457b8804a7e8455399b2b096161de7ed310466f",
+      "validation": "9/9 showcase, 0 errors, 0 warnings",
+      "browser_evidence": "passed",
+      "visual_review": "passed",
+      "correction_rounds": 1,
+      "reviewer": "Codex image-capable screenshot review",
+      "inspected_images": [
+        "03-registration-issue-workflow.visual-check.1440x900.light.png",
+        "03-registration-issue-workflow.visual-check.2048x1320.dark.png"
+      ],
+      "observations": [
+        "Default READ/Still composition checked in light and dark themes",
+        "No visible node/label obstruction, clipping or ambiguous routes",
+        "Smaller desktop view and large desktop balance checked; diagram and conclusion cards fit",
+        "Folder diagram describes navigation; actual parent-child tree is in 09 and the hub"
+      ]
+    },
+    {
+      "name": "04-return-overdue-workflow",
+      "diagram_type": "workflow",
+      "artifact_sha256": "efc8ff5b21e7cc34636274bbbebcbb89adfea6611c4e68de3e3f196be786f857",
+      "artifact_bytes": 813640,
+      "specification_sha256": "4de3f321e5f4db5494e898b6ea85e111551c2348e76b4b925a08e9a32240555e",
+      "validation": "9/9 showcase, 0 errors, 0 warnings",
+      "browser_evidence": "passed",
+      "visual_review": "passed",
+      "correction_rounds": 0,
+      "reviewer": "Codex image-capable screenshot review",
+      "inspected_images": [
+        "04-return-overdue-workflow.visual-check.1440x900.light.png",
+        "04-return-overdue-workflow.visual-check.2048x1320.dark.png",
+        "04-return-overdue-workflow.visual-check.2048x1320.light.png"
+      ],
+      "observations": [
+        "Default READ/Still composition checked in light and dark themes",
+        "No visible node/label obstruction, clipping or ambiguous routes",
+        "Smaller desktop view and large desktop balance checked; diagram and conclusion cards fit",
+        "Folder diagram describes navigation; actual parent-child tree is in 09 and the hub"
+      ]
+    },
+    {
+      "name": "05-scan-issue-sequence",
+      "diagram_type": "sequence",
+      "artifact_sha256": "7e6afd895bef1f765e589d060008cecda565ac52a6cea35a75b1fed3cbde2980",
+      "artifact_bytes": 805471,
+      "specification_sha256": "f3acb7b38ab1442c2870084337453e3f293aee673e75fc45dcb6ef5ce170a64d",
+      "validation": "9/9 showcase, 0 errors, 0 warnings",
+      "browser_evidence": "passed",
+      "visual_review": "passed",
+      "correction_rounds": 0,
+      "reviewer": "Codex image-capable screenshot review",
+      "inspected_images": [
+        "05-scan-issue-sequence.visual-check.1440x900.light.png",
+        "05-scan-issue-sequence.visual-check.2048x1320.dark.png",
+        "05-scan-issue-sequence.visual-check.2048x1320.light.png"
+      ],
+      "observations": [
+        "Default READ/Still composition checked in light and dark themes",
+        "No visible node/label obstruction, clipping or ambiguous routes",
+        "Smaller desktop view and large desktop balance checked; diagram and conclusion cards fit",
+        "Folder diagram describes navigation; actual parent-child tree is in 09 and the hub"
+      ]
+    },
+    {
+      "name": "06-async-delivery-sequence",
+      "diagram_type": "sequence",
+      "artifact_sha256": "8c13576c52729e9f481469b05691c7f9aaebd17030d12a9e6e4a2383d6527c95",
+      "artifact_bytes": 805048,
+      "specification_sha256": "9aac9ad6e078210f53fbf90f6ac27d6ddff52158cf5f8fc41cc207327da2bb62",
+      "validation": "9/9 showcase, 0 errors, 0 warnings",
+      "browser_evidence": "passed",
+      "visual_review": "passed",
+      "correction_rounds": 0,
+      "reviewer": "Codex image-capable screenshot review",
+      "inspected_images": [
+        "06-async-delivery-sequence.visual-check.1440x900.light.png",
+        "06-async-delivery-sequence.visual-check.2048x1320.dark.png",
+        "06-async-delivery-sequence.visual-check.2048x1320.light.png"
+      ],
+      "observations": [
+        "Default READ/Still composition checked in light and dark themes",
+        "No visible node/label obstruction, clipping or ambiguous routes",
+        "Smaller desktop view and large desktop balance checked; diagram and conclusion cards fit",
+        "Folder diagram describes navigation; actual parent-child tree is in 09 and the hub"
+      ]
+    }
+  ]
+}

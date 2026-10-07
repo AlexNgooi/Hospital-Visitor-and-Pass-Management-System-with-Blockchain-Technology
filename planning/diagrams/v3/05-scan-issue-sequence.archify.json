@@ -1,0 +1,156 @@
+{
+  "schema_version": 1,
+  "diagram_type": "sequence",
+  "meta": {
+    "title": "HSAAS · NFC 扫描与原子发卡时序",
+    "locale": "zh-CN",
+    "quality_profile": "showcase",
+    "viewBox": [
+      1400,
+      802
+    ],
+    "column_fit": "spread"
+  },
+  "participants": [
+    {
+      "id": "counter_ui",
+      "type": "frontend",
+      "label": "柜台 Web"
+    },
+    {
+      "id": "business_api",
+      "type": "backend",
+      "label": "Spring API"
+    },
+    {
+      "id": "local_reader",
+      "type": "backend",
+      "label": "Reader Agent"
+    },
+    {
+      "id": "nfc_device",
+      "type": "external",
+      "label": "NFC 设备"
+    },
+    {
+      "id": "data_store",
+      "type": "database",
+      "label": "MySQL"
+    }
+  ],
+  "messages": [
+    {
+      "id": "m1",
+      "from": "counter_ui",
+      "to": "business_api",
+      "y": 180,
+      "label": "创建 ISSUE 扫描任务",
+      "variant": "security"
+    },
+    {
+      "id": "m2",
+      "from": "business_api",
+      "to": "data_store",
+      "y": 224,
+      "label": "绑定 actor / device / registration",
+      "variant": "emphasis"
+    },
+    {
+      "id": "m3",
+      "from": "local_reader",
+      "to": "business_api",
+      "y": 268,
+      "label": "设备认证 · 领取租约",
+      "variant": "security"
+    },
+    {
+      "id": "m4",
+      "from": "business_api",
+      "to": "local_reader",
+      "y": 312,
+      "label": "任务 nonce / expiry",
+      "variant": "return"
+    },
+    {
+      "id": "m5",
+      "from": "local_reader",
+      "to": "nfc_device",
+      "y": 356,
+      "label": "等待移卡后读取 UID / profile",
+      "variant": "default"
+    },
+    {
+      "id": "m6",
+      "from": "nfc_device",
+      "to": "local_reader",
+      "y": 400,
+      "label": "UID + 可读 profile 或失败",
+      "variant": "return"
+    },
+    {
+      "id": "m7",
+      "from": "local_reader",
+      "to": "business_api",
+      "y": 444,
+      "label": "上传绑定扫描结果",
+      "variant": "security"
+    },
+    {
+      "id": "m8",
+      "from": "business_api",
+      "to": "data_store",
+      "y": 488,
+      "label": "校验归属 / 租约 / 一次性结果",
+      "variant": "emphasis"
+    },
+    {
+      "id": "m9",
+      "from": "counter_ui",
+      "to": "business_api",
+      "y": 532,
+      "label": "轮询结果后确认交付",
+      "variant": "default"
+    },
+    {
+      "id": "m10",
+      "from": "business_api",
+      "to": "data_store",
+      "y": 576,
+      "label": "锁登记 / 卡 / 扫描证据；核实类别",
+      "variant": "emphasis"
+    },
+    {
+      "id": "m11",
+      "from": "business_api",
+      "to": "data_store",
+      "y": 620,
+      "label": "原子写借用 / ISSUED / 两类任务",
+      "variant": "emphasis"
+    },
+    {
+      "id": "m12",
+      "from": "data_store",
+      "to": "business_api",
+      "y": 664,
+      "label": "COMMIT；证据与幂等结果已保存",
+      "variant": "return"
+    },
+    {
+      "id": "m13",
+      "from": "business_api",
+      "to": "counter_ui",
+      "y": 708,
+      "label": "201 Pass ID / due_at / 任务状态",
+      "variant": "return"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "rose",
+      "title": "冲突不会部分发卡",
+      "items": [
+        "非法类别、过期扫描或并发占卡导致整笔回滚；相同幂等请求返回同一借用。交付确认由职员作出。"
+      ]
+    }
+  ]
+}

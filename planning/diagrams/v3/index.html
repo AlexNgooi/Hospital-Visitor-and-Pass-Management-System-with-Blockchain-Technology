@@ -1,0 +1,92 @@
+<!doctype html><html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>HSAAS 当前架构与流程图</title>
+<style>
+:root{font-family:Segoe UI,Microsoft YaHei,sans-serif;color:#172638;background:#f4f7fb}*{box-sizing:border-box}body{margin:0}main{max-width:1180px;margin:auto;padding:48px 28px}header{border-left:5px solid #CA0026;padding-left:22px;margin-bottom:28px}h1{font-size:32px;margin:10px 0}h2{font-size:20px;margin:12px 0}p{color:#526277;line-height:1.7;margin:0 0 16px}.tag{font-size:13px;letter-spacing:.08em;color:#9d1430}.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}.tile{display:block;color:inherit;text-decoration:none;background:#fff;border:1px solid #dae2eb;border-radius:16px;padding:24px;min-height:208px;box-shadow:0 4px 18px #12233a06}.tile:hover{border-color:#CA0026;box-shadow:0 5px 20px #CA002610}.tile:focus-visible{outline:3px solid #CA0026;outline-offset:4px}.number{font-size:12px;color:#738299}.open{font-size:14px;color:#b01b38}.note{margin:26px 0;background:#eaf1f7;border-radius:12px;padding:20px}details{background:#fff;border:1px solid #dae2eb;border-radius:12px;padding:20px;margin-top:18px}summary{cursor:pointer;font-weight:600}pre{white-space:pre-wrap;overflow-wrap:anywhere;font-size:13px;line-height:1.6;color:#26384d}footer{margin-top:24px;font-size:13px;color:#68768b}footer a{color:#8b1934}@media(max-width:900px){.grid{grid-template-columns:repeat(2,1fr)}}@media(max-width:560px){main{padding:28px 18px}.grid{grid-template-columns:1fr}h1{font-size:26px}}
+</style><main><header><span class="tag">HSAAS / FYP · 2026-10-05 · current</span><h1>架构、目录与业务流程</h1><p>基于现有 proposal、实施指南与 UI v4 的当前设计。六张 Archify 图支持明暗主题、缩放、关系追踪和导出。</p></header><section class="grid" aria-label="六张设计图"><a class="tile" href="01-architecture.html"><span class="number">01 / architecture</span><h2>v3 目标系统架构</h2><p>组件与部署目标，数据库与集成边界</p><span class="open">打开交互图 ↗</span></a><a class="tile" href="02-folder-structure.html"><span class="number">02 / architecture</span><h2>当前目标目录与上下文入口</h2><p>上下文入口与模块导航，完整层级在下方</p><span class="open">打开交互图 ↗</span></a><a class="tile" href="03-registration-issue-workflow.html"><span class="number">03 / workflow</span><h2>登记、审核与实体发卡</h2><p>四类登记、审核、NFC发卡与单条消息</p><span class="open">打开交互图 ↗</span></a><a class="tile" href="04-return-overdue-workflow.html"><span class="number">04 / workflow</span><h2>归还、逾期与遗失处理</h2><p>实体归还、内部逾期告警、遗失恢复</p><span class="open">打开交互图 ↗</span></a><a class="tile" href="05-scan-issue-sequence.html"><span class="number">05 / sequence</span><h2>NFC 扫描与原子发卡时序</h2><p>扫描任务、设备证据、原子业务提交</p><span class="open">打开交互图 ↗</span></a><a class="tile" href="06-async-delivery-sequence.html"><span class="number">06 / sequence</span><h2>发卡后的两条独立异步路径</h2><p>Sui证明与WhatsApp分别处理，未知结果先核查</p><span class="open">打开交互图 ↗</span></a></section><div class="note"><strong>当前为实施设计。</strong><p>正式应用尚未创建。批准登记与发卡分开；NFC证据由设备任务绑定；每次借用只有一条组合WhatsApp任务；消息与链上故障独立处理。</p><small>每图已通过 9/9 showcase 校验，四种桌面视口的浏览器检查已通过。完整哈希和检查状态见交付收据。</small></div><details><summary>展开完整目标目录树</summary><pre>FYP Dev/
+├── AGENTS.md                         [现有] 小型任务路由
+├── CONTEXT.md                        [现有] 工作区契约
+├── proposal.pdf                      [现有] 简写，实际完整文件名保留
+├── planning/                         [现有] 规范唯一事实归属
+│   ├── README.md / CONTEXT.md / PROJECT_MAP.md
+│   ├── 01_DEVELOPMENT_PLAN.md         2026-10-05 至 2027-01-03 三个月计划
+│   ├── 02_TECHNICAL_ARCHITECTURE.md   v3 架构
+│   ├── 03_REQUIREMENTS_AND_TEST_PLAN.md
+│   ├── 04_DATA_MODEL_AND_API_PLAN.md
+│   ├── 05_RISK_REGISTER.md / 06_TRELLO_BOARD_GUIDE.md
+│   ├── 07_FIGMA_UI_SPEC.md            导航到 UI v4
+│   ├── 08_MERMAID_DIAGRAMS.md         从 Archify 源生成语义镜像
+│   ├── 09_FOLDER_STRUCTURE.md / 10_BASELINE_REVIEW.md
+│   ├── 11_ENVIRONMENT_AND_MANUAL_INITIALIZATION.md
+│   ├── 12_THREE_MONTH_CHAT_PLAN.md
+│   ├── _templates/                   稳定模板；与实例分离
+│   ├── diagrams/v3/                  Archify JSON / HTML / receipts / QA
+│   └── figma_assets/                 当前 Figma 导入基础资产
+├── output/                           [现有] 静态成果
+│   ├── CONTEXT.md
+│   ├── ui-redesign-v4/               最新交互/一条消息原型
+│   ├── ui-redesign-v3/               历史原型
+│   └── pdf/                         历史实施指南（有被覆盖条款）
+├── tmp/                              [现有] 检查/解析的中间文件
+├── Implementation/                   [现有] 正式开发代码边界；使用根 Git 仓库
+│   ├── CONTEXT.md                    [计划] 实现区输入、职责、输出与验证入口
+│   ├── frontend/                     [手动初始化] React + TypeScript + Vite
+│   │   ├── CONTEXT.md
+│   │   ├── src/
+│   │   │   ├── app/                 router / providers / auth bootstrap
+│   │   │   ├── features/
+│   │   │   │   ├── registration/    四类别表单/consent/receipt
+│   │   │   │   ├── counter/         review / QR / scan / issue / return
+│   │   │   │   ├── administration/  users / cards / settings / reports
+│   │   │   │   └── audit/           proof / notification status
+│   │   │   ├── components/ui/       shadcn primitives
+│   │   │   ├── lib/                 API client / CSRF / time / errors
+│   │   │   └── generated/           OpenAPI TS types，生成不手改
+│   │   ├── tests/                   component tests
+│   │   └── vite.config.ts / vercel.json / package.json / lockfile
+│   ├── backend/                      [手动初始化] Java 21 / Maven / Spring Boot
+│   │   ├── CONTEXT.md / pom.xml / mvnw.cmd
+│   │   ├── src/main/java/edu/upm/hsaas/
+│   │   │   ├── auth/                session / user policies
+│   │   │   ├── registration/        fields / consent / verification
+│   │   │   ├── card/                inventory / enrollment / lost cases
+│   │   │   ├── assignment/          issue / return / state transactions
+│   │   │   ├── reader/              devices / scan jobs / fencing
+│   │   │   ├── hospital/            MRN adapter interface / mock / manual
+│   │   │   ├── audit/               immutable snapshots / verification jobs
+│   │   │   ├── notification/        one-message queue / poller / adapter
+│   │   │   ├── monitoring/          overdue scheduler / alerts / followups
+│   │   │   ├── administration/      protected settings / accounts
+│   │   │   ├── reporting/           golden-metric queries / masked exports
+│   │   │   ├── config/              security chains / datasource / jobs
+│   │   │   └── common/              errors / clocks / idempotency primitives
+│   │   ├── src/main/resources/db/migration/
+│   │   └── src/test/java/edu/upm/hsaas/  MySQL integration + module tests
+│   ├── reader-agent/                 [按阶段手动初始化] 独立 Java Maven 工程
+│   │   ├── CONTEXT.md / pom.xml
+│   │   ├── src/main/java/.../device/ PC/SC transport + approved parser
+│   │   ├── src/main/java/.../jobs/   claim / cancellation / lease / upload
+│   │   ├── src/main/java/.../http/   token-auth HTTPS client
+│   │   └── packaging/               Windows installer/service runbook
+│   ├── sui-worker/                   [按阶段手动初始化] 私有 TypeScript 进程
+│   │   ├── CONTEXT.md / package.json / lockfile
+│   │   ├── src/outbox/              polling / lease / retry
+│   │   ├── src/sui/                 gRPC / wallet / transaction / reconcile
+│   │   ├── src/verification/        read proof / bind result
+│   │   ├── src/contracts/           minimal shared audit envelope types
+│   │   └── tests/                   failure/replay/SDK smoke
+│   ├── move/                         [按阶段手动初始化] Sui Move package
+│   │   ├── CONTEXT.md / Move.toml
+│   │   ├── sources/audit.move       registry / capability / idempotent anchor
+│   │   └── tests/                   duplicate eventId / writer / mismatch
+│   ├── infra/                        [手动初始化] 环境与发布
+│   │   ├── CONTEXT.md / compose.yaml / .env.example
+│   │   ├── containers/              backend / worker build definitions
+│   │   └── environments/            synthetic profiles / release manifest
+│   ├── docs/                         [手动初始化] 运维与研究证据
+│   │   ├── CONTEXT.md / adr/ / runbooks/
+│   │   ├── api/                     generated OpenAPI / ERD
+│   │   ├── uat/                     scenarios / SUS / approvals
+│   │   └── evidence/                per-requirement results + bindings
+│   └── tests/                        [按阶段手动初始化] 跨模块 E2E / fixtures / performance
+│       └── CONTEXT.md
+└── .github/workflows/                [计划] 各模块 CI，默认不自动发链交易
+</pre></details><footer><a href="delivery-manifest.json">交付与哈希收据</a> · <a href="review-receipt.json">人工截图检查记录</a> · 需求与API文档入口：planning/README.md。硬件、医院接口、真实消息通道与保留策略仍有待确认事项。</footer></main></html>

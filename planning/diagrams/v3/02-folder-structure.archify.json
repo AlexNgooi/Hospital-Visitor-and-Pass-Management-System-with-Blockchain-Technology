@@ -1,0 +1,228 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "HSAAS · 当前目标目录与上下文入口",
+    "locale": "zh-CN",
+    "quality_profile": "showcase",
+    "viewBox": [
+      1395,
+      760
+    ]
+  },
+  "components": [
+    {
+      "id": "root_catalog",
+      "type": "security",
+      "label": "根目录 AGENTS.md",
+      "sublabel": "项目导航 · 读取任务所需文档",
+      "pos": [
+        40,
+        340
+      ],
+      "size": [
+        210,
+        76
+      ]
+    },
+    {
+      "id": "planning_shelf",
+      "type": "external",
+      "label": "planning/",
+      "sublabel": "需求 / 架构 / 数据 / 阶段计划",
+      "pos": [
+        400,
+        100
+      ],
+      "size": [
+        220,
+        76
+      ]
+    },
+    {
+      "id": "app_shelf",
+      "type": "backend",
+      "label": "Implementation/",
+      "sublabel": "正式代码边界 · 根 Git 仓库",
+      "pos": [
+        400,
+        340
+      ],
+      "size": [
+        220,
+        76
+      ]
+    },
+    {
+      "id": "infra_shelf",
+      "type": "cloud",
+      "label": "Implementation/infra/",
+      "sublabel": "本地环境 · 容器 · 发布配置",
+      "pos": [
+        400,
+        580
+      ],
+      "size": [
+        220,
+        76
+      ]
+    },
+    {
+      "id": "design_outputs",
+      "type": "frontend",
+      "label": "planning/diagrams/v3/",
+      "sublabel": "Archify JSON / HTML / 验证收据",
+      "pos": [
+        800,
+        100
+      ],
+      "size": [
+        260,
+        76
+      ]
+    },
+    {
+      "id": "frontend_module",
+      "type": "frontend",
+      "label": "frontend/",
+      "sublabel": "Implementation · 开发者手动初始化",
+      "pos": [
+        800,
+        300
+      ],
+      "size": [
+        220,
+        76
+      ]
+    },
+    {
+      "id": "backend_module",
+      "type": "backend",
+      "label": "backend/",
+      "sublabel": "Implementation · 开发者手动初始化",
+      "pos": [
+        1130,
+        300
+      ],
+      "size": [
+        220,
+        76
+      ]
+    },
+    {
+      "id": "reader_module",
+      "type": "backend",
+      "label": "reader-agent/（计划）",
+      "sublabel": "设备协议 · PC/SC · HTTPS",
+      "pos": [
+        800,
+        460
+      ],
+      "size": [
+        220,
+        76
+      ]
+    },
+    {
+      "id": "sui_module",
+      "type": "backend",
+      "label": "sui-worker/ + move/（计划）",
+      "sublabel": "异步审计 · 链上幂等",
+      "pos": [
+        1130,
+        460
+      ],
+      "size": [
+        220,
+        76
+      ]
+    },
+    {
+      "id": "release_evidence",
+      "type": "database",
+      "label": "Implementation/docs + tests",
+      "sublabel": "运维 / UAT / 跨模块证据",
+      "pos": [
+        800,
+        660
+      ],
+      "size": [
+        260,
+        76
+      ]
+    }
+  ],
+  "connections": [
+    {
+      "from": "root_catalog",
+      "to": "planning_shelf",
+      "label": "查阅规范",
+      "variant": "default"
+    },
+    {
+      "from": "root_catalog",
+      "to": "app_shelf",
+      "label": "定位实现",
+      "variant": "emphasis",
+      "labelAt": [
+        366,
+        378
+      ]
+    },
+    {
+      "from": "app_shelf",
+      "to": "infra_shelf",
+      "label": "环境与发布",
+      "variant": "default",
+      "labelAt": [
+        510,
+        430
+      ]
+    },
+    {
+      "from": "planning_shelf",
+      "to": "design_outputs",
+      "label": "生成并验收",
+      "variant": "default"
+    },
+    {
+      "from": "app_shelf",
+      "to": "frontend_module",
+      "label": "界面与交互",
+      "variant": "default"
+    },
+    {
+      "from": "frontend_module",
+      "to": "backend_module",
+      "label": "API 契约",
+      "variant": "emphasis"
+    },
+    {
+      "from": "app_shelf",
+      "to": "reader_module",
+      "label": "扫描适配",
+      "variant": "default"
+    },
+    {
+      "from": "reader_module",
+      "to": "sui_module",
+      "label": "独立集成边界",
+      "variant": "dashed"
+    },
+    {
+      "from": "infra_shelf",
+      "to": "release_evidence",
+      "label": "演练与留证",
+      "variant": "default"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "amber",
+      "title": "目录图是导航关系",
+      "items": [
+        "完整树与模块契约见 09_FOLDER_STRUCTURE.md。planning 与 output 保持独立；正式代码、配置、测试和实施证据统一进入 Implementation/。"
+      ]
+    }
+  ]
+}

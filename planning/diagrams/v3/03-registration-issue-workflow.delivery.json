@@ -1,0 +1,24 @@
+{
+  "schemaVersion": 1,
+  "ok": true,
+  "command": "deliver",
+  "type": "workflow",
+  "input": "C:\\Users\\alexy\\Documents\\FYP Dev\\planning\\diagrams\\v3\\03-registration-issue-workflow.archify.json",
+  "output": "C:\\Users\\alexy\\Documents\\FYP Dev\\planning\\diagrams\\v3\\03-registration-issue-workflow.html",
+  "specification": {
+    "sha256": "c92b54bc1e3e8fe93745dd90e457b8804a7e8455399b2b096161de7ed310466f",
+    "bytes": 5321
+  },
+  "artifact": {
+    "sha256": "bb1442069a06a94c13daaa31e04fa7fc77ff89dab3dbbe53f6da6e824997bd9c",
+    "bytes": 814856
+  },
+  "validation": {
+    "checksPassed": 9,
+    "checkCount": 9,
+    "compositionProfile": "showcase",
+    "compositionStatus": "pass",
+    "errors": 0,
+    "warnings": 0
+  }
+}

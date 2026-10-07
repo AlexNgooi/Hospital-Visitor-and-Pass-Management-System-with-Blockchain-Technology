@@ -1,0 +1,85 @@
+{
+  "runId": "hsaas-shadcn-ui-2026-08-22",
+  "figmaFileKey": "jocHafgTspDMxcJesTcbRp",
+  "figmaFileUrl": "https://www.figma.com/design/jocHafgTspDMxcJesTcbRp",
+  "phase": "phase4-visual-qa-complete-with-followups",
+  "step": "P4.d",
+  "decisions": {
+    "designLanguage": "shadcn/ui compatible",
+    "font": "Geist",
+    "theme": "Light only for v1",
+    "libraryReuse": "No shadcn library available; do not substitute Material 3 or Simple Design System components",
+    "brandDirection": "UPM Hospital red and white",
+    "primaryColor": "Provisional deep clinical red #9D0B0F pending official UPM brand guide",
+    "colorUsage": "White-dominant surfaces; deep red for primary actions and navigation emphasis; pale red for selected and alert states; neutral shadcn gray for structure",
+    "screens": 13
+  },
+  "entities": {
+    "pages": {
+      "default": "0:1"
+    },
+    "collections": {
+      "UPM Primitives": "VariableCollectionId:3:2",
+      "UPM Semantic Color": "VariableCollectionId:3:3",
+      "UPM Dimensions": "VariableCollectionId:3:4"
+    },
+    "variables": {
+      "primitiveColorCount": 20,
+      "semanticColorCount": 29,
+      "dimensionCount": 0,
+      "firstPrimitiveId": "VariableID:3:5",
+      "lastSemanticId": "VariableID:3:53"
+    },
+    "components": {},
+    "screens": {
+      "plannedCount": 13,
+      "editableSvgAssets": [
+        "planning/figma_assets/00_low_fidelity_wireframes.svg",
+        "planning/figma_assets/01_visitor_mobile_ui.svg",
+        "planning/figma_assets/02_counter_staff_ui.svg",
+        "planning/figma_assets/03_administrator_ui.svg",
+        "planning/figma_assets/04_shadcn_design_system.svg",
+        "planning/figma_assets/05_registration_qr_detail.svg"
+      ],
+      "figmaPages": [
+        "00 Wireframes",
+        "01 Visitor Mobile",
+        "02 Counter Staff",
+        "03 Administrator",
+        "04 shadcn UI System",
+        "02 Counter Staff + Registration QR",
+        "05 Registration QR Detail"
+      ],
+      "browserImportValidated": true
+    }
+  },
+  "completedSteps": [
+    "P0.a",
+    "P0.b",
+    "P0.c",
+    "P0.d",
+    "P0.e",
+    "P0.f",
+    "P1.a",
+    "P1.b",
+    "P2.a",
+    "P2.b",
+    "P3.a",
+    "P3.b",
+    "P3.c",
+    "P4.a",
+    "P4.b",
+    "P4.c",
+    "P4.d"
+  ],
+  "pendingValidations": [
+    "Create dimension variables when Figma MCP allowance is available",
+    "Create text and effect styles",
+    "Convert repeated vector groups into reusable Figma component instances when MCP allowance is available",
+    "Validate all collections, aliases and scopes",
+    "Replace provisional red if official UPM brand hex is supplied"
+  ],
+  "deliveryStatus": "Wireframes, 13 UI screens including Counter Staff registration QR, and shadcn design-system reference imported and visually checked in Figma",
+  "lastUpdate": "Added Counter Staff sidebar and dashboard entry for visitor registration QR, plus S06 display dialog with print and full-screen actions",
+  "limitation": "Figma Starter MCP tool-call allowance reached after color tokens; screen delivery continued through editable SVG browser import"
+}

@@ -1,0 +1,222 @@
+{
+  "schema_version": 2,
+  "diagram_type": "workflow",
+  "meta": {
+    "title": "HSAAS · 归还、逾期与遗失处理",
+    "locale": "zh-CN",
+    "quality_profile": "showcase"
+  },
+  "lanes": [
+    {
+      "id": "staff_lane",
+      "label": "柜台归还"
+    },
+    {
+      "id": "system_lane",
+      "label": "系统逾期"
+    },
+    {
+      "id": "admin_lane",
+      "label": "管理员例外",
+      "variant": "exception"
+    }
+  ],
+  "mainPath": [
+    "active_assignment",
+    "scan_return",
+    "commit_return",
+    "available_again"
+  ],
+  "nodes": [
+    {
+      "id": "active_assignment",
+      "lane": "staff_lane",
+      "col": 0,
+      "type": "database",
+      "label": "使用中的实体卡",
+      "sublabel": "ISSUED / OVERDUE",
+      "width": 156
+    },
+    {
+      "id": "scan_return",
+      "lane": "staff_lane",
+      "col": 1,
+      "type": "backend",
+      "label": "扫描并确认收到",
+      "sublabel": "RETURN 任务 · 实体卡已收回",
+      "width": 156
+    },
+    {
+      "id": "commit_return",
+      "lane": "staff_lane",
+      "col": 2,
+      "type": "database",
+      "label": "提交归还事务",
+      "sublabel": "关闭借用 · RETURNED 事件",
+      "width": 156
+    },
+    {
+      "id": "available_again",
+      "lane": "staff_lane",
+      "col": 3,
+      "type": "frontend",
+      "label": "库存恢复可用",
+      "sublabel": "AVAILABLE · 归还是事件",
+      "width": 156
+    },
+    {
+      "id": "due_elapsed",
+      "lane": "system_lane",
+      "col": 0,
+      "type": "backend",
+      "label": "截止时间已到",
+      "sublabel": "UTC now >= due_at",
+      "width": 156
+    },
+    {
+      "id": "mark_overdue",
+      "lane": "system_lane",
+      "col": 1,
+      "type": "database",
+      "label": "原子标记逾期",
+      "sublabel": "OVERDUE · 一次事件",
+      "width": 156
+    },
+    {
+      "id": "staff_followup",
+      "lane": "system_lane",
+      "col": 2,
+      "type": "frontend",
+      "label": "内部告警与跟进",
+      "sublabel": "权限控制联系方式",
+      "width": 156
+    },
+    {
+      "id": "anchor_return",
+      "lane": "system_lane",
+      "col": 3,
+      "type": "cloud",
+      "label": "异步审计锚定",
+      "sublabel": "RETURNED / OVERDUE",
+      "width": 156
+    },
+    {
+      "id": "mark_lost",
+      "lane": "admin_lane",
+      "col": 1,
+      "type": "security",
+      "label": "管理员标记遗失",
+      "sublabel": "原因必填 · 关闭当前借用",
+      "width": 156
+    },
+    {
+      "id": "lost_resolution",
+      "lane": "admin_lane",
+      "col": 2,
+      "type": "security",
+      "label": "遗失后受控恢复",
+      "sublabel": "找回核验 · 管理员审核",
+      "width": 156
+    },
+    {
+      "id": "restore_available",
+      "lane": "admin_lane",
+      "col": 3,
+      "type": "database",
+      "label": "恢复可用库存",
+      "sublabel": "RESTORED 事件",
+      "width": 156
+    }
+  ],
+  "edges": [
+    {
+      "from": "active_assignment",
+      "to": "scan_return",
+      "label": "归还",
+      "role": "main",
+      "variant": "default"
+    },
+    {
+      "from": "scan_return",
+      "to": "commit_return",
+      "label": "收到有效实体卡",
+      "role": "main",
+      "variant": "default"
+    },
+    {
+      "from": "commit_return",
+      "to": "available_again",
+      "label": "事务已提交",
+      "role": "main",
+      "variant": "default",
+      "route": "straight"
+    },
+    {
+      "from": "due_elapsed",
+      "to": "mark_overdue",
+      "label": "仍有活动借用",
+      "role": "main",
+      "variant": "default"
+    },
+    {
+      "from": "mark_overdue",
+      "to": "staff_followup",
+      "label": "内部告警",
+      "role": "main",
+      "variant": "default"
+    },
+    {
+      "from": "staff_followup",
+      "to": "scan_return",
+      "label": "访客交回卡",
+      "role": "return",
+      "variant": "default"
+    },
+    {
+      "from": "commit_return",
+      "to": "anchor_return",
+      "label": "写 Outbox",
+      "role": "async",
+      "variant": "dashed"
+    },
+    {
+      "from": "mark_overdue",
+      "to": "anchor_return",
+      "label": "写 Outbox",
+      "role": "async",
+      "variant": "dashed"
+    },
+    {
+      "from": "active_assignment",
+      "to": "mark_lost",
+      "label": "遗失报告",
+      "role": "branch",
+      "variant": "default",
+      "bias": 0.8,
+      "route": "return-left"
+    },
+    {
+      "from": "mark_lost",
+      "to": "lost_resolution",
+      "label": "找回后核实",
+      "role": "main",
+      "variant": "default"
+    },
+    {
+      "from": "lost_resolution",
+      "to": "restore_available",
+      "label": "规则允许",
+      "role": "main",
+      "variant": "default"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "rose",
+      "title": "并发与例外",
+      "items": [
+        "归还、逾期、遗失按同一锁顺序检查状态。重复归还返回原结果；LOST 不执行普通归还。无自动提醒消息。"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,24 @@
+{
+  "date": "2026-09-30",
+  "installer": "skill-installer/install-skill-from-github.py",
+  "skills": [
+    {
+      "name": "icm-architect",
+      "source": "https://github.com/RinDig/icm-architect",
+      "installed_ref": "e16cafe6a664dcf6d787a726b452adba77d913f4",
+      "installed_path": "C:\\Users\\alexy\\.codex\\skills\\icm-architect",
+      "files": 15,
+      "skill_md_sha256": "8a0d62444f047e84aa02ca1728a5dc3848dd06afa32f9e66bf3225352fe67a38",
+      "status": "installed-and-read"
+    },
+    {
+      "name": "prompt-master",
+      "source": "https://github.com/nidhinjs/prompt-master",
+      "installed_ref": "2bd92518e26bf659e21e3d9ab90573fcf3ddeccb",
+      "installed_path": "C:\\Users\\alexy\\.codex\\skills\\prompt-master",
+      "files": 5,
+      "skill_md_sha256": "651e5490f4b51c6e6ca32cc26eed10dff52f344b95a1b9122105f0c8d8e1506a",
+      "status": "installed-and-read"
+    }
+  ]
+}

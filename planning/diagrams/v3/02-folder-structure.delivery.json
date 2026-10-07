@@ -1,0 +1,24 @@
+{
+  "schemaVersion": 1,
+  "ok": true,
+  "command": "deliver",
+  "type": "architecture",
+  "input": "C:\\Users\\alexy\\Documents\\FYP Dev\\planning\\diagrams\\v3\\02-folder-structure.archify.json",
+  "output": "C:\\Users\\alexy\\Documents\\FYP Dev\\planning\\diagrams\\v3\\02-folder-structure.html",
+  "specification": {
+    "sha256": "67b3b3a5486ccdec1fdc4c48abaad389e17c3e97d6c074d7a8dcfb94ca89a05d",
+    "bytes": 4673
+  },
+  "artifact": {
+    "sha256": "466a078084ca6413aab7c59faca89902f25a717fcc04b5f9c9dd56f07c94c191",
+    "bytes": 808026
+  },
+  "validation": {
+    "checksPassed": 9,
+    "checkCount": 9,
+    "compositionProfile": "showcase",
+    "compositionStatus": "pass",
+    "errors": 0,
+    "warnings": 0
+  }
+}

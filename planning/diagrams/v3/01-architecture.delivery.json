@@ -1,0 +1,24 @@
+{
+  "schemaVersion": 1,
+  "ok": true,
+  "command": "deliver",
+  "type": "architecture",
+  "input": "C:\\Users\\alexy\\Documents\\FYP Dev\\planning\\diagrams\\v3\\01-architecture.archify.json",
+  "output": "C:\\Users\\alexy\\Documents\\FYP Dev\\planning\\diagrams\\v3\\01-architecture.html",
+  "specification": {
+    "sha256": "b5663fcdd7f950d3db46c393ff78bb1c61053cca47949f946e079c3191070958",
+    "bytes": 5098
+  },
+  "artifact": {
+    "sha256": "48e8ab6d8008307b027122331c1697e71678cd2cebffcdc9781ca9328684d986",
+    "bytes": 811412
+  },
+  "validation": {
+    "checksPassed": 9,
+    "checkCount": 9,
+    "compositionProfile": "showcase",
+    "compositionStatus": "pass",
+    "errors": 0,
+    "warnings": 0
+  }
+}

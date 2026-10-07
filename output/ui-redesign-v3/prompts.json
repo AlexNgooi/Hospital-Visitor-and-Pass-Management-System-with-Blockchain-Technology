@@ -1,0 +1,268 @@
+[
+  {
+    "file": "01-visitor-registration",
+    "title": "01 / VISITOR REGISTRATION",
+    "layout": "Six tall mobile-browser screens in one horizontal row, approximately 390x844 logical units each. White mobile frames without hardware, a small BM / EN control. All visible fields labelled, touch buttons large. Each frame is a distinct page.",
+    "screens": [
+      [
+        "V01",
+        "Welcome & category",
+        "BM: 'Pendaftaran pelawat', 'Pilih kategori'. Four radio cards: Pelawat Eksekutif, Penjaga, Vendor, Kontraktor. Counter 01 and 'Tiada akaun diperlukan'. Primary 'Teruskan'."
+      ],
+      [
+        "V02",
+        "Visitor details",
+        "Step 1 of 3. 'Maklumat pelawat'. Nama penuh, Jenis pengenalan, No. pengenalan, No. telefon. One field shows clear inline validation. Back and 'Seterusnya'."
+      ],
+      [
+        "V03",
+        "Penjaga details",
+        "Step 2 of 3. MRN, Wad, Hubungan dengan pesakit. Sample masked MRN ***4821. Amber 'Pengesahan di kaunter' and retained values. 'Semak MRN', 'Seterusnya'."
+      ],
+      [
+        "V04",
+        "Executive visit",
+        "Step 2 of 3. 'Pelawat Eksekutif'. Organisasi, Pegawai dihubungi, Jabatan / lokasi, Tujuan lawatan. Restrained form, 'Seterusnya'."
+      ],
+      [
+        "V05",
+        "Vendor visit",
+        "Step 2 of 3. 'Vendor'. Syarikat, Pegawai dihubungi, Lokasi, Tujuan penghantaran. 'Seterusnya'."
+      ],
+      [
+        "V06",
+        "Contractor visit",
+        "Step 2 of 3. 'Kontraktor'. Syarikat, Pegawai dihubungi, Lokasi kerja, Tujuan kerja. 'Seterusnya'."
+      ]
+    ],
+    "prompt": "Use case: ui-mockup. Create a polished, high-fidelity hospital visitor and physical NFC pass management UI design contact sheet, product \"HSAAS Visitor Pass\", inspired by Universiti Putra Malaysia red/white identity. Brand red #CA0026, dark red #A30020, white surfaces, near-white #F7F8FA background, charcoal #18212B text, grey #8A9396. Restrained semantic green/amber/blue status chips with words and icons. Clean Swiss enterprise style, Geist-like sans serif, consistent outline icons, 8px spacing rhythm, 10px card corners, light fine borders, subtle shadows. Very crisp readable typography. No 3D device perspective, no decorative photographs, no fake official crest: use simple HSAAS wordmark only. Header small editorial title, numbered frame labels outside every screen, generous gutters. Render SIX DISTINCT COMPLETE screen mockups per board, with realistic synthetic data. Each screen must have its own appropriate content, never repeat same generic dashboard. High resolution landscape canvas. Mockup only; QR blocks illustrative. Personal IDs/phones/MRN masked in operational screens. Approval must not contain Pass ID or due date; these exist only after physical issue. All buttons visible. Do not show programming internals or blockchain to visitors.\nBoard title: 01 / VISITOR REGISTRATION\nComposition: Six tall mobile-browser screens in one horizontal row, approximately 390x844 logical units each. White mobile frames without hardware, a small BM / EN control. All visible fields labelled, touch buttons large. Each frame is a distinct page.\nRequired six frames:\nV01 — Welcome & category — BM: 'Pendaftaran pelawat', 'Pilih kategori'. Four radio cards: Pelawat Eksekutif, Penjaga, Vendor, Kontraktor. Counter 01 and 'Tiada akaun diperlukan'. Primary 'Teruskan'.\nV02 — Visitor details — Step 1 of 3. 'Maklumat pelawat'. Nama penuh, Jenis pengenalan, No. pengenalan, No. telefon. One field shows clear inline validation. Back and 'Seterusnya'.\nV03 — Penjaga details — Step 2 of 3. MRN, Wad, Hubungan dengan pesakit. Sample masked MRN ***4821. Amber 'Pengesahan di kaunter' and retained values. 'Semak MRN', 'Seterusnya'.\nV04 — Executive visit — Step 2 of 3. 'Pelawat Eksekutif'. Organisasi, Pegawai dihubungi, Jabatan / lokasi, Tujuan lawatan. Restrained form, 'Seterusnya'.\nV05 — Vendor visit — Step 2 of 3. 'Vendor'. Syarikat, Pegawai dihubungi, Lokasi, Tujuan penghantaran. 'Seterusnya'.\nV06 — Contractor visit — Step 2 of 3. 'Kontraktor'. Syarikat, Pegawai dihubungi, Lokasi kerja, Tujuan kerja. 'Seterusnya'.\nRender every frame fully within the canvas, exact IDs and headings; prioritize functional UI over presentation decoration."
+  },
+  {
+    "file": "02-visitor-consent-and-notices",
+    "title": "02 / VISITOR CONFIRMATION & NOTICES",
+    "layout": "Six tall mobile screens in a single horizontal row. V07 and V08 are the HSAAS browser. N01-N04 are clearly marked 'WhatsApp template preview', notification mockups only, not new visitor portal pages.",
+    "screens": [
+      [
+        "V07",
+        "Review and consent",
+        "'Semak & hantar'. Category Penjaga, masked detail summary with edit links. Required privacy acknowledgement, separate OPTIONAL unchecked checkbox 'Saya bersetuju menerima notifikasi WhatsApp'. Text 'Pilihan ini tidak menjejaskan permohonan'. Primary 'Hantar permohonan'."
+      ],
+      [
+        "V08",
+        "Submission receipt",
+        "'Permohonan diterima'. Public reference R-K7M2; 'Menunggu semakan'. No Pass ID or deadline. 'Sila ke Kaunter 01 untuk pengesahan'. 'Simpan rujukan'. Small illustrative reference QR and no personal data."
+      ],
+      [
+        "N01",
+        "Approval notification",
+        "WhatsApp preview headed HSAAS. 'Permohonan diluluskan'. R-K7M2. 'Sila ke Kaunter 01 untuk mengambil kad fizikal'. No Pass ID, no return deadline. Clearly approval only."
+      ],
+      [
+        "N02",
+        "Card issue notification",
+        "WhatsApp preview. 'Kad telah diserahkan'. Pass P-0248, reference R-K7M2, category Penjaga, 'Pulangkan sebelum 24 Sep, 6:00 PM', 'Kaunter 01'. No identification or patient information."
+      ],
+      [
+        "N03",
+        "Before-due reminder",
+        "WhatsApp preview. 'Peringatan pemulangan'. Pass P-0248, 'Pulangkan kad sebelum 6:00 PM di Kaunter 01'. Warm amber reminder accent; no guarantee delivery."
+      ],
+      [
+        "N04",
+        "Rejection notification",
+        "WhatsApp preview. 'Permohonan tidak diluluskan'. R-K7M2. 'Sila rujuk Kaunter 01 untuk bantuan'. No sensitive rejection reason; no Pass ID."
+      ]
+    ],
+    "prompt": "Use case: ui-mockup. Create a polished, high-fidelity hospital visitor and physical NFC pass management UI design contact sheet, product \"HSAAS Visitor Pass\", inspired by Universiti Putra Malaysia red/white identity. Brand red #CA0026, dark red #A30020, white surfaces, near-white #F7F8FA background, charcoal #18212B text, grey #8A9396. Restrained semantic green/amber/blue status chips with words and icons. Clean Swiss enterprise style, Geist-like sans serif, consistent outline icons, 8px spacing rhythm, 10px card corners, light fine borders, subtle shadows. Very crisp readable typography. No 3D device perspective, no decorative photographs, no fake official crest: use simple HSAAS wordmark only. Header small editorial title, numbered frame labels outside every screen, generous gutters. Render SIX DISTINCT COMPLETE screen mockups per board, with realistic synthetic data. Each screen must have its own appropriate content, never repeat same generic dashboard. High resolution landscape canvas. Mockup only; QR blocks illustrative. Personal IDs/phones/MRN masked in operational screens. Approval must not contain Pass ID or due date; these exist only after physical issue. All buttons visible. Do not show programming internals or blockchain to visitors.\nBoard title: 02 / VISITOR CONFIRMATION & NOTICES\nComposition: Six tall mobile screens in a single horizontal row. V07 and V08 are the HSAAS browser. N01-N04 are clearly marked 'WhatsApp template preview', notification mockups only, not new visitor portal pages.\nRequired six frames:\nV07 — Review and consent — 'Semak & hantar'. Category Penjaga, masked detail summary with edit links. Required privacy acknowledgement, separate OPTIONAL unchecked checkbox 'Saya bersetuju menerima notifikasi WhatsApp'. Text 'Pilihan ini tidak menjejaskan permohonan'. Primary 'Hantar permohonan'.\nV08 — Submission receipt — 'Permohonan diterima'. Public reference R-K7M2; 'Menunggu semakan'. No Pass ID or deadline. 'Sila ke Kaunter 01 untuk pengesahan'. 'Simpan rujukan'. Small illustrative reference QR and no personal data.\nN01 — Approval notification — WhatsApp preview headed HSAAS. 'Permohonan diluluskan'. R-K7M2. 'Sila ke Kaunter 01 untuk mengambil kad fizikal'. No Pass ID, no return deadline. Clearly approval only.\nN02 — Card issue notification — WhatsApp preview. 'Kad telah diserahkan'. Pass P-0248, reference R-K7M2, category Penjaga, 'Pulangkan sebelum 24 Sep, 6:00 PM', 'Kaunter 01'. No identification or patient information.\nN03 — Before-due reminder — WhatsApp preview. 'Peringatan pemulangan'. Pass P-0248, 'Pulangkan kad sebelum 6:00 PM di Kaunter 01'. Warm amber reminder accent; no guarantee delivery.\nN04 — Rejection notification — WhatsApp preview. 'Permohonan tidak diluluskan'. R-K7M2. 'Sila rujuk Kaunter 01 untuk bantuan'. No sensitive rejection reason; no Pass ID.\nRender every frame fully within the canvas, exact IDs and headings; prioritize functional UI over presentation decoration."
+  },
+  {
+    "file": "03-counter-review-and-issue",
+    "title": "03 / COUNTER STAFF · REVIEW & ISSUE",
+    "layout": "Six landscape desktop application screens arranged 2 columns by 3 rows, extra-high-resolution landscape board. Each has coherent left sidebar and main area. White sidebar, tiny red active pill, top bar with Counter 01, date, staff avatar. Large enough frame content, no device hardware. Sidebar: Dashboard, Registrations, Issue pass, Active passes, Overdue, Registration QR.",
+    "screens": [
+      [
+        "S01",
+        "Staff sign in",
+        "Professional split layout: red brand panel with HSAAS wordmark and quiet line pattern, white 'Staff sign in' card with email, password, show password, Sign in, 'Contact administrator for access'. No public signup or role picker."
+      ],
+      [
+        "S02",
+        "Counter dashboard",
+        "KPI cards: Awaiting review 12, Approved 8, In use 24, Overdue 3. New registrations table with category, arrival, status and Review. Card availability compact by category. 'Display registration QR' action."
+      ],
+      [
+        "S03",
+        "Registration QR display",
+        "'Visitor registration QR'. Dominant illustrative QR on white card, Counter 01, HSAAS label, 'Scan to register'. Category All categories. Print and Full screen buttons. Caption 'Public registration link only'."
+      ],
+      [
+        "S04",
+        "Review registration",
+        "Master-detail queue with R-K7M2 selected. Masked ID/phone/MRN; Penjaga, Ward 4A. MRN pending manual verification. Identity and ward verification checkboxes. 'Approve registration' and outlined 'Reject'. Label 'Approval does not issue a card'."
+      ],
+      [
+        "S05",
+        "Reject registration",
+        "Queue background and focused rejection dialog. Reference R-K7M2, reason select and short internal note. 'Notify visitor if opted in'. Primary destructive 'Reject registration'; Cancel."
+      ],
+      [
+        "S06",
+        "Scan and issue NFC",
+        "Approved registration R-K7M2. Stepper 'Approved / Scan card / Hand over'. Reader connected, scanned card C-0248, UID masked, category Penjaga, Available. Four validation ticks. Due date/time selection, physical handover checkbox, 'Issue physical pass'. No Pass ID assigned before confirmation."
+      ]
+    ],
+    "prompt": "Use case: ui-mockup. Create a polished, high-fidelity hospital visitor and physical NFC pass management UI design contact sheet, product \"HSAAS Visitor Pass\", inspired by Universiti Putra Malaysia red/white identity. Brand red #CA0026, dark red #A30020, white surfaces, near-white #F7F8FA background, charcoal #18212B text, grey #8A9396. Restrained semantic green/amber/blue status chips with words and icons. Clean Swiss enterprise style, Geist-like sans serif, consistent outline icons, 8px spacing rhythm, 10px card corners, light fine borders, subtle shadows. Very crisp readable typography. No 3D device perspective, no decorative photographs, no fake official crest: use simple HSAAS wordmark only. Header small editorial title, numbered frame labels outside every screen, generous gutters. Render SIX DISTINCT COMPLETE screen mockups per board, with realistic synthetic data. Each screen must have its own appropriate content, never repeat same generic dashboard. High resolution landscape canvas. Mockup only; QR blocks illustrative. Personal IDs/phones/MRN masked in operational screens. Approval must not contain Pass ID or due date; these exist only after physical issue. All buttons visible. Do not show programming internals or blockchain to visitors.\nBoard title: 03 / COUNTER STAFF · REVIEW & ISSUE\nComposition: Six landscape desktop application screens arranged 2 columns by 3 rows, extra-high-resolution landscape board. Each has coherent left sidebar and main area. White sidebar, tiny red active pill, top bar with Counter 01, date, staff avatar. Large enough frame content, no device hardware. Sidebar: Dashboard, Registrations, Issue pass, Active passes, Overdue, Registration QR.\nRequired six frames:\nS01 — Staff sign in — Professional split layout: red brand panel with HSAAS wordmark and quiet line pattern, white 'Staff sign in' card with email, password, show password, Sign in, 'Contact administrator for access'. No public signup or role picker.\nS02 — Counter dashboard — KPI cards: Awaiting review 12, Approved 8, In use 24, Overdue 3. New registrations table with category, arrival, status and Review. Card availability compact by category. 'Display registration QR' action.\nS03 — Registration QR display — 'Visitor registration QR'. Dominant illustrative QR on white card, Counter 01, HSAAS label, 'Scan to register'. Category All categories. Print and Full screen buttons. Caption 'Public registration link only'.\nS04 — Review registration — Master-detail queue with R-K7M2 selected. Masked ID/phone/MRN; Penjaga, Ward 4A. MRN pending manual verification. Identity and ward verification checkboxes. 'Approve registration' and outlined 'Reject'. Label 'Approval does not issue a card'.\nS05 — Reject registration — Queue background and focused rejection dialog. Reference R-K7M2, reason select and short internal note. 'Notify visitor if opted in'. Primary destructive 'Reject registration'; Cancel.\nS06 — Scan and issue NFC — Approved registration R-K7M2. Stepper 'Approved / Scan card / Hand over'. Reader connected, scanned card C-0248, UID masked, category Penjaga, Available. Four validation ticks. Due date/time selection, physical handover checkbox, 'Issue physical pass'. No Pass ID assigned before confirmation.\nRender every frame fully within the canvas, exact IDs and headings; prioritize functional UI over presentation decoration."
+  },
+  {
+    "file": "04-counter-return-and-followup",
+    "title": "04 / COUNTER STAFF · RETURN & FOLLOW-UP",
+    "layout": "Six landscape desktop application screens arranged 2 columns by 3 rows, crisp high-resolution. Same Counter Staff sidebar, white surfaces and red active navigation. Operational tables have short realistic rows.",
+    "screens": [
+      [
+        "S07",
+        "Issue successful",
+        "Success panel 'Pass issued'. Pass ID P-0248, card C-0248, reference R-K7M2, due 24 Sep 6:00 PM. 'Card handed to visitor'. WhatsApp queued status shown as secondary, 'Back to queue' action."
+      ],
+      [
+        "S08",
+        "Active passes",
+        "Tabs In use / Overdue / History. Search and category filter. Table Pass ID, category, reference, issued at, return by, status, action. Masked visitor labels. 'Receive return' action."
+      ],
+      [
+        "S09",
+        "Receive physical card",
+        "Return screen with scan target, scanned card C-0248, active Pass P-0248, due and issue summary. Checkbox 'Physical card received'. Primary 'Confirm return', Cancel. Scan disconnected small recovery link."
+      ],
+      [
+        "S10",
+        "Return complete",
+        "'Return recorded' green success. P-0248 assignment closed at 5:42 PM, inventory card C-0248 'Available', future reminders cancelled. 'Receive next card' primary and View history secondary."
+      ],
+      [
+        "S11",
+        "Overdue follow-up",
+        "Three overdue records. Selected P-0172 detail drawer: 42 minutes overdue, masked contact with authorised Reveal button, owner, prior timeline, contact outcome select, follow-up note and Save follow-up. Return action remains. Notice 'Alerts remain active regardless of message delivery'."
+      ],
+      [
+        "S12",
+        "Message delivery status",
+        "Approval / Issue / Reminder events table. Sent, Queued, Failed, Not opted in labelled chips. Failed row offers View details. Notice 'Card operations remain available'. No automatic opt-in. Show a short failed-delivery drawer and retry guidance without changing pass state."
+      ]
+    ],
+    "prompt": "Use case: ui-mockup. Create a polished, high-fidelity hospital visitor and physical NFC pass management UI design contact sheet, product \"HSAAS Visitor Pass\", inspired by Universiti Putra Malaysia red/white identity. Brand red #CA0026, dark red #A30020, white surfaces, near-white #F7F8FA background, charcoal #18212B text, grey #8A9396. Restrained semantic green/amber/blue status chips with words and icons. Clean Swiss enterprise style, Geist-like sans serif, consistent outline icons, 8px spacing rhythm, 10px card corners, light fine borders, subtle shadows. Very crisp readable typography. No 3D device perspective, no decorative photographs, no fake official crest: use simple HSAAS wordmark only. Header small editorial title, numbered frame labels outside every screen, generous gutters. Render SIX DISTINCT COMPLETE screen mockups per board, with realistic synthetic data. Each screen must have its own appropriate content, never repeat same generic dashboard. High resolution landscape canvas. Mockup only; QR blocks illustrative. Personal IDs/phones/MRN masked in operational screens. Approval must not contain Pass ID or due date; these exist only after physical issue. All buttons visible. Do not show programming internals or blockchain to visitors.\nBoard title: 04 / COUNTER STAFF · RETURN & FOLLOW-UP\nComposition: Six landscape desktop application screens arranged 2 columns by 3 rows, crisp high-resolution. Same Counter Staff sidebar, white surfaces and red active navigation. Operational tables have short realistic rows.\nRequired six frames:\nS07 — Issue successful — Success panel 'Pass issued'. Pass ID P-0248, card C-0248, reference R-K7M2, due 24 Sep 6:00 PM. 'Card handed to visitor'. WhatsApp queued status shown as secondary, 'Back to queue' action.\nS08 — Active passes — Tabs In use / Overdue / History. Search and category filter. Table Pass ID, category, reference, issued at, return by, status, action. Masked visitor labels. 'Receive return' action.\nS09 — Receive physical card — Return screen with scan target, scanned card C-0248, active Pass P-0248, due and issue summary. Checkbox 'Physical card received'. Primary 'Confirm return', Cancel. Scan disconnected small recovery link.\nS10 — Return complete — 'Return recorded' green success. P-0248 assignment closed at 5:42 PM, inventory card C-0248 'Available', future reminders cancelled. 'Receive next card' primary and View history secondary.\nS11 — Overdue follow-up — Three overdue records. Selected P-0172 detail drawer: 42 minutes overdue, masked contact with authorised Reveal button, owner, prior timeline, contact outcome select, follow-up note and Save follow-up. Return action remains. Notice 'Alerts remain active regardless of message delivery'.\nS12 — Message delivery status — Approval / Issue / Reminder events table. Sent, Queued, Failed, Not opted in labelled chips. Failed row offers View details. Notice 'Card operations remain available'. No automatic opt-in. Show a short failed-delivery drawer and retry guidance without changing pass state.\nRender every frame fully within the canvas, exact IDs and headings; prioritize functional UI over presentation decoration."
+  },
+  {
+    "file": "05-admin-inventory-and-accounts",
+    "title": "05 / ADMINISTRATOR · CARDS & ACCOUNTS",
+    "layout": "Six landscape desktop application screens in 2 columns by 3 rows. Consistent ADMIN sidebar: Overview, Card inventory, Users, Configuration, Reports, Audit & proofs. White/UPM red enterprise UI.",
+    "screens": [
+      [
+        "A01",
+        "Operations overview",
+        "KPIs total visits 126, in use 24, overdue 3, available 61. Category bar chart, utilisation chart, attention queue and recent protected changes. Label charts with values; not red only."
+      ],
+      [
+        "A02",
+        "NFC card inventory",
+        "Table card code, masked UID, category, status and action. Available, Issued, Overdue, Lost, Disabled labelled statuses. Search, status filter, 'Register card' primary. No inventory status called Returned."
+      ],
+      [
+        "A03",
+        "Register NFC card",
+        "Centered enrollment form with reader Connected, tap card region, UID read, Card code, Category, initial Available state. Save card. Small inline example 'UID already registered' below UID on a duplicate example, save disabled while duplicate."
+      ],
+      [
+        "A04",
+        "Card detail & lifecycle",
+        "Card C-0172, currently Overdue. Assignment history and lifecycle timeline. Action 'Mark lost' opens reason-required dialog. Available-card actions Disable and conditional Restore shown as separate contextual examples. Clear 'Lost cards cannot be issued'. Never normal-return a lost card."
+      ],
+      [
+        "A05",
+        "User management",
+        "User table Name, Email, Role, Status, Last sign-in. Counter Staff and Administrator roles. 'Create user' button and edit action. Small note 'Only administrators can manage users'."
+      ],
+      [
+        "A06",
+        "Create or edit staff user",
+        "Side panel Name, Email, Role select Counter Staff / Administrator, status Active, Save changes. Adjacent compact disable confirmation with reason. Protection banner 'The last active administrator cannot be disabled or demoted' and disabled protected action."
+      ]
+    ],
+    "prompt": "Use case: ui-mockup. Create a polished, high-fidelity hospital visitor and physical NFC pass management UI design contact sheet, product \"HSAAS Visitor Pass\", inspired by Universiti Putra Malaysia red/white identity. Brand red #CA0026, dark red #A30020, white surfaces, near-white #F7F8FA background, charcoal #18212B text, grey #8A9396. Restrained semantic green/amber/blue status chips with words and icons. Clean Swiss enterprise style, Geist-like sans serif, consistent outline icons, 8px spacing rhythm, 10px card corners, light fine borders, subtle shadows. Very crisp readable typography. No 3D device perspective, no decorative photographs, no fake official crest: use simple HSAAS wordmark only. Header small editorial title, numbered frame labels outside every screen, generous gutters. Render SIX DISTINCT COMPLETE screen mockups per board, with realistic synthetic data. Each screen must have its own appropriate content, never repeat same generic dashboard. High resolution landscape canvas. Mockup only; QR blocks illustrative. Personal IDs/phones/MRN masked in operational screens. Approval must not contain Pass ID or due date; these exist only after physical issue. All buttons visible. Do not show programming internals or blockchain to visitors.\nBoard title: 05 / ADMINISTRATOR · CARDS & ACCOUNTS\nComposition: Six landscape desktop application screens in 2 columns by 3 rows. Consistent ADMIN sidebar: Overview, Card inventory, Users, Configuration, Reports, Audit & proofs. White/UPM red enterprise UI.\nRequired six frames:\nA01 — Operations overview — KPIs total visits 126, in use 24, overdue 3, available 61. Category bar chart, utilisation chart, attention queue and recent protected changes. Label charts with values; not red only.\nA02 — NFC card inventory — Table card code, masked UID, category, status and action. Available, Issued, Overdue, Lost, Disabled labelled statuses. Search, status filter, 'Register card' primary. No inventory status called Returned.\nA03 — Register NFC card — Centered enrollment form with reader Connected, tap card region, UID read, Card code, Category, initial Available state. Save card. Small inline example 'UID already registered' below UID on a duplicate example, save disabled while duplicate.\nA04 — Card detail & lifecycle — Card C-0172, currently Overdue. Assignment history and lifecycle timeline. Action 'Mark lost' opens reason-required dialog. Available-card actions Disable and conditional Restore shown as separate contextual examples. Clear 'Lost cards cannot be issued'. Never normal-return a lost card.\nA05 — User management — User table Name, Email, Role, Status, Last sign-in. Counter Staff and Administrator roles. 'Create user' button and edit action. Small note 'Only administrators can manage users'.\nA06 — Create or edit staff user — Side panel Name, Email, Role select Counter Staff / Administrator, status Active, Save changes. Adjacent compact disable confirmation with reason. Protection banner 'The last active administrator cannot be disabled or demoted' and disabled protected action.\nRender every frame fully within the canvas, exact IDs and headings; prioritize functional UI over presentation decoration."
+  },
+  {
+    "file": "06-admin-governance-and-audit",
+    "title": "06 / ADMINISTRATOR · GOVERNANCE & AUDIT",
+    "layout": "Six landscape desktop screens 2 columns by 3 rows. Same ADMIN navigation and consistent clinical red/white design. Text on charts and rows must be legible, avoid too many tiny rows.",
+    "screens": [
+      [
+        "A07",
+        "Wards & categories",
+        "Tabs Wards / Visitor categories. Ward code, name, floor, active, edit. Four visitor category cards Executive, Penjaga, Vendor, Contractor with category-specific field settings. Add/edit ward drawer."
+      ],
+      [
+        "A08",
+        "Operational settings",
+        "Sectioned form return deadline rules, pre-deadline reminder timing, retention, staff session timeout. WhatsApp opt-in requirement locked ON. MRN mode labelled 'Manual / mock until hospital integration approved'. Save changes and a concise change-reason field. Values labelled Proposed defaults."
+      ],
+      [
+        "A09",
+        "Reports",
+        "Date range, category and ward filters. Visitors by category bars; daily trend; overdue and utilisation summary. Preview table; Export masked report. Synthetic demo data label, timezone MYT."
+      ],
+      [
+        "A10",
+        "Audit log",
+        "Filter actor/action/date/status. Audit table with registration approved, issued, returned, user disabled and setting changed. Detail drawer actor, time, object reference, before/after safe values. No raw personal data."
+      ],
+      [
+        "A11",
+        "Blockchain proof verifier",
+        "Sui Testnet badge. Selected RETURNED event proof: local hash vs on-chain hash, transaction digest abbreviated, confirmed time, green 'Match'. Verify proof button. Also compact states Pending, Failed and Mismatch distinctly labelled. No personal data on-chain."
+      ],
+      [
+        "A12",
+        "Integration & retry monitoring",
+        "Cards MRN Manual mode, NFC workstation Offline, WhatsApp Failed 2, Sui proof Pending 4. Job rows with Retry failed job and View details. Clear calm banner 'Issue and return remain available during notification or proof delays'. Mismatch gets Investigate not success."
+      ]
+    ],
+    "prompt": "Use case: ui-mockup. Create a polished, high-fidelity hospital visitor and physical NFC pass management UI design contact sheet, product \"HSAAS Visitor Pass\", inspired by Universiti Putra Malaysia red/white identity. Brand red #CA0026, dark red #A30020, white surfaces, near-white #F7F8FA background, charcoal #18212B text, grey #8A9396. Restrained semantic green/amber/blue status chips with words and icons. Clean Swiss enterprise style, Geist-like sans serif, consistent outline icons, 8px spacing rhythm, 10px card corners, light fine borders, subtle shadows. Very crisp readable typography. No 3D device perspective, no decorative photographs, no fake official crest: use simple HSAAS wordmark only. Header small editorial title, numbered frame labels outside every screen, generous gutters. Render SIX DISTINCT COMPLETE screen mockups per board, with realistic synthetic data. Each screen must have its own appropriate content, never repeat same generic dashboard. High resolution landscape canvas. Mockup only; QR blocks illustrative. Personal IDs/phones/MRN masked in operational screens. Approval must not contain Pass ID or due date; these exist only after physical issue. All buttons visible. Do not show programming internals or blockchain to visitors.\nBoard title: 06 / ADMINISTRATOR · GOVERNANCE & AUDIT\nComposition: Six landscape desktop screens 2 columns by 3 rows. Same ADMIN navigation and consistent clinical red/white design. Text on charts and rows must be legible, avoid too many tiny rows.\nRequired six frames:\nA07 — Wards & categories — Tabs Wards / Visitor categories. Ward code, name, floor, active, edit. Four visitor category cards Executive, Penjaga, Vendor, Contractor with category-specific field settings. Add/edit ward drawer.\nA08 — Operational settings — Sectioned form return deadline rules, pre-deadline reminder timing, retention, staff session timeout. WhatsApp opt-in requirement locked ON. MRN mode labelled 'Manual / mock until hospital integration approved'. Save changes and a concise change-reason field. Values labelled Proposed defaults.\nA09 — Reports — Date range, category and ward filters. Visitors by category bars; daily trend; overdue and utilisation summary. Preview table; Export masked report. Synthetic demo data label, timezone MYT.\nA10 — Audit log — Filter actor/action/date/status. Audit table with registration approved, issued, returned, user disabled and setting changed. Detail drawer actor, time, object reference, before/after safe values. No raw personal data.\nA11 — Blockchain proof verifier — Sui Testnet badge. Selected RETURNED event proof: local hash vs on-chain hash, transaction digest abbreviated, confirmed time, green 'Match'. Verify proof button. Also compact states Pending, Failed and Mismatch distinctly labelled. No personal data on-chain.\nA12 — Integration & retry monitoring — Cards MRN Manual mode, NFC workstation Offline, WhatsApp Failed 2, Sui proof Pending 4. Job rows with Retry failed job and View details. Clear calm banner 'Issue and return remain available during notification or proof delays'. Mismatch gets Investigate not success.\nRender every frame fully within the canvas, exact IDs and headings; prioritize functional UI over presentation decoration."
+  },
+  {
+    "file": "07-exceptions-and-shared-states",
+    "title": "07 / EXCEPTIONS & SHARED STATES",
+    "layout": "Six carefully composed landscape desktop or mobile-in-panel state mockups in 2 columns by 3 rows. Each tile contains one primary UI state plus tiny labelled secondary state where specified. Same red/white visual system. State specimens, not workflow arrows.",
+    "screens": [
+      [
+        "X01",
+        "Form validation & MRN timeout",
+        "Mobile Penjaga form with top 'Sila semak maklumat' linked error summary, one missing required field inline error. Separate amber MRN timeout 'Maklumat disimpan. Pengesahan di kaunter tersedia'. Retain entered values; continue to manual verification."
+      ],
+      [
+        "X02",
+        "NFC reader offline",
+        "Issue screen warning 'Reader disconnected'. Clear Reconnect and Check connection actions, disabled Issue physical pass. Separate small chips explaining unregistered card, wrong category, card unavailable. No bypass issue button."
+      ],
+      [
+        "X03",
+        "Concurrent issue conflict",
+        "Issue modal banner 'This card was just issued at another counter'. Clear 'Scan another card' action, approved registration preserved. Adjacent small already-returned informational state 'Return already recorded', no duplicate return action."
+      ],
+      [
+        "X04",
+        "Session & access",
+        "Sign-in card with 'Session expired. Sign in again'. Additional compact access-denied panel 'Administrator access required' and 'Back to dashboard'. No account signup, no privilege escalation."
+      ],
+      [
+        "X05",
+        "Empty, loading & service error",
+        "Three clearly labelled mini-panels within one frame: queue skeleton with Loading label; empty queue 'No registrations waiting'; service failure 'Unable to load registrations' with Retry and last-updated time. Do not present zero as loaded data on failure."
+      ],
+      [
+        "X06",
+        "Confirmation & focus states",
+        "Real account-disable confirmation with reason and Cancel / Disable account. Separate tiny component strip normal, focused, loading, disabled buttons, visible focus ring, success/warning/error labelled badges. Separate reference-expired mobile notice directing visitor to counter; no personal-data leak."
+      ]
+    ],
+    "prompt": "Use case: ui-mockup. Create a polished, high-fidelity hospital visitor and physical NFC pass management UI design contact sheet, product \"HSAAS Visitor Pass\", inspired by Universiti Putra Malaysia red/white identity. Brand red #CA0026, dark red #A30020, white surfaces, near-white #F7F8FA background, charcoal #18212B text, grey #8A9396. Restrained semantic green/amber/blue status chips with words and icons. Clean Swiss enterprise style, Geist-like sans serif, consistent outline icons, 8px spacing rhythm, 10px card corners, light fine borders, subtle shadows. Very crisp readable typography. No 3D device perspective, no decorative photographs, no fake official crest: use simple HSAAS wordmark only. Header small editorial title, numbered frame labels outside every screen, generous gutters. Render SIX DISTINCT COMPLETE screen mockups per board, with realistic synthetic data. Each screen must have its own appropriate content, never repeat same generic dashboard. High resolution landscape canvas. Mockup only; QR blocks illustrative. Personal IDs/phones/MRN masked in operational screens. Approval must not contain Pass ID or due date; these exist only after physical issue. All buttons visible. Do not show programming internals or blockchain to visitors.\nBoard title: 07 / EXCEPTIONS & SHARED STATES\nComposition: Six carefully composed landscape desktop or mobile-in-panel state mockups in 2 columns by 3 rows. Each tile contains one primary UI state plus tiny labelled secondary state where specified. Same red/white visual system. State specimens, not workflow arrows.\nRequired six frames:\nX01 — Form validation & MRN timeout — Mobile Penjaga form with top 'Sila semak maklumat' linked error summary, one missing required field inline error. Separate amber MRN timeout 'Maklumat disimpan. Pengesahan di kaunter tersedia'. Retain entered values; continue to manual verification.\nX02 — NFC reader offline — Issue screen warning 'Reader disconnected'. Clear Reconnect and Check connection actions, disabled Issue physical pass. Separate small chips explaining unregistered card, wrong category, card unavailable. No bypass issue button.\nX03 — Concurrent issue conflict — Issue modal banner 'This card was just issued at another counter'. Clear 'Scan another card' action, approved registration preserved. Adjacent small already-returned informational state 'Return already recorded', no duplicate return action.\nX04 — Session & access — Sign-in card with 'Session expired. Sign in again'. Additional compact access-denied panel 'Administrator access required' and 'Back to dashboard'. No account signup, no privilege escalation.\nX05 — Empty, loading & service error — Three clearly labelled mini-panels within one frame: queue skeleton with Loading label; empty queue 'No registrations waiting'; service failure 'Unable to load registrations' with Retry and last-updated time. Do not present zero as loaded data on failure.\nX06 — Confirmation & focus states — Real account-disable confirmation with reason and Cancel / Disable account. Separate tiny component strip normal, focused, loading, disabled buttons, visible focus ring, success/warning/error labelled badges. Separate reference-expired mobile notice directing visitor to counter; no personal-data leak.\nRender every frame fully within the canvas, exact IDs and headings; prioritize functional UI over presentation decoration."
+  }
+]
