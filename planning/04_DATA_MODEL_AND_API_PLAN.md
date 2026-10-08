@@ -212,4 +212,6 @@ API 不接收 caller 自选 actor、UID、category 或 status 来替代扫描证
 
 以下是依赖批次，不是已执行的 Flyway V 编号：identity/reference/session/idempotency/local audit → QR display/challenge/grant → registration/consent → synthetic cards/device/scan → assignment/active unique/lifecycle/alerts/lost → reporting/settings。M00 登记实际编号，每个 module 申请后使用；先检查库中已有 migration，不重写共享环境已应用版本。
 
+M00 实施中登记（2026-10-08）：V1 `foundation_identity_reference`、V2 `spring_session_jdbc`、V3 `session_capability_guards` 已在 M00 独立分支编写并由临时 MySQL clean migration 测试执行，编号保留给 M00，其他模块不得重用。coordinator 已核对实际文件与 Surefire 输出；尚未完成模块审核/merge，真实开发/生产库未在本次验证中使用。后续号继续由 M00/coordinator 台账登记，不因该初步 PASS 自动放行 guard 集成。
+
 M08 增加真设备/profile；M09 增加获批 MRN adapter 所需最少字段；M10 增 notification/receipts；M11 增 audit_outbox/verification jobs/链绑定。后两者在启用前完成 clean + upgrade、模式默认 disabled 与故障恢复验收。历史本地事件不自动入队，canonical snapshot 缺失或版本不兼容不能伪造历史承诺。表设计落地后生成 ERD/OpenAPI；当前仍为规划。

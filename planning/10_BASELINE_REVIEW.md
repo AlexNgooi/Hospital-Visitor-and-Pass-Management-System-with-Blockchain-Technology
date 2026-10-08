@@ -14,6 +14,8 @@ status: locally-reviewed-design
 
 实际启动已完成：规划提交 c2b0c316e04947df06b84f1008f470b6e5a9eb8b；app handoff 成功创建 M00/M01 隔离工作树及目标 chat，路径/branch/thread ID 见12当前状态表。启动任务已送达并保持 gpt-6.1-sol/high，快照确认两个 chat active/inProgress。该状态证明任务运行，不代表业务完成；coordinator 未合并模块业务、未 push/deploy，M02–M04 未启动实施。
 
+M00 初步实施证据：coordinator 读取 ced2 工作树的实际测试源码及 Surefire XML，确认 `HsaasBackendApplicationTests.contextLoads` 1 test、0 failures/errors/skips；Testcontainers MySQL 8.0.45 clean 应用 V1–V3，实际 HTTP health 200/UP 且 users 空。编号登记见04。测试通过仅覆盖迁移与 health；login/CSRF/save失败/并发/撤销 guard spike 尚在测试开发中，未批准 live 联调或 merge。实现当前为模块工作树未提交变更，最终证据须关联提交 SHA 与 HANDOFF。
+
 最高优先级是本轮用户请求：当前 chat 为 coordinator，每 module 独立 chat，模块可回问并交回审核/merge；实体卡、reader、病人资讯 API 尚未准备，当前优先前端、基础后端和 QR；WhatsApp/blockchain 暂不启用但预先规划；QR 必须实时更新。本轮只 plan，未创建 chat/worktree、未写业务源码、未 commit/merge/push。
 
 用户后续明确约束：新写/修改的代码与指导示例必须有英文注释；每个 module 的 chat 与开发必须由用户手动开启和启动。coordinator 只准备任务/依赖，不代开、不自动启动，也不以子代理或自动化替代用户启动；审核与 merge 后仍等待用户启动下一模块。
