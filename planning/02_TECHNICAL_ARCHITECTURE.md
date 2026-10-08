@@ -46,6 +46,8 @@ Java 21 沿用指南。Spring Boot、React、SDK、MySQL 和 Node 的具体兼�
 
 保留实际 Java 包名 `eduupm.hsaas`，不重建或批量迁移包。M00 负责 backend/pom、auth/config/common、隔离 MySQL 测试、全局 migration 登记、最小 reference/counter 权限与本地 audit/idempotency 基础；M01 是 frontend 入口、全局 CSS、依赖/lockfile、router/client 和 Vite proxy 的唯一执行 owner，M00 提供 proxy 的安全/验收契约，其他模块不直接改这些共享文件。
 
+2026-10-09 公共事务决定：保留 Data JPA 路线，领域事务统一使用匹配同一 EntityManagerFactory/DataSource 的 JpaTransactionManager 与 READ_COMMITTED；JdbcTemplate 的本地审计/幂等/锁查询加入同一 REQUIRED 事务，不另走默认 JDBC manager。配置匹配 vendor JpaDialect 与事务连接，JPA flush/缓存边界不得绕过统一锁序；不用 JDBC savepoint 代替完整 JPA 嵌套事务。Spring 官方说明该 manager 支持同 DataSource 的 JPA/JDBC 混用，但需要正确连接获取与 dialect：[JpaTransactionManager](https://docs.spring.io/spring-framework/docs/current/javadoc-api/org/springframework/orm/jpa/JpaTransactionManager.html)。M00 用 test-only 既有 counters 映射在临时 MySQL 证明联合提交/回滚、隔离级别与 Session 独立保存；Flyway 仍管 DDL，不新增生产聚合或自动建表。Session save/delete 继续零领域锁/事务、独立 REQUIRES_NEW，与领域 manager 的实际绑定/挂起恢复须按锁定依赖测试，不从注解推断 PASS。
+
 M03 拥有 registration 根聚合/实体/持久化和字段 schema；M04 拥有 review 子域与审核命令，通过冻结的 registration 领域接口更新，不各自复制 registration 实体。verify 一次命令原子保存核实依据并批准，不添加审核草稿 endpoint；actor/time 从服务端取得。M02 提供参与现有事务的 grant 检查/消费 port，M03 提交外层事务，禁止提前独立提交 grant 消费。
 
 HTTP 公共形状与权限决定见 04。用户已在 coordinator chat 确认 U01–U03：登录用用户名/职员账号（不强制邮箱）；同一匿名会话只保留一份有效登记表单，再扫不同入口先确认重新开始，确认后撤销旧 grant；synthetic Penjaga 仍需职员模拟人工核实，mock 结果本身不满足批准。技术选择已解决，但不等于模块开发许可。

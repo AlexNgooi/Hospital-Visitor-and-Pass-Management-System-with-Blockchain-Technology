@@ -133,6 +133,7 @@ C11 M00 公共工程契约：
 - request hash 采用独立 key 的 HMAC-SHA-256（至少 256-bit 随机秘密，不能复用 QR 签名 key）；encoding/version/key_version 持久化，原 body/canonical bytes 不保存或写日志。编码 v1 按每 operation 的显式 DTO 字段 schema、固定次序/UTF-8、presence(MISSING/NULL/VALUE)/type/value，包含 scope/operation/target/dtoSchemaVersion/formContext/expectedVersion/全部业务字段。JSON 属性顺序/等价转义不影响已解析语义，普通数组保序，C09 basisCodes 集合排序且重复拒绝；未知/重复属性、非法 Unicode/数值拒绝，不进行未定义全局 trim。精确 wire encoding 固定样例须在 M00 验证，不宣称这就是通用 canonical JSON 标准。
 - 旧 key/version 保留到相关 24h 记录和有界在途窗口结束；无法取得旧 key 时为 503、禁止当新命令执行。初次成功记录读查不是领域锁；缺记录时先按领域顺序锁，locking current-read 重查成功记录要优先旧 state/version 判定，以处理等锁期间成功提交。所有变更/幂等成功结果/audit 在一个外层事务，无独立 claim/REQUIRES_NEW PROCESSING 状态。UNIQUE 冲突必须完整回滚，在新事务重新鉴权并读取结果，不在 rollback-only 事务继续写。
 - 每域依其已冻结对象锁序执行，M00 不代实现业务；并发/权限撤销/回滚/key轮换等验证必须真实 MySQL留证，当前 NOT_RUN。C11 技术方案不代表模块开发批准。
+- 2026-10-09 公共领域事务 manager 统一为 JpaTransactionManager（同 EntityManagerFactory/DataSource、READ_COMMITTED），JPA 聚合写与 JdbcTemplate audit/idempotency 加入同一 REQUIRED 外层事务；不混用两个默认 manager 分别提交。实际共享连接、flush/缓存边界与失败回滚由 M00 测试证明，后续模块沿此 port/事务契约实施，详见02。framework Session 持久化仍独立，不参加 grant/registration/audit/idempotency 原子提交。
 
 | 权限边界 | 方法 / 路径 | 返回与条件 |
 |---|---|---|
