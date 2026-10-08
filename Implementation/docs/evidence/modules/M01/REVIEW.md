@@ -116,3 +116,22 @@ isolation comments. No backend/business change or unrelated browser rerun needed
 HTTPS/production Secure forwarding and downstream object/QR/domain authorization
 remain NOT_RUN. Return this minimal test-only correction on the existing M01
 branch for re-review; existing module permission covers it.
+
+## Isolation return approved
+
+Reviewed test-only source `4979d6d38b1a4c3101b514462f4924e4e0d04a08`, delivery
+`58b738a478e74da7460e2455a8785ba650e633a0`. Guard runs before output creation,
+port probing or subprocess/resource startup. Inherited Spring/JVM/Node injection
+is rejected with fixed non-sensitive diagnostics; all children use one OS/runtime
+allowlist plus explicit disposable values. Packaged configuration/profile/import
+locations are pinned. This resolves the environment-isolation return.
+
+Coordinator independently ran 16 environment checks, including actual harness
+subprocess rejection with harmless loopback-port9 override and an empty scratch
+directory: PASS, no skipped/failed checks. Lint and strict test typing PASS.
+Module's corrected normal-startup health200/cleanup smoke is separately recorded
+in its isolation receipt; the coordinator's earlier 28 real-wire PASS remains
+associated with the previous harness source, not falsely restamped as a rerun.
+Backend, auth fix, generated types/spec and wire/browser scripts are unchanged
+by the isolation return. Approved for local integration merge; post-merge checks
+and exact merge SHA follow. HTTPS/full-system gates remain separate.
