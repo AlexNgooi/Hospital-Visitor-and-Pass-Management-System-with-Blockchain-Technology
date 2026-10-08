@@ -1,7 +1,7 @@
 # M01 coordinator review
 
 - Review date: 2026-10-09 (Asia/Singapore).
-- Status: APPROVED after revision for independent frontend slice; merge regression pending, real backend/HTTPS integration NOT_RUN.
+- Status: MERGED after revision; independent frontend merge regression PASS, real backend/HTTPS integration NOT_RUN.
 - Reviewed delivery: `c8b9804e6653408fd49db7d1d95069c585a58ceb`.
 - Implementation: `99e860c1ae11b2198e3b63b1153f6d52fce14247`.
 - Baseline: `c2b0c316e04947df06b84f1008f470b6e5a9eb8b`.
@@ -77,3 +77,9 @@ recovery and mutated command options. No blocking independent-slice finding.
 Production/real M00 integration remains NOT_RUN until the separate C01 session/
 cookie/proxy checks complete. Coordinator will record merge SHA and post-merge
 checks after local integration; no push or deployment is authorized.
+
+Local merge: `014d03092f6328942ff66da060ecc69ee9ba4407`.
+Coordinator ran frozen-lockfile install, 63 tests, strict test typing, build,
+lint and synthetic proxy checks from main after merge: all exit 0 (test start
+2026-10-09 05:58:44 +08:00). Backend post-merge 40-test verification is recorded
+in M00 REVIEW. M01 real C01 integration is the next separately evidenced task.

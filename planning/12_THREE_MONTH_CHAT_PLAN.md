@@ -1,8 +1,8 @@
 ---
 type: module-chat-coordination
-updated: 2026-10-08
+updated: 2026-10-09
 window: 2026-10-08..2027-01-03
-status: m00-m01-development-authorized
+status: m00-m01-foundation-merged-integration-pending
 ---
 # Coordinator 与每模块独立 Chat 执行指南
 
@@ -93,7 +93,7 @@ M00–M04 已创建并完成准备核对；M00/M01 已隔离并派发直接实�
 | 模块 | 状态 | chat ID / owner | baseline / branch / worktree | handoff / review / merge |
 |---|---|---|---|---|
 | M00 | MERGED；基础回归 PASS，真实前端/HTTPS联调待做 | 01a11bcf-a53d-7323-a74e-edffa8092c50 / 模块助手直接实现 | c2b0c316；codex/hsaas-m00-foundation；C:/Users/alexy/.codex/worktrees/ced2/FYP Dev | delivery 1b2d8f2；merge a137acd；独立及合并后40tests PASS；gpt-6.1-sol/high |
-| M01 | APPROVED；独立前端返修复审通过，真实联调待做 | 01a11bcf-e448-7be0-88c1-f7910300e82e / 模块助手直接实现 | c2b0c316；codex/hsaas-m01-frontend-shell；C:/Users/alexy/.codex/worktrees/4156/FYP Dev | delivery ad23099；独立63tests/build/proxy PASS；待 merge；gpt-6.1-sol/high |
+| M01 | MERGED；独立前端回归 PASS，真实联调进行下一批 | 01a11bcf-e448-7be0-88c1-f7910300e82e / 模块助手直接实现 | c2b0c316；codex/hsaas-m01-frontend-shell；C:/Users/alexy/.codex/worktrees/4156/FYP Dev | delivery ad23099；merge 014d030；合并后63tests/build/proxy PASS；gpt-6.1-sol/high |
 | M02 | PLANNED；一次开发许可待答，依赖 M00/M01 | 01a11ba4-e2bd-74a3-beee-1f47860bfc01 / 模块助手直接实现 | Local/main；HEAD b005823；规划未提交；实施隔离待建立 | 无；gpt-6.1-sol/high |
 | M03 | PLANNED；一次开发许可待答，接入依赖 M00/M01/M02 | 01a11ba4-e814-7832-bd40-f471edf417b4 / 模块助手直接实现 | Local/main；HEAD b005823；规划未提交；实施隔离待建立 | 无；gpt-6.1-sol/high |
 | M04 | PLANNED；一次开发许可待答，依赖 M03 | 01a11ba4-ecca-7ca3-a224-c3dde42d1edd / 模块助手直接实现 | Local/main；HEAD b005823；规划未提交；实施隔离待建立 | 无；gpt-6.1-sol/high |
@@ -137,4 +137,4 @@ coordinator 记录答复/decision ID、影响规范与 owner，通过 send_messa
 
 ## 下一项具体计划
 
-M00–M04 已完成只读准备，最新方式为模块直接写代码。用户已批准 M00/M01，coordinator 固定基线和隔离后立即派发，两模块直接实现并交接，不重复询问许可。M01 真实联调等待 M00，独立 UI/client 可先推进。M02–M04 保持准备/等待许可，M05–M11 不自动开启，不重建项目或先要求外部硬件/API/消息/链到位。
+M00/M01 的基础实现已审核并本地合并，合并后 backend 40 tests、frontend 63 tests/build/lint/synthetic proxy PASS。M01 在原隔离分支同步已合并基线，用临时 MySQL 与 synthetic fixture 做真实 C01/backend/proxy/cookie/CSRF/browser 联调，并使用 M00 OpenAPI 生成真实类型；不读取开发 .env、不触碰 native DB、不执行真实 bootstrap。此为既有 M01 许可内任务，问题/后端返修交 coordinator/M00。M02–M04 保持准备/等待许可，M05–M11 不自动开启。

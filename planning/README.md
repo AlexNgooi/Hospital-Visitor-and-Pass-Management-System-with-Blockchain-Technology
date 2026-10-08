@@ -1,16 +1,16 @@
 # HSAAS FYP 当前规划入口
 
-更新日期：2026-10-08。当前 chat 为 project coordinator；每个模块使用独立 chat，完成后交回审核、本地 merge 与集成复验。M00–M04 已按用户最新明确请求创建独立 chat，仅做只读核对/契约准备；源码尚未实施，其他模块未开启。
+更新日期：2026-10-09。当前 chat 为 project coordinator；每个模块使用独立 chat，完成后交回审核、本地 merge 与集成复验。M00/M01 的基础实现已审核并合并到本地 main，真实前后端联调待完成；M02–M04 已准备但未获开发许可，其他模块未开启。
 
 每个 module 的 chat 和开发必须由用户手动开启和启动；coordinator/助手准备任务和开工条件，不代开、不自动启动下一模块。
 
 2026-10-08 用户要求 coordinator 代开 M00–M04 五个 chat，模型 gpt-6.1-sol / high；初始 Local 只读准备。最新又明确取消 guide/用户手写方式：获各模块一次开发许可后，由模块助手直接编写、测试、修复和交接，所有新写/修改代码有英文注释。其他模块不自动开启。实际登记见 12。
 
-最新沟通规则：模块主动把问题/交接发给 coordinator，coordinator 可回复；用户只审批每个 module 的开发许可，已批准范围内不逐步重复求授权。当前五个模块均未取得开发许可，技术答复不替代用户许可。具体协议与消息授权见 12。
+最新沟通规则：模块主动把问题/交接发给 coordinator，coordinator 可回复；用户只审批每个 module 的开发许可，已批准范围内不逐步重复求授权。M00/M01 已获用户许可并完成基础交接，M02–M04 仍未获开发许可；技术答复不替代用户许可。具体协议与消息授权见 12。
 
 需要用户裁决的 conflict、需求不清或无法确定的选择，统一由 coordinator 在本 chat 整理选项后询问用户，再将决定发回模块。
 
-当前优先前端、基础 backend/MySQL、动态 QR 扫码登记。实体卡/reader 与医院病人 API 未准备，先以 synthetic simulation / MRN mock/manual 建立边界；WhatsApp 和 blockchain 默认 disabled，后续独立模块的契约与启动条件已保留。已有用户初始化的 frontend/backend/infra 骨架和 [P0 证据](../Implementation/docs/evidence/foundation/P0_REVIEW.md)，业务仍 NOT_RUN。
+当前优先前端、基础 backend/MySQL、动态 QR 扫码登记。实体卡/reader 与医院病人 API 未准备，先以 synthetic simulation / MRN mock/manual 建立边界；WhatsApp 和 blockchain 默认 disabled。当前基础验证：backend 40 tests、frontend 63 tests 与构建/synthetic proxy 已由 coordinator 独立及合并后复验；访客/QR/登记/审核业务仍未实施/验收，真实前后端联调待完成。历史初始化见 [P0](../Implementation/docs/evidence/foundation/P0_REVIEW.md)，当前证据见 [M00 REVIEW](../Implementation/docs/evidence/modules/M00/REVIEW.md) / [M01 REVIEW](../Implementation/docs/evidence/modules/M01/REVIEW.md)。
 
 ## 从这里进入
 
@@ -37,7 +37,7 @@ v3 六张图保留完整长期集成设计，图源和视觉收据未重绘：**
 
 ## 验证和外部边界
 
-- python planning/verify_planning_v3.py：当前文件链接、需求 ID、旧图 artifact/收据完整性；业务测试仍 NOT_RUN。
+- python planning/verify_planning_v3.py：仅校验当前链接、需求 ID、旧图 artifact/收据；应用测试状态以模块 REVIEW 为准，该脚本不执行应用测试。
 - 图编辑面是 diagrams/v3/*.archify.json；build_archify_v3.py --deliver 才更新六图，不直接改生成 HTML。
 - sync_mermaid.py 更新文本镜像；build_delivery_hub.py 更新导航、哈希与范围提示。
 - [旧图交付清单](diagrams/v3/delivery-manifest.json)、[人工截图评审](diagrams/v3/review-receipt.json)、[规划 QA](diagrams/v3/planning-qa.json)。

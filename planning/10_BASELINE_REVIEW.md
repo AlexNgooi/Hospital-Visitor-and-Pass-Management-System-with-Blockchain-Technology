@@ -1,14 +1,16 @@
 ---
 type: baseline-review
 revision: current
-updated: 2026-10-08
-status: locally-reviewed-design
+updated: 2026-10-09
+status: foundation-merged-integration-pending
 ---
 # 当前基线评审、来源与未决项
 
 最近规划评审日期 2026-10-08（Asia/Singapore）。这是用户范围/协作变更的规划记录，不是医院签字、真实硬件/API 验收或业务实现完成声明。
 
 ## 2026-10-08 当前决定与实际状态
+
+2026-10-09 当前实施状态优先：M00 delivery 1b2d8f2 与 M01 revised delivery ad23099 已分别审核并本地合并到 main，merge SHA 为 a137acd 与014d030。coordinator 独立复跑和合并后回归：backend 40 tests/verify/JAR、frontend 63 tests/typecheck/build/lint/frozen install/synthetic proxy 全 PASS；审核和限制见各模块 REVIEW。M01 原首轮登录核查按钮缺失判断已在 REVIEW 撤回，R1注销保护与R3重试配置问题已修复。真实 C01 前后端/HTTPS 联调仍待完成，M02–M04 未获许可；不能将基础片段通过视为访客/QR/登记/审核业务已验收。后文“骨架/未提交/未执行”均为历史对应阶段。
 
 2026-10-09 最小接口补充：M00 实施中提出 categoryScope ID/code 歧义，coordinator 核对当前契约后统一为 visitor_categories 数据库 ID 十进制字符串，与 counterId 一致；完整 C10 scope/details 与 bindingVersion 安全整数范围见04。该决定用于公共 DTO/client 对接，不启动 M02 开发。M00 报告在 framework save 前增加只校验/撤销、不激活/续期的有界领域检查，锁全部释放后 save，再执行成功确认 hook；作为 spike 实现调整纳入最终故障/并发审核，未放行 guard 集成。M00 当前报告 20 tests PASS，完整 upgrade/restart/DB-offline/竞争验证与 HANDOFF 仍进行中。
 
