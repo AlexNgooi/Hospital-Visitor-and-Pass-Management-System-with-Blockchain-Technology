@@ -1,0 +1,38 @@
+# Confirmed JDBC Session and domain capability spike
+
+Pinned Spring Session JDBC 4.1.1 uses a package-private concrete JdbcSession, a stable PRIMARY_ID across sessionId rotation, ON_SAVE persistence and its own save transaction. Source inspection found no Session event mechanism suitable for authoritative activation. The wrapper delegates through the public Session interface using one documented cast and only accepts repository-created Sessions; no framework table FK/row lock is added to domain operations.
+
+`app_session_bindings` maps stable framework PRIMARY_ID to a server-only binding and anonymous scope; its 24h absolute lifetime is fixed at creation. `auth_session_contexts` maps one login generation to actor/epoch, 8h absolute lifetime, short activation deadline, confirmed idle deadline and PENDING/ACTIVE/REVOKED state. The current owner pointer/generation is authoritative. These coordinates and framework Session IDs never appear in public DTOs or become caller-selected bearer scope.
+
+Login prepares a new PENDING context under domain locks, rotates Session ID, stores binding/context/generation with the Spring SecurityContext, then explicitly persists the actual request Session. The delegate commits before a bounded REQUIRED hook checks the actual stored row, principal and app attributes, live user epoch, current pointer/generation and all deadlines. Only then is PENDING activated. The entire API response remains buffered until the automatic request-end save also completes. Credential verification captures actor epoch; a policy edit in that interval rejects the old proof.
+
+Before every framework write a separate bounded domain validation runs: it may commit a revoke barrier, but cannot activate or renew. All these locks end before the delegate's REQUIRES_NEW write. Afterwards a successful confirmation sets idle expiry to `min(actual framework expiry, fixed staff absolute)`. ACTIVE must still be within its previous confirmed deadline; a late save cannot revive it. REVOKED never reactivates. Failed delegate saves leave pending/confirmed authority unchanged; a confirmation crash does not create authority, even if framework data already persisted. A later legitimate timely retry must independently satisfy the full mapping/deadline checks.
+
+Current human authorization reads the actual framework metadata as well as domain state; copied future domain expiry alone is insufficient. Domain metadata reads are nonlocking/current under READ_COMMITTED and deserialize only the application's trusted String/Long attributes, not arbitrary principal classes. Framework cleanup is storage maintenance; permission validity never waits for a scheduler or Session event. Logout commits binding invalidation and context revoke before framework deletion. Policy edits increment user security_epoch, making all old contexts fail; counter closure is checked directly by owner use. Reloading a stale Session cannot restore these barriers.
+
+## Lock order and port contract
+
+Discover immutable IDs without authority. In one outer REQUIRED/READ_COMMITTED domain transaction acquire:
+
+1. identity_policy_gate only for identity policy/last-admin/bootstrap paths;
+2. all required users in numeric ascending order;
+3. all required counters in numeric ascending order;
+4. app_session_bindings in ID order, including the submitting anonymous binding;
+5. auth_session_contexts in ID order;
+6. downstream QR display → entry context → challenge/grant → registration/idempotency locks, under the coordinator-approved downstream order.
+
+`SessionCapabilities.lockOwners(uses, anonymousBindingId)` provides steps 2–5, validates current role/counter grants/owner mapping/deadlines, and joins the caller transaction. Pass only server-discovered owner/counter/binding coordinates. Re-locks of already held users do not introduce a new identity; never chase a newly changed pointer while holding downstream locks. Failure is rollback/re-discovery/conflict according to the domain contract. There are no QR locks/tables in M00, so this proves the security prefix, not the full M02/M03 race graph. Future QR ports must map owner expiry/invalidity to their frozen QR errors.
+
+Normal authorize/prepare/confirm/revoke acquire user → binding → context; prepare discovers old/new actors first and locks both sorted. Counter permission mutation uses users → counter → permission row → actor binding/context. Counter closure uses actor user → counter → actor binding/context. Last-admin edits serialize policy gate then users and actor capability. Bootstrap gate → bootstrap singleton precedes empty-user insertion. An anonymous bootstrap only locks its binding/unique stable PRIMARY_ID; competing creation retries after full rollback. `anonymous(bindingId)` resolves scope outside downstream lock acquisition; do not call it ahead of users/counters in an already-running QR transaction. Use `lockOwners` for the full prefix.
+
+No framework repository save/delete may run inside an active domain transaction: the wrapper rejects it before REQUIRES_NEW could suspend a transaction that holds capability locks. Hooks do not invoke repository methods. No external provider is called while domain locks are held.
+
+## JPA/JDBC discipline and evidence
+
+The approved hybrid uses one JpaTransactionManager explicitly configured with the same DataSource. Hibernate uses DELAYED_ACQUISITION_AND_HOLD and OSIV=false; the domain template is REQUIRED, READ_COMMITTED, timeout 5 seconds. No NESTED/JPA savepoints are used. The framework delegate has isolated REQUIRES_NEW persistence only after the prefix releases.
+
+Real MySQL tests compare EntityManager native CONNECTION_ID with JdbcTemplate's ID inside the transaction, verify READ-COMMITTED, flush a test-only counter entity and write audit/idempotency through JDBC. Commit preserves all three; explicit failure and a real audit trigger SQL failure roll back all writes. The test entity is under src/test and is absent from the packaged application. Later JPA owners must avoid stale first-level-cache authorization, refresh/re-read after locks and explicitly flush when JDBC depends on entity writes. Shared connection proof does not make a cached entity an authoritative current projection.
+
+Actual servlet tests cover fixed PRIMARY_ID/rotated Session ID, CSRF rotation, request-end save failure buffering, real delegate failure, post-save confirmation failure, epoch edit during credential verification, stale save after superseding login/logout/expiry, framework expiry, concurrent binding creation and owner-use/logout locking. Guards match the decoded Servlet path, excluding contextPath: encoded URL aliases retain the same closed integration/current-owner checks. A second independently started Spring application under /foundation reads the same cookie/Session from MySQL and rejects a changed epoch; no in-memory SecurityContext is shared. Request-local Session tracking is cleared on all backend paths, including denied non-API requests. This validates retrieval across instances; a full deployment restart/load/clock-skew exercise remains NOT_RUN. Pinned framework serialization/schema upgrades require repeating these tests and an explicit Session invalidation/migration decision.
+
+Idle is request activity, including polling, not a hospital inactivity lock-screen policy. Absolute deadlines and engineering limiter defaults remain subject to hospital O07 approval. Durable app capability rows currently have no cleanup reaper; authorization is deadline-based. Cleanup must be separately coordinated with future domain references and retention.

@@ -1,9 +1,58 @@
+# The deployment database is explicit; only the local profile imports a local .env.
 spring:
-  config:
-    import: "optional:file:./.env[.properties]"
   application:
     name: hsaas-backend
   datasource:
-    url: jdbc:mysql://localhost:3306/hsaas_db
-    username: hsaas
+    url: ${HSAAS_DB_URL}
+    username: ${HSAAS_DB_USER}
     password: ${HSAAS_DB_PASSWORD}
+    hikari:
+      transaction-isolation: TRANSACTION_READ_COMMITTED
+      connection-timeout: 3000
+      data-source-properties:
+        connectTimeout: 3000
+        socketTimeout: 3000
+        connectionTimeZone: UTC
+        forceConnectionTimeZoneToSession: true
+  jpa:
+    open-in-view: false
+    properties:
+      # HibernateJpaDialect can prepare isolation and expose the same JDBC connection until EntityManager closes.
+      hibernate.connection.handling_mode: DELAYED_ACQUISITION_AND_HOLD
+    hibernate:
+      ddl-auto: validate
+  flyway:
+    enabled: true
+    clean-disabled: true
+    validate-on-migrate: true
+  jackson:
+    deserialization:
+      fail-on-unknown-properties: true
+server:
+  port: ${HSAAS_PORT:8080}
+  forward-headers-strategy: none
+  error:
+    include-message: never
+    include-stacktrace: never
+    include-binding-errors: never
+management:
+  endpoints:
+    web:
+      exposure:
+        exclude: '*'
+hsaas:
+  environment: ${HSAAS_ENVIRONMENT:production}
+  reader-mode: ${READER_MODE:disabled}
+  mrn-mode: ${MRN_MODE:manual}
+  notification-mode: ${NOTIFICATION_MODE:disabled}
+  blockchain-mode: ${BLOCKCHAIN_MODE:disabled}
+  secure-cookie: true
+  request-idle: 30m
+  staff-absolute: 8h
+  anonymous-absolute: 24h
+  activation-ttl: 1m
+  # Missing hashing secrets disable commands that need hashing; no fallback is generated.
+  hash-key-version: ${IDEMPOTENCY_KEY_VERSION:}
+  hash-key: ${IDEMPOTENCY_HMAC_KEY:}
+  # Keep previous key versions until their result retention and bounded in-flight window have ended.
+  hash-keys: {}

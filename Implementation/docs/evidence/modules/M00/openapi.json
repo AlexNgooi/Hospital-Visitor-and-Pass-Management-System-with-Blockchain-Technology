@@ -1,0 +1,672 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "HSAAS M00 Foundation API",
+    "version": "1.0.0",
+    "description": "Implemented foundation routes only. QR, registration, account CRUD and provider workflows are owned by later modules. Human login uses Spring Session, not JWT."
+  },
+  "servers": [
+    {
+      "url": "/",
+      "description": "Same-origin application/proxy"
+    }
+  ],
+  "paths": {
+    "/api/health": {
+      "get": {
+        "operationId": "health",
+        "summary": "Read actual database readiness",
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "Successful foundation response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Health"
+                }
+              }
+            }
+          },
+          "503": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
+    "/api/public/csrf": {
+      "get": {
+        "operationId": "csrfBootstrap",
+        "summary": "Persist browser identity and obtain framework CSRF",
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "Successful foundation response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CsrfBootstrap"
+                }
+              }
+            }
+          },
+          "429": {
+            "$ref": "#/components/responses/Error"
+          },
+          "503": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
+    "/api/auth/login": {
+      "post": {
+        "operationId": "login",
+        "summary": "Verify credentials, rotate Session/CSRF and confirm persistence",
+        "security": [
+          {
+            "sessionCookie": [],
+            "csrfHeader": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful foundation response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Me"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error"
+          },
+          "429": {
+            "$ref": "#/components/responses/Error"
+          },
+          "503": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "description": "Bootstrap CSRF first. Password is unmodified and at most 72 UTF-8 bytes. Unknown account, disabled account and incorrect password share INVALID_CREDENTIALS. Obtain fresh CSRF after success.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Credentials"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/auth/me": {
+      "get": {
+        "operationId": "me",
+        "summary": "Read current account and counter permissions",
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful foundation response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Me"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Error"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error"
+          },
+          "503": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
+    "/api/auth/logout": {
+      "post": {
+        "operationId": "logout",
+        "summary": "Revoke browser capability before Session deletion",
+        "security": [
+          {
+            "sessionCookie": [],
+            "csrfHeader": []
+          }
+        ],
+        "description": "Refetch CSRF afterwards. A failed framework delete can return 503 while the durable revoke barrier remains effective.",
+        "responses": {
+          "204": {
+            "description": "Session invalidated; no response body"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error"
+          },
+          "503": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
+    "/api/public/config/registration": {
+      "get": {
+        "operationId": "publicCapabilities",
+        "summary": "Read minimal release capabilities",
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "Successful foundation response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Capabilities"
+                }
+              }
+            }
+          },
+          "503": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
+    "/api/admin/integrations": {
+      "get": {
+        "operationId": "adminCapabilities",
+        "summary": "Read release capabilities as current ADMIN",
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful foundation response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Capabilities"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Error"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error"
+          },
+          "503": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
+    "/api/admin/blockchain-proofs/{id}/verify": {
+      "post": {
+        "operationId": "disabledProofverify",
+        "summary": "Reject unavailable blockchain operation",
+        "security": [
+          {
+            "sessionCookie": [],
+            "csrfHeader": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Unused opaque target while this integration is disabled."
+          }
+        ],
+        "responses": {
+          "401": {
+            "$ref": "#/components/responses/Error"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error"
+          },
+          "503": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
+    "/api/admin/blockchain-proofs/{id}/retry": {
+      "post": {
+        "operationId": "disabledProofretry",
+        "summary": "Reject unavailable blockchain operation",
+        "security": [
+          {
+            "sessionCookie": [],
+            "csrfHeader": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Unused opaque target while this integration is disabled."
+          }
+        ],
+        "responses": {
+          "401": {
+            "$ref": "#/components/responses/Error"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error"
+          },
+          "503": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
+    "/api/device/scan-jobs/claim": {
+      "post": {
+        "operationId": "disabledDeviceClaim",
+        "summary": "Reject disabled machine surface before endpoint/provider processing",
+        "security": [],
+        "responses": {
+          "409": {
+            "$ref": "#/components/responses/Error"
+          },
+          "503": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
+    "/api/integrations/whatsapp/webhook": {
+      "post": {
+        "operationId": "disabledWebhook",
+        "summary": "Reject disabled machine surface before endpoint/provider processing",
+        "security": [],
+        "responses": {
+          "409": {
+            "$ref": "#/components/responses/Error"
+          },
+          "503": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "sessionCookie": {
+        "type": "apiKey",
+        "in": "cookie",
+        "name": "HSAAS_SESSION",
+        "description": "HttpOnly host-only SameSite=Lax browser-session cookie; Secure by default. Managed by browser, never used as an explicit caller scope."
+      },
+      "csrfHeader": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-CSRF-TOKEN",
+        "description": "Framework-generated token returned by /api/public/csrf. Required on browser writes, renewed after login/logout."
+      }
+    },
+    "responses": {
+      "Error": {
+        "description": "Safe error; no rejected values, exception/SQL diagnostics or secrets. 503 can mean an uncertain committed command outcome: preserve its original command key.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        },
+        "headers": {
+          "X-Correlation-ID": {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "description": "Server-generated correlation identifier"
+          }
+        }
+      }
+    },
+    "schemas": {
+      "Health": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "status"
+        ],
+        "properties": {
+          "status": {
+            "const": "UP",
+            "type": "string"
+          }
+        },
+        "description": "Database SELECT 1 succeeded."
+      },
+      "CsrfBootstrap": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "headerName",
+          "token"
+        ],
+        "properties": {
+          "headerName": {
+            "type": "string",
+            "const": "X-CSRF-TOKEN"
+          },
+          "token": {
+            "type": "string"
+          }
+        },
+        "description": "Framework CSRF token; separate from the HttpOnly Session cookie."
+      },
+      "Credentials": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "login",
+          "password"
+        ],
+        "properties": {
+          "login": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256,
+            "description": "ASCII; trim outer U+0020 and lowercase Locale.ROOT. Canonical pattern [a-z0-9][a-z0-9._-]{2,63}. No email, non-ASCII, tabs or internal spaces."
+          },
+          "password": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 72,
+            "writeOnly": true,
+            "description": "Never normalized. Maximum 72 UTF-8 bytes; byte rule is stricter than this character upper bound."
+          }
+        },
+        "description": "Strict JSON: unknown or duplicate fields reject."
+      },
+      "Me": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "login",
+          "role",
+          "counterIds"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[0-9]+$",
+            "description": "Server database ID serialized as a decimal string."
+          },
+          "login": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9._-]{2,63}$"
+          },
+          "role": {
+            "type": "string",
+            "enum": [
+              "ADMIN",
+              "COUNTER_STAFF"
+            ]
+          },
+          "counterIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "pattern": "^[0-9]+$",
+              "description": "Server database ID serialized as a decimal string."
+            },
+            "uniqueItems": true,
+            "description": "Current active staff counter grants; ADMIN has an empty list."
+          }
+        },
+        "description": "Minimal current authenticated staff projection."
+      },
+      "Capabilities": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "schemaVersion",
+          "environment",
+          "readerMode",
+          "mrnMode",
+          "notificationStatus",
+          "blockchainStatus",
+          "auditStatus"
+        ],
+        "properties": {
+          "schemaVersion": {
+            "type": "integer",
+            "const": 1
+          },
+          "environment": {
+            "type": "string",
+            "enum": [
+              "production",
+              "development",
+              "synthetic",
+              "test"
+            ]
+          },
+          "readerMode": {
+            "type": "string",
+            "enum": [
+              "disabled",
+              "mock"
+            ]
+          },
+          "mrnMode": {
+            "type": "string",
+            "enum": [
+              "manual",
+              "mock"
+            ]
+          },
+          "notificationStatus": {
+            "type": "string",
+            "const": "NOT_ENABLED"
+          },
+          "blockchainStatus": {
+            "type": "string",
+            "const": "NOT_ENABLED"
+          },
+          "auditStatus": {
+            "type": "string",
+            "const": "LOCAL_ONLY"
+          }
+        },
+        "description": "Configuration-derived capabilities; no claim of provider delivery or chain proof."
+      },
+      "FieldError": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "field",
+          "code",
+          "message"
+        ],
+        "properties": {
+          "field": {
+            "type": "string"
+          },
+          "code": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          }
+        },
+        "description": "Safe field diagnostics without rejectedValue."
+      },
+      "FormContext": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "grantReference",
+          "bindingVersion"
+        ],
+        "properties": {
+          "grantReference": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9_-]{1,128}$"
+          },
+          "bindingVersion": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          }
+        },
+        "description": "M02's server-generated form context; not a grant bearer token."
+      },
+      "RestartScope": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "environment",
+          "counterId",
+          "categoryScope"
+        ],
+        "properties": {
+          "environment": {
+            "type": "string",
+            "enum": [
+              "production",
+              "development",
+              "synthetic",
+              "test"
+            ]
+          },
+          "counterId": {
+            "type": "string",
+            "pattern": "^[0-9]+$",
+            "description": "Server database ID serialized as a decimal string."
+          },
+          "categoryScope": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "pattern": "^[0-9]+$",
+            "description": "Nullable category database ID string; null represents the four-category scope."
+          }
+        },
+        "description": "Server-resolved non-sensitive scope."
+      },
+      "RestartDetails": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "currentFormContext",
+          "currentScope",
+          "requestedScope"
+        ],
+        "properties": {
+          "currentFormContext": {
+            "$ref": "#/components/schemas/FormContext"
+          },
+          "currentScope": {
+            "$ref": "#/components/schemas/RestartScope"
+          },
+          "requestedScope": {
+            "$ref": "#/components/schemas/RestartScope"
+          }
+        },
+        "description": "Only REGISTRATION_ENTRY_RESTART_REQUIRED may carry this optional shape. Foundation defines the type, but no restart route."
+      },
+      "Error": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "timestamp",
+          "status",
+          "code",
+          "message",
+          "correlationId",
+          "fieldErrors"
+        ],
+        "properties": {
+          "timestamp": {
+            "type": "string",
+            "format": "date-time",
+            "description": "UTC ISO timestamp."
+          },
+          "status": {
+            "type": "integer",
+            "minimum": 400,
+            "maximum": 599
+          },
+          "code": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          },
+          "correlationId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "fieldErrors": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/FieldError"
+            }
+          },
+          "details": {
+            "$ref": "#/components/schemas/RestartDetails"
+          }
+        },
+        "description": "Uniform security/filter/controller error. details is omitted except the typed restart code.",
+        "allOf": [
+          {
+            "if": {
+              "required": [
+                "details"
+              ]
+            },
+            "then": {
+              "properties": {
+                "code": {
+                  "const": "REGISTRATION_ENTRY_RESTART_REQUIRED"
+                }
+              }
+            }
+          }
+        ]
+      }
+    }
+  }
+}
