@@ -46,6 +46,8 @@ Java 21 沿用指南。Spring Boot、React、SDK、MySQL 和 Node 的具体兼�
 
 保留实际 Java 包名 `eduupm.hsaas`，不重建或批量迁移包。M00 负责 backend/pom、auth/config/common、隔离 MySQL 测试、全局 migration 登记、最小 reference/counter 权限与本地 audit/idempotency 基础；M01 是 frontend 入口、全局 CSS、依赖/lockfile、router/client 和 Vite proxy 的唯一执行 owner，M00 提供 proxy 的安全/验收契约，其他模块不直接改这些共享文件。
 
+2026-10-09 M02 窄共享例外：coordinator 允许 M02 在自己的隔离分支仅为 QR 增加 frontend package/lockfile 的 qrcode@1.5.4、兼容 @types/qrcode 和 test-only jsQR，以及 main.tsx 导入 M02 FeatureSlot 并传给现有 App.features；保留 fragment 在 bootstrap 前清除，优先不改 App.tsx/auth/lib/Vite/全局CSS。模块内样式自己维护。渲染依赖具备浏览器入口，依据 [qrcode 官方 package](https://github.com/soldair/node-qrcode/blob/master/package.json)；实际兼容/解码仍由模块测试。允许基础 contextLoads/upgrade 测试仅更新 V4 带来的数量与注释，不削弱安全负例。
+
 2026-10-09 公共事务决定：保留 Data JPA 路线，领域事务统一使用匹配同一 EntityManagerFactory/DataSource 的 JpaTransactionManager 与 READ_COMMITTED；JdbcTemplate 的本地审计/幂等/锁查询加入同一 REQUIRED 事务，不另走默认 JDBC manager。配置匹配 vendor JpaDialect 与事务连接，JPA flush/缓存边界不得绕过统一锁序；不用 JDBC savepoint 代替完整 JPA 嵌套事务。Spring 官方说明该 manager 支持同 DataSource 的 JPA/JDBC 混用，但需要正确连接获取与 dialect：[JpaTransactionManager](https://docs.spring.io/spring-framework/docs/current/javadoc-api/org/springframework/orm/jpa/JpaTransactionManager.html)。M00 用 test-only 既有 counters 映射在临时 MySQL 证明联合提交/回滚、隔离级别与 Session 独立保存；Flyway 仍管 DDL，不新增生产聚合或自动建表。Session save/delete 继续零领域锁/事务、独立 REQUIRES_NEW，与领域 manager 的实际绑定/挂起恢复须按锁定依赖测试，不从注解推断 PASS。
 
 M03 拥有 registration 根聚合/实体/持久化和字段 schema；M04 拥有 review 子域与审核命令，通过冻结的 registration 领域接口更新，不各自复制 registration 实体。verify 一次命令原子保存核实依据并批准，不添加审核草稿 endpoint；actor/time 从服务端取得。M02 提供参与现有事务的 grant 检查/消费 port，M03 提交外层事务，禁止提前独立提交 grant 消费。
@@ -113,6 +115,8 @@ Move registry 必须持久化 eventId -> commitment，而不是只 emit 事件�
 当前顺序是基础安全/API 契约 → 前端框架 → 动态 QR → 四类登记 → 审核 → synthetic 生命周期 → 管理/报表 → 当前版验收。硬件/profile、live MRN、消息与链按 M08–M11 条件独立启动；旧图体现后续完整设计，尚未包含新 QR 与模块协作。图的哈希/视觉通过不表示新范围语义已同步。
 
 ## 9. 动态 QR 登记入口
+
+M02 运行开关：module-owned `hsaas.qr.enabled` 缺省 false，使普通基础登录/console 在未配置 QR 密钥时仍可运行。显式 true 必须提供有效 active key/keyring 与受控 origin，否则启动失败；不产生随机 fallback 密钥。disabled 时不写 display/challenge/grant 或产生 job，stateful QR API 返回明确 INTEGRATION_DISABLED。只读 `/api/public/registration-entry/capabilities` 返回 `{enabled:boolean}`（no-store/no-referrer，无秘密/范围/PII），不需 grant；UI 必须据此隐藏可扫码区域并显示未启用。QR 的交付验收须在明确 enabled 的真实配置中执行，disabled 基础启动不是动态QR验收。
 
 当前将“实时更新 QR”落实为柜台屏幕定时轮换的短期登记挑战。服务端每 30 秒产生新 challenge，45 秒过期（15 秒扫描交界重叠）；display session 绑定授权职员、counter、可选 category 与 active/revoked 状态。多个显示页可以独立 display session，不互相意外撤销；每显示会话/轮换时间槽只有一个当前 challenge，读取不能任意延长 expiry。
 

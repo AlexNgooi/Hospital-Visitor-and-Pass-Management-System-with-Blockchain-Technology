@@ -138,6 +138,7 @@ C11 M00 公共工程契约：
 | 权限边界 | 方法 / 路径 | 返回与条件 |
 |---|---|---|
 | Public | GET /api/public/csrf；GET /api/public/config/registration | 最少公开配置，版本和 CSRF bootstrap；no-store |
+| Public | GET /api/public/registration-entry/capabilities | M02 module-owned最低 `{enabled:boolean}`，no-store/no-referrer，不含钥/入口token/人员或范围，不要求grant；disabled明确不可扫码 |
 | Public | POST /api/public/registration-entry/exchange | CSRF + entryToken；校验签名/服务端 expiry/scope/撤销，绑定匿名会话 grant；返回最低 scope/serverNow/grantExpiresAt，不返回 PII |
 | Public | GET /api/public/registration-entry | 读取本匿名会话当前 grant 的最少范围/expiry；无 grant 不可开启登记；no-store |
 | Public | POST /api/public/registrations | 有效 grant + CSRF + Idempotency-Key；原子消费并创建；201 public_reference，不返回个人资料/card/pass/due_at |

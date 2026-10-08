@@ -14,6 +14,8 @@ status: foundation-local-integration-verified
 
 M02实际开工已派发：baseline98a7f7d，branch codex/hsaas-m02-dynamic-registration，bd17独立工作树，目标chat01a11db3-31c9-7da0-bfb2-217e71081355；模型gpt-6.1-sol/high，快照active/inProgress。前端/后端动态QR任务已送达，不代表已实现或验收；M03/M04仍未启动。
 
+M02 首次共享请求裁决：允许隔离分支的限定 QR renderer/type/decoder 依赖和 main.tsx FeatureSlot 接线、foundation迁移数量/upgrade注释适配V4；原安全/事务负例保留。module QR enabled缺省false，显式true缺/非法keyring/origin失败启动，最低readonly capability与disabled零写/API409决定见02/04。属于M02已批准范围的ownership/工程安排，不额外要求人类批准；没有修改native库或开启M03/M04。模块必须实际enabled验证，不能用disabled启动代替交付。
+
 2026-10-09 最新验收状态：M00/M01 的当前本地基础/UI/C01 范围已 INTEGRATION_VERIFIED。M01 最终联调交付58b738a已通过隔离返修复审并合并e8ca80a；coordinator在main复跑68前端tests、16隔离checks、typing/build/lint/proxy全PASS，此前独立真实28wire PASS仍精确关联原runtime/harness来源；M00 backend40 tests未变。CSRF UNKNOWN缓存与harness环境覆盖问题均已修正。当前本地验收不包含生产HTTPS、后续QR/登记/审核或live外部集成；M02基础依赖满足但仍未获用户开发许可。各REVIEW包含完整证据、先前返修与限制；下文未完成状态为对应历史阶段。
 
 2026-10-09 当前实施状态优先：M00 delivery 1b2d8f2 与 M01 revised delivery ad23099 已分别审核并本地合并到 main，merge SHA 为 a137acd 与014d030。coordinator 独立复跑和合并后回归：backend 40 tests/verify/JAR、frontend 63 tests/typecheck/build/lint/frozen install/synthetic proxy 全 PASS；审核和限制见各模块 REVIEW。M01 原首轮登录核查按钮缺失判断已在 REVIEW 撤回，R1注销保护与R3重试配置问题已修复。真实 C01 前后端/HTTPS 联调仍待完成，M02–M04 未获许可；不能将基础片段通过视为访客/QR/登记/审核业务已验收。后文“骨架/未提交/未执行”均为历史对应阶段。
