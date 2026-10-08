@@ -51,6 +51,10 @@ Login failures, including a successful login POST followed by unavailable CSRF,
 can be resolved with the persistent session check without replaying credentials.
 Void commands such as logout require the contracted HTTP 204 response; unexpected
 HTTP 200 does not confirm success.
+All login/logout outcomes discard cached CSRF, including UNKNOWN, because the
+server may already have rotated or revoked the session. An explicit me401 also
+clears that cache. The next explicit action bootstraps a current token; auth writes
+are never automatically replayed.
 
 Form context is `{grantReference,bindingVersion}`. Restart confirmation only calls
 the supplied callbacks: M02/M03 implement exchange/CAS/recovery. Do not clear old
@@ -63,7 +67,10 @@ no registration, review, QR generation, patient lookup, issue or return business
 `pnpm run api:generate` consumes `../docs/api/openapi.json` once backend owners
 deliver it. Output goes to `src/generated/api.d.ts`. The CLI runs in an isolated
 pinned TypeScript 5.9 tool environment (hoisted linking for Windows) to respect its peer range while the app
-retains TypeScript 6. Generated DTOs are not currently present or claimed complete.
+retains TypeScript 6. The input now mirrors the reviewed M00 foundation spec
+(source SHA in docs/api/README.md); `src/generated/api.d.ts` describes those
+implemented routes. Session/CSRF/error runtime schemas also satisfy their
+generated output types. Later business APIs remain outside this foundation spec.
 
 ## Browser verification (synthetic only)
 
@@ -81,3 +88,9 @@ sign-out recovery against that fixture, with local axe and no login replay.
 
 WhatsApp/blockchain remain not enabled. Reader and live MRN remain unavailable.
 Real M00 session/CSRF/MySQL/HTTPS forwarding requires a separate integration review.
+
+The [disposable real integration harness](tests/real-integration/README.md) checks
+actual M00/MySQL wire and browser behavior. Its isolated records/faults are
+synthetic; its backend responses are real. Latest sanitized integration receipts
+are in `../docs/evidence/modules/M01/INTEGRATION_HANDOFF.md`. Production HTTPS
+acceptance remains separate.
