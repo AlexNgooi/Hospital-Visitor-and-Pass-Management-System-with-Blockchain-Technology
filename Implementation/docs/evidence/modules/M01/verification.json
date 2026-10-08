@@ -1,0 +1,120 @@
+{
+  "module": "M01",
+  "provenance": "Explicit synthetic fixtures only; real M00/MySQL/HTTPS/QR business NOT_RUN",
+  "baseline": "c2b0c316e04947df06b84f1008f470b6e5a9eb8b",
+  "sourceImplementationSha": "99e860c1ae11b2198e3b63b1153f6d52fce14247",
+  "tests": {
+    "total": 53,
+    "passed": 53,
+    "failed": 0,
+    "success": true,
+    "startUtc": "2026-10-08T21:27:39.312Z"
+  },
+  "commands": [
+    "pnpm run typecheck:test: PASS exit0",
+    "pnpm run lint: PASS exit0",
+    "pnpm run build: PASS exit0",
+    "pnpm test: PASS exit0",
+    "pnpm run test:proxy: PASS exit0 synthetic",
+    "pnpm install --frozen-lockfile: PASS exit0",
+    "pnpm peers check: PASS exit0",
+    "isolated hoisted openapi-typescript synthetic generation: PASS exit0"
+  ],
+  "browser": {
+    "engine": "Chromium through Playwright CLI",
+    "mode": "Final dist preview + explicit synthetic HTTP fixture",
+    "stylesLoaded": true,
+    "axeViolations": 0,
+    "horizontalOverflow": false,
+    "viewports": [
+      "1440x1024",
+      "1024x768",
+      "768x1024",
+      "375x812"
+    ],
+    "escapeFocusRestored": true,
+    "initialAndSameDocumentFragmentCleared": true,
+    "persistentStorageUsed": false,
+    "scope": "Only pages described in HANDOFF; not full WCAG/UAT or backend acceptance"
+  },
+  "screenshots": [
+    {
+      "path": "screenshots/access-denied-synthetic.png",
+      "sha256": "79047eb0ce1ebb9049e5ae925c73f9424b280b1a934dbfb06d788eaf08f106d7",
+      "bytes": 16550,
+      "captureScope": "Final dist preview with explicit synthetic HTTP fixture"
+    },
+    {
+      "path": "screenshots/admin-1024-synthetic.png",
+      "sha256": "0012964d7060d5684c6795c9da15ac08da69f0fb5cb1b2b420c7892b89824372",
+      "bytes": 84986,
+      "captureScope": "Final dist preview with explicit synthetic HTTP fixture"
+    },
+    {
+      "path": "screenshots/admin-desktop-synthetic.png",
+      "sha256": "2bcb40c11646028c0a8f41b383ae314d0e84f359c467de84cffbd61276c336c4",
+      "bytes": 97738,
+      "captureScope": "Final dist preview with explicit synthetic HTTP fixture"
+    },
+    {
+      "path": "screenshots/admin-tablet-synthetic.png",
+      "sha256": "2519566a73f6536b2d111c54e9d3d6cccd7753d9f21070a08ba7408760c1746d",
+      "bytes": 70363,
+      "captureScope": "Final dist preview with explicit synthetic HTTP fixture"
+    },
+    {
+      "path": "screenshots/feature-empty-synthetic.png",
+      "sha256": "e75593edca1bc2d1caab87e896534caa749bea0addbc16c6d61877d187e1d776",
+      "bytes": 33951,
+      "captureScope": "Final dist preview with explicit synthetic HTTP fixture"
+    },
+    {
+      "path": "screenshots/login-backend-unavailable.png",
+      "sha256": "911f1e12048b42ed2118fe7a0414378aa62825806cc66435161df6d6b30eded4",
+      "bytes": 88991,
+      "captureScope": "Historical development check; retained as bounded UI/error evidence, not final dist audit"
+    },
+    {
+      "path": "screenshots/login-desktop.png",
+      "sha256": "c94dfe18c71ee57dbf50f40320a35eabf49c83ae85c84acf0eb18a9733790b69",
+      "bytes": 82464,
+      "captureScope": "Final dist preview with explicit synthetic HTTP fixture"
+    },
+    {
+      "path": "screenshots/login-mobile.png",
+      "sha256": "c299b403ff0418252b7dedc207288d04148eaf9d8f6cf7dcd80dfb694936b0ca",
+      "bytes": 32271,
+      "captureScope": "Final dist preview with explicit synthetic HTTP fixture"
+    },
+    {
+      "path": "screenshots/login-validation.png",
+      "sha256": "1cec1fd68ddeafbf38419ce41482b9fef913facf703ced8de50a656dab5a931b",
+      "bytes": 103991,
+      "captureScope": "Historical development check; retained as bounded UI/error evidence, not final dist audit"
+    },
+    {
+      "path": "screenshots/mobile-navigation-synthetic.png",
+      "sha256": "acd19119c24213f3e73170bb77930e5a9260adada8293c249da038b4dab10c46",
+      "bytes": 22328,
+      "captureScope": "Final dist preview with explicit synthetic HTTP fixture"
+    },
+    {
+      "path": "screenshots/staff-desktop-synthetic.png",
+      "sha256": "8ada0a8dc7dd6ed5e6972898138e22401b36d88e36dee6d6e1e106e599bc4431",
+      "bytes": 102036,
+      "captureScope": "Final dist preview with explicit synthetic HTTP fixture"
+    },
+    {
+      "path": "screenshots/staff-mobile-synthetic.png",
+      "sha256": "0c9bf26149bb1966380586b3580320c34e9f36c1c32e76a26864b6d64ffbc8f3",
+      "bytes": 43972,
+      "captureScope": "Final dist preview with explicit synthetic HTTP fixture"
+    },
+    {
+      "path": "screenshots/visitor-entry-mobile.png",
+      "sha256": "63c1a00cc1414307452f0ecb68587bb5725c652724cc41d8d663ec02c0c3a521",
+      "bytes": 26194,
+      "captureScope": "Final dist preview with explicit synthetic HTTP fixture"
+    }
+  ]
+}
