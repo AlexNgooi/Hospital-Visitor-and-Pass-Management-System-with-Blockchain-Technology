@@ -4,6 +4,6 @@ spring:
   application:
     name: hsaas-backend
   datasource:
-    url: jdbc:mysql://localhost:3306/hsaas_dev
-    username: hsaas_app
+    url: jdbc:mysql://localhost:3306/hsaas_db
+    username: hsaas
     password: ${HSAAS_DB_PASSWORD}
