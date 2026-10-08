@@ -1,6 +1,6 @@
 ---
 type: workspace-contract
-updated: 2026-10-05
+updated: 2026-10-08
 ---
 # 工作区契约
 
@@ -14,4 +14,4 @@ updated: 2026-10-05
 
 人工检查：阅读需求变更、确认医院业务未决项、审阅最终图和验收证据。设计文档完成不代表医院认可或业务软件实现完成。
 
-planning 只保留当前版本；Implementation/ 由开发者按 planning/11 手动初始化，使用根 Git 仓库。其他目录若要删除/搬迁，先检查 referrer 与路径冲突。
+planning 只保留当前版本；Implementation/ 已有用户手动初始化的骨架，使用根 Git 仓库，实际状态先看 docs/evidence/foundation/P0_REVIEW.md。本 chat 为 coordinator，按 planning/12 分配独立 module chat、审核并本地 merge。最新用户要求改为模块助手直接编写源码/测试/交接，必须有英文注释；每模块开发许可仍一次确认，已有许可不重复问。当前优先 Web/基础后端/动态 QR，硬件/live MRN deferred，WhatsApp/blockchain disabled。其他目录若要删除/搬迁，先检查 referrer 与路径冲突。

@@ -1,64 +1,70 @@
 ---
 type: development-plan
 revision: current
-updated: 2026-10-05
+updated: 2026-10-08
 window: 2026-10-05..2027-01-03
-status: ready-for-manual-initialization
+status: coordinator-planning
 ---
-# 三个月开发计划
+# 三个月开发计划：coordinator 与独立模块 chat
 
-本计划从 2026-10-05 开始，到 2027-01-03 完成，共 13 周，不超过三个月；2027-01-04 只作为一天应急余量。第 1 周由开发者手动初始化；之后每两周一个阶段，每个阶段使用一个新的 Codex chat。当前工作区只有规划与静态原型，任何功能只有在相应测试证据产生后才算完成。
+本 chat 是 HSAAS project coordinator，负责范围、模块分配、契约、答疑、审核与本地合并。每个模块使用自己的独立 chat；阶段只是时间和集成关卡，不再对应一个开发 chat。模块与协作协议的事实归属在 [12](12_THREE_MONTH_CHAT_PLAN.md)。本轮仅修改规划，不创建模块 chat，不实施业务代码。
 
-## 交付策略
+最新状态：2026-10-08 用户随后明确要求代开 M00–M04，五个独立 chat 已创建，统一 gpt-6.1-sol/high，初始仅 Local 只读准备；最新开发方式改为模块助手直接实现、测试和交接，英文注释必需，各模块仍一次开发许可。实际登记见 12，其他模块不自动开启。
 
-- 单人开发，Kanban WIP 上限为 2；任何任务超过 2–3 个工作日必须拆分。
-- 每个阶段只实现该阶段的 Must 范围，阶段最后两天用于集成、缺陷修复和留证。
-- 每个新 chat 先读 `AGENTS.md`，再读该阶段指定规范和上一阶段 handoff；不把旧 chat 的记忆当事实。
-- 每个阶段结束必须产生：构建/测试结果、需求 ID 状态、风险变化、未决项、下一阶段 handoff。
-- 外部依赖未到位时保留 adapter + mock/manual 路径，并明确标成未完成的 live integration。
+所有 module 的 chat 与开发均由用户手动开启和启动；coordinator 只准备分配计划、任务单与依赖条件，不代开或自动启动。阶段日期、依赖通过和 merge 完成不会自动启动下一模块。
 
-## 时间表与阶段关卡
+仍以 2026-10-05 至 2027-01-03 为 13 周规划窗口；2027-01-04 为应急余量。日期是目标而非完成证据。2026-10-08 实际已有 frontend/backend 骨架、infra 配置与 Git commit；[P0 检查](../Implementation/docs/evidence/foundation/P0_REVIEW.md) 表示技术初始化已补齐，业务功能仍未验收，不重复初始化。
 
-| 阶段 | 日期 | 新 chat | 主要范围 | 阶段关卡 |
-|---|---|---|---|---|
-| P0 手动初始化 | 5–11 Oct | 不开开发 chat；按 11 手动操作 | 首次 Git 基线、`Implementation/frontend`、`backend`、`infra` 最小骨架、MySQL、Wrapper、目录契约 | 前后端空骨架可构建；首次 commit；秘密未入库 |
-| P1 基础与安全 | 12–25 Oct | Chat 01 | session/CSRF、登录、RBAC、用户最小模型、Flyway、健康检查、CI、部署兼容 spike、NFC 设备 spike | M0：真实 MySQL 集成测试通过；401/403/CSRF 行为有证据；硬件路径有结论 |
-| P2 登记与审核 | 26 Oct–8 Nov | Chat 02 | R01–R04、S01；四类别表单、隐私/消息同意、登记 reference、队列、批准/拒绝、MRN adapter/manual fallback | M1：四类登记到审核端到端通过；批准不会提前发卡或发消息 |
-| P3 卡与借用生命周期 | 9–22 Nov | Chat 03 | C01–C02、P01–P05；库存、ScanJob/Reader Agent、发卡、归还、逾期、遗失、并发与幂等 | M2：真实或批准的 reader profile 下完成 issue/return；双发卡恰好一项成功 |
-| P4 异步消息与链上审计 | 23 Nov–6 Dec | Chat 04 | N01–N03、B01–B03；单条组合消息、outbox、Sui worker、Move、proof verifier、故障恢复 | M3：Sui 慢/离线不阻断柜台；Testnet proof 可核验；链上无 PII |
-| P5 管理、分析与隐私 | 7–20 Dec | Chat 05 | A01–A04、D01；账号/配置、dashboard、掩码 CSV、审计、保留策略、golden dataset | M4：Must 功能冻结；指标可从数据库重算；最后管理员保护通过 |
-| P6 发布、UAT 与报告 | 21 Dec–3 Jan | Chat 06 | 全量回归、安全/性能/恢复、部署演练、UAT/SUS、操作手册、FYP 证据与最终报告 | M5：无 P0/P1；发布候选可部署；UAT 结果和限制已记录 |
+## 当前交付范围
 
-## 每阶段容量
+当前优先完成可运行的前端、基础后端和动态 QR 登记纵向流程，再完成审核、卡生命周期模拟、管理和本地报表。前端可先对契约 mock 开发，但最终当前版必须接真实 backend/MySQL；纯静态页面不算模块完成。
 
-每个两周阶段按 10 个工作日规划：6 天功能与测试、2 天集成、1 天文档/证据、1 天缓冲。只承诺 70–80% 容量，保留其余时间处理缺陷、学习成本、外部接口和部署问题。
+| 依赖 / 能力 | 当前策略 | 后续保留 |
+|---|---|---|
+| 登录、权限、MySQL、审计、表单、审核、管理 | 当前实现 | 不依赖医院外部接口 |
+| 动态 QR 与手机扫码 | 当前 Must，M02 优先 | 服务端轮换、过期、撤销、表单会话与防绕过 |
+| 实体卡与读卡机 | 尚未准备；只在 synthetic demo/test 使用模拟扫描 | M08 接真实 PC/SC/profile，真实发卡验收另做 |
+| 病人资讯 / MRN API | synthetic mock + 授权人工核实模型 | M09 接获批接口；不采集完整病历 |
+| WhatsApp | NOTIFICATION_MODE=disabled；当前不收集发送用途的 opt-in，不创建发送任务 | M10；保留一条组合消息规则和 adapter 契约 |
+| Blockchain / Sui | BLOCKCHAIN_MODE=disabled；本地事件与审计可用，不创建待上链队列 | M11；保留 canonical schema、outbox、worker/Move/proof 设计 |
 
-## 完成定义
+simulation/mock、disabled、live 是不同状态。关闭集成显示“未启用”，不是 Pending、Sent、Delivered、Confirmed 或虚构健康状态。当前 release 的完成只覆盖当前范围；proposal 中尚未启用的链/消息/真实硬件目标必须在 FYP 报告单独说明，不能标为已完成。
 
-阶段只有同时满足以下条件才关闭：
+## 目标节奏与关卡
 
-- 对应验收条件已执行，结果不是占位的 `PASS`。
-- 单元、真实 MySQL 集成和必要 E2E/人工测试通过；失败项有明确 owner 与日期。
-- RBAC、PII、日志、链上 payload、并发、幂等和错误状态按阶段范围检查。
-- API、schema、运行说明和 evidence 路径已更新。
-- 新 chat 写出 handoff；下一阶段不得依赖聊天记忆才能继续。
+| 阶段 | 目标日期 | 模块工作 | 可放行的结果 |
+|---|---|---|---|
+| P0 骨架 | 5–11 Oct | 已有初始化证据；coordinator 核对现状 | 不重建；未有业务验收 |
+| P1 基础与前端框架 | 12–25 Oct | M00 基础/安全；随后 M01 公共 UI | API/错误/权限契约固定；隔离 MySQL 测试；session/CSRF/RBAC；UI mock 可运行 |
+| P2 动态 QR 与登记 | 26 Oct–8 Nov | M02 动态 QR；M03 四类登记 | 真实手机扫码 → 有效会话 → 表单 → MySQL；过期码与直接绕过拒绝 |
+| P3 柜台与模拟生命周期 | 9–22 Nov | M04 审核；M05 synthetic 卡流程 | 审核 → 模拟 issue/return/overdue/lost；并发与幂等正确，来源明确 |
+| P4 管理与完整前端集成 | 23 Nov–6 Dec | M06 管理/报表；前述模块返修 | 当前范围页面接 backend；本地审计与 disabled 状态正确；无外部发送/链调用 |
+| P5 当前版冻结与验证 | 7–20 Dec | M07 跨模块 QA；coordinator review/merge | 当前 Must 冻结；安全、QR、性能、隐私、恢复与 golden dataset 证据 |
+| P6 交付与 FYP 证据 | 21 Dec–3 Jan | M07 + coordinator | 当前版 release candidate、UAT/SUS 或未执行原因、runbooks、需求/限制矩阵 |
 
-## 三个月内的范围保护
+M02 的契约在 P1 固定，前端可以提前准备 QR 显示与失效状态；安全路径必须等 M00 后端能力通过后接入。每个模块可跨阶段继续返修，保留自己的 chat。外部依赖到位时由 coordinator 准备 deferred 模块的任务单与独立排期，仍由用户手动开启 chat 并启动开发；不自动占用当前关键路径，也不要求在 P4 强行上链或发送消息。
 
-以下内容不进入 Must 路径：Sui Mainnet、原生手机 App、完整医院信息系统集成、室内定位、一般无需实体卡访客、复杂异常检测、多语言、额外 WhatsApp 模板。若进度落后，依次削减高级图表/自定义报表、live MRN、非关键 UI polish；不得削减发卡/归还一致性、隐私、链上完整性测试、部署证据与 UAT。
+## 容量、依赖与范围保护
 
-## 每周节奏
+开发保持 WIP ≤2；每个任务拆到 2–3 个工作日内。一项在开发、一项在审核即可，不因有多个 chat 就并行写同一 checkout。每两周预留最后两天集成，每周保留约 20–30% 缓冲。用户已明确要求模块助手直接编写源码，所有新增/修改代码须有英文注释；模块获得一次范围许可后自行实现/测试/交接，不再让用户逐步手写。
 
-- 周一：确认本周最多两项 In Progress，以及依赖和验收。
-- 周三：检查 blocker、测试债务和剩余时间；阻塞超过 2 个工作日立即升级。
-- 周五：运行阶段回归、更新风险和 evidence；只把满足完成定义的工作移到 Done。
-- 每两周：演示、冻结阶段结果、写 handoff、关闭当前 chat，再启动下一个 chat。
+如果延期，依次削减高级图表/可选导出、非关键 UI polish；保留动态 QR 服务端验证、权限/PII、安全状态、核心事务一致性与测试。硬件/API/消息/链已经 deferred，不以它们的安装或现场可用性阻塞当前版。
 
-## 硬截止与决策点
+## 完成定义与审核
 
-- 11 Oct：手动初始化结束。若骨架仍不可构建，先修环境，不进入 P1。
-- 25 Oct：会话/权限与 reader 可行性必须有证据；未知硬件 profile 不得拖到 P3 才发现。
-- 22 Nov：本地完整 pass lifecycle 必须完成；否则暂停 Sui UI polish，先保住核心流程。
-- 6 Dec：链上与消息异步边界必须稳定；真实 provider 未批则保留 mock 并记录限制。
-- 20 Dec：功能冻结，之后只修缺陷、测试、部署、UAT 和报告。
-- 3 Jan：发布候选与 FYP 证据包完成；4 Jan 仅留作应急余量。
+模块通过验收后提交 Implementation/docs/evidence/modules/Mxx/HANDOFF.md，由 coordinator 按 [12 的审核与合并流程](12_THREE_MONTH_CHAT_PLAN.md) 检查提交、契约、变更、真实测试与影响。未审核/未合并不能作为其他模块的稳定依赖。
+
+- 当前范围需求具有 PASS / FAIL / NOT_RUN、commit、命令和可打开的 evidence；deferred 项记录 DEFERRED 范围、测试仍 NOT_RUN。
+- frontend build、backend verify、相关 MySQL/浏览器/E2E 验证按变更实际执行；mock 验证与 live 验证分开。
+- 共享 API/schema、migration 编号、路由和配置变更先回 coordinator；禁止模块自行改其他模块或合并 main。
+- 合并后重跑受影响的集成验收，记录 merge SHA、返修项与可放行依赖；不自动 push、发布或启动外部集成。
+- 周一选任务，周三处理 blocker，周五更新证据与风险；每两周演示当前范围和审阅 readiness。
+
+## 决策点
+
+- 25 Oct：基础与 API 契约稳定；独立测试环境有证据。
+- 8 Nov：动态 QR 登记纵向路径完成，不能以静态 URL QR 代替。
+- 22 Nov：本地 synthetic 生命周期正确，真实硬件验收仍独立列出。
+- 6 Dec：当前前后端主要流程贯通，所有 deferred 集成显示未启用。
+- 20 Dec：当前 Must 冻结。
+- 3 Jan：当前范围候选版本与 FYP 证据完成；外部目标未达成必须明确披露。

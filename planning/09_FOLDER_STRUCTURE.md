@@ -1,12 +1,12 @@
 ---
 type: folder-plan
 revision: v3
-updated: 2026-10-05
+updated: 2026-10-08
 status: proposed-implementation
 ---
 # 目录结构与模块契约
 
-现有工作区为规划/原型库。下面 `[现有]` 为当前文件，`[计划]` 只表示实施目标；没有为未实现功能创建空目录或搬动旧文件。ICM 组织文档和上下文，应用运行仍依靠 Spring/DB/worker 代码。[Archify 目录导航](diagrams/v3/02-folder-structure.html) 是阅读与集成关系；完整父子层级以下树为准。
+工作区已有规划/原型与用户初始化的 frontend/backend/infra 骨架（P0 已补齐，业务未验收）。下面 `[计划]` 仍只表示目标，骨架不等于业务完成。ICM 组织文档，上线运行依靠应用代码。[Archify 目录导航](diagrams/v3/02-folder-structure.html) 是长期导航，尚未同步新动态 QR/模块协作；当前范围/ownership 以 [12](12_THREE_MONTH_CHAT_PLAN.md) 与本树为准。
 
 ```text
 FYP Dev/
@@ -24,7 +24,7 @@ FYP Dev/
 │   ├── 08_MERMAID_DIAGRAMS.md         从 Archify 源生成语义镜像
 │   ├── 09_FOLDER_STRUCTURE.md / 10_BASELINE_REVIEW.md
 │   ├── 11_ENVIRONMENT_AND_MANUAL_INITIALIZATION.md
-│   ├── 12_THREE_MONTH_CHAT_PLAN.md
+│   ├── 12_THREE_MONTH_CHAT_PLAN.md    coordinator / 独立 module chat / review / merge
 │   ├── _templates/                   稳定模板；与实例分离
 │   ├── diagrams/v3/                  Archify JSON / HTML / receipts / QA
 │   └── figma_assets/                 当前 Figma 导入基础资产
@@ -42,6 +42,7 @@ FYP Dev/
 │   │   │   ├── app/                 router / providers / auth bootstrap
 │   │   │   ├── features/
 │   │   │   │   ├── registration/    四类别表单/consent/receipt
+│   │   │   │   ├── registration-qr/ 动态 QR 显示/倒计时/失效；M02 ownership
 │   │   │   │   ├── counter/         review / QR / scan / issue / return
 │   │   │   │   ├── administration/  users / cards / settings / reports
 │   │   │   │   └── audit/           proof / notification status
@@ -55,6 +56,7 @@ FYP Dev/
 │   │   ├── src/main/java/edu/upm/hsaas/
 │   │   │   ├── auth/                session / user policies
 │   │   │   ├── registration/        fields / consent / verification
+│   │   │   ├── registrationentry/   QR display/challenge/grant / expiry / revoke
 │   │   │   ├── card/                inventory / enrollment / lost cases
 │   │   │   ├── assignment/          issue / return / state transactions
 │   │   │   ├── reader/              devices / scan jobs / fencing
@@ -93,7 +95,7 @@ FYP Dev/
 │   │   ├── CONTEXT.md / adr/ / runbooks/
 │   │   ├── api/                     generated OpenAPI / ERD
 │   │   ├── uat/                     scenarios / SUS / approvals
-│   │   └── evidence/                per-requirement results + bindings
+│   │   └── evidence/                foundation 现有；modules/Mxx 的 handoff/questions/review 计划
 │   └── tests/                        [按阶段手动初始化] 跨模块 E2E / fixtures / performance
 │       └── CONTEXT.md
 └── .github/workflows/                [计划] 各模块 CI，默认不自动发链交易
@@ -102,6 +104,8 @@ FYP Dev/
 ## 边界和依赖方向
 
 `Implementation/` 是正式代码和实施证据边界，不在其中再次 `git init`。backend 按域分包，各域内采用 controller/DTO/service/repository（仅需要时创建），避免一个全局 controllers/services/entities 目录混合所有业务。HTTP controller 只负责请求、校验和 DTO；service 管规则/事务；repository 管持久化；外部 adapter 在事务外执行。
+
+每 module 独立 chat/feature branch/worktree；共享文件、migration 编号和 API 由 coordinator 登记与审核。最新用户要求模块助手直接编写有英文注释的代码，取消用户手写/guide方式；各模块开发许可仍一次申请。当前先完善现有 frontend/backend/infra；reader-agent、sui-worker、Move 延至 M08/M11，notification/audit_outbox 为后续启用目标。实际 Spring 包名 eduupm.hsaas，树中的 edu/upm/hsaas 是设计示例；已决定保留实际包名，不能按树重建。
 
 frontend -> backend API；reader-agent -> backend device API；backend -> MySQL/MRN/WhatsApp；sui-worker -> 受限 DB + Sui；Move 不读取 off-chain 数据。reader-agent 与 sui-worker 无直接运行时依赖；目录图中的虚线表示不同集成文档间导航。共用数据契约由 OpenAPI 和 audit schema 版本管理，不跨 Java/TS 共享业务实现代码。
 
@@ -125,4 +129,4 @@ frontend -> backend API；reader-agent -> backend device API；backend -> MySQL/
 
 稳定 references=主需求/架构/数据规范与模板；run products=图、测试收据、UAT 和每次变更记录。根 AGENTS 小于 60 行，只负责路由；PROJECT_MAP 给一阶修改影响。业务实现完成状态需扫描实际代码/test evidence，而不是看到“规划目录有文件”就标完成。
 
-2026-10-05 已删除 planning 的历史快照、v2 图和 v2 临时预览；当前入口与引用已同步。`Implementation/` 目录结构由开发者手动建立；空目录不代表功能实现。
+2026-10-05 已删除 planning 历史快照/v2 图。2026-10-08 更新当前范围/模块计划与动态 QR；v3 图保留完整长期设计，入口明确标待同步。现有骨架由用户手动建立；新业务目录按模块需要创建，空目录不代表实现。

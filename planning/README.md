@@ -1,43 +1,45 @@
 # HSAAS FYP 当前规划入口
 
-更新日期：2026-10-05。项目：QR-Based Hospital Visitor and Pass Management System with Blockchain Technology。
+更新日期：2026-10-08。当前 chat 为 project coordinator；每个模块使用独立 chat，完成后交回审核、本地 merge 与集成复验。M00–M04 已按用户最新明确请求创建独立 chat，仅做只读核对/契约准备；源码尚未实施，其他模块未开启。
 
-本轮已核对 proposal、最新实施指南和 UI v4，更新需求、架构、数据/API，并生成六张 Archify 图。当前为实施设计与静态原型；正式应用、真实硬件和外部接口尚未验收。
+每个 module 的 chat 和开发必须由用户手动开启和启动；coordinator/助手准备任务和开工条件，不代开、不自动启动下一模块。
+
+2026-10-08 用户要求 coordinator 代开 M00–M04 五个 chat，模型 gpt-6.1-sol / high；初始 Local 只读准备。最新又明确取消 guide/用户手写方式：获各模块一次开发许可后，由模块助手直接编写、测试、修复和交接，所有新写/修改代码有英文注释。其他模块不自动开启。实际登记见 12。
+
+最新沟通规则：模块主动把问题/交接发给 coordinator，coordinator 可回复；用户只审批每个 module 的开发许可，已批准范围内不逐步重复求授权。当前五个模块均未取得开发许可，技术答复不替代用户许可。具体协议与消息授权见 12。
+
+需要用户裁决的 conflict、需求不清或无法确定的选择，统一由 coordinator 在本 chat 整理选项后询问用户，再将决定发回模块。
+
+当前优先前端、基础 backend/MySQL、动态 QR 扫码登记。实体卡/reader 与医院病人 API 未准备，先以 synthetic simulation / MRN mock/manual 建立边界；WhatsApp 和 blockchain 默认 disabled，后续独立模块的契约与启动条件已保留。已有用户初始化的 frontend/backend/infra 骨架和 [P0 证据](../Implementation/docs/evidence/foundation/P0_REVIEW.md)，业务仍 NOT_RUN。
 
 ## 从这里进入
 
 | 任务 | 当前文件 |
 |---|---|
-| 浏览图与完整目录树 | [Archify v3 总入口](diagrams/v3/index.html) |
-| 系统组件 | [系统架构图](diagrams/v3/01-architecture.html) / [架构规范](02_TECHNICAL_ARCHITECTURE.md) |
-| 目录与修改影响 | [目录图](diagrams/v3/02-folder-structure.html) / [完整目录计划](09_FOLDER_STRUCTURE.md) / [ICM map](PROJECT_MAP.md) |
-| 登记、审核、发卡 | [工作流](diagrams/v3/03-registration-issue-workflow.html) |
-| 归还、逾期、遗失 | [工作流](diagrams/v3/04-return-overdue-workflow.html) |
-| NFC 扫描与事务 | [时序图](diagrams/v3/05-scan-issue-sequence.html) |
-| Sui 与单次消息 | [异步时序图](diagrams/v3/06-async-delivery-sequence.html) |
-| 需求和测试追溯 | [需求基线](03_REQUIREMENTS_AND_TEST_PLAN.md) |
-| 实体、约束、状态、endpoint | [数据/API 契约](04_DATA_MODEL_AND_API_PLAN.md) |
-| 本轮修订依据与待确认 | [基线评审](10_BASELINE_REVIEW.md) |
-| 三个月开发时间表 | [开发计划](01_DEVELOPMENT_PLAN.md) |
-| 手动初始化与环境检查 | [环境与初始化指南](11_ENVIRONMENT_AND_MANUAL_INITIALIZATION.md) |
-| 每阶段开启新 chat | [阶段 Chat 指南](12_THREE_MONTH_CHAT_PLAN.md) |
-| UI 交互和消息内容 | [UI v4 inventory](../output/ui-redesign-v4/README.md) |
-| 文本版图 | [生成的 Mermaid 语义镜像](08_MERMAID_DIAGRAMS.md) |
+| Coordinator、模块分配、依赖、答疑、审核/merge | [模块 Chat 协议](12_THREE_MONTH_CHAT_PLAN.md) |
+| 三个月当前范围与关卡 | [开发计划](01_DEVELOPMENT_PLAN.md) |
+| 动态 QR、启用/停用边界、安全与长期 adapter | [架构规范](02_TECHNICAL_ARCHITECTURE.md) |
+| 当前/deferred 需求及 QR 验收 | [需求基线](03_REQUIREMENTS_AND_TEST_PLAN.md) |
+| QR challenge/grant、schema、状态、API、迁移 | [数据/API 契约](04_DATA_MODEL_AND_API_PLAN.md) |
+| 目录 ownership 与修改影响 | [完整目录计划](09_FOLDER_STRUCTURE.md) / [PROJECT_MAP](PROJECT_MAP.md) |
+| 本次决策、实际状态与外部未决项 | [基线评审](10_BASELINE_REVIEW.md) |
+| 既有初始化步骤/环境快照 | [初始化参考](11_ENVIRONMENT_AND_MANUAL_INITIALIZATION.md)；先读 P0 证据，不重复初始化 |
+| 模块 handoff | [稳定模板](_templates/module-handoff.md)，实例在 Implementation/docs/evidence/modules/Mxx/ |
+| UI 外观、当前能力覆盖 | [UI v4 inventory](../output/ui-redesign-v4/README.md) / [当前 UI 规格覆盖](07_FIGMA_UI_SPEC.md) |
+| 风险与本地 Kanban 指南 | [风险](05_RISK_REGISTER.md) / [Kanban](06_TRELLO_BOARD_GUIDE.md) |
+| 长期完整架构/工作流图（尚待同步新范围） | [Archify v3 入口](diagrams/v3/index.html) / [文本镜像](08_MERMAID_DIAGRAMS.md) |
 
-## 事实归属
+## 事实归属与版本边界
 
-需求由 03 管理，架构由 02 管理，数据/API 由 04 管理，目录由 09 管理；导航与图通过链接/生成保持同步。角色、字段和单条消息冲突按 [来源优先级](10_BASELINE_REVIEW.md) 解释。根 [AGENTS.md](../AGENTS.md) 为小型路由；每个已纳入工作流的目录有 CONTEXT.md。
+需求由 03 管理，架构由 02 管理，数据/API 由 04 管理，目录由 09 管理，coordinator/模块协议由 12 管理。用户 2026-10-08 决定覆盖旧“每阶段一个 chat”、强制 P4 消息/上链与静态登记 QR 行为。UI v4 仍作外观/交互输入；它的 print/copy-static-URL、消息启用和真链成功画面不能作为当前实现默认。
 
-[开发计划](01_DEVELOPMENT_PLAN.md)、[风险](05_RISK_REGISTER.md)、[Kanban 指南](06_TRELLO_BOARD_GUIDE.md) 和 [Figma 规格](07_FIGMA_UI_SPEC.md) 均为当前规划。planning 内的历史快照、v2 图和临时 v2 预览已删除，只保留当前规范与 `diagrams/v3/` 交付图。
+v3 六张图保留完整长期集成设计，图源和视觉收据未重绘：**尚未包含动态 QR token/grant、coordinator 与 module chat、当前 disabled 策略**。修改新流程按 02/03/04/12；图的哈希/视觉通过仅证明旧 artifact 完整，不代表 2026-10-08 语义同步或业务测试通过。后续重绘按 diagrams/v3/CONTEXT.md 重新生成/验证/留证。
 
-外部 [Trello board](https://trello.com/b/XnospkpS/fyp-hsaas-visitor-pass-management-system) 是既有引用，本轮没有读取或更新 board，也没有向外发送消息。
+## 验证和外部边界
 
-## 复现和证据
+- python planning/verify_planning_v3.py：当前文件链接、需求 ID、旧图 artifact/收据完整性；业务测试仍 NOT_RUN。
+- 图编辑面是 diagrams/v3/*.archify.json；build_archify_v3.py --deliver 才更新六图，不直接改生成 HTML。
+- sync_mermaid.py 更新文本镜像；build_delivery_hub.py 更新导航、哈希与范围提示。
+- [旧图交付清单](diagrams/v3/delivery-manifest.json)、[人工截图评审](diagrams/v3/review-receipt.json)、[规划 QA](diagrams/v3/planning-qa.json)。
 
-- 图的编辑面为 `diagrams/v3/*.archify.json`；不要直接改交付 HTML。
-- `python planning/build_archify_v3.py` 验证六个图源；`--deliver` 才更新 HTML 和浏览器证据。
-- `python planning/sync_mermaid.py` 更新文本语义镜像；`python planning/build_delivery_hub.py` 更新导航与哈希清单。
-- `python planning/verify_planning_v3.py` 检查文件链接、需求 ID、artifact/收据绑定；业务测试仍 NOT_RUN。
-- [交付清单](diagrams/v3/delivery-manifest.json)、[人工截图评审](diagrams/v3/review-receipt.json)、[规划 QA](diagrams/v3/planning-qa.json)、[skill 安装记录](skill-installation.json)。
-
-下一步由开发者在 `Implementation/` 内按 11 手动初始化；之后按 12 为每个阶段开一个新 chat。真实 MRN、WhatsApp、reader 或医院数据的完成状态需实测证据；不以 mock 替代。
+本轮不更新外部 [Trello board](https://trello.com/b/XnospkpS/fyp-hsaas-visitor-pass-management-system) 或 Figma。M00–M04 已创建并收到各自只读准备任务；下一步由用户在 M00 chat 继续，先审查现有骨架和契约，不重建项目；模块交接后由 coordinator 审核合并。

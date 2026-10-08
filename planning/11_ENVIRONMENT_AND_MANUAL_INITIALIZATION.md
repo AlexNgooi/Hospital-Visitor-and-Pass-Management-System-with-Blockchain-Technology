@@ -1,9 +1,11 @@
 ---
 type: manual-initialization-guide
-updated: 2026-10-05
+updated: 2026-10-08
 status: user-executed
 ---
 # 环境检查与手动初始化指南
+
+> 2026-10-08：下列环境表是 2026-10-05 初始化前快照，不是当前状态。已有 frontend/backend、infra、Git commit；P0 技术关卡补齐，准确证据见 [P0_REVIEW](../Implementation/docs/evidence/foundation/P0_REVIEW.md)。不要重复初始化/安装或用旧的“零 commit”判断当前环境。下次按 [12](12_THREE_MONTH_CHAT_PLAN.md) 启动 M00 独立模块 chat；本 chat 为 coordinator。此处工具版本是原检查记录，开发时再核对锁定值。
 
 本文件只给操作步骤；Codex 不初始化应用、创建 Implementation 模块或安装工具，目录结构由开发者手动管理。检查发生在 Windows PowerShell 7.6.5、`C:\Users\alexy\Documents\FYP Dev`。
 
@@ -23,7 +25,7 @@ status: user-executed
 | WSL | 只有 `docker-desktop`，没有 Ubuntu 开发发行版 | 若采用 `suiup`，先装 Ubuntu WSL；也可按官方 Windows Chocolatey 路径 |
 | 磁盘 | C 盘约 207.5 GiB 可用 | 足够当前开发 |
 
-结论：**可以开始 P0 手动初始化和 P1 的 Web/数据库开发**。目前不能直接执行 Move/Sui CLI 测试；这不会阻止前三个阶段，但必须在 P4 前解决。
+原检查结论是可开始 P0/P1。当前 P0 已补齐；Sui/Move deferred 至 M11 启动前，不再要求 P4 安装或验证，不阻止当前 Web/数据库/动态 QR 开发。
 
 ## 0. 先建立可回滚基线
 
@@ -108,7 +110,7 @@ Implementation/
 └── docs/evidence/foundation/    P0/P1 命令和测试收据
 ```
 
-`Implementation/reader-agent/` 在 P1 硬件 spike 开始时创建，`Implementation/sui-worker/` 与 `Implementation/move/` 在 P4 开始时创建。不要在 `Implementation/` 内再次执行 `git init`，也不要预建空的 `controller/service/repository` 树；按业务域在有第一份真实代码时创建。完整目标结构见 [09_FOLDER_STRUCTURE.md](09_FOLDER_STRUCTURE.md)。
+`Implementation/reader-agent/` 在 M08 硬件条件到位后创建，`Implementation/sui-worker/` 与 `Implementation/move/` 在 M11 启动时创建。不要在 `Implementation/` 内再次执行 `git init`，也不要预建空的 `controller/service/repository` 树；按业务域在有第一份真实代码时创建。完整目标结构见 [09_FOLDER_STRUCTURE.md](09_FOLDER_STRUCTURE.md)。
 
 每个 `CONTEXT.md` 只写五项：输入规范、单一职责、输出、验证命令、人工检查。
 
@@ -141,7 +143,7 @@ Set-Location ..\backend; .\mvnw.cmd test
 
 P0 的完成证据要保存命令、时间、exit code 与必要摘要，不保存 `.env`、cookie、密码、私钥或真实 PII。
 
-## 6. P4 前安装 Sui
+## 6. M11 启动前的 Sui 安装参考（当前不执行）
 
 官方当前推荐 `suiup` 并用 `suiup install sui@testnet` 安装与 Testnet 匹配的工具链。Windows 也支持 `choco install sui`，但官方说明 `suiup` 更适合版本切换。当前机器已有 Chocolatey，但没有一般用途的 WSL Ubuntu；选择一种路线即可，不要同时维护多个 Sui 安装。
 
@@ -152,4 +154,4 @@ P0 的完成证据要保存命令、时间、exit code 与必要摘要，不保�
 
 ## 初始化停止点
 
-当 frontend build、backend Wrapper test、MySQL 连接、首次 Git commit 都成功后停止继续加业务代码。接着按 [12_THREE_MONTH_CHAT_PLAN.md](12_THREE_MONTH_CHAT_PLAN.md) 启动 Chat 01，让新 chat 先验证你手动创建的结构。
+P0 已有检查证据；M00–M04 已按用户明确要求代开，实际状态见 [12](12_THREE_MONTH_CHAT_PLAN.md)。最新开发方式取消用户手写：各模块一次获开发许可后，由模块助手直接实现有英文注释的源码与测试，不再重复初始化。此文件原手动初始化步骤/旧版本表仍是历史参考，不能当作当前实施证据。

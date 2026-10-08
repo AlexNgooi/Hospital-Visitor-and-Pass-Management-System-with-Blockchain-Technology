@@ -1,5 +1,7 @@
 # Trello Board Guide
 
+> 2026-10-08：本文件只指导本地任务组织，本轮未读取/修改外部 board。模块 ID 与 ownership 以 [12](12_THREE_MONTH_CHAT_PLAN.md) 为准；一个模块一个 chat，coordinator 审核/本地 merge。卡片增加 Module ID、chat、branch/worktree、baseline/head、Current/Deferred、handoff、review、merge SHA。当前 Done 须已集成验证；消息/链 deferred 放 Backlog，不靠日期自动移入 In Progress。
+
 Live board: https://trello.com/b/XnospkpS/fyp-hsaas-visitor-pass-management-system
 
 ## 1. Lists from left to right

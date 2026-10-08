@@ -1,6 +1,20 @@
 # HSAAS / UPM Hospital Figma UI Specification
 
-> 2026-10-05 当前版：需求、架构和数据/API 以 [规划入口](README.md) 的 02/03/04 为准；UI 交互以 output/ui-redesign-v4/README.md 为准。
+> 2026-10-08 当前覆盖：需求、架构和数据/API 以 02/03/04 为准；UI v4 是外观输入，以下能力改变覆盖其旧画面，未重新生成图片或写入 Figma。
+
+## 当前能力覆盖
+
+- 柜台 S03（UI v4 的编号）/旧 S06 QR 页面显示真正轮换的 entry QR、counter/category、server 倒计时、过期/断网/刷新/撤销状态；保留 fullscreen，取消 static print/copy-fixed-URL 作为登记入口。详见 03 R01/R06。
+- 访客成功 exchange 后进入独立限时表单；自然 QR 换码不丢填写内容，grant 过期/显式撤销提示重扫码。二维码轮换不能替代 staff 身份核实。
+- 当前成功页仅交付文字 public reference，旧图的 receipt/pass QR 不实现成静态码；将来新增此类 QR 仍必须动态且先定义独立权限契约。
+- U01 已确认职员登录为 Username / Staff account，不强制邮箱；旧 UI 的 Email 标签由当前规则覆盖。
+- U02 已确认同一匿名会话保留单份表单：再次扫码不同入口先显示重新开始确认，取消保留内容，确认后撤销旧 grant 并开始新表单。旧标签页显示原表单已失效，不悄悄切换柜台/类别。
+- U03 已确认 synthetic Penjaga 由职员模拟人工核实后才可批准，mock 成功状态不显示“患者已核实”，模拟人工核实与真实模式明确区分。
+- WhatsApp 当前显示“未启用”，隐藏发送 opt-in 与 resend；不会生成模拟送达成功提示。将来启用再按一条组合消息规则采集同意。
+- Sui proof 页当前显示“未启用”，本地 audit 可用；Verify/Retry 不可操作，不用示例 Match/Pending 冒充运行结果。
+- 卡 inventory、issue/return 在 synthetic demo/test 显示 SIMULATED/模拟交付；真实 reader 未准备显示未连接/未启用，生产不提供模拟 bypass。MRN mock/manual 来源明确，无 patient API 已验证假象。
+
+上述是行为/范围计划，不是新的 UI 实现或视觉验收。
 
 ## Latest image-review revision — 24 September 2026
 
@@ -30,7 +44,7 @@ The image-first redesign and updated screen inventory are in [UI v4](../output/u
    - MRN may be verified or sent for manual verification; failure must not discard the form.
    - Explicit privacy copy: personal and patient data are never sent to blockchain.
 3. `V03 Submission success` — 390 × 844
-   - Non-sensitive public reference and QR only.
+   - Current version: non-sensitive public reference as text; no static receipt QR.
    - Waiting-for-verification badge, counter instructions and save-reference action.
 
 ### Counter staff desktop
@@ -50,8 +64,8 @@ Desktop frames are 1440 × 1024 with 248 px sidebar, 72 px top bar and 32 px con
    - Active/overdue/history tabs, overdue table and record-return flow.
 9. `S06 Display visitor registration QR`
    - Dashboard quick action and dedicated sidebar entry.
-   - shadcn Dialog with a large QR, registration type, counter/location, print and full-screen actions.
-   - QR encodes only the public visitor-registration URL; no visitor, IC, phone, MRN or patient data.
+   - Dialog with rotating QR, type, counter/location, countdown, refresh/expired/offline states and full-screen; no static print fallback.
+   - QR encodes the registration URL with a short-lived non-PII entry token; server expiry/grant enforcement is required.
 
 ### Administrator desktop
 

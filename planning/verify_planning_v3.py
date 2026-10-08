@@ -10,6 +10,8 @@ PLANNING=ROOT/'planning'
 issues=[]
 paths=[ROOT/'AGENTS.md',ROOT/'CONTEXT.md',PLANNING/'README.md',PLANNING/'CONTEXT.md',PLANNING/'PROJECT_MAP.md']
 paths += list(PLANNING.glob('[01][0-9]_*.md'))
+paths += list((PLANNING/'_templates').glob('*.md'))
+paths += [ROOT/'Implementation/CONTEXT.md',ROOT/'Implementation/docs/CONTEXT.md',PLANNING/'diagrams/v3/CONTEXT.md']
 links=0
 for p in paths:
     for target in re.findall(r'\]\(([^)]+)\)',p.read_text(encoding='utf-8')):
@@ -36,7 +38,7 @@ for d in manifest['diagrams']:
     r=next(x for x in review['diagrams'] if x['name']==name)
     if r['artifact_sha256']!=d['artifact_sha256']: issues.append(f'Stale visual review: {name}')
     if r['visual_review']!='passed': issues.append(f'Visual review not passed: {name}')
-result={'status':'pass' if not issues else 'fail','local_links_checked':links,'functional_requirements':len(ids),'trusted_diagrams':len(manifest['diagrams']),'root_catalog_lines':len((ROOT/'AGENTS.md').read_text(encoding='utf-8').splitlines()),'business_tests':'NOT_RUN (planning workspace)','issues':issues}
+result={'status':'pass' if not issues else 'fail','local_links_checked':links,'functional_requirements':len(ids),'artifact_verified_diagrams':len(manifest['diagrams']),'diagram_semantics':'PENDING_SYNC: dynamic QR, coordinator/module chats, disabled integration modes (2026-10-08)','root_catalog_lines':len((ROOT/'AGENTS.md').read_text(encoding='utf-8').splitlines()),'business_tests':'NOT_RUN (planning update; initialized skeleton only)','issues':issues}
 (PLANNING/'diagrams/v3/planning-qa.json').write_text(json.dumps(result,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
 print(json.dumps(result,ensure_ascii=True))
 raise SystemExit(1 if issues else 0)

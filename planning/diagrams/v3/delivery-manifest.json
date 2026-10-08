@@ -1,6 +1,8 @@
 {
   "revision": "current",
-  "date": "2026-10-05",
+  "date": "2026-10-08",
+  "artifact_delivery_date": "2026-10-05",
+  "semantic_status": "PENDING_SYNC: dynamic QR, coordinator/module chats, disabled integrations",
   "diagrams": [
     {
       "name": "01-architecture",
