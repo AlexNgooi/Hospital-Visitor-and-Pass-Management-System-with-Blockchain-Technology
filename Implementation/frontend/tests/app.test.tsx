@@ -1,0 +1,305 @@
+import { describe, expect, it, vi } from "vitest";
+import {
+  act,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+} from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+import { MemoryRouter } from "react-router-dom";
+import axe from "axe-core";
+import App from "../src/App";
+import type { AuthPort } from "../src/lib/auth";
+import type { Role, SessionUser } from "../src/lib/contracts";
+import { ClientError } from "../src/lib/errors";
+import {
+  RestartConfirmation,
+  StatusPanel,
+} from "../src/components/ui/primitives";
+
+// Mock injection exists only here; production entry imports the real auth port.
+function fixture(role: Role = "COUNTER_STAFF"): SessionUser {
+  return {
+    id: "1",
+    login: "synthetic_staff",
+    role,
+    counterIds: role === "ADMIN" ? [] : ["01", "02"],
+  };
+}
+function anonymous(): ClientError {
+  return new ClientError("api", {
+    timestamp: "test",
+    status: 401,
+    code: "AUTHENTICATION_REQUIRED",
+    message: "",
+    correlationId: "test",
+    fieldErrors: [],
+  });
+}
+function mockPort(role?: Role) {
+  let expired = () => {};
+  const port: AuthPort = {
+    me: vi.fn().mockImplementation(async () => {
+      if (!role) throw anonymous();
+      return fixture(role);
+    }),
+    login: vi.fn().mockResolvedValue(fixture()),
+    logout: vi.fn().mockResolvedValue(undefined),
+    onExpired: (listener) => {
+      expired = listener;
+      return () => {};
+    },
+  };
+  return { port, expire: () => expired() };
+}
+function mount(
+  path: string,
+  port: AuthPort,
+  features: Parameters<typeof App>[0]["features"] = [],
+) {
+  return render(
+    <MemoryRouter initialEntries={[path]}>
+      <App auth={port} features={features} />
+    </MemoryRouter>,
+  );
+}
+
+describe("shell auth and role interactions", () => {
+  it("validates linked error summary and focuses it without making an auth request", async () => {
+    const { port } = mockPort();
+    mount("/login", port);
+    await screen.findByLabelText("Username / Staff account");
+    const user = userEvent.setup();
+    await user.click(screen.getByRole("button", { name: "Sign in" }));
+    expect(port.login).not.toHaveBeenCalled();
+    const summary = screen.getByRole("alert");
+    expect(document.activeElement).toBe(summary);
+    await user.click(screen.getByRole("link", { name: /Use 3–64/ }));
+    expect(document.activeElement).toBe(
+      screen.getByLabelText("Username / Staff account"),
+    );
+    expect(screen.getByLabelText("Password").getAttribute("aria-invalid")).toBe(
+      "true",
+    );
+  });
+  it("signs in using username (not email), preserves password bytes and navigates to role workspace", async () => {
+    const { port } = mockPort();
+    mount("/login", port);
+    const user = userEvent.setup();
+    await user.type(
+      screen.getByLabelText("Username / Staff account"),
+      " STAFF_01 ",
+    );
+    await user.type(screen.getByLabelText("Password"), " synthetic password ");
+    await user.click(screen.getByRole("button", { name: "Show password" }));
+    expect(screen.getByLabelText("Password").getAttribute("type")).toBe("text");
+    await user.click(screen.getByRole("button", { name: "Sign in" }));
+    await screen.findByRole("heading", { name: "Your workspace, ready." });
+    expect(port.login).toHaveBeenCalledWith("staff_01", " synthetic password ");
+    expect(
+      screen.getByRole("combobox", { name: "Counter access" }).children,
+    ).toHaveLength(2);
+  });
+  it("clears password after a failed login and uses safe failure copy", async () => {
+    const { port } = mockPort();
+    vi.mocked(port.login).mockRejectedValue(new ClientError("network"));
+    mount("/login", port);
+    const user = userEvent.setup();
+    await user.type(
+      screen.getByLabelText("Username / Staff account"),
+      "staff_01",
+    );
+    await user.type(screen.getByLabelText("Password"), "synthetic");
+    await user.click(screen.getByRole("button", { name: "Sign in" }));
+    await screen.findByText(/Unable to connect/);
+    expect((screen.getByLabelText("Password") as HTMLInputElement).value).toBe(
+      "",
+    );
+    expect(
+      screen.getByRole("button", { name: "Check current session" }),
+    ).toBeTruthy();
+  });
+  it("denies ADMIN entry to staff routes and never shows review navigation", async () => {
+    const { port } = mockPort("ADMIN");
+    mount("/staff/registrations", port);
+    await screen.findByRole("heading", { name: "Access restricted" });
+    expect(
+      screen.queryByRole("navigation", { name: "Counter navigation" }),
+    ).toBeNull();
+  });
+  it("shows ADMIN-only navigation without granting counter permissions", async () => {
+    const { port } = mockPort("ADMIN");
+    mount("/admin", port);
+    await screen.findByRole("heading", { name: "Your workspace, ready." });
+    expect(
+      screen.getByRole("navigation", { name: "Administrator navigation" }),
+    ).toBeTruthy();
+    expect(screen.queryByLabelText("Counter access")).toBeNull();
+    expect(
+      screen.queryByRole("link", { name: "Registration review" }),
+    ).toBeNull();
+  });
+  it("renders loading, retryable error and unauthenticated states distinctly", async () => {
+    const { port } = mockPort();
+    let fail!: (error: unknown) => void;
+    vi.mocked(port.me).mockImplementationOnce(
+      () =>
+        new Promise((_resolve, reject) => {
+          fail = reject;
+        }),
+    );
+    mount("/staff", port);
+    expect(
+      screen.getByRole("heading", { name: "Checking your session" }),
+    ).toBeTruthy();
+    await act(async () => fail(new ClientError("network")));
+    expect(
+      screen.getByRole("heading", { name: "Unable to check your session" }),
+    ).toBeTruthy();
+    await userEvent
+      .setup()
+      .click(screen.getByRole("button", { name: "Retry" }));
+    await screen.findByRole("heading", { name: "Welcome back" });
+  });
+  it("expires a protected session, removes sensitive feature content and returns to sign in", async () => {
+    const { port, expire } = mockPort("COUNTER_STAFF");
+    mount("/staff/registrations", port, [
+      {
+        path: "/staff/registrations",
+        label: "Registration review",
+        role: "COUNTER_STAFF",
+        element: <p>synthetic protected record</p>,
+      },
+    ]);
+    await screen.findByText("synthetic protected record");
+    act(() => expire());
+    await screen.findByText("Your session has ended. Sign in again.");
+    expect(screen.queryByText("synthetic protected record")).toBeNull();
+  });
+  it("fences delayed login completion after session invalidation", async () => {
+    const { port, expire } = mockPort();
+    let finish!: (user: SessionUser) => void;
+    vi.mocked(port.login).mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          finish = resolve;
+        }),
+    );
+    mount("/login", port);
+    await waitFor(() => expect(vi.mocked(port.me)).toHaveBeenCalled());
+    const user = userEvent.setup();
+    await user.type(
+      screen.getByLabelText("Username / Staff account"),
+      "staff_01",
+    );
+    await user.type(screen.getByLabelText("Password"), "synthetic");
+    await user.click(screen.getByRole("button", { name: "Sign in" }));
+    act(() => expire());
+    await act(async () => finish(fixture()));
+    expect(
+      screen.queryByRole("heading", { name: "Your workspace, ready." }),
+    ).toBeNull();
+  });
+  it("signs out and unmounts protected shell", async () => {
+    const { port } = mockPort("COUNTER_STAFF");
+    mount("/staff", port);
+    await screen.findByRole("heading", { name: "Your workspace, ready." });
+    await userEvent
+      .setup()
+      .click(screen.getByRole("button", { name: "Sign out" }));
+    await screen.findByRole("heading", { name: "Welcome back" });
+    expect(port.logout).toHaveBeenCalledTimes(1);
+    expect(
+      screen.queryByRole("navigation", { name: "Counter navigation" }),
+    ).toBeNull();
+  });
+  it("opens mobile navigation, closes on Escape and restores trigger focus", async () => {
+    const { port } = mockPort("COUNTER_STAFF");
+    mount("/staff", port);
+    await screen.findByRole("heading", { name: "Your workspace, ready." });
+    const user = userEvent.setup();
+    const trigger = screen.getByRole("button", { name: "Open navigation" });
+    await user.click(trigger);
+    expect(
+      screen.getByRole("dialog", { name: "Workspace navigation" }),
+    ).toBeTruthy();
+    await user.keyboard("{Escape}");
+    await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
+    expect(document.activeElement).toBe(trigger);
+  });
+  it("keeps public registration BM-first without a staff login/grant bypass", async () => {
+    const { port } = mockPort();
+    mount("/register", port);
+    expect(
+      screen.getByRole("heading", { name: "Pendaftaran pelawat" }),
+    ).toBeTruthy();
+    expect(document.documentElement.lang).toBe("ms");
+    expect(screen.queryByRole("button", { name: "Sign in" })).toBeNull();
+    expect(screen.queryByText(/Pass ID/)).toBeNull();
+  });
+  it("offers empty state for unconnected features rather than fake queue metrics", async () => {
+    mount("/staff/registrations", mockPort("COUNTER_STAFF").port);
+    await screen.findByRole("heading", {
+      name: "This module is not connected",
+    });
+    expect(screen.queryByText("Awaiting review 12")).toBeNull();
+  });
+  it("passes automated structural accessibility for login (contrast requires real browser)", async () => {
+    mount("/login", mockPort().port);
+    await waitFor(() =>
+      expect(
+        screen.getByRole("heading", { name: "Welcome back" }),
+      ).toBeTruthy(),
+    );
+    const report = await axe.run(document.body, {
+      rules: { "color-contrast": { enabled: false } },
+    });
+    expect(report.violations.map((violation) => violation.id)).toEqual([]);
+  });
+});
+
+describe("shared status and restart dialog", () => {
+  it("labels loading and error states independently of colour", () => {
+    const { rerender } = render(
+      <StatusPanel kind="loading" title="Loading registrations" />,
+    );
+    expect(screen.getByRole("status").getAttribute("aria-busy")).toBe("true");
+    rerender(<StatusPanel kind="error" title="Unable to load registrations" />);
+    expect(screen.getByRole("alert")).toBeTruthy();
+  });
+  it("focuses cancellation and waits for explicit confirmation; busy cannot dismiss", async () => {
+    const cancel = vi.fn(),
+      confirm = vi.fn();
+    const { rerender } = render(
+      <RestartConfirmation
+        open
+        currentLabel="Kaunter lama"
+        requestedLabel="Kaunter baharu"
+        onCancel={cancel}
+        onConfirm={confirm}
+      />,
+    );
+    await waitFor(() =>
+      expect(document.activeElement).toBe(
+        screen.getByRole("button", { name: "Kekalkan borang" }),
+      ),
+    );
+    await userEvent
+      .setup()
+      .click(screen.getByRole("button", { name: "Mulakan semula" }));
+    expect(confirm).toHaveBeenCalledTimes(1);
+    rerender(
+      <RestartConfirmation
+        open
+        busy
+        currentLabel="Kaunter lama"
+        requestedLabel="Kaunter baharu"
+        onCancel={cancel}
+        onConfirm={confirm}
+      />,
+    );
+    fireEvent.keyDown(screen.getByRole("dialog"), { key: "Escape" });
+    expect(cancel).not.toHaveBeenCalled();
+  });
+});
