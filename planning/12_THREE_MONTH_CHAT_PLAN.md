@@ -2,7 +2,7 @@
 type: module-chat-coordination
 updated: 2026-10-09
 window: 2026-10-08..2027-01-03
-status: m00-m01-local-integration-verified
+status: m02-development-authorized
 ---
 # Coordinator 与每模块独立 Chat 执行指南
 
@@ -29,6 +29,12 @@ status: m00-m01-local-integration-verified
 - 执行下节最新直接实现方式；[P0 记录](../Implementation/docs/evidence/foundation/P0_REVIEW.md) 仅为历史证据，其用户手写限制已被最新明确请求覆盖。
 
 ## 最新开发方式：模块直接编写代码
+
+### M02 开发许可（2026-10-09）
+
+人类用户在 coordinator chat 明确要求“开启m02”。M00/M01 当前本地基础与真实 C01 已验收，该请求授予 M02 Dynamic Registration QR 一次开发许可；coordinator 固定最新规划基线并隔离原模块 chat，再派发直接实施任务，M02 不重复求许可。范围为真正轮换的 QR/display/challenge/exchange/grant、单份表单上下文/CAS、对应前后端和隔离测试；所有新写/修改代码有英文注释。M03/M04 的表单/审核业务不随之启动，WhatsApp/blockchain 保持 disabled。
+
+启动现有系统时发现 native 开发库旧 V1 CHECKSUM_MISMATCH，前端已运行，后端数据库选择仍待人类答复；这个运行环境问题不阻塞 M02 使用新建临时 MySQL/Testcontainers 实施。M02 不读取/复制 .env、不修改该旧库、不调用真实bootstrap。V1–V3 已冻结，coordinator 将 V4 migration 名额保留给 M02 的 QR/entry 表，具体DDL由 M02交回审核；M03未来registration FK/schema另行登记，不提前创建其聚合。
 
 ### M00/M01 开发许可（2026-10-08）
 
@@ -94,7 +100,7 @@ M00–M04 已创建并完成准备核对；M00/M01 已隔离并派发直接实�
 |---|---|---|---|---|
 | M00 | INTEGRATION_VERIFIED（当前本地基础/C01范围）；HTTPS/业务后续验收 | 01a11bcf-a53d-7323-a74e-edffa8092c50 / 模块助手直接实现 | c2b0c316；codex/hsaas-m00-foundation；ced2/FYP Dev | 基础merge a137acd；40tests PASS；真实28wire联调 PASS；gpt-6.1-sol/high |
 | M01 | INTEGRATION_VERIFIED（当前本地UI/C01范围）；HTTPS/后续业务未验收 | 01a11bcf-e448-7be0-88c1-f7910300e82e / 模块助手直接实现 | 基础c2b0c316；联调03fda7f；codex/hsaas-m01-frontend-shell；4156/FYP Dev | 基础merge014d030；联调delivery58b738a/merge e8ca80a；68tests+16隔离+真实28wire PASS；gpt-6.1-sol/high |
-| M02 | READY；M00/M01基础已通过，等待用户一次开发许可 | 01a11ba4-e2bd-74a3-beee-1f47860bfc01 / 模块助手直接实现 | 准备chat仍Local；启动时固定最新main并建立隔离 | 未实施；gpt-6.1-sol/high |
+| M02 | READY；用户已批准开发，隔离后派发 | 01a11ba4-e2bd-74a3-beee-1f47860bfc01 / 模块助手直接实现 | coordinator 固定最新main并建立隔离 | 尚未实施；V4保留给M02；gpt-6.1-sol/high |
 | M03 | PLANNED；一次开发许可待答，接入依赖 M00/M01/M02 | 01a11ba4-e814-7832-bd40-f471edf417b4 / 模块助手直接实现 | Local/main；HEAD b005823；规划未提交；实施隔离待建立 | 无；gpt-6.1-sol/high |
 | M04 | PLANNED；一次开发许可待答，依赖 M03 | 01a11ba4-ecca-7ca3-a224-c3dde42d1edd / 模块助手直接实现 | Local/main；HEAD b005823；规划未提交；实施隔离待建立 | 无；gpt-6.1-sol/high |
 | M05 | PLANNED | 未创建 / 未派工 | 待登记 | 无 |
@@ -137,4 +143,4 @@ coordinator 记录答复/decision ID、影响规范与 owner，通过 send_messa
 
 ## 下一项具体计划
 
-M00/M01 当前本地范围已完成开发、返修、审核、合并与真实 C01 联调。backend40、frontend68、隔离16与真实28wire检查通过；M00 OpenAPI镜像/生成类型已落地。生产HTTPS/完整业务图仍需其所属关卡验收。M02 开发所需基础依赖现已满足，下一项为真正轮换的动态 QR/challenge/grant；仍等待用户明确启动 M02，不会因依赖通过自动开工。M03/M04 与后续模块同样保持各自许可和依赖关卡。未来多模块 OpenAPI 汇总由 coordinator 协调，原 M00 spec 不被下游修改。
+M00/M01 当前本地范围已验收，M02 已获用户明确启动许可。coordinator 固定新基线、隔离后派发真正轮换的动态 QR/challenge/grant 实施；模块直接写代码/测试/交接。生产HTTPS/完整业务图仍需其所属关卡验收。M03/M04 与后续模块不自动启动，保持各自许可和依赖。未来多模块 OpenAPI 汇总由 coordinator 协调，原 M00 spec 不被下游修改。

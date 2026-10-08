@@ -1,12 +1,12 @@
 # HSAAS FYP 当前规划入口
 
-更新日期：2026-10-09。当前 chat 为 project coordinator；每个模块使用独立 chat，完成后交回审核、本地 merge 与集成复验。M00/M01 当前本地基础/UI/C01范围已开发、审核、合并并完成真实联调；M02–M04 已准备但未获开发许可，其他模块未开启。
+更新日期：2026-10-09。当前 chat 为 project coordinator；每个模块使用独立 chat，完成后交回审核、本地 merge 与集成复验。M00/M01 当前本地范围已验收，用户已明确启动 M02 动态 QR；M03/M04 仍待开发许可，其他模块未开启。
 
 每个 module 的 chat 和开发必须由用户手动开启和启动；coordinator/助手准备任务和开工条件，不代开、不自动启动下一模块。
 
 2026-10-08 用户要求 coordinator 代开 M00–M04 五个 chat，模型 gpt-6.1-sol / high；初始 Local 只读准备。最新又明确取消 guide/用户手写方式：获各模块一次开发许可后，由模块助手直接编写、测试、修复和交接，所有新写/修改代码有英文注释。其他模块不自动开启。实际登记见 12。
 
-最新沟通规则：模块主动把问题/交接发给 coordinator，coordinator 可回复；用户只审批每个 module 的开发许可，已批准范围内不逐步重复求授权。M00/M01 已获用户许可并完成基础交接，M02–M04 仍未获开发许可；技术答复不替代用户许可。具体协议与消息授权见 12。
+最新沟通规则：模块主动把问题/交接发给 coordinator，coordinator 可回复；用户只审批每个 module 的开发许可，已批准范围内不逐步重复求授权。M00/M01 已验收，M02 已获许可，M03/M04 仍未获开发许可；技术答复不替代用户许可。具体协议与消息授权见12。
 
 需要用户裁决的 conflict、需求不清或无法确定的选择，统一由 coordinator 在本 chat 整理选项后询问用户，再将决定发回模块。
 
@@ -42,4 +42,4 @@ v3 六张图保留完整长期集成设计，图源和视觉收据未重绘：**
 - sync_mermaid.py 更新文本镜像；build_delivery_hub.py 更新导航、哈希与范围提示。
 - [旧图交付清单](diagrams/v3/delivery-manifest.json)、[人工截图评审](diagrams/v3/review-receipt.json)、[规划 QA](diagrams/v3/planning-qa.json)。
 
-本轮不更新外部 [Trello board](https://trello.com/b/XnospkpS/fyp-hsaas-visitor-pass-management-system) 或 Figma。M00/M01 已完成当前本地验收与类型生成；M02 的基础依赖已满足，等待用户许可，M03/M04 同样不自动启动。模块交接后仍由 coordinator 审核合并。
+本轮不更新外部 [Trello board](https://trello.com/b/XnospkpS/fyp-hsaas-visitor-pass-management-system) 或 Figma。M00/M01 已完成当前本地验收与类型生成，M02 按用户明确指令隔离后开工，M03/M04 不自动启动。模块交接后仍由 coordinator 审核合并。
