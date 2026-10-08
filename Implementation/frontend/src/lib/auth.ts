@@ -13,24 +13,42 @@ export interface AuthPort {
 /** Auth/CSRF deliberately use no business idempotency key and never auto-replay. */
 export function createAuthPort(client: ApiClient): AuthPort {
   return {
-    me: (signal) => client.get("/api/auth/me", sessionSchema, { signal }),
+    async me(signal) {
+      try {
+        return await client.get("/api/auth/me", sessionSchema, { signal });
+      } catch (error) {
+        // A confirmed absent/revoked session cannot keep CSRF from its previous framework identity.
+        if (error instanceof ClientError && error.status === 401)
+          client.invalidateCsrf();
+        throw error;
+      }
+    },
     async login(input, password) {
       const login = canonicalLogin(input);
       if (!login || !password) throw new Error("Invalid login input.");
       await client.bootstrapCsrf();
-      const user = await client.post(
-        "/api/auth/login",
-        { login, password },
-        sessionSchema,
-      );
-      client.invalidateCsrf();
+      let user: SessionUser;
+      try {
+        user = await client.post(
+          "/api/auth/login",
+          { login, password },
+          sessionSchema,
+        );
+      } finally {
+        // Even UNKNOWN may have rotated the server session; only a later explicit action reboots CSRF.
+        client.invalidateCsrf();
+      }
       // Bootstrap failure does not replay login. A later me retry checks committed identity.
       await client.bootstrapCsrf();
       return user;
     },
     async logout() {
-      await client.post("/api/auth/logout", {});
-      client.invalidateCsrf();
+      try {
+        await client.post("/api/auth/logout", {});
+      } finally {
+        // Revocation can commit before a 503/delete failure: never reuse pre-logout CSRF afterwards.
+        client.invalidateCsrf();
+      }
       // Logout has committed; CSRF unavailability must not resurrect the signed-out UI.
       try {
         await client.bootstrapCsrf();

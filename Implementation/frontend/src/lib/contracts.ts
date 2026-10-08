@@ -1,6 +1,7 @@
 import { z } from "zod";
+import type { components } from "../generated/api";
 
-/** Frozen C01 wire IDs stay opaque strings; Java long IDs must never round in JS. */
+/** Frozen C01 wire IDs stay opaque strings; generated-shape checks never replace runtime validation. */
 export const roleSchema = z.enum(["COUNTER_STAFF", "ADMIN"]);
 export type Role = z.infer<typeof roleSchema>;
 export const sessionSchema = z.object({
@@ -8,13 +9,13 @@ export const sessionSchema = z.object({
   login: z.string().regex(/^[a-z0-9][a-z0-9._-]{2,63}$/),
   role: roleSchema,
   counterIds: z.array(z.string().min(1).max(64)),
-});
+}) satisfies z.ZodType<components["schemas"]["Me"]>;
 export type SessionUser = z.infer<typeof sessionSchema>;
 export const csrfSchema = z.object({
   // Restrict token metadata to a dedicated header, never Cookie/Authorization.
   headerName: z.literal("X-CSRF-TOKEN"),
   token: z.string().min(1).max(4096),
-});
+}) satisfies z.ZodType<components["schemas"]["CsrfBootstrap"]>;
 
 /** Only known structural fields survive parsing; raw inputs/details are discarded. */
 export const errorSchema = z.object({
@@ -32,7 +33,7 @@ export const errorSchema = z.object({
       }),
     )
     .max(100),
-});
+}) satisfies z.ZodType<components["schemas"]["Error"]>;
 export interface FormContext {
   grantReference: string;
   bindingVersion: number;

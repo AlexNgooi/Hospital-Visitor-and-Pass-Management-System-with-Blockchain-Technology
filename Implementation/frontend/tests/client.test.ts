@@ -94,6 +94,60 @@ describe("frozen transport boundaries", () => {
       new Headers(fetcher.mock.calls[1][1]?.headers).has("Idempotency-Key"),
     ).toBe(false);
   });
+  it.each([
+    ["login", "network"],
+    ["login", "service"],
+    ["logout", "network"],
+    ["logout", "service"],
+  ])(
+    "discards CSRF after unknown %s / %s without replay",
+    async (action, failure) => {
+      // A real logout may revoke before returning 503; the next explicit action needs a new binding/token.
+      const fetcher = vi.fn<typeof fetch>().mockResolvedValueOnce(json(csrf));
+      if (failure === "network")
+        fetcher.mockRejectedValueOnce(
+          new TypeError("synthetic transport failure"),
+        );
+      else fetcher.mockResolvedValueOnce(apiError("SERVICE_UNAVAILABLE", 503));
+      fetcher.mockResolvedValueOnce(
+        json({ ...csrf, token: "synthetic-new-identity-token" }),
+      );
+      const client = new ApiClient(fetcher),
+        port = createAuthPort(client);
+      await expect(
+        action === "login"
+          ? port.login("staff_01", "synthetic-only")
+          : port.logout(),
+      ).rejects.toBeInstanceOf(ClientError);
+      expect(fetcher).toHaveBeenCalledTimes(2);
+      await client.bootstrapCsrf();
+      expect(fetcher.mock.calls.map(([path]) => path)).toEqual([
+        "/api/public/csrf",
+        action === "login" ? "/api/auth/login" : "/api/auth/logout",
+        "/api/public/csrf",
+      ]);
+    },
+  );
+  it("discards cached CSRF when explicit me confirms an absent session", async () => {
+    // Read-only recovery must not retain a token from a revoked framework session.
+    const fetcher = vi
+      .fn<typeof fetch>()
+      .mockResolvedValueOnce(json(csrf))
+      .mockResolvedValueOnce(apiError("AUTHENTICATION_REQUIRED", 401))
+      .mockResolvedValueOnce(
+        json({ ...csrf, token: "synthetic-anonymous-token" }),
+      );
+    const client = new ApiClient(fetcher),
+      port = createAuthPort(client);
+    await client.bootstrapCsrf();
+    await expect(port.me()).rejects.toMatchObject({ status: 401 });
+    await client.bootstrapCsrf();
+    expect(fetcher.mock.calls.map(([path]) => path)).toEqual([
+      "/api/public/csrf",
+      "/api/auth/me",
+      "/api/public/csrf",
+    ]);
+  });
   it("preserves command key/body across unknown results without automatically retrying", async () => {
     const fetcher = vi
       .fn<typeof fetch>()
