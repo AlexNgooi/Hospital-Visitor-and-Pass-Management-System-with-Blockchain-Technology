@@ -1,0 +1,584 @@
+{
+  "module": "M01",
+  "status": "REVIEW_READY integration slice; no self-approval or merge",
+  "baseline": "03fda7fe56d1de94e04083b8f58370ac9cf80c7f",
+  "sourceImplementationSha": "2baded5ca1acef2ff0e6cc5391a59cbfa30731f0",
+  "backendSourceSha": "42bc95c68df2bc392fbd2e3ad72096a53929975e",
+  "recordedUtc": "2026-10-08T22:19:06.604Z",
+  "provenance": "Actual reviewed executable, real MySQL8.0.45, actual Vite proxy/client/provider; synthetic database records only. Deliberate network drop is identified separately.",
+  "resources": {
+    "containerName": "hsaas-m01-real-4156",
+    "owner": "m01-4156-integration",
+    "mysqlImage": "mysql:8.0.45",
+    "dbPort": 56124,
+    "backendPort": 18091,
+    "webPort": 15191,
+    "controlPort": 15192,
+    "profile": "integration-m01 (no .env import)",
+    "modes": "test / disabled / manual / disabled / disabled"
+  },
+  "mysqlImageDigest": "sha256:4af1f8815716546f5b12410f7621f37f93db8dd11a184706ef59111930b8c2ff",
+  "spec": {
+    "owner": "Implementation/docs/evidence/modules/M00/openapi.json",
+    "mirror": "Implementation/docs/api/openapi.json",
+    "ownerSourceSha": "42bc95c68df2bc392fbd2e3ad72096a53929975e",
+    "sha256": "f8bc1c31cb267269fab1523f9e5ddfecb4ac72c167bdf49ffe44fd4445631498",
+    "mirrorMatchesOwner": true,
+    "generated": "Implementation/frontend/src/generated/api.d.ts",
+    "command": "pnpm run api:generate",
+    "result": "PASS exit0; no generated manual edits"
+  },
+  "tests": {
+    "total": 68,
+    "passed": 68,
+    "failed": 0,
+    "success": true,
+    "startUtc": "2026-10-08T22:11:55.322Z"
+  },
+  "commands": [
+    "backend mvnw -B -DskipTests package: PASS packaging only, not new backend unit run",
+    "backend mvnw dependency:build-classpath with quoted outputFile: PASS exit0",
+    "frontend pnpm run api:generate: PASS exit0 actual reviewed spec",
+    "frontend pnpm run typecheck:test: PASS exit0",
+    "frontend pnpm run lint: PASS exit0 zero warnings",
+    "frontend pnpm test: PASS exit0 68/68",
+    "frontend pnpm run build: PASS exit0",
+    "node tests/real-integration/wire.mjs: PASS exit0 actual backend, 28 requests",
+    "Playwright CLI real-integration/browser.js: PASS 7 ready states",
+    "frontend pnpm run test:proxy: PASS exit0 explicitly synthetic regression, separate from real wire",
+    "root git diff --check / git diff --cached --check: PASS exit0"
+  ],
+  "wire": {
+    "provenance": "Actual reviewed M00 executable / real Docker MySQL 8.0.45 / Vite same-origin proxy / synthetic records only",
+    "startedUtc": "2026-10-08T22:12:50.181Z",
+    "finishedUtc": "2026-10-08T22:12:58.532Z",
+    "success": true,
+    "csrfUnderlyingRotation": true,
+    "sessionCookieRotated": true,
+    "idsBeyondSafeIntegerPreserved": true,
+    "cookiePolicies": [
+      {
+        "hostOnly": true,
+        "httpOnly": true,
+        "sameSiteLax": true,
+        "pathRoot": true,
+        "secure": false
+      },
+      {
+        "hostOnly": true,
+        "httpOnly": true,
+        "sameSiteLax": true,
+        "pathRoot": true,
+        "secure": false
+      },
+      {
+        "hostOnly": true,
+        "httpOnly": true,
+        "sameSiteLax": true,
+        "pathRoot": true,
+        "secure": false
+      },
+      {
+        "hostOnly": true,
+        "httpOnly": true,
+        "sameSiteLax": true,
+        "pathRoot": true,
+        "secure": false
+      },
+      {
+        "hostOnly": true,
+        "httpOnly": true,
+        "sameSiteLax": true,
+        "pathRoot": true,
+        "secure": false
+      },
+      {
+        "hostOnly": true,
+        "httpOnly": true,
+        "sameSiteLax": true,
+        "pathRoot": true,
+        "secure": false
+      }
+    ],
+    "checks": [
+      {
+        "path": "/api/auth/me",
+        "method": "GET",
+        "status": 401,
+        "code": "AUTHENTICATION_REQUIRED",
+        "noStore": true,
+        "contentType": "application/json"
+      },
+      {
+        "path": "/api/auth/login",
+        "method": "POST",
+        "status": 403,
+        "code": "CSRF_INVALID",
+        "noStore": true,
+        "contentType": "application/json"
+      },
+      {
+        "path": "/api/public/csrf",
+        "method": "GET",
+        "status": 200,
+        "noStore": true,
+        "contentType": "application/json"
+      },
+      {
+        "path": "/api/auth/login",
+        "method": "POST",
+        "status": 403,
+        "code": "CSRF_INVALID",
+        "noStore": true,
+        "contentType": "application/json"
+      },
+      {
+        "path": "/api/public/csrf",
+        "method": "GET",
+        "status": 200,
+        "noStore": true,
+        "contentType": "application/json"
+      },
+      {
+        "path": "/api/auth/login",
+        "method": "POST",
+        "status": 401,
+        "code": "INVALID_CREDENTIALS",
+        "noStore": true,
+        "contentType": "application/json"
+      },
+      {
+        "path": "/api/auth/me",
+        "method": "GET",
+        "status": 401,
+        "code": "AUTHENTICATION_REQUIRED",
+        "noStore": true,
+        "contentType": "application/json"
+      },
+      {
+        "path": "/api/public/config/registration",
+        "method": "GET",
+        "status": 200,
+        "noStore": true,
+        "contentType": "application/json"
+      },
+      {
+        "path": "/api/public/csrf",
+        "method": "GET",
+        "status": 200,
+        "noStore": true,
+        "contentType": "application/json"
+      },
+      {
+        "path": "/api/auth/login",
+        "method": "POST",
+        "status": 200,
+        "noStore": true,
+        "contentType": "application/json"
+      },
+      {
+        "path": "/api/auth/logout",
+        "method": "POST",
+        "status": 403,
+        "code": "CSRF_INVALID",
+        "noStore": true,
+        "contentType": "application/json"
+      },
+      {
+        "path": "/api/public/csrf",
+        "method": "GET",
+        "status": 200,
+        "noStore": true,
+        "contentType": "application/json"
+      },
+      {
+        "path": "/api/auth/me",
+        "method": "GET",
+        "status": 200,
+        "noStore": true,
+        "contentType": "application/json"
+      },
+      {
+        "path": "/api/admin/integrations",
+        "method": "GET",
+        "status": 403,
+        "code": "ACCESS_DENIED",
+        "noStore": true,
+        "contentType": "application/json"
+      },
+      {
+        "path": "/api/staff/registrations/9999999999999999",
+        "method": "GET",
+        "status": 404,
+        "code": "NOT_FOUND",
+        "noStore": true,
+        "contentType": "application/json"
+      },
+      {
+        "path": "/api/auth/logout",
+        "method": "POST",
+        "status": 204,
+        "noStore": true,
+        "contentType": "void"
+      },
+      {
+        "path": "/api/public/csrf",
+        "method": "GET",
+        "status": 200,
+        "noStore": true,
+        "contentType": "application/json"
+      },
+      {
+        "path": "/api/auth/me",
+        "method": "GET",
+        "status": 401,
+        "code": "AUTHENTICATION_REQUIRED",
+        "noStore": true,
+        "contentType": "application/json"
+      },
+      {
+        "path": "/api/public/csrf",
+        "method": "GET",
+        "status": 200,
+        "noStore": true,
+        "contentType": "application/json"
+      },
+      {
+        "path": "/api/auth/login",
+        "method": "POST",
+        "status": 200,
+        "noStore": true,
+        "contentType": "application/json"
+      },
+      {
+        "path": "/api/auth/logout",
+        "method": "POST",
+        "status": 403,
+        "code": "CSRF_INVALID",
+        "noStore": true,
+        "contentType": "application/json"
+      },
+      {
+        "path": "/api/public/csrf",
+        "method": "GET",
+        "status": 200,
+        "noStore": true,
+        "contentType": "application/json"
+      },
+      {
+        "path": "/api/staff/registrations/9999999999999999",
+        "method": "GET",
+        "status": 403,
+        "code": "ACCESS_DENIED",
+        "noStore": true,
+        "contentType": "application/json"
+      },
+      {
+        "path": "/api/admin/integrations",
+        "method": "GET",
+        "status": 200,
+        "noStore": true,
+        "contentType": "application/json"
+      },
+      {
+        "path": "/api/admin/accounts/9999999999999999",
+        "method": "GET",
+        "status": 404,
+        "code": "NOT_FOUND",
+        "noStore": true,
+        "contentType": "application/json"
+      },
+      {
+        "path": "/api/auth/logout",
+        "method": "POST",
+        "status": 204,
+        "noStore": true,
+        "contentType": "void"
+      },
+      {
+        "path": "/api/health",
+        "method": "GET",
+        "status": 503,
+        "code": "SERVICE_UNAVAILABLE",
+        "noStore": true,
+        "contentType": "application/json"
+      },
+      {
+        "path": "/api/health",
+        "method": "GET",
+        "status": 200,
+        "noStore": true,
+        "contentType": "application/json"
+      }
+    ],
+    "https": "NOT_RUN; isolated loopback HTTP test configuration"
+  },
+  "browser": {
+    "provenance": "Actual M00 / temporary real MySQL / Vite proxy; only post-login CSRF network response is deliberately dropped",
+    "success": true,
+    "checks": [
+      {
+        "step": "real-login-rejected-mobile",
+        "stylesLoaded": true,
+        "violations": [],
+        "horizontalOverflow": false,
+        "httpOnlyCookieAbsentFromScript": true,
+        "persistentStorageEmpty": true
+      },
+      {
+        "step": "real-staff-mobile",
+        "stylesLoaded": true,
+        "violations": [],
+        "horizontalOverflow": false,
+        "httpOnlyCookieAbsentFromScript": true,
+        "persistentStorageEmpty": true
+      },
+      {
+        "step": "real-logout-503-mobile",
+        "stylesLoaded": true,
+        "violations": [],
+        "horizontalOverflow": false,
+        "httpOnlyCookieAbsentFromScript": true,
+        "persistentStorageEmpty": true
+      },
+      {
+        "step": "real-logout-me401-mobile",
+        "stylesLoaded": true,
+        "violations": [],
+        "horizontalOverflow": false,
+        "httpOnlyCookieAbsentFromScript": true,
+        "persistentStorageEmpty": true
+      },
+      {
+        "step": "real-epoch-expiry-mobile",
+        "stylesLoaded": true,
+        "violations": [],
+        "horizontalOverflow": false,
+        "httpOnlyCookieAbsentFromScript": true,
+        "persistentStorageEmpty": true
+      },
+      {
+        "step": "real-login-csrf-response-lost-mobile",
+        "stylesLoaded": true,
+        "violations": [],
+        "horizontalOverflow": false,
+        "httpOnlyCookieAbsentFromScript": true,
+        "persistentStorageEmpty": true
+      },
+      {
+        "step": "real-admin-desktop",
+        "stylesLoaded": true,
+        "violations": [],
+        "horizontalOverflow": false,
+        "httpOnlyCookieAbsentFromScript": true,
+        "persistentStorageEmpty": true
+      }
+    ],
+    "responses": [
+      {
+        "path": "/api/auth/me",
+        "method": "GET",
+        "status": 401
+      },
+      {
+        "path": "/api/public/csrf",
+        "method": "GET",
+        "status": 200
+      },
+      {
+        "path": "/api/auth/login",
+        "method": "POST",
+        "status": 401
+      },
+      {
+        "path": "/api/public/csrf",
+        "method": "GET",
+        "status": 200
+      },
+      {
+        "path": "/api/auth/login",
+        "method": "POST",
+        "status": 200
+      },
+      {
+        "path": "/api/public/csrf",
+        "method": "GET",
+        "status": 200
+      },
+      {
+        "path": "/api/auth/logout",
+        "method": "POST",
+        "status": 503
+      },
+      {
+        "path": "/api/auth/me",
+        "method": "GET",
+        "status": 401
+      },
+      {
+        "path": "/api/public/csrf",
+        "method": "GET",
+        "status": 200
+      },
+      {
+        "path": "/api/auth/login",
+        "method": "POST",
+        "status": 200
+      },
+      {
+        "path": "/api/public/csrf",
+        "method": "GET",
+        "status": 200
+      },
+      {
+        "path": "/api/auth/me",
+        "method": "GET",
+        "status": 401
+      },
+      {
+        "path": "/api/auth/me",
+        "method": "GET",
+        "status": 401
+      },
+      {
+        "path": "/api/public/csrf",
+        "method": "GET",
+        "status": 200
+      },
+      {
+        "path": "/api/auth/login",
+        "method": "POST",
+        "status": 200
+      },
+      {
+        "path": "/api/auth/me",
+        "method": "GET",
+        "status": 200
+      },
+      {
+        "path": "/api/public/csrf",
+        "method": "GET",
+        "status": 200
+      },
+      {
+        "path": "/api/auth/logout",
+        "method": "POST",
+        "status": 204
+      },
+      {
+        "path": "/api/public/csrf",
+        "method": "GET",
+        "status": 200
+      },
+      {
+        "path": "/api/auth/login",
+        "method": "POST",
+        "status": 200
+      },
+      {
+        "path": "/api/public/csrf",
+        "method": "GET",
+        "status": 200
+      },
+      {
+        "path": "/api/auth/logout",
+        "method": "POST",
+        "status": 204
+      },
+      {
+        "path": "/api/public/csrf",
+        "method": "GET",
+        "status": 200
+      }
+    ],
+    "cookieFlags": [
+      {
+        "httpOnly": true,
+        "sameSite": "Lax",
+        "path": "/",
+        "sessionScoped": true
+      }
+    ],
+    "actualLogout503ThenMe401": true,
+    "actualClientExpiryClearedContent": true,
+    "ambiguousLoginPosts": 1,
+    "noUncaughtJavaScriptErrors": true,
+    "https": "NOT_RUN"
+  },
+  "screenshots": [
+    {
+      "path": "screenshots/integration/real-login-rejected-mobile.png",
+      "sha256": "70e9486667e758776ae512207be2a39272d1cd1fbb8fe2bc582f032938e99000",
+      "bytes": 47858,
+      "capturedUtc": "2026-10-08T22:15:11.568Z",
+      "captureScope": "Actual M00 and real disposable MySQL via Vite dev; synthetic records, fault mode identified by state",
+      "sourceImplementationSha": "2baded5ca1acef2ff0e6cc5391a59cbfa30731f0"
+    },
+    {
+      "path": "screenshots/integration/real-staff-mobile.png",
+      "sha256": "417ec010415275d31b227643e45ad903d699b821a9de621292855548ce87eb4a",
+      "bytes": 77249,
+      "capturedUtc": "2026-10-08T22:15:12.211Z",
+      "captureScope": "Actual M00 and real disposable MySQL via Vite dev; synthetic records, fault mode identified by state",
+      "sourceImplementationSha": "2baded5ca1acef2ff0e6cc5391a59cbfa30731f0"
+    },
+    {
+      "path": "screenshots/integration/real-logout-503-mobile.png",
+      "sha256": "e5d958000ceb0ef53b65999d7f4f735ca3fbd4cb797f9b4b27037d82c387117e",
+      "bytes": 46830,
+      "capturedUtc": "2026-10-08T22:15:14.103Z",
+      "captureScope": "Actual M00 and real disposable MySQL via Vite dev; synthetic records, fault mode identified by state",
+      "sourceImplementationSha": "2baded5ca1acef2ff0e6cc5391a59cbfa30731f0"
+    },
+    {
+      "path": "screenshots/integration/real-logout-me401-mobile.png",
+      "sha256": "bffbbae00a9027b6306838e9ac73adb6e7fd858ae7fd110f067a55cfd754c505",
+      "bytes": 39432,
+      "capturedUtc": "2026-10-08T22:15:15.974Z",
+      "captureScope": "Actual M00 and real disposable MySQL via Vite dev; synthetic records, fault mode identified by state",
+      "sourceImplementationSha": "2baded5ca1acef2ff0e6cc5391a59cbfa30731f0"
+    },
+    {
+      "path": "screenshots/integration/real-epoch-expiry-mobile.png",
+      "sha256": "4cae7c37696eb39f73a3b4ff0396abe2728503144e970e34d07cc89cfdbee757",
+      "bytes": 37851,
+      "capturedUtc": "2026-10-08T22:15:18.278Z",
+      "captureScope": "Actual M00 and real disposable MySQL via Vite dev; synthetic records, fault mode identified by state",
+      "sourceImplementationSha": "2baded5ca1acef2ff0e6cc5391a59cbfa30731f0"
+    },
+    {
+      "path": "screenshots/integration/real-login-csrf-response-lost-mobile.png",
+      "sha256": "bf6350dee719fe7e36a4990d1db2ec0ada123784047ab7fe503fb7066ee9d672",
+      "bytes": 48351,
+      "capturedUtc": "2026-10-08T22:15:19.897Z",
+      "captureScope": "Actual M00 and real disposable MySQL via Vite dev; synthetic records, fault mode identified by state",
+      "sourceImplementationSha": "2baded5ca1acef2ff0e6cc5391a59cbfa30731f0"
+    },
+    {
+      "path": "screenshots/integration/real-admin-desktop.png",
+      "sha256": "e0a34b1224db7cb78fc58ec54d860d92a833e99aeed27c027ad8906ba0c7d449",
+      "bytes": 101367,
+      "capturedUtc": "2026-10-08T22:15:20.944Z",
+      "captureScope": "Actual M00 and real disposable MySQL via Vite dev; synthetic records, fault mode identified by state",
+      "sourceImplementationSha": "2baded5ca1acef2ff0e6cc5391a59cbfa30731f0"
+    }
+  ],
+  "fix": "Unknown login/logout and explicit me401 discard cached CSRF; next explicit action bootstraps, no automatic auth POST replay",
+  "cleanup": {
+    "harness": {
+      "ownedProcessesStopped": true,
+      "ownedContainerRemoved": true
+    },
+    "namedBrowserClosed": true,
+    "independentListenerCount": 0,
+    "independentOwnedContainerCount": 0
+  },
+  "limits": [
+    "Production HTTPS/TLS and Secure-cookie forwarded acceptance NOT_RUN",
+    "Actual C01 foundation slice only; later object authorization/business workflows unimplemented",
+    "Missing correct-role object routes404 do not prove business ownership/scope filtering",
+    "No fresh 40-test backend run; packaging and actual integration only, coordinator-reviewed backend unit receipt remains separate",
+    "Live MRN/reader/WhatsApp/blockchain and interactive console bootstrap NOT_RUN",
+    "Browser audited on Vite dev; production bundle build PASS, production deployed browser acceptance NOT_RUN"
+  ]
+}
