@@ -93,7 +93,7 @@ M00–M04 已创建并完成准备核对；M00/M01 已隔离并派发直接实�
 | 模块 | 状态 | chat ID / owner | baseline / branch / worktree | handoff / review / merge |
 |---|---|---|---|---|
 | M00 | MERGED；基础回归 PASS，真实前端/HTTPS联调待做 | 01a11bcf-a53d-7323-a74e-edffa8092c50 / 模块助手直接实现 | c2b0c316；codex/hsaas-m00-foundation；C:/Users/alexy/.codex/worktrees/ced2/FYP Dev | delivery 1b2d8f2；merge a137acd；独立及合并后40tests PASS；gpt-6.1-sol/high |
-| M01 | MERGED；独立前端回归 PASS，真实联调进行下一批 | 01a11bcf-e448-7be0-88c1-f7910300e82e / 模块助手直接实现 | c2b0c316；codex/hsaas-m01-frontend-shell；C:/Users/alexy/.codex/worktrees/4156/FYP Dev | delivery ad23099；merge 014d030；合并后63tests/build/proxy PASS；gpt-6.1-sol/high |
+| M01 | 基础 MERGED；联调 candidate CHANGES_REQUESTED（harness隔离） | 01a11bcf-e448-7be0-88c1-f7910300e82e / 模块助手直接实现 | 基础 c2b0c316；联调03fda7f；codex/hsaas-m01-frontend-shell；4156/FYP Dev | 基础merge014d030；联调delivery8e5ffcf，独立68tests+真实28wire PASS；等待最小harness返修；gpt-6.1-sol/high |
 | M02 | PLANNED；一次开发许可待答，依赖 M00/M01 | 01a11ba4-e2bd-74a3-beee-1f47860bfc01 / 模块助手直接实现 | Local/main；HEAD b005823；规划未提交；实施隔离待建立 | 无；gpt-6.1-sol/high |
 | M03 | PLANNED；一次开发许可待答，接入依赖 M00/M01/M02 | 01a11ba4-e814-7832-bd40-f471edf417b4 / 模块助手直接实现 | Local/main；HEAD b005823；规划未提交；实施隔离待建立 | 无；gpt-6.1-sol/high |
 | M04 | PLANNED；一次开发许可待答，依赖 M03 | 01a11ba4-ecca-7ca3-a224-c3dde42d1edd / 模块助手直接实现 | Local/main；HEAD b005823；规划未提交；实施隔离待建立 | 无；gpt-6.1-sol/high |

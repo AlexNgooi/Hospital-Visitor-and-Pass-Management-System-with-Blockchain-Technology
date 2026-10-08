@@ -12,6 +12,8 @@ status: foundation-merged-integration-pending
 
 2026-10-09 当前实施状态优先：M00 delivery 1b2d8f2 与 M01 revised delivery ad23099 已分别审核并本地合并到 main，merge SHA 为 a137acd 与014d030。coordinator 独立复跑和合并后回归：backend 40 tests/verify/JAR、frontend 63 tests/typecheck/build/lint/frozen install/synthetic proxy 全 PASS；审核和限制见各模块 REVIEW。M01 原首轮登录核查按钮缺失判断已在 REVIEW 撤回，R1注销保护与R3重试配置问题已修复。真实 C01 前后端/HTTPS 联调仍待完成，M02–M04 未获许可；不能将基础片段通过视为访客/QR/登记/审核业务已验收。后文“骨架/未提交/未执行”均为历史对应阶段。
 
+随后 M01 联调交接8e5ffcf/source2baded5：coordinator 独立复跑68前端tests/build/lint/proxy并实际启动临时MySQL+reviewedbackend+Vite，真实28wire检查PASS（含DBpause503/resume200），spec镜像及7截图hash一致，停止资源并确认无残留。登录/注销UNKNOWN后的CSRF缓存修复通过审查；但harness继承Spring/JVM环境配置可能覆盖临时DB边界，已交回最小隔离/负例修正，联调候选未merge。当前运行前已确认没有这些覆盖变量、没有nativeDB/.env使用。HTTPS/完整业务授权仍NOT_RUN。
+
 2026-10-09 最小接口补充：M00 实施中提出 categoryScope ID/code 歧义，coordinator 核对当前契约后统一为 visitor_categories 数据库 ID 十进制字符串，与 counterId 一致；完整 C10 scope/details 与 bindingVersion 安全整数范围见04。该决定用于公共 DTO/client 对接，不启动 M02 开发。M00 报告在 framework save 前增加只校验/撤销、不激活/续期的有界领域检查，锁全部释放后 save，再执行成功确认 hook；作为 spike 实现调整纳入最终故障/并发审核，未放行 guard 集成。M00 当前报告 20 tests PASS，完整 upgrade/restart/DB-offline/竞争验证与 HANDOFF 仍进行中。
 
 同日 M00 发现基础 DataSourceTransactionManager 会限制后续 JPA EntityManager 写事务，coordinator 核对 Spring 官方文档后选择统一 JpaTransactionManager 同 DataSource 路线，保留 Data JPA，不要求其他模块改为纯 JDBC。M00 直接修正公共配置、以 test-only counters 映射验证 JPA/JDBC audit/idempotency 同事务提交/回滚，并复验 Session/save/并发；属于已有 M00 许可范围。决定见02/04，实际兼容验证尚待执行/交接，不将此前20项结果当作切换后 PASS。

@@ -83,3 +83,36 @@ Coordinator ran frozen-lockfile install, 63 tests, strict test typing, build,
 lint and synthetic proxy checks from main after merge: all exit 0 (test start
 2026-10-09 05:58:44 +08:00). Backend post-merge 40-test verification is recorded
 in M00 REVIEW. M01 real C01 integration is the next separately evidenced task.
+
+## Real C01 integration candidate review
+
+Source `2baded5ca1acef2ff0e6cc5391a59cbfa30731f0`, delivery
+`8e5ffcffdccd8530a9e30da8244e46f33c2029f2`, baseline `03fda7f`.
+Foundation remains merged; this additional candidate is CHANGES_REQUESTED and
+not merged yet. Auth CSRF invalidation on both mutation outcomes and me401 is
+accepted. Coordinator independently reran 68 tests, typing, build, lint and
+synthetic proxy: PASS. OpenAPI mirror hashes match the unchanged M00 spec;
+7 integration screenshot hashes match. Module browser results remain module
+evidence, not a new coordinator browser run.
+
+Coordinator also launched the submitted harness and independently reran 28 real
+wire checks against the reviewed backend, disposable MySQL 8.0.45 and actual Vite
+proxy: PASS, including CSRF/session rotation, role errors, no-store, cookie flags,
+real DB pause503/resume200. Before launch, only inherited override variable names
+were checked; no Spring/JVM override was present. This run did not use native DB
+or .env. POST stop204 completed; the exact owned container and all three fixed
+listening ports were independently confirmed removed/stopped.
+
+Required harness correction: `...process.env` can inherit Spring datasource/
+configuration/profile overrides or JVM options, overriding the HSAAS_* temporary
+database values used by the backend. FixtureSeed URL checks protect fixture SQL,
+not backend startup/Flyway. Create one isolated child environment or reject
+unsafe inherited overrides before resource creation; backend and fixture must
+both use it. Add a negative test using a harmless loopback port9 override, not a
+native DB URL. Prove rejection with no resources, or continued exclusive use of
+the owned temporary database. Preserve credentials in memory and English
+isolation comments. No backend/business change or unrelated browser rerun needed.
+
+HTTPS/production Secure forwarding and downstream object/QR/domain authorization
+remain NOT_RUN. Return this minimal test-only correction on the existing M01
+branch for re-review; existing module permission covers it.
