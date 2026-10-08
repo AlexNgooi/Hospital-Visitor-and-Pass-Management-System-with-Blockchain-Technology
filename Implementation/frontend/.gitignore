@@ -22,3 +22,7 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Playwright CLI cache/raw request records and transient screenshots are never submitted.
+/.playwright-cli/
+/output/playwright/
