@@ -96,7 +96,7 @@ M08–M11 当前为 DEFERRED，不启动运行进程、不安装依赖来阻塞�
 
 基本依赖为 M00 → M01 → M02 → M03 → M04 → M05 → M06 → M07。M01 可先对冻结契约 mock；M06 的账号/配置可在 M00 后提前，报表等候生命周期数据。WIP ≤2，分支隔离不替代依赖验收。
 
-M00–M04 已创建并完成准备核对；M00/M01 已隔离并派发直接实施任务。M02–M04 仍只读，其他模块未启动。此表由 coordinator 更新；业务完成需实际交接/审核/验收。
+M00–M04 已创建并完成准备核对；M00/M01 当前本地范围已验收，M02 已隔离并启动；M03/M04 仍只读，其他模块未启动。此表由 coordinator 更新；业务完成需实际交接/审核/验收。
 
 | 模块 | 状态 | chat ID / owner | baseline / branch / worktree | handoff / review / merge |
 |---|---|---|---|---|
@@ -114,6 +114,8 @@ M00–M04 已创建并完成准备核对；M00/M01 已隔离并派发直接实�
 | M11 | DEFERRED：用户要求暂不启用 | 未创建 / 未派工 | disabled | live NOT_RUN |
 
 状态路径：PLANNED → READY → IN_PROGRESS → REVIEW_READY → CHANGES_REQUESTED / APPROVED → MERGED → INTEGRATION_VERIFIED。DEFERRED 满足条件后回 READY；BLOCKED 必须记录问题、owner 与下次动作。测试状态与模块状态独立，APPROVED 仍未 merge。
+
+2026-10-09 M01 维护任务 IN_PROGRESS：用户要求修复登录错误/会话提示叠加后的视口布局，并检查现有各页。已向原 M01 chat 派发，沿用其开发许可与 4156 隔离 worktree，baseline `ed6fff7`；原本地 UI/C01 验收结论保留，本次候选仍需单独 review/merge。范围限现有 app/ui/index.css 与相关测试、证据，不改变 auth/API、后端、入口或依赖；标准 shadcn 迁移未包含。视口与可达性验收见 07，不把必要滚动误判为隐藏内容的理由。
 
 ## Module chat 共同工作约定
 

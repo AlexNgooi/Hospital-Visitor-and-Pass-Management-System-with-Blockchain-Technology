@@ -16,6 +16,17 @@
 
 上述是行为/范围计划，不是新的 UI 实现或视觉验收。
 
+## 2026-10-09 视口与状态布局要求
+
+用户要求减少登录错误出现后必须滚动才能看完整页的情况，并将此要求应用到各页面。正常、loading、empty、error、会话不可用和恢复状态均纳入布局验收，不能只验收正常态截图。
+
+- 登录摘要保留聚焦与字段定位，但避免重复字段下方的完整长规则；缩减标题、提示、表单、帮助与页脚之间不必要的留白。会话检查、未知退出恢复与错误提示必须可见且可操作。
+- 当前页优先在 1366×768、1440×900、790×885 和手机 375×812 / 390×844 呈现主要操作。桌面工作区根据高度缩减布局间距；长列表分页或在明确的内容区滚动，长表单分步骤，不能靠裁切使页面表面上无滚动。
+- 小屏、短横屏、屏幕键盘、200% 放大或内容增长时，完整可达性优先；允许必要滚动，禁止全局隐藏 overflow、缩小文字至不可读或隐藏错误与恢复动作。具体页的视口实测、截图与局限由所属模块交接记录，不宣称任意情况绝对无滚动。
+- M01 负责现有共享布局和登录页维护；已启动 M02 遵循相同要求。未获开发许可的模块只继承未来验收要求，不因此自动启动。
+
+当前实际组件为 React、Radix Dialog 与自定义 CSS / UI primitives；`shadcn/ui-compatible` 描述设计方向，不代表已采用标准 shadcn 源码组件。以下组件清单是设计目标；改用标准 shadcn 组件体系须作为独立实施范围，不由本次布局修复自动引入。
+
 ## Latest image-review revision — 24 September 2026
 
 The image-first redesign and updated screen inventory are in [UI v4](../output/ui-redesign-v4/README.md), with a [visual gallery](../output/ui-redesign-v4/index.html). The user's latest instruction supersedes the earlier multi-message WhatsApp design: send only one combined message containing a greeting, visitor details, pass details and return deadline. It is sent after approval and successful physical card issue, with opt-in; approval alone still has no Pass ID or deadline. Do not send separate approval, rejection, reminder, overdue or return WhatsApp messages. Internal overdue alerts remain. The v4 palette uses official UPM red `#CA0026` in place of the provisional red below.
