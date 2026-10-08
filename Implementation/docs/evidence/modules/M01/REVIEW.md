@@ -1,7 +1,7 @@
 # M01 coordinator review
 
 - Review date: 2026-10-09 (Asia/Singapore).
-- Status: CHANGES_REQUESTED; no merge or integration approval.
+- Status: APPROVED after revision for independent frontend slice; merge regression pending, real backend/HTTPS integration NOT_RUN.
 - Reviewed delivery: `c8b9804e6653408fd49db7d1d95069c585a58ceb`.
 - Implementation: `99e860c1ae11b2198e3b63b1153f6d52fce14247`.
 - Baseline: `c2b0c316e04947df06b84f1008f470b6e5a9eb8b`.
@@ -39,13 +39,12 @@ NOT_RUN. The current tests do not cover the failures below.
    or automatically restore the previous identity. Test pending and rejected
    logout with protected content, plus stale async results after that transition.
 
-2. **[P2] Provide an actual action to check an unknown login result.**
-   `login-page.tsx` tells users to use the session check after a timeout, but its
-   check button exists only for the initial `auth.state.kind === error` state.
-   A failed login request or failed post-login CSRF bootstrap usually leaves an
-   anonymous state, so this advice has no action. Offer an explicit session check
-   for uncertain sign-in outcomes; do not automatically retry login. Test committed
-   login followed by failed CSRF bootstrap, and transport-unknown login recovery.
+2. **Withdrawn finding: unknown-login session check action.**
+   On full diff reinspection, the original source already had a
+   `message && Check current session` button covering the login error case.
+   Coordinator's initial missing-action claim was inaccurate and is withdrawn.
+   The revision's always-visible session check and additional recovery tests are
+   accepted improvements, not a repair of a proven missing original button.
 
 3. **[P2] Snapshot command options before exposing a retry handle.**
    `ApiClient.command()` captures serialized body/key, but execute reads mutable
@@ -59,3 +58,22 @@ Fix on the existing M01 branch/chat, update English recovery comments, rerun
 affected tests/typecheck/build and update HANDOFF with the new source/delivery
 SHA. Coordinator will re-review the changed paths before local merge. M02–M04
 remain unstarted; this return is covered by the existing M01 development permit.
+
+## Revision re-review
+
+Reviewed source `fcad282656c0d00b8a21c7514eabc3a34f9e18b4`, delivery
+`ad23099774c06bfb9a40c72fa93eea1a9ddfbe37`. R1 and R3 are resolved:
+sign-out immediately fences identity and unmounts protected content; pending/
+UNKNOWN/retry/status checking does not revive the previous user. Command policy
+is captured with its body/key. Explicit login checks do not replay credentials.
+Void requests now require the expected 204. English recovery comments updated.
+
+Coordinator independently reran 63 tests, strict test typing, build, lint and
+synthetic proxy checks: all PASS. Checked 17 screenshot hashes with no mismatch;
+visually inspected the revised mobile UNKNOWN/still-active logout page. New tests
+exercise pending/rejected logout, post-revocation 503, late login/me, explicit
+recovery and mutated command options. No blocking independent-slice finding.
+
+Production/real M00 integration remains NOT_RUN until the separate C01 session/
+cookie/proxy checks complete. Coordinator will record merge SHA and post-merge
+checks after local integration; no push or deployment is authorized.

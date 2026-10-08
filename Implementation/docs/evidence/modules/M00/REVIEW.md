@@ -1,7 +1,7 @@
 # M00 coordinator review
 
 - Date: 2026-10-09 (Asia/Singapore).
-- Status: APPROVED for the M00 foundation slice; local merge and post-merge check pending.
+- Status: MERGED; foundation post-merge regression PASS, real frontend/HTTPS integration pending.
 - Baseline: `c2b0c316e04947df06b84f1008f470b6e5a9eb8b`.
 - Tested source: `42bc95c68df2bc392fbd2e3ad72096a53929975e`.
 - Reviewed delivery: `1b2d8f2657f14689da8c66e25baf0ea428d5f02c`.
@@ -45,5 +45,9 @@ No blocking finding in this foundation slice.
 
 ## Merge and regression
 
-Coordinator will record the exact local merge SHA and post-merge result here;
-no push or deployment is part of this review.
+Local merge: `a137acd205b9b6d2224b7edb8e072e521f2b116d`.
+Coordinator reran `.\mvnw.cmd -B verify` from the main backend directory after
+merge: exit 0, 40 tests, zero failures/errors/skips, executable JAR, finished
+2026-10-09 05:56:54 +08:00. The log is the ignored
+`Implementation/backend/target/coordinator-post-merge-verify.log`; this review
+preserves its bounded result. No push/deployment or native database action.

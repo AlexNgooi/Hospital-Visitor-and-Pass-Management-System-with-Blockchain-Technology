@@ -92,8 +92,8 @@ M00–M04 已创建并完成准备核对；M00/M01 已隔离并派发直接实�
 
 | 模块 | 状态 | chat ID / owner | baseline / branch / worktree | handoff / review / merge |
 |---|---|---|---|---|
-| M00 | IN_PROGRESS；用户已批准，实施任务已运行 | 01a11bcf-a53d-7323-a74e-edffa8092c50 / 模块助手直接实现 | c2b0c316；codex/hsaas-m00-foundation；C:/Users/alexy/.codex/worktrees/ced2/FYP Dev | 无；gpt-6.1-sol/high |
-| M01 | CHANGES_REQUESTED；真实接入仍依赖 M00 | 01a11bcf-e448-7be0-88c1-f7910300e82e / 模块助手直接实现 | c2b0c316；codex/hsaas-m01-frontend-shell；C:/Users/alexy/.codex/worktrees/4156/FYP Dev | delivery c8b9804；coordinator REVIEW 已记录3项返修；未 merge；gpt-6.1-sol/high |
+| M00 | MERGED；基础回归 PASS，真实前端/HTTPS联调待做 | 01a11bcf-a53d-7323-a74e-edffa8092c50 / 模块助手直接实现 | c2b0c316；codex/hsaas-m00-foundation；C:/Users/alexy/.codex/worktrees/ced2/FYP Dev | delivery 1b2d8f2；merge a137acd；独立及合并后40tests PASS；gpt-6.1-sol/high |
+| M01 | APPROVED；独立前端返修复审通过，真实联调待做 | 01a11bcf-e448-7be0-88c1-f7910300e82e / 模块助手直接实现 | c2b0c316；codex/hsaas-m01-frontend-shell；C:/Users/alexy/.codex/worktrees/4156/FYP Dev | delivery ad23099；独立63tests/build/proxy PASS；待 merge；gpt-6.1-sol/high |
 | M02 | PLANNED；一次开发许可待答，依赖 M00/M01 | 01a11ba4-e2bd-74a3-beee-1f47860bfc01 / 模块助手直接实现 | Local/main；HEAD b005823；规划未提交；实施隔离待建立 | 无；gpt-6.1-sol/high |
 | M03 | PLANNED；一次开发许可待答，接入依赖 M00/M01/M02 | 01a11ba4-e814-7832-bd40-f471edf417b4 / 模块助手直接实现 | Local/main；HEAD b005823；规划未提交；实施隔离待建立 | 无；gpt-6.1-sol/high |
 | M04 | PLANNED；一次开发许可待答，依赖 M03 | 01a11ba4-ecca-7ca3-a224-c3dde42d1edd / 模块助手直接实现 | Local/main；HEAD b005823；规划未提交；实施隔离待建立 | 无；gpt-6.1-sol/high |
