@@ -27,11 +27,11 @@ Other modules supply feature components; coordinator integrates their registrati
 | Export | Consumer contract |
 |---|---|
 | `App` `features: FeatureSlot[]` | Exact `/staff/...` or `/admin/...` role-bound slot; `PUBLIC` only `/register`. Reserved slots show honest unavailable states until replaced. |
-| `app/auth-context.ts` `useAuth` | Loading/anonymous/authenticated/error and server-returned opaque string IDs. This hook does not confer backend permissions. |
+| `app/auth-context.ts` `useAuth` | Loading/anonymous/authenticated/error and server-returned opaque string IDs; additive `logoutState` and `mutationPending` expose controlled sign-out recovery. This hook does not confer backend permissions. |
 | `app/counter-context.ts` `useCounterScope` | Current authorised counter string for view selection; backend always verifies object scope. |
 | `app/entry.ts` `entryVault.read/subscribe/clear` | M02-only memory token; URL sanitisation before render and on native hash/back navigation. Subscribe with useSyncExternalStore; clear(expectedToken) fences stale completions. No storage/log/analytics. |
 | `lib/api-client.ts` `apiClient.get/post/command` | Every response requires a runtime schema. Protected feature requests must use `authRequired:true`; public grant errors stay public. |
-| `Command.execute()` | Retain the handle for unknown/manual retry; same key and serialized body. Create new handle only for a genuinely new command. No automatic write replay. |
+| `Command.execute()` | Retain the handle for unknown/manual retry; path, method, auth policy, key and serialized body are captured when created. Create new handle only for a genuinely new command. No automatic write replay. |
 | `ClientError.restartDetails` | Frozen C10 scope/context parsed only for RESTART_REQUIRED. IDs stay strings and categoryScope=null means four categories. Invalid/unknown details are discarded; M02 still adapts safe display labels. |
 | `components/ui/primitives.tsx` | Labelled inputs, buttons, loading/empty/error panels, controlled BM restart dialog. Dialog accepts safe labels, not raw API objects. |
 | `lib/time.ts` `formatMyt` | UTC timestamps displayed in MYT; server alone determines expiry. |
@@ -42,6 +42,15 @@ username rules follow C11, passwords remain byte-for-byte unchanged. Login/logou
 rotate CSRF and have no business idempotency keys. Protected 401 clears local
 identity even if the response body is malformed; caller cancellation is distinct
 from network timeout. UI errors use allowlisted copy, not backend message bodies.
+
+Sign-out clears local identity and fences pending identity results before its
+request settles. A failed/unknown response leaves local access cleared and exposes
+explicit sign-out retry and read-only session check. A session read cannot undo
+sign-out intent; only a new explicit login after confirmed sign-out may do so.
+Login failures, including a successful login POST followed by unavailable CSRF,
+can be resolved with the persistent session check without replaying credentials.
+Void commands such as logout require the contracted HTTP 204 response; unexpected
+HTTP 200 does not confirm success.
 
 Form context is `{grantReference,bindingVersion}`. Restart confirmation only calls
 the supplied callbacks: M02/M03 implement exchange/CAS/recovery. Do not clear old
@@ -67,6 +76,8 @@ service. No real database, patient data or external message is touched.
 Playwright CLI screenshots were inspected at 1440×1024 and 375×812. The reusable
 `tests/browser-audit.js` snippet injects local axe for browser audits; it is never
 bundled in production. Evidence lives in `../docs/evidence/modules/M01/`.
+`tests/browser-review-check.js` covers mobile login/CSRF ambiguity and explicit
+sign-out recovery against that fixture, with local axe and no login replay.
 
 WhatsApp/blockchain remain not enabled. Reader and live MRN remain unavailable.
 Real M00 session/CSRF/MySQL/HTTPS forwarding requires a separate integration review.

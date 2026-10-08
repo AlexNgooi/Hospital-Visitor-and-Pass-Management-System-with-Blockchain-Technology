@@ -23,7 +23,12 @@ export function LoginPage() {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [message, setMessage] = useState("");
   const [attempt, setAttempt] = useState(0);
+  const [checkedSession, setCheckedSession] = useState(false);
   const summary = useRef<HTMLDivElement>(null);
+  const checking = auth.state.kind === "loading";
+  const logoutUnresolved =
+    auth.logoutState.kind === "pending" || auth.logoutState.kind === "unknown";
+  const disabled = busy || checking || auth.mutationPending || logoutUnresolved;
   useEffect(() => {
     if (attempt && (message || Object.keys(errors).length))
       summary.current?.focus();
@@ -39,8 +44,9 @@ export function LoginPage() {
   /** Never trim passwords or preserve them after a request, including unknown outcomes. */
   async function submit(event: FormEvent) {
     event.preventDefault();
-    if (busy) return;
+    if (disabled) return;
     setMessage("");
+    setCheckedSession(false);
     const nextErrors: Record<string, string> = {};
     const login = canonicalLogin(account);
     if (!login)
@@ -119,10 +125,42 @@ export function LoginPage() {
           {auth.state.kind === "error" && (
             <div className="notice">
               <p role="status">Unable to check your current session.</p>
-              <Button variant="ghost" onClick={auth.refresh}>
-                Retry session check
+            </div>
+          )}
+          {checkedSession &&
+            auth.state.kind === "anonymous" &&
+            auth.logoutState.kind === "idle" && (
+              <p className="notice" role="status">
+                No authorised staff session was found. You can sign in.
+              </p>
+            )}
+          {auth.logoutState.kind === "pending" && (
+            <p className="notice" role="status">
+              Signing out… Local staff access has been cleared.
+            </p>
+          )}
+          {auth.logoutState.kind === "unknown" && (
+            <div className="error-summary" role="alert">
+              <strong>Server sign-out could not be confirmed.</strong>
+              <p>
+                Local staff access remains cleared. {auth.logoutState.message}
+              </p>
+              <Button
+                variant="secondary"
+                disabled={auth.mutationPending || checking}
+                onClick={() => {
+                  void auth.logout().catch(() => {});
+                }}
+              >
+                Retry sign out
               </Button>
             </div>
+          )}
+          {auth.logoutState.kind === "confirmed" && (
+            <p className="notice" role="status">
+              Local staff access is cleared. Your staff session is no longer
+              authorised.
+            </p>
           )}
           {(message || Object.keys(errors).length > 0) && (
             <div
@@ -166,7 +204,7 @@ export function LoginPage() {
               value={account}
               onChange={(event) => setAccount(event.target.value)}
               error={errors.login}
-              disabled={busy}
+              disabled={disabled}
             />
             <div className="password-field">
               <InputField
@@ -177,7 +215,7 @@ export function LoginPage() {
                 value={password}
                 onChange={(event) => setPassword(event.target.value)}
                 error={errors.password}
-                disabled={busy}
+                disabled={disabled}
               />
               <button
                 className="password-toggle"
@@ -185,7 +223,7 @@ export function LoginPage() {
                 aria-label={visible ? "Hide password" : "Show password"}
                 aria-pressed={visible}
                 onClick={() => setVisible((value) => !value)}
-                disabled={busy}
+                disabled={disabled}
               >
                 {visible ? (
                   <EyeOff size={18} aria-hidden="true" />
@@ -194,16 +232,32 @@ export function LoginPage() {
                 )}
               </button>
             </div>
-            <Button type="submit" busy={busy} className="sign-in">
+            <Button
+              type="submit"
+              busy={busy}
+              disabled={disabled}
+              className="sign-in"
+            >
               {busy ? "Signing in…" : "Sign in"}
               {!busy && <ArrowRight size={18} aria-hidden="true" />}
             </Button>
           </form>
-          {message && (
-            <Button variant="ghost" onClick={auth.refresh}>
-              Check current session
-            </Button>
-          )}
+          {/* Always available for ambiguous login and post-login CSRF failures; never replays login. */}
+          <Button
+            variant="ghost"
+            onClick={() => {
+              // A read resolves the ambiguous result without resubmitting credentials or retaining stale copy.
+              setCheckedSession(true);
+              setMessage("");
+              auth.refresh();
+            }}
+            disabled={auth.mutationPending}
+            busy={checking}
+          >
+            {logoutUnresolved
+              ? "Check sign-out status"
+              : "Check current session"}
+          </Button>
           <p className="login-help">
             Need an account? <strong>Contact your administrator.</strong>
           </p>

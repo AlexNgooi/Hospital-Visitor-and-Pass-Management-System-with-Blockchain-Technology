@@ -10,7 +10,6 @@ import {
 import * as Dialog from "@radix-ui/react-dialog";
 import { Link, NavLink, Outlet, useLocation } from "react-router-dom";
 import { Button } from "../components/ui/primitives";
-import { safeError } from "../lib/errors";
 import { useAuth } from "./auth-context";
 import { homeIcon as HomeIcon, type FeatureSlot } from "./features";
 import { CounterContext } from "./counter-context";
@@ -23,8 +22,6 @@ export function WorkspaceShell({ slots }: { slots: readonly FeatureSlot[] }) {
     path: location.pathname,
     open: false,
   });
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState("");
   const [counter, setCounter] = useState<string | null>(null);
   if (state.kind !== "authenticated") return null;
   const { user } = state;
@@ -37,16 +34,9 @@ export function WorkspaceShell({ slots }: { slots: readonly FeatureSlot[] }) {
   const current =
     navigation.find((slot) => slot.path === location.pathname)?.label ??
     "Workspace overview";
-  async function signOut() {
-    setBusy(true);
-    setError("");
-    try {
-      await logout();
-    } catch (failure) {
-      setError(safeError(failure));
-    } finally {
-      setBusy(false);
-    }
+  function signOut() {
+    // Provider owns pending/UNKNOWN recovery after this protected shell immediately unmounts.
+    void logout().catch(() => {});
   }
   const nav = (
     <>
@@ -140,23 +130,13 @@ export function WorkspaceShell({ slots }: { slots: readonly FeatureSlot[] }) {
                 {user.login}
                 <small>{isStaff ? "Counter Staff" : "Administrator"}</small>
               </span>
-              <Button
-                variant="ghost"
-                onClick={signOut}
-                busy={busy}
-                aria-label="Sign out"
-              >
+              <Button variant="ghost" onClick={signOut} aria-label="Sign out">
                 <LogOut size={18} aria-hidden="true" />
                 <span className="signout-label">Sign out</span>
               </Button>
             </div>
           </header>
           <main id="main-content" className="workspace-main">
-            {error && (
-              <p className="notice error-summary" role="alert">
-                {error} Your sign-out result has not been confirmed.
-              </p>
-            )}
             {isStaff && (
               <div className="counter-bar">
                 <label htmlFor="active-counter">Counter access</label>

@@ -7,8 +7,14 @@ export type AuthState =
   | { kind: "anonymous"; expired: boolean }
   | { kind: "authenticated"; user: SessionUser }
   | { kind: "error"; error: unknown };
+/** Local access and confirmed server sign-out are distinct; UNKNOWN must never restore identity. */
+export type LogoutState =
+  | { kind: "idle" | "pending" | "confirmed" }
+  | { kind: "unknown"; message: string };
 export interface AuthContextValue {
   state: AuthState;
+  logoutState: LogoutState;
+  mutationPending: boolean;
   refresh: () => void;
   login: AuthPort["login"];
   logout: () => Promise<void>;

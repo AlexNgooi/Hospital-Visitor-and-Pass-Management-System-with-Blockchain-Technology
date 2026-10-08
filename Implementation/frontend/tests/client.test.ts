@@ -132,6 +132,59 @@ describe("frozen transport boundaries", () => {
       }),
     ).toThrow("canonical UUIDv4");
   });
+  it.each([true, false])(
+    "snapshots command method and protected expiry policy even if options mutate (%s)",
+    async (authRequired) => {
+      const fetcher = vi
+        .fn<typeof fetch>()
+        .mockResolvedValueOnce(json(csrf))
+        .mockRejectedValueOnce(new TypeError("synthetic network failure"))
+        .mockResolvedValueOnce(apiError("AUTHENTICATION_REQUIRED", 401));
+      const client = new ApiClient(fetcher),
+        expired = vi.fn();
+      client.onSessionExpired(expired);
+      const options: {
+        authRequired: boolean;
+        method: "PATCH" | "DELETE";
+        key: string;
+      } = {
+        authRequired,
+        method: "PATCH",
+        key: "12345678-1234-4234-8234-123456789abc",
+      };
+      const body = {
+        expectedVersion: 3,
+        formContext: { grantReference: "synthetic", bindingVersion: 2 },
+      };
+      const command = client.command(
+        "/api/staff/registrations/1/verify",
+        body,
+        z.object({}),
+        options,
+      );
+      await expect(command.execute()).rejects.toMatchObject({
+        kind: "network",
+      });
+      options.method = "DELETE";
+      options.authRequired = !authRequired;
+      options.key = "87654321-1234-4234-8234-123456789abc";
+      body.expectedVersion = 99;
+      await expect(command.execute()).rejects.toMatchObject({
+        code: "AUTHENTICATION_REQUIRED",
+      });
+      const first = fetcher.mock.calls[1],
+        retry = fetcher.mock.calls[2];
+      expect(retry[0]).toBe(first[0]);
+      expect(retry[1]?.method).toBe("PATCH");
+      expect(retry[1]?.body).toBe(first[1]?.body);
+      expect(JSON.parse(retry[1]?.body as string).expectedVersion).toBe(3);
+      expect(new Headers(retry[1]?.headers).get("Idempotency-Key")).toBe(
+        command.key,
+      );
+      expect(expired).toHaveBeenCalledTimes(authRequired ? 1 : 0);
+      expect(fetcher).toHaveBeenCalledTimes(3);
+    },
+  );
   it("does not retry CSRF failures and only the next explicit command reboots token", async () => {
     const fetcher = vi
       .fn<typeof fetch>()
@@ -152,6 +205,16 @@ describe("frozen transport boundaries", () => {
     const client = new ApiClient(fetcher);
     await Promise.all([client.bootstrapCsrf(), client.bootstrapCsrf()]);
     expect(fetcher).toHaveBeenCalledTimes(1);
+  });
+  it("does not claim void logout success for an unexpected 200 response", async () => {
+    const fetcher = vi
+      .fn<typeof fetch>()
+      .mockResolvedValueOnce(json(csrf))
+      .mockResolvedValueOnce(json({}));
+    await expect(
+      createAuthPort(new ApiClient(fetcher)).logout(),
+    ).rejects.toMatchObject({ kind: "invalid-response" });
+    expect(fetcher).toHaveBeenCalledTimes(2);
   });
   it("prevents pre-rotation inflight CSRF from restoring a stale token", async () => {
     let finish!: (response: Response) => void;

@@ -110,14 +110,17 @@ export class ApiClient {
     if (!keyPattern.test(key))
       throw new Error("Idempotency key must be a canonical UUIDv4.");
     const serialized = JSON.stringify(body);
+    // Snapshot all caller-controlled request policy, not just body/key: retries are one command.
+    const method = options.method ?? "POST";
+    const authRequired = options.authRequired;
     return Object.freeze({
       key,
       execute: (signal?: AbortSignal) =>
         this.request(path, schema, {
-          method: options.method ?? "POST",
+          method,
           body: serialized,
           signal,
-          authRequired: options.authRequired,
+          authRequired,
           idempotencyKey: key,
         }),
     });
@@ -196,7 +199,8 @@ export class ApiClient {
         if (error.code === "CSRF_INVALID") this.invalidateCsrf();
         throw error;
       }
-      if (!schema) return undefined as T;
+      // Void commands require the confirmed 204 contract; a stray 200 must not claim logout success.
+      if (!schema) throw new ClientError("invalid-response");
       const parsed = schema.safeParse(data);
       if (!parsed.success) throw new ClientError("invalid-response");
       return parsed.data;

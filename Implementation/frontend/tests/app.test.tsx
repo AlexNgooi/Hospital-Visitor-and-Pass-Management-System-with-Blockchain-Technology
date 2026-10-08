@@ -9,10 +9,15 @@ import {
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter } from "react-router-dom";
 import axe from "axe-core";
+import { useEffect } from "react";
 import App from "../src/App";
 import type { AuthPort } from "../src/lib/auth";
 import type { Role, SessionUser } from "../src/lib/contracts";
 import { ClientError } from "../src/lib/errors";
+import { ApiClient } from "../src/lib/api-client";
+import { createAuthPort } from "../src/lib/auth";
+import { useAuth, type AuthContextValue } from "../src/app/auth-context";
+import { AuthProvider } from "../src/app/auth-provider";
 import {
   RestartConfirmation,
   StatusPanel,
@@ -65,6 +70,26 @@ function mount(
   );
 }
 
+/** Review regressions exercise the real auth/client adapter with synthetic HTTP responses. */
+const jsonResponse = (data: unknown, status = 200) =>
+  new Response(JSON.stringify(data), {
+    status,
+    headers: { "content-type": "application/json" },
+  });
+function httpAnonymous() {
+  return jsonResponse(
+    {
+      timestamp: "test",
+      status: 401,
+      code: "AUTHENTICATION_REQUIRED",
+      message: "",
+      correlationId: "test",
+      fieldErrors: [],
+    },
+    401,
+  );
+}
+
 describe("shell auth and role interactions", () => {
   it("validates linked error summary and focuses it without making an auth request", async () => {
     const { port } = mockPort();
@@ -86,6 +111,12 @@ describe("shell auth and role interactions", () => {
   it("signs in using username (not email), preserves password bytes and navigates to role workspace", async () => {
     const { port } = mockPort();
     mount("/login", port);
+    await waitFor(() =>
+      expect(
+        (screen.getByLabelText("Username / Staff account") as HTMLInputElement)
+          .disabled,
+      ).toBe(false),
+    );
     const user = userEvent.setup();
     await user.type(
       screen.getByLabelText("Username / Staff account"),
@@ -105,6 +136,12 @@ describe("shell auth and role interactions", () => {
     const { port } = mockPort();
     vi.mocked(port.login).mockRejectedValue(new ClientError("network"));
     mount("/login", port);
+    await waitFor(() =>
+      expect(
+        (screen.getByLabelText("Username / Staff account") as HTMLInputElement)
+          .disabled,
+      ).toBe(false),
+    );
     const user = userEvent.setup();
     await user.type(
       screen.getByLabelText("Username / Staff account"),
@@ -302,4 +339,288 @@ describe("shared status and restart dialog", () => {
     fireEvent.keyDown(screen.getByRole("dialog"), { key: "Escape" });
     expect(cancel).not.toHaveBeenCalled();
   });
+});
+
+describe("review regressions: local logout and explicit unknown-login recovery", () => {
+  it("reports an anonymous lookup explicitly after unknown login without replaying credentials", async () => {
+    const { port } = mockPort();
+    vi.mocked(port.login).mockRejectedValue(new ClientError("network"));
+    mount("/login", port);
+    await waitFor(() =>
+      expect(
+        (screen.getByLabelText("Username / Staff account") as HTMLInputElement)
+          .disabled,
+      ).toBe(false),
+    );
+    const user = userEvent.setup();
+    await user.type(
+      screen.getByLabelText("Username / Staff account"),
+      "staff_01",
+    );
+    await user.type(screen.getByLabelText("Password"), "fixture-only");
+    await user.click(screen.getByRole("button", { name: "Sign in" }));
+    await screen.findByRole("alert");
+    await user.click(
+      screen.getByRole("button", { name: "Check current session" }),
+    );
+    await screen.findByText(
+      "No authorised staff session was found. You can sign in.",
+    );
+    expect(port.login).toHaveBeenCalledTimes(1);
+    expect(port.me).toHaveBeenCalledTimes(2);
+    expect(screen.queryByText(/Unable to connect/)).toBeNull();
+  });
+  it("cannot restore a delayed login after sign-out overtakes it", async () => {
+    const { port } = mockPort();
+    let controls!: AuthContextValue;
+    let finishLogin!: (user: SessionUser) => void;
+    vi.mocked(port.login).mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          finishLogin = resolve;
+        }),
+    );
+    function Probe() {
+      const auth = useAuth();
+      useEffect(() => {
+        controls = auth;
+      }, [auth]);
+      return <p>{auth.state.kind}</p>;
+    }
+    render(
+      <AuthProvider port={port}>
+        <Probe />
+      </AuthProvider>,
+    );
+    await screen.findByText("anonymous");
+    let loginResult!: Promise<SessionUser | null>;
+    act(() => {
+      loginResult = controls
+        .login("staff_01", "fixture-only")
+        .catch(() => null);
+    });
+    await act(async () => controls.logout());
+    expect(controls.logoutState.kind).toBe("unknown");
+    await act(async () => finishLogin(fixture()));
+    expect(await loginResult).toBeNull();
+    expect(controls.state.kind).toBe("anonymous");
+    expect(controls.mutationPending).toBe(false);
+    expect(screen.queryByText("authenticated")).toBeNull();
+    vi.mocked(port.me).mockResolvedValueOnce(fixture());
+    act(() => controls.refresh());
+    await waitFor(() =>
+      expect(controls.logoutState).toMatchObject({
+        kind: "unknown",
+        message: "The server session is still active. Retry sign out.",
+      }),
+    );
+    expect(controls.state.kind).toBe("anonymous");
+  });
+  it("unmounts protected content immediately while logout is pending and keeps it cleared after rejection", async () => {
+    const { port } = mockPort("COUNTER_STAFF");
+    let rejectLogout!: (error: unknown) => void;
+    vi.mocked(port.logout).mockImplementationOnce(
+      () =>
+        new Promise((_resolve, reject) => {
+          rejectLogout = reject;
+        }),
+    );
+    mount("/staff/registrations", port, [
+      {
+        path: "/staff/registrations",
+        role: "COUNTER_STAFF",
+        label: "Registration review",
+        element: <p>synthetic protected record</p>,
+      },
+    ]);
+    await screen.findByText("synthetic protected record");
+    const user = userEvent.setup();
+    await user.click(screen.getByRole("button", { name: "Sign out" }));
+    await screen.findByText(
+      "Signing out… Local staff access has been cleared.",
+    );
+    expect(screen.queryByText("synthetic protected record")).toBeNull();
+    expect(
+      screen.queryByRole("navigation", { name: "Counter navigation" }),
+    ).toBeNull();
+    expect(
+      (screen.getByRole("button", { name: "Sign in" }) as HTMLButtonElement)
+        .disabled,
+    ).toBe(true);
+    await act(async () => rejectLogout(new ClientError("network")));
+    await screen.findByText("Server sign-out could not be confirmed.");
+    expect(screen.queryByText("synthetic protected record")).toBeNull();
+    // Even an explicit GET reporting the old server user cannot undo the sign-out intent.
+    await user.click(
+      screen.getByRole("button", { name: "Check sign-out status" }),
+    );
+    await screen.findByText(/The server session is still active/);
+    expect(
+      screen.queryByRole("heading", { name: "Your workspace, ready." }),
+    ).toBeNull();
+    expect(port.logout).toHaveBeenCalledTimes(1);
+    await user.click(screen.getByRole("button", { name: "Retry sign out" }));
+    await screen.findByText(
+      "Local staff access is cleared. Your staff session is no longer authorised.",
+    );
+    expect(port.logout).toHaveBeenCalledTimes(2);
+    expect(
+      (screen.getByRole("button", { name: "Sign in" }) as HTMLButtonElement)
+        .disabled,
+    ).toBe(false);
+  });
+  it("recovers a post-revocation 503 using an explicit me401 check without replaying logout", async () => {
+    const { port } = mockPort("COUNTER_STAFF");
+    vi.mocked(port.logout).mockRejectedValue(
+      new ClientError("api", {
+        timestamp: "test",
+        status: 503,
+        code: "SERVICE_UNAVAILABLE",
+        message: "",
+        correlationId: "test",
+        fieldErrors: [],
+      }),
+    );
+    mount("/staff", port);
+    await screen.findByRole("heading", { name: "Your workspace, ready." });
+    await userEvent
+      .setup()
+      .click(screen.getByRole("button", { name: "Sign out" }));
+    await screen.findByText("Server sign-out could not be confirmed.");
+    vi.mocked(port.me).mockRejectedValueOnce(anonymous());
+    await userEvent
+      .setup()
+      .click(screen.getByRole("button", { name: "Check sign-out status" }));
+    await screen.findByText(
+      "Local staff access is cleared. Your staff session is no longer authorised.",
+    );
+    expect(port.logout).toHaveBeenCalledTimes(1);
+    expect(
+      screen.queryByRole("navigation", { name: "Counter navigation" }),
+    ).toBeNull();
+  });
+  it("fences a delayed identity lookup after logout starts", async () => {
+    const { port } = mockPort("COUNTER_STAFF");
+    let controls!: AuthContextValue;
+    let finishMe!: (user: SessionUser) => void;
+    let finishLogout!: () => void;
+    function ProtectedProbe() {
+      const auth = useAuth();
+      useEffect(() => {
+        controls = auth;
+      }, [auth]);
+      return <p>synthetic protected record</p>;
+    }
+    mount("/staff/registrations", port, [
+      {
+        path: "/staff/registrations",
+        role: "COUNTER_STAFF",
+        label: "Registration review",
+        element: <ProtectedProbe />,
+      },
+    ]);
+    await screen.findByText("synthetic protected record");
+    vi.mocked(port.me).mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          finishMe = resolve;
+        }),
+    );
+    act(() => controls.refresh());
+    await waitFor(() => expect(port.me).toHaveBeenCalledTimes(2));
+    vi.mocked(port.logout).mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          finishLogout = resolve;
+        }),
+    );
+    act(() => {
+      void controls.logout();
+    });
+    await screen.findByText(
+      "Signing out… Local staff access has been cleared.",
+    );
+    await act(async () => finishMe(fixture()));
+    expect(screen.queryByText("synthetic protected record")).toBeNull();
+    expect(
+      screen.queryByRole("heading", { name: "Your workspace, ready." }),
+    ).toBeNull();
+    await act(async () => finishLogout());
+    await screen.findByText(
+      "Local staff access is cleared. Your staff session is no longer authorised.",
+    );
+  });
+  it.each(["network-unknown", "csrf-after-success"])(
+    "offers an explicit current-session check after %s and does not replay login",
+    async (failure) => {
+      const fetcher = vi
+        .fn<typeof fetch>()
+        .mockResolvedValueOnce(httpAnonymous())
+        .mockResolvedValueOnce(
+          jsonResponse({
+            headerName: "X-CSRF-TOKEN",
+            token: "synthetic-test-csrf",
+          }),
+        );
+      if (failure === "network-unknown")
+        fetcher.mockRejectedValueOnce(
+          new TypeError("synthetic network failure"),
+        );
+      else
+        fetcher
+          .mockResolvedValueOnce(jsonResponse(fixture()))
+          .mockResolvedValueOnce(
+            jsonResponse(
+              {
+                timestamp: "test",
+                status: 503,
+                code: "SERVICE_UNAVAILABLE",
+                message: "",
+                correlationId: "test",
+                fieldErrors: [],
+              },
+              503,
+            ),
+          );
+      fetcher.mockResolvedValueOnce(jsonResponse(fixture()));
+      mount("/login", createAuthPort(new ApiClient(fetcher)));
+      await waitFor(() =>
+        expect(
+          (
+            screen.getByLabelText(
+              "Username / Staff account",
+            ) as HTMLInputElement
+          ).disabled,
+        ).toBe(false),
+      );
+      const user = userEvent.setup();
+      await user.type(
+        screen.getByLabelText("Username / Staff account"),
+        "staff_01",
+      );
+      await user.type(screen.getByLabelText("Password"), "fixture-only");
+      await user.click(screen.getByRole("button", { name: "Sign in" }));
+      await screen.findByRole("alert");
+      await waitFor(() =>
+        expect(
+          (
+            screen.getByRole("button", {
+              name: "Check current session",
+            }) as HTMLButtonElement
+          ).disabled,
+        ).toBe(false),
+      );
+      expect(
+        fetcher.mock.calls.filter(([path]) => path === "/api/auth/login"),
+      ).toHaveLength(1);
+      await user.click(
+        screen.getByRole("button", { name: "Check current session" }),
+      );
+      await screen.findByRole("heading", { name: "Your workspace, ready." });
+      expect(fetcher.mock.calls.at(-1)?.[0]).toBe("/api/auth/me");
+      expect(
+        fetcher.mock.calls.filter(([path]) => path === "/api/auth/login"),
+      ).toHaveLength(1);
+    },
+  );
 });
