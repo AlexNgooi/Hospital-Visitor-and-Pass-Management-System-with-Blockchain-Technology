@@ -1,0 +1,13 @@
+# Only explicit local development imports the untracked Java Properties file.
+spring:
+  config:
+    import: optional:file:./.env[.properties]
+  datasource:
+    url: ${HSAAS_DB_URL:jdbc:mysql://localhost:3306/hsaas_db}
+    username: ${HSAAS_DB_USER:hsaas}
+hsaas:
+  environment: development
+  secure-cookie: false
+server:
+  # Insecure development cookies are allowed only on an explicitly loopback-bound server.
+  address: 127.0.0.1

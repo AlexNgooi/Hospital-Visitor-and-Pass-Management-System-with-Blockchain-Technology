@@ -1,0 +1,16 @@
+# Testcontainers must override these unreachable values; native MySQL is never a fallback.
+spring:
+  config:
+    import: ''
+  datasource:
+    url: jdbc:mysql://127.0.0.1:1/TESTCONTAINERS_REQUIRED
+    username: TESTCONTAINERS_REQUIRED
+    password: TESTCONTAINERS_REQUIRED
+hsaas:
+  environment: test
+  secure-cookie: false
+logging:
+  level:
+    org.springframework.security: WARN
+    org.testcontainers: WARN
+    com.github.dockerjava: WARN
