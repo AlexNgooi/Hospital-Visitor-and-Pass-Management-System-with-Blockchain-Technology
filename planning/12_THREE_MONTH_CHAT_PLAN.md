@@ -8,7 +8,7 @@ status: m00-m01-development-authorized
 
 本 chat 固定为 coordinator。开发按模块拆分，每个模块有自己的 chat，不共用一个阶段开发 chat；模块返修继续用原模块 chat。coordinator 管规划、契约、分配、问题裁决、审核与本地 merge。阶段时间表见 [01](01_DEVELOPMENT_PLAN.md)，业务事实以 02/03/04 为准。
 
-默认由用户手动开启 module chat 并启动开发，coordinator 不自动派发或用子代理/自动化替代用户启动。本次用户明确授权的 M00–M04 例外及实际登记见下。最新用户已授权 M00/M01 开发，coordinator 固定规划基线并建立隔离后派发；M02–M04 仍只读准备。chat 存在、READY、依赖完成或日期到达均不代表已启动源码实施。
+默认由用户手动开启 module chat 并启动开发，coordinator 不自动派发或用子代理/自动化替代用户启动。本次用户明确授权的 M00–M04 例外及实际登记见下。最新用户已授权 M00/M01 开发，coordinator 已固定规划基线并建立隔离、派发实施任务；M02–M04 仍只读准备。chat 存在、READY、依赖完成或日期到达均不代表已启动源码实施。
 
 ## 本次明确授权例外：代开 M00–M04
 
@@ -33,6 +33,8 @@ status: m00-m01-development-authorized
 ### M00/M01 开发许可（2026-10-08）
 
 人类用户在 coordinator chat 明确要求：“现在每个module 都好了吗？ 好了的话可以开始让 00 01 开始写”。M00–M04 已完成准备核对；该请求授予 M00、M01 各自范围的一次开发许可。coordinator 负责本地提交当前规划基线、安排独立工作区并发回启动任务，模块不重复向用户求许可。M00 直接实现基础后端、安全/会话同步验证；M01 先按冻结契约实现前端框架、公共 UI/client 和登录，真实联调等待 M00 可用接口。英文注释、测试、交接和 coordinator 审核/merge 规则持续有效。M02–M04 与后续模块未获开发许可；不开启外部部署/push或真实医院/硬件/消息/链集成。
+
+实际派发：规划基线已本地提交为 `c2b0c316e04947df06b84f1008f470b6e5a9eb8b`。通过 app handoff 成功把两个既有 module chat 移到独立工作树，工具返回新目标 thread ID；历史原 ID 保留在创建记录中，今后使用下表目标 ID。两个工作树启动前均干净且 HEAD 为该基线。已向目标 chat 发出直接实施任务并显式保持 `gpt-6.1-sol/high`；一次 wait_threads 快照确认两者 active/inProgress，尚无业务验收结果。coordinator main 留作审核/集成。
 
 2026-10-08 用户明确要求“不需要再 guide 我写了，直接帮我写，只不过代码里要写好注释英文”。这取消源码用户手写/一步一步guide方式。模块取得自身一次开发许可后，由模块助手直接实现所属范围、运行适当构建/测试、修复问题、整理可审阅 diff 与 HANDOFF；coordinator 审核、本地 merge 与集成复验。不再要求用户逐步写源码或确认普通实现步骤。
 
@@ -86,12 +88,12 @@ M08–M11 当前为 DEFERRED，不启动运行进程、不安装依赖来阻塞�
 
 基本依赖为 M00 → M01 → M02 → M03 → M04 → M05 → M06 → M07。M01 可先对冻结契约 mock；M06 的账号/配置可在 M00 后提前，报表等候生命周期数据。WIP ≤2，分支隔离不替代依赖验收。
 
-M00–M04 已创建并完成准备核对；用户已启动 M00/M01，实施隔离正在安排。M02–M04 仍只读，其他模块未启动。此表由 coordinator 更新；任务单/chat 准备好不等于源码已实施。
+M00–M04 已创建并完成准备核对；M00/M01 已隔离并派发直接实施任务。M02–M04 仍只读，其他模块未启动。此表由 coordinator 更新；业务完成需实际交接/审核/验收。
 
 | 模块 | 状态 | chat ID / owner | baseline / branch / worktree | handoff / review / merge |
 |---|---|---|---|---|
-| M00 | READY；用户已批准开发，隔离后派发 | 01a11ba4-d95a-7260-976f-f997b683c403 / 模块助手直接实现 | coordinator 固定规划基线并登记隔离工作树 | 无；gpt-6.1-sol/high |
-| M01 | READY；用户已批准开发，真实接入依赖 M00 | 01a11ba4-ddd4-78f1-bcb1-340650645d3e / 模块助手直接实现 | coordinator 固定规划基线并登记隔离工作树 | 无；gpt-6.1-sol/high |
+| M00 | IN_PROGRESS；用户已批准，实施任务已运行 | 01a11bcf-a53d-7323-a74e-edffa8092c50 / 模块助手直接实现 | c2b0c316；codex/hsaas-m00-foundation；C:/Users/alexy/.codex/worktrees/ced2/FYP Dev | 无；gpt-6.1-sol/high |
+| M01 | IN_PROGRESS；用户已批准，真实接入依赖 M00 | 01a11bcf-e448-7be0-88c1-f7910300e82e / 模块助手直接实现 | c2b0c316；codex/hsaas-m01-frontend-shell；C:/Users/alexy/.codex/worktrees/4156/FYP Dev | 无；gpt-6.1-sol/high |
 | M02 | PLANNED；一次开发许可待答，依赖 M00/M01 | 01a11ba4-e2bd-74a3-beee-1f47860bfc01 / 模块助手直接实现 | Local/main；HEAD b005823；规划未提交；实施隔离待建立 | 无；gpt-6.1-sol/high |
 | M03 | PLANNED；一次开发许可待答，接入依赖 M00/M01/M02 | 01a11ba4-e814-7832-bd40-f471edf417b4 / 模块助手直接实现 | Local/main；HEAD b005823；规划未提交；实施隔离待建立 | 无；gpt-6.1-sol/high |
 | M04 | PLANNED；一次开发许可待答，依赖 M03 | 01a11ba4-ecca-7ca3-a224-c3dde42d1edd / 模块助手直接实现 | Local/main；HEAD b005823；规划未提交；实施隔离待建立 | 无；gpt-6.1-sol/high |
