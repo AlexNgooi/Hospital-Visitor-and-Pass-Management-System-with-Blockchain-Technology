@@ -27,6 +27,29 @@ using Spring's password encoder. The test-only trigger requires
 production setting or grant change. Backend profile `integration-m01` explicitly
 clears config import and uses `test` environment/non-Secure loopback HTTP cookies.
 
+Before creating files, checking ports or launching Docker/Java, the harness rejects
+inherited `SPRING_*` variables and common JVM/Node injection options, including
+JAVA_TOOL_OPTIONS, JDK_JAVA_OPTIONS and _JAVA_OPTIONS. Refusal prints a fixed
+message, never the host variable value. Remove those overrides from the test
+terminal environment before normal startup. All subprocesses receive one shared
+OS/runtime allowlist plus explicit disposable values; inherited HSAAS credentials
+and unrelated configuration are dropped. Backend and fixture use the same clean
+database environment. Backend configuration is restricted to packaged
+`classpath:/application.yaml`, with empty additional locations/import/profile
+includes/group and the explicit integration-m01 profile; cwd configuration and
+external profile groups cannot redirect Flyway.
+
+```powershell
+# Non-secret refusal case uses port9/ignored without connecting to it or starting Docker/Java.
+node --test --test-reporter=spec tests/real-integration/environment-check.mjs
+```
+
+The environment check covers the allowlist, case-insensitive Spring/JVM injection
+names and an actual harness subprocess carrying
+`SPRING_DATASOURCE_URL=jdbc:mysql://127.0.0.1:9/ignored`. It must exit1 before even
+creating an output directory; the override target is never probed. These 16 native
+Node checks are separate from the frontend's previously reviewed 68 Vitest tests.
+
 In another frontend terminal:
 
 ```powershell

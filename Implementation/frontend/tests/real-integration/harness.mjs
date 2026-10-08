@@ -6,8 +6,27 @@ import { createServer as tcpServer } from "node:net";
 import { createWriteStream } from "node:fs";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { resolve } from "node:path";
+import { createChildEnvironment } from "./environment.mjs";
 
-const exec = promisify(execFile);
+// Refusal happens before filesystem writes, port checks, Docker, Java, or automatic Flyway startup.
+let childEnvironment;
+try {
+  childEnvironment = createChildEnvironment(process.env);
+} catch {
+  console.error(
+    "REFUSED inherited Spring/JVM/runtime configuration; no resources started",
+  );
+  process.exit(1);
+}
+const executeFile = promisify(execFile);
+/** Every subprocess shares the clean environment unless supplied with explicit disposable values. */
+function exec(command, args, options = {}) {
+  return executeFile(command, args, {
+    ...options,
+    windowsHide: true,
+    env: options.env ?? childEnvironment,
+  });
+}
 const frontend = process.cwd();
 const backend = resolve(frontend, "../backend");
 const output = resolve(frontend, "output/playwright/real-integration");
@@ -41,6 +60,7 @@ function launch(command, args, options, filename) {
   logs.push(log);
   const child = spawn(command, args, {
     ...options,
+    env: options.env ?? childEnvironment,
     windowsHide: true,
     stdio: ["ignore", "pipe", "pipe"],
   });
@@ -147,7 +167,7 @@ try {
     ],
     {
       env: {
-        ...process.env,
+        ...childEnvironment,
         MYSQL_ROOT_PASSWORD: rootPassword,
         MYSQL_DATABASE: "hsaas_m01_integration",
         MYSQL_USER: "m01_integration",
@@ -170,7 +190,7 @@ try {
         "-e",
         "SELECT 1",
       ],
-      { env: { ...process.env, MYSQL_PWD: rootPassword } },
+      { env: { ...childEnvironment, MYSQL_PWD: rootPassword } },
     );
     return true;
   });
@@ -188,19 +208,24 @@ try {
       "SET GLOBAL log_bin_trust_function_creators=1",
     ],
     {
-      env: { ...process.env, MYSQL_PWD: rootPassword },
+      env: { ...childEnvironment, MYSQL_PWD: rootPassword },
     },
   );
   const mapping = await exec("docker", ["port", containerId, "3306/tcp"]);
   const dbPort = Number(mapping.stdout.trim().split(":").at(-1));
   databaseEnvironment = {
-    ...process.env,
+    ...childEnvironment,
     HSAAS_DB_URL: `jdbc:mysql://127.0.0.1:${dbPort}/hsaas_m01_integration?connectionTimeZone=UTC`,
     HSAAS_DB_USER: "m01_integration",
     HSAAS_DB_PASSWORD: databasePassword,
     // Public synthetic login fixture, never a real hospital staff credential or deployment default.
     M01_FIXTURE_PASSWORD: "Synthetic-only-password_1",
     HSAAS_PORT: String(backendPort),
+    HSAAS_ENVIRONMENT: "test",
+    READER_MODE: "disabled",
+    MRN_MODE: "manual",
+    NOTIFICATION_MODE: "disabled",
+    BLOCKCHAIN_MODE: "disabled",
   };
   const server = launch(
     "java",
@@ -208,7 +233,12 @@ try {
       "-jar",
       "target/hsaas-backend-0.0.1-SNAPSHOT.jar",
       "--spring.profiles.active=integration-m01",
+      // Only packaged reviewed configuration is eligible; cwd files and external profile groups cannot join.
+      "--spring.config.location=classpath:/application.yaml",
+      "--spring.config.additional-location=",
       "--spring.config.import=",
+      "--spring.profiles.include=",
+      "--spring.profiles.group.integration-m01=",
       "--server.address=127.0.0.1",
       "--hsaas.environment=test",
       "--hsaas.secure-cookie=false",
@@ -242,7 +272,7 @@ try {
     {
       cwd: frontend,
       env: {
-        ...process.env,
+        ...childEnvironment,
         HSAAS_BACKEND_ORIGIN: `http://127.0.0.1:${backendPort}`,
       },
     },
@@ -299,6 +329,10 @@ try {
         controlPort,
         profile: "integration-m01 (no .env import)",
         modes: "test / disabled / manual / disabled / disabled",
+        childEnvironment:
+          "OS/runtime allowlist; inherited Spring/JVM/runtime injection rejected before startup",
+        configurationLocation:
+          "classpath:/application.yaml only; no file location, additional location, import, included profile or profile group",
       },
       null,
       2,
