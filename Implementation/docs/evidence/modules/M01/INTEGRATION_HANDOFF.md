@@ -5,6 +5,12 @@ slice; coordinator alone approves/merges and records INTEGRATION_VERIFIED.
 The previously merged foundation remains merged. This delivery adds real local
 M00 integration evidence and one frontend recovery fix, not whole-system acceptance.
 
+Harness-only review return: see [HARNESS_ISOLATION_HANDOFF](HARNESS_ISOLATION_HANDOFF.md)
+for source `4979d6d38b1a4c3101b514462f4924e4e0d04a08`, the inherited-configuration
+refusal checks and startup smoke. The original 28-wire/7-browser/68-unit receipt
+below remains preserved at its tested source; this return does not claim those
+unrelated checks were rerun.
+
 - Branch/worktree: `codex/hsaas-m01-frontend-shell`, `C:\Users\alexy\.codex\worktrees\4156\FYP Dev`.
 - Integration baseline: `03fda7fe56d1de94e04083b8f58370ac9cf80c7f`, fast-forwarded into this feature branch only; no main checkout/branch operation.
 - Tested source implementation: `2baded5ca1acef2ff0e6cc5391a59cbfa30731f0`.

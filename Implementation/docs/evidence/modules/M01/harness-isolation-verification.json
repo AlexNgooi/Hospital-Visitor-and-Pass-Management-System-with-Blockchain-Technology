@@ -1,0 +1,80 @@
+{
+  "module": "M01",
+  "status": "REVIEW_READY harness isolation only",
+  "sourceImplementationSha": "4979d6d38b1a4c3101b514462f4924e4e0d04a08",
+  "previousDeliverySha": "8e5ffcffdccd8530a9e30da8244e46f33c2029f2",
+  "previousActualIntegrationSourceSha": "2baded5ca1acef2ff0e6cc5391a59cbfa30731f0",
+  "recordedUtc": "2026-10-08T22:28:39.548Z",
+  "policy": "Refuse inherited Spring/JVM/Node configuration before all resources; every child uses shared OS/runtime allowlist plus explicit disposable settings",
+  "checks": {
+    "command": "node --test --test-reporter=spec tests/real-integration/environment-check.mjs",
+    "runnerExit": 0,
+    "total": 16,
+    "passed": 16,
+    "failed": 0,
+    "skipped": 0,
+    "guardCaseInsensitive": true,
+    "allowlistDropsApplicationConfiguration": true,
+    "actualHarnessNegative": {
+      "overrideName": "SPRING_DATASOURCE_URL",
+      "publicInertValue": "jdbc:mysql://127.0.0.1:9/ignored",
+      "expectedChildExit": 1,
+      "actualChildExit": 1,
+      "stdoutEmpty": true,
+      "fixedRefusalMessage": true,
+      "scratchDirectoryEmpty": true,
+      "hostValueNotReflected": true,
+      "refusedBeforeFilesystemPortDockerJavaOrFlyway": true,
+      "targetProbed": false
+    }
+  },
+  "smoke": {
+    "scope": "Actual reviewed M00/owned MySQL/Vite normal startup and health only; no auth/business/browser replay",
+    "ready": true,
+    "proxiedHealthStatus": 200,
+    "healthBodyStatus": "UP",
+    "resources": {
+      "containerName": "hsaas-m01-real-4156",
+      "owner": "m01-4156-integration",
+      "mysqlImage": "mysql:8.0.45",
+      "dbPort": 53354,
+      "backendPort": 18091,
+      "webPort": 15191,
+      "controlPort": 15192,
+      "profile": "integration-m01 (no .env import)",
+      "modes": "test / disabled / manual / disabled / disabled",
+      "childEnvironment": "OS/runtime allowlist; inherited Spring/JVM/runtime injection rejected before startup",
+      "configurationLocation": "classpath:/application.yaml only; no file location, additional location, import, included profile or profile group"
+    },
+    "cleanup": {
+      "ownedProcessesStopped": true,
+      "ownedContainerRemoved": true
+    },
+    "independentOwnedListenerCount": 0,
+    "independentOwnedContainerCount": 0,
+    "browserOpened": false
+  },
+  "commands": [
+    "node environment-check: PASS runner exit0, 16/16",
+    "pnpm run lint: PASS exit0 zero warnings final run",
+    "pnpm run typecheck:test: PASS exit0",
+    "git diff --check / git diff --cached --check: PASS exit0",
+    "normal harness start: READY, actual proxied health200/UP",
+    "POST stop:204, harness exit0, independent no owned listeners/container"
+  ],
+  "unchanged": [
+    "backend production source/migrations",
+    "frontend auth.ts fix",
+    "production OpenAPI/generated declarations",
+    "original integration-verification.json and seven screenshots"
+  ],
+  "notRerun": [
+    "28 real wire auth/business requests",
+    "seven browser states",
+    "68 Vitest tests"
+  ],
+  "limits": [
+    "Production HTTPS acceptance NOT_RUN",
+    "Whole-system business/live integration NOT_RUN"
+  ]
+}
