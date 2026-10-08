@@ -137,4 +137,4 @@ coordinator 记录答复/decision ID、影响规范与 owner，通过 send_messa
 
 ## 下一项具体计划
 
-M00/M01 的基础实现已审核并本地合并，合并后 backend 40 tests、frontend 63 tests/build/lint/synthetic proxy PASS。M01 在原隔离分支同步已合并基线，用临时 MySQL 与 synthetic fixture 做真实 C01/backend/proxy/cookie/CSRF/browser 联调，并使用 M00 OpenAPI 生成真实类型；不读取开发 .env、不触碰 native DB、不执行真实 bootstrap。此为既有 M01 许可内任务，问题/后端返修交 coordinator/M00。M02–M04 保持准备/等待许可，M05–M11 不自动开启。
+M00/M01 的基础实现已审核并本地合并，合并后 backend 40 tests、frontend 63 tests/build/lint/synthetic proxy PASS。M01 已收到联调任务，以 main03fda7f 为固定输入同步原分支，用临时 MySQL 与 synthetic seed 做真实 C01/backend/proxy/cookie/CSRF/browser 联调，并使用 M00 OpenAPI 生成真实类型；不读取开发 .env、不触碰 native DB、不执行真实 bootstrap。允许 M01 在 Implementation/docs/api/openapi.json 建立标注源 SHA 的生成输入镜像，frontend generated 类型由 M01 生成，原 M00 spec 不改；未来多模块 schema 汇总由 coordinator 统一协调。此为既有 M01 许可内任务，问题/后端返修交 coordinator/M00。M02–M04 保持准备/等待许可，M05–M11 不自动开启。

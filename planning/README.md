@@ -42,4 +42,4 @@ v3 六张图保留完整长期集成设计，图源和视觉收据未重绘：**
 - sync_mermaid.py 更新文本镜像；build_delivery_hub.py 更新导航、哈希与范围提示。
 - [旧图交付清单](diagrams/v3/delivery-manifest.json)、[人工截图评审](diagrams/v3/review-receipt.json)、[规划 QA](diagrams/v3/planning-qa.json)。
 
-本轮不更新外部 [Trello board](https://trello.com/b/XnospkpS/fyp-hsaas-visitor-pass-management-system) 或 Figma。M00–M04 已创建并收到各自只读准备任务；下一步由用户在 M00 chat 继续，先审查现有骨架和契约，不重建项目；模块交接后由 coordinator 审核合并。
+本轮不更新外部 [Trello board](https://trello.com/b/XnospkpS/fyp-hsaas-visitor-pass-management-system) 或 Figma。M00/M01 基础代码已本地合并，M01 正在原工作树推进临时环境真实联调与 M00 OpenAPI 类型生成；M02–M04 等待用户许可。模块交接后仍由 coordinator 审核合并，不自动开启其他模块。
