@@ -10,6 +10,8 @@ status: locally-reviewed-design
 
 ## 2026-10-08 当前决定与实际状态
 
+2026-10-09 最小接口补充：M00 实施中提出 categoryScope ID/code 歧义，coordinator 核对当前契约后统一为 visitor_categories 数据库 ID 十进制字符串，与 counterId 一致；完整 C10 scope/details 与 bindingVersion 安全整数范围见04。该决定用于公共 DTO/client 对接，不启动 M02 开发。M00 报告在 framework save 前增加只校验/撤销、不激活/续期的有界领域检查，锁全部释放后 save，再执行成功确认 hook；作为 spike 实现调整纳入最终故障/并发审核，未放行 guard 集成。M00 当前报告 20 tests PASS，完整 upgrade/restart/DB-offline/竞争验证与 HANDOFF 仍进行中。
+
 最新启动决定：用户明确要求准备完成后让 M00/M01 开始写代码。已核对 M00–M04 准备状态，M00/M01 获一次开发许可；coordinator 本地提交当前规划作为可追溯输入并安排独立工作树，再发开发任务。M01 可先按冻结契约实现 UI/client，真实联调依赖 M00。M02–M04 未获开发许可；以下“只 plan/未提交/许可待答”记录为此前历史，不再代表 M00/M01 当前状态。业务功能仍未验收。
 
 实际启动已完成：规划提交 c2b0c316e04947df06b84f1008f470b6e5a9eb8b；app handoff 成功创建 M00/M01 隔离工作树及目标 chat，路径/branch/thread ID 见12当前状态表。启动任务已送达并保持 gpt-6.1-sol/high，快照确认两个 chat active/inProgress。该状态证明任务运行，不代表业务完成；coordinator 未合并模块业务、未 push/deploy，M02–M04 未启动实施。

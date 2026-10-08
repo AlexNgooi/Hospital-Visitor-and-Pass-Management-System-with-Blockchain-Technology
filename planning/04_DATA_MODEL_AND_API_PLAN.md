@@ -91,7 +91,7 @@ Outbox worker claim 用短事务和 lease fencing，不持有 DB lock 等待 pro
 
 C01–C06 是 coordinator 的技术决定，均未实现/未测试，不代表用户已批准模块开发。cookie/工程 session TTL 已采用 02 的明确工程方案，QR 签名方向见该文件；限流和实际依赖兼容性仍需 M00/M02 验证，不能从 framework 默认猜测。
 
-C01 wire ID 补充（M01 实施问题）：login/me 的 `id` 为 JSON string，`counterIds` 为 JSON string 数组；数值主键在 HTTP 层输出十进制字符串，前端按 opaque string 保存/比较，不转 JavaScript Number，避免 Java long 超出精确整数范围。其他 DTO 的数据库主键遵循同一 string 原则；此决定不改变 version/期限等非 ID 字段契约。C10 未冻结的 scope 精确 DTO 不由 M01 猜测；共享 restart 组件先提供适配入口，接收业务模块校验后的安全标签/context，未知 details 不渲染或回显原对象，待 M02 实施启动后冻结。
+C01 wire ID 补充（M01 实施问题）：login/me 的 `id` 为 JSON string，`counterIds` 为 JSON string 数组；数值主键在 HTTP 层输出十进制字符串，前端按 opaque string 保存/比较，不转 JavaScript Number，避免 Java long 超出精确整数范围。其他 DTO 的数据库主键遵循同一 string 原则；此决定不改变 version/期限等非 ID 字段契约。C10 scope 精确 DTO 现已在下文冻结；共享 restart 组件保留适配入口，接收业务模块校验后的安全标签/context，未知 details 不渲染或回显原对象，不代 M02 实现 exchange。
 
 C07/U02 单份表单：同一 anonymousScopeId 最多一条有效未提交 grant；exchange 发现不同入口已有有效表单先返回 409 `REGISTRATION_ENTRY_RESTART_REQUIRED` 与最小旧/新 scope 信息，不自动覆盖。客户端只在明确确认重新开始后重试（绑定 expected old grant reference/version）；服务端同时校验当前绑定与新 entry 有效性，原子撤销旧 grant/创建新 grant。取消/替换失败保留原 grant，旧页以原 grant reference/version 提交必须被拒，不能借共享 cookie 误用新 grant。成功重放按 C05，不把新的 grant 身份作为 PII 查询授权；同码同会话重试保持原 expiry。M02 提出具体 DTO/锁序/CAS 模型供 coordinator 评审，M03 必须显式校验提交表单上下文。
 
@@ -104,6 +104,7 @@ M03 的其余 synthetic-registration-v1 字段与 MRN enum/validation token 方�
 C10 单份表单 DTO/CAS 决定：
 
 - `formContext={grantReference,bindingVersion}`。grantReference 是随机非敏感引用，不是授权 bearer；exchange/GET entry 返回此 context、scope/serverNow/grantExpiresAt，M03 schema 由其 owner 定义。schema/MRN/submission 都传表单最初的 context；不能先 GET 新 context 把旧输入悄悄换绑。request hash 同时覆盖 formContext。
+- C10 wire scope 已于 2026-10-09 冻结为 `{environment:string,counterId:string,categoryScope:string|null}`。counterId/categoryScope 为对应数据库主键的十进制字符串；categoryScope 唯一表示 visitor_categories ID，不混用 code 或显示名称。null 表示本环境当前四类允许类别的选择入口，非 NULL 限于指定类别；服务器校验其存在/启用与入口授权，不接受 details 改写 grant。environment 来自服务端配置/入口，仅用作范围比较，不由客户端切环境。`bindingVersion` 保持 JSON number，但必须为 0–9007199254740991 内整数；客户端严格校验，服务端 CAS/递增不得越界或回绕，达到上限须拒绝状态变更。`RestartDetails={currentFormContext,currentScope,requestedScope}` 只用于 RESTART_REQUIRED，其他错误不输出 details；不加 name/token/PII，M01 使用受控适配得到展示标签。
 - exchange 确认重试带 `restartConfirmed=true`、`expectedFormContext`；未确认不得自选 counter/category。已有不同 canonical scope 的有效 grant 返回 RESTART_REQUIRED，不修改 version/pointer；canonical scope 包括 environment/counter/categoryScope，同 scope 的另一 display 可复用原有效 grant，但保留原 display/owner 来源与撤销语义，不延长 expiry、不换绑。
 - 首次与 replace 在领域事务中更新 entry_context，CAS 检查 pointer/version，成功一次才撤销旧 grant/创建新 grant；失败完整回滚。消费成功清 current_grant_id 并增加 binding_version，保留原 grant 与幂等历史。未知提交结果不能宣称“替换失败、旧 grant 有效”，客户端先 GET entry 核对，只在明确新绑定后清旧输入。
 - 统一 409 `REGISTRATION_ENTRY_CONTEXT_CHANGED` 表示预期 pointer/version 已改变。RESTART_REQUIRED 的统一安全错误允许可选 typed `details={currentFormContext,currentScope,requestedScope}`，仅此白名单形状，无 PII/token/raw input；其他错误默认 details 缺省。不要把 JSON 塞 message/fieldErrors，M00/M01 按 error code 解析明确类型。
