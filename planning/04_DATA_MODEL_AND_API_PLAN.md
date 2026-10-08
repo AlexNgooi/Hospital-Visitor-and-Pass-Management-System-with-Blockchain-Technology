@@ -89,7 +89,7 @@ Outbox worker claim 用短事务和 lease fencing，不持有 DB lock 等待 pro
 - C05 Grant/幂等：M03 通过 M02 port 加入同一外层事务，锁序按 §2，不独立提前消费；幂等 scope 用服务端稳定 anonymousScopeId + operation，不能用 caller 自填 scope 或暴露 cookie。会话 ID 轮换保留服务端 scope 属性；会话丢失不能用 reference 重建授权。相同 scope/key/body 的已成功命令，在安全响应保留窗口内可返回原非敏感 reference，即便 grant 已自然过期/消费/撤销；新命令仍按当前状态拒绝。幂等保留期初值 24h，匿名授权会话本身必须仍有效，清理/过期后不得伪造原结果或创建第二个登记。
 - C06 本地审计：M00 提供可参与外层事务的 LocalAuditPort，当前包含 `REGISTRATION_SUBMITTED / REGISTRATION_VERIFIED / REGISTRATION_REJECTED` 本地 action；只含所需安全关联/状态/version/actor/time，不复制表单/证件/MRN/note 原文。审计失败业务回滚，不自动加入链 catalogue 或发消息。schema 与 OpenAPI 由各 backend owner 提供，M01 管 generated client 入口，不手改生成代码；冻结前只能使用明确的 mock port。
 
-C01–C06 是 coordinator 的技术决定，均未实现/未测试，不代表用户已批准模块开发。cookie/工程 session TTL 已采用 02 的明确工程方案，QR 签名方向见该文件；限流和实际依赖兼容性仍需 M00/M02 验证，不能从 framework 默认猜测。
+C01–C06 是 coordinator 的技术决定。2026-10-09 C01/C02 与基础权限、审计/幂等 port 已在 M00/M01 当前本地范围实现并验证；具体登记/审核/grant 命令仍由未启动的业务模块实现，不把基础 port PASS 当完整业务 PASS。cookie/工程 session TTL 已采用02方案，QR签名方向见该文件；M02 的完整token/keyring/lifecycle仍需实测。用户只批准M00/M01，不扩展至其他模块。
 
 C01 wire ID 补充（M01 实施问题）：login/me 的 `id` 为 JSON string，`counterIds` 为 JSON string 数组；数值主键在 HTTP 层输出十进制字符串，前端按 opaque string 保存/比较，不转 JavaScript Number，避免 Java long 超出精确整数范围。其他 DTO 的数据库主键遵循同一 string 原则；此决定不改变 version/期限等非 ID 字段契约。C10 scope 精确 DTO 现已在下文冻结；共享 restart 组件保留适配入口，接收业务模块校验后的安全标签/context，未知 details 不渲染或回显原对象，不代 M02 实现 exchange。
 
@@ -124,7 +124,7 @@ framework save/flush/delete 阶段不持领域锁、不在领域事务内；成�
 
 logout 先按 user→binding→context 提交逻辑撤销，再删除框架 Session；delete 失败仍拒绝能力。账号/角色/权限更新与 target user epoch/audit 同事务；counter 关闭按 actor user→counter→actor binding/context 校验并停用，不反向追锁所有 owner。grant/display 可依据当前权威 guard 逻辑失效，物理清理为后续工作；API 不把仍 OPEN 的失效 grant 显示为有效。业务已提交但请求结束自动 save 失败为响应 UNKNOWN，不宣称业务回滚或换幂等 key；按 C05/C08 在有效会话内核查原命令。框架 reaper 不直接调用领域 hook。
 
-这项 spike 由获用户模块许可并隔离后的 M00 直接编写和测试；不需要用户手写，也不要求实现前就有运行PASS。只有 spike 和故障/并发证据通过后才把 owner guard 完整实现放行给 M02/M03。
+M00 已直接实现 spike，并经 coordinator 独立及合并后 verify40tests和真实C01联调验证、审核合并。安全前缀可供获自身用户许可后的 M02/M03 接入；新模块必须验证自己的完整QR/grant/registration事务图，不把基础前缀通过当全图通过。
 
 C11 M00 公共工程契约：
 
@@ -214,6 +214,6 @@ API 不接收 caller 自选 actor、UID、category 或 status 来替代扫描证
 
 以下是依赖批次，不是已执行的 Flyway V 编号：identity/reference/session/idempotency/local audit → QR display/challenge/grant → registration/consent → synthetic cards/device/scan → assignment/active unique/lifecycle/alerts/lost → reporting/settings。M00 登记实际编号，每个 module 申请后使用；先检查库中已有 migration，不重写共享环境已应用版本。
 
-M00 实施中登记（2026-10-08）：V1 `foundation_identity_reference`、V2 `spring_session_jdbc`、V3 `session_capability_guards` 已在 M00 独立分支编写并由临时 MySQL clean migration 测试执行，编号保留给 M00，其他模块不得重用。coordinator 已核对实际文件与 Surefire 输出；尚未完成模块审核/merge，真实开发/生产库未在本次验证中使用。后续号继续由 M00/coordinator 台账登记，不因该初步 PASS 自动放行 guard 集成。
+M00 当前迁移登记（2026-10-09）：V1 `foundation_identity_reference`、V2 `spring_session_jdbc`、V3 `session_capability_guards` 已审核合并，临时MySQL clean/upgrade验证通过；已应用版本冻结，其他模块不得重用或重写。真实开发/生产库未在本次验证中使用。后续号继续由M00/coordinator台账登记；安全前缀已放行，但后续模块完整业务图仍需自己的验证。
 
 M08 增加真设备/profile；M09 增加获批 MRN adapter 所需最少字段；M10 增 notification/receipts；M11 增 audit_outbox/verification jobs/链绑定。后两者在启用前完成 clean + upgrade、模式默认 disabled 与故障恢复验收。历史本地事件不自动入队，canonical snapshot 缺失或版本不兼容不能伪造历史承诺。表设计落地后生成 ERD/OpenAPI；当前仍为规划。

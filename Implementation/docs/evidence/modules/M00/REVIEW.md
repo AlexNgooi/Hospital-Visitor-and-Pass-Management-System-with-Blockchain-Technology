@@ -1,7 +1,7 @@
 # M00 coordinator review
 
 - Date: 2026-10-09 (Asia/Singapore).
-- Status: MERGED; foundation post-merge regression PASS, real frontend/HTTPS integration pending.
+- Status: INTEGRATION_VERIFIED for the approved local foundation/C01 slice; production HTTPS and downstream business gates NOT_RUN.
 - Baseline: `c2b0c316e04947df06b84f1008f470b6e5a9eb8b`.
 - Tested source: `42bc95c68df2bc392fbd2e3ad72096a53929975e`.
 - Reviewed delivery: `1b2d8f2657f14689da8c66e25baf0ea428d5f02c`.
@@ -51,3 +51,10 @@ merge: exit 0, 40 tests, zero failures/errors/skips, executable JAR, finished
 2026-10-09 05:56:54 +08:00. The log is the ignored
 `Implementation/backend/target/coordinator-post-merge-verify.log`; this review
 preserves its bounded result. No push/deployment or native database action.
+
+Subsequent M01 integration review independently reproduced 28 actual wire checks
+through Vite to this reviewed executable and disposable MySQL. Cookie/CSRF/login/
+logout/role errors and DB outage recovery passed. Final accepted integration merge
+is `e8ca80ab56ae676a2dd97b34d6fb2a05979a0331`; backend production code/schema were
+unchanged. M01 REVIEW records frontend recovery, isolation returns and acceptance.
+This completes local C01 foundation integration, not HTTPS/full-domain acceptance.

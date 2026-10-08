@@ -2,7 +2,7 @@
 type: module-chat-coordination
 updated: 2026-10-09
 window: 2026-10-08..2027-01-03
-status: m00-m01-foundation-merged-integration-pending
+status: m00-m01-local-integration-verified
 ---
 # Coordinator 与每模块独立 Chat 执行指南
 
@@ -92,8 +92,8 @@ M00–M04 已创建并完成准备核对；M00/M01 已隔离并派发直接实�
 
 | 模块 | 状态 | chat ID / owner | baseline / branch / worktree | handoff / review / merge |
 |---|---|---|---|---|
-| M00 | MERGED；基础回归 PASS，真实前端/HTTPS联调待做 | 01a11bcf-a53d-7323-a74e-edffa8092c50 / 模块助手直接实现 | c2b0c316；codex/hsaas-m00-foundation；C:/Users/alexy/.codex/worktrees/ced2/FYP Dev | delivery 1b2d8f2；merge a137acd；独立及合并后40tests PASS；gpt-6.1-sol/high |
-| M01 | 基础 MERGED；联调 candidate CHANGES_REQUESTED（harness隔离） | 01a11bcf-e448-7be0-88c1-f7910300e82e / 模块助手直接实现 | 基础 c2b0c316；联调03fda7f；codex/hsaas-m01-frontend-shell；4156/FYP Dev | 基础merge014d030；联调delivery8e5ffcf，独立68tests+真实28wire PASS；等待最小harness返修；gpt-6.1-sol/high |
+| M00 | INTEGRATION_VERIFIED（当前本地基础/C01范围）；HTTPS/业务后续验收 | 01a11bcf-a53d-7323-a74e-edffa8092c50 / 模块助手直接实现 | c2b0c316；codex/hsaas-m00-foundation；ced2/FYP Dev | 基础merge a137acd；40tests PASS；真实28wire联调 PASS；gpt-6.1-sol/high |
+| M01 | INTEGRATION_VERIFIED（当前本地UI/C01范围）；HTTPS/后续业务未验收 | 01a11bcf-e448-7be0-88c1-f7910300e82e / 模块助手直接实现 | 基础c2b0c316；联调03fda7f；codex/hsaas-m01-frontend-shell；4156/FYP Dev | 基础merge014d030；联调delivery58b738a/merge e8ca80a；68tests+16隔离+真实28wire PASS；gpt-6.1-sol/high |
 | M02 | PLANNED；一次开发许可待答，依赖 M00/M01 | 01a11ba4-e2bd-74a3-beee-1f47860bfc01 / 模块助手直接实现 | Local/main；HEAD b005823；规划未提交；实施隔离待建立 | 无；gpt-6.1-sol/high |
 | M03 | PLANNED；一次开发许可待答，接入依赖 M00/M01/M02 | 01a11ba4-e814-7832-bd40-f471edf417b4 / 模块助手直接实现 | Local/main；HEAD b005823；规划未提交；实施隔离待建立 | 无；gpt-6.1-sol/high |
 | M04 | PLANNED；一次开发许可待答，依赖 M03 | 01a11ba4-ecca-7ca3-a224-c3dde42d1edd / 模块助手直接实现 | Local/main；HEAD b005823；规划未提交；实施隔离待建立 | 无；gpt-6.1-sol/high |
@@ -137,4 +137,4 @@ coordinator 记录答复/decision ID、影响规范与 owner，通过 send_messa
 
 ## 下一项具体计划
 
-M00/M01 的基础实现已审核并本地合并，合并后 backend 40 tests、frontend 63 tests/build/lint/synthetic proxy PASS。M01 已收到联调任务，以 main03fda7f 为固定输入同步原分支，用临时 MySQL 与 synthetic seed 做真实 C01/backend/proxy/cookie/CSRF/browser 联调，并使用 M00 OpenAPI 生成真实类型；不读取开发 .env、不触碰 native DB、不执行真实 bootstrap。允许 M01 在 Implementation/docs/api/openapi.json 建立标注源 SHA 的生成输入镜像，frontend generated 类型由 M01 生成，原 M00 spec 不改；未来多模块 schema 汇总由 coordinator 统一协调。此为既有 M01 许可内任务，问题/后端返修交 coordinator/M00。M02–M04 保持准备/等待许可，M05–M11 不自动开启。
+M00/M01 当前本地范围已完成开发、返修、审核、合并与真实 C01 联调。backend40、frontend68、隔离16与真实28wire检查通过；M00 OpenAPI镜像/生成类型已落地。生产HTTPS/完整业务图仍需其所属关卡验收。M02 开发所需基础依赖现已满足，下一项为真正轮换的动态 QR/challenge/grant；仍等待用户明确启动 M02，不会因依赖通过自动开工。M03/M04 与后续模块同样保持各自许可和依赖关卡。未来多模块 OpenAPI 汇总由 coordinator 协调，原 M00 spec 不被下游修改。

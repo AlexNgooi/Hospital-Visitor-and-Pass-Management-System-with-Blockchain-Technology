@@ -1,7 +1,7 @@
 # M01 coordinator review
 
 - Review date: 2026-10-09 (Asia/Singapore).
-- Status: MERGED after revision; independent frontend merge regression PASS, real backend/HTTPS integration NOT_RUN.
+- Status: INTEGRATION_VERIFIED for the approved local frontend/C01 slice; production HTTPS and downstream business gates NOT_RUN.
 - Reviewed delivery: `c8b9804e6653408fd49db7d1d95069c585a58ceb`.
 - Implementation: `99e860c1ae11b2198e3b63b1153f6d52fce14247`.
 - Baseline: `c2b0c316e04947df06b84f1008f470b6e5a9eb8b`.
@@ -135,3 +135,13 @@ associated with the previous harness source, not falsely restamped as a rerun.
 Backend, auth fix, generated types/spec and wire/browser scripts are unchanged
 by the isolation return. Approved for local integration merge; post-merge checks
 and exact merge SHA follow. HTTPS/full-system gates remain separate.
+
+Final integration merge: `e8ca80ab56ae676a2dd97b34d6fb2a05979a0331`.
+Coordinator's post-merge checks in main passed: 16 isolated environment checks,
+68 frontend tests (start 2026-10-09 06:30:56 +08:00), strict typing, build,
+lint and synthetic proxy regression. The reviewed runtime frontend/backend match
+the earlier independently verified real 28-wire source; the isolation return
+changes only the harness environment and its tests. Local C01 integration and
+shared frontend scope are accepted. Production HTTPS/Secure forwarding, complete
+object authorization/QR/registration/review and live integrations remain NOT_RUN.
+No module auto-start, push/deployment or native DB action accompanies acceptance.

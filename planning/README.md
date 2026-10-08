@@ -1,6 +1,6 @@
 # HSAAS FYP 当前规划入口
 
-更新日期：2026-10-09。当前 chat 为 project coordinator；每个模块使用独立 chat，完成后交回审核、本地 merge 与集成复验。M00/M01 的基础实现已审核并合并到本地 main，真实前后端联调待完成；M02–M04 已准备但未获开发许可，其他模块未开启。
+更新日期：2026-10-09。当前 chat 为 project coordinator；每个模块使用独立 chat，完成后交回审核、本地 merge 与集成复验。M00/M01 当前本地基础/UI/C01范围已开发、审核、合并并完成真实联调；M02–M04 已准备但未获开发许可，其他模块未开启。
 
 每个 module 的 chat 和开发必须由用户手动开启和启动；coordinator/助手准备任务和开工条件，不代开、不自动启动下一模块。
 
@@ -10,7 +10,7 @@
 
 需要用户裁决的 conflict、需求不清或无法确定的选择，统一由 coordinator 在本 chat 整理选项后询问用户，再将决定发回模块。
 
-当前优先前端、基础 backend/MySQL、动态 QR 扫码登记。实体卡/reader 与医院病人 API 未准备，先以 synthetic simulation / MRN mock/manual 建立边界；WhatsApp 和 blockchain 默认 disabled。当前基础验证：backend 40 tests、frontend 63 tests 与构建/synthetic proxy 已由 coordinator 独立及合并后复验；访客/QR/登记/审核业务仍未实施/验收，真实前后端联调待完成。历史初始化见 [P0](../Implementation/docs/evidence/foundation/P0_REVIEW.md)，当前证据见 [M00 REVIEW](../Implementation/docs/evidence/modules/M00/REVIEW.md) / [M01 REVIEW](../Implementation/docs/evidence/modules/M01/REVIEW.md)。
+当前优先前端、基础 backend/MySQL、动态 QR 扫码登记。实体卡/reader 与医院病人 API 未准备，先以 synthetic simulation / MRN mock/manual 建立边界；WhatsApp 和 blockchain 默认 disabled。当前验证：backend40、frontend68、harness隔离16与真实28wire通过；访客/QR/登记/审核业务仍未实施/验收，生产HTTPS仍NOT_RUN。历史初始化见 [P0](../Implementation/docs/evidence/foundation/P0_REVIEW.md)，当前证据见 [M00 REVIEW](../Implementation/docs/evidence/modules/M00/REVIEW.md) / [M01 REVIEW](../Implementation/docs/evidence/modules/M01/REVIEW.md)。
 
 ## 从这里进入
 
@@ -42,4 +42,4 @@ v3 六张图保留完整长期集成设计，图源和视觉收据未重绘：**
 - sync_mermaid.py 更新文本镜像；build_delivery_hub.py 更新导航、哈希与范围提示。
 - [旧图交付清单](diagrams/v3/delivery-manifest.json)、[人工截图评审](diagrams/v3/review-receipt.json)、[规划 QA](diagrams/v3/planning-qa.json)。
 
-本轮不更新外部 [Trello board](https://trello.com/b/XnospkpS/fyp-hsaas-visitor-pass-management-system) 或 Figma。M00/M01 基础代码已本地合并，M01 正在原工作树推进临时环境真实联调与 M00 OpenAPI 类型生成；M02–M04 等待用户许可。模块交接后仍由 coordinator 审核合并，不自动开启其他模块。
+本轮不更新外部 [Trello board](https://trello.com/b/XnospkpS/fyp-hsaas-visitor-pass-management-system) 或 Figma。M00/M01 已完成当前本地验收与类型生成；M02 的基础依赖已满足，等待用户许可，M03/M04 同样不自动启动。模块交接后仍由 coordinator 审核合并。
