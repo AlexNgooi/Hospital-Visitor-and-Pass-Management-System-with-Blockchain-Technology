@@ -2,8 +2,13 @@
 /* eslint-disable no-unused-expressions -- The CLI evaluates this standalone function expression. */
 async (page) => {
   const origin = new URL(page.url()).origin;
+  // Load the current build, then check both first ingress and another same-document hash entry.
+  await page.reload();
   await page.goto(origin + "/register#entry=synthetic-test-only");
   await page.getByRole("heading", { name: "Pendaftaran pelawat" }).waitFor();
+  await page.waitForFunction(() => location.hash === '');
+  await page.goto(origin + '/register#entry=synthetic-second-entry');
+  await page.waitForFunction(() => location.hash === '');
   const result = await page.evaluate(() => ({
     fragmentCleared: location.hash === "",
     language: document.documentElement.lang,
@@ -17,6 +22,6 @@ async (page) => {
     !result.noPersistentStorage ||
     result.horizontalOverflow
   )
-    throw new Error("Synthetic public entry check failed.");
+    throw new Error("Synthetic public entry check failed: " + JSON.stringify(result));
   return result;
 }

@@ -29,7 +29,7 @@ Other modules supply feature components; coordinator integrates their registrati
 | `App` `features: FeatureSlot[]` | Exact `/staff/...` or `/admin/...` role-bound slot; `PUBLIC` only `/register`. Reserved slots show honest unavailable states until replaced. |
 | `app/auth-context.ts` `useAuth` | Loading/anonymous/authenticated/error and server-returned opaque string IDs. This hook does not confer backend permissions. |
 | `app/counter-context.ts` `useCounterScope` | Current authorised counter string for view selection; backend always verifies object scope. |
-| `app/entry.ts` `entryVault.read/clear` | M02-only memory token; capture/clear URL happens before render. M02 clears it after exchange/terminal handling. No storage/log/analytics. |
+| `app/entry.ts` `entryVault.read/subscribe/clear` | M02-only memory token; URL sanitisation before render and on native hash/back navigation. Subscribe with useSyncExternalStore; clear(expectedToken) fences stale completions. No storage/log/analytics. |
 | `lib/api-client.ts` `apiClient.get/post/command` | Every response requires a runtime schema. Protected feature requests must use `authRequired:true`; public grant errors stay public. |
 | `Command.execute()` | Retain the handle for unknown/manual retry; same key and serialized body. Create new handle only for a genuinely new command. No automatic write replay. |
 | `ClientError.restartDetails` | Frozen C10 scope/context parsed only for RESTART_REQUIRED. IDs stay strings and categoryScope=null means four categories. Invalid/unknown details are discarded; M02 still adapts safe display labels. |

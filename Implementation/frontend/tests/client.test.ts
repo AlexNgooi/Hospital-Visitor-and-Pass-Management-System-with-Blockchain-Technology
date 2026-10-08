@@ -220,14 +220,12 @@ describe("frozen transport boundaries", () => {
   it("does not expose backend messages or unknown details", async () => {
     expect.assertions(4);
     const client = new ApiClient(
-      vi
-        .fn<typeof fetch>()
-        .mockResolvedValue(
-          apiError("SERVICE_UNAVAILABLE", 503, {
-            details: { secret: "private" },
-            fieldErrors: [{ field: "login", code: "x", message: "private" }],
-          }),
-        ),
+      vi.fn<typeof fetch>().mockResolvedValue(
+        apiError("SERVICE_UNAVAILABLE", 503, {
+          details: { secret: "private" },
+          fieldErrors: [{ field: "login", code: "x", message: "private" }],
+        }),
+      ),
     );
     try {
       await client.get("/api/auth/me", sessionSchema);
@@ -282,20 +280,18 @@ describe("frozen transport boundaries", () => {
     async ({ counterId, categoryScope, bindingVersion }) => {
       const scope = { environment: "SYNTHETIC", counterId, categoryScope };
       const client = new ApiClient(
-        vi
-          .fn<typeof fetch>()
-          .mockResolvedValue(
-            apiError("REGISTRATION_ENTRY_RESTART_REQUIRED", 409, {
-              details: {
-                currentFormContext: {
-                  grantReference: "synthetic",
-                  bindingVersion,
-                },
-                currentScope: scope,
-                requestedScope: scope,
+        vi.fn<typeof fetch>().mockResolvedValue(
+          apiError("REGISTRATION_ENTRY_RESTART_REQUIRED", 409, {
+            details: {
+              currentFormContext: {
+                grantReference: "synthetic",
+                bindingVersion,
               },
-            }),
-          ),
+              currentScope: scope,
+              requestedScope: scope,
+            },
+          }),
+        ),
       );
       await expect(
         client.get("/api/public/registration-entry", z.object({})),
@@ -364,6 +360,31 @@ describe("input, entry and time contracts", () => {
   it("formats UTC in MYT and refuses ambiguous local timestamps", () => {
     expect(formatMyt("2026-10-08T00:00:00Z")).toMatch(/8.*2026.*8:00/);
     expect(formatMyt("2026-10-08T00:00:00")).toBe("—");
+  });
+  it("captures a new same-document entry and fences an obsolete exchange clear", () => {
+    const location = {
+      pathname: "/register",
+      hash: "#entry=synthetic-old",
+      search: "",
+    };
+    const state = { idx: 3, key: "router-fixture" };
+    const history = { replaceState: vi.fn(), state };
+    const vault = createEntryVault(location, history);
+    const notified = vi.fn();
+    vault.subscribe(notified);
+    location.hash = "#entry=synthetic-new";
+    vault.capture();
+    expect(history.replaceState).toHaveBeenLastCalledWith(
+      state,
+      "",
+      "/register",
+    );
+    expect(vault.read()).toBe("synthetic-new");
+    expect(notified).toHaveBeenCalledTimes(1);
+    vault.clear("synthetic-old");
+    expect(vault.read()).toBe("synthetic-new");
+    vault.clear("synthetic-new");
+    expect(vault.read()).toBeNull();
   });
   it("provides safe BM public failure copy without reflecting unknown backend input", () => {
     expect(safeError(new ClientError("timeout"), "ms")).toContain(
