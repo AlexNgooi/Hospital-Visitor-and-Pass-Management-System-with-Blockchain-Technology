@@ -91,6 +91,8 @@ Outbox worker claim 用短事务和 lease fencing，不持有 DB lock 等待 pro
 
 C01–C06 是 coordinator 的技术决定，均未实现/未测试，不代表用户已批准模块开发。cookie/工程 session TTL 已采用 02 的明确工程方案，QR 签名方向见该文件；限流和实际依赖兼容性仍需 M00/M02 验证，不能从 framework 默认猜测。
 
+C01 wire ID 补充（M01 实施问题）：login/me 的 `id` 为 JSON string，`counterIds` 为 JSON string 数组；数值主键在 HTTP 层输出十进制字符串，前端按 opaque string 保存/比较，不转 JavaScript Number，避免 Java long 超出精确整数范围。其他 DTO 的数据库主键遵循同一 string 原则；此决定不改变 version/期限等非 ID 字段契约。C10 未冻结的 scope 精确 DTO 不由 M01 猜测；共享 restart 组件先提供适配入口，接收业务模块校验后的安全标签/context，未知 details 不渲染或回显原对象，待 M02 实施启动后冻结。
+
 C07/U02 单份表单：同一 anonymousScopeId 最多一条有效未提交 grant；exchange 发现不同入口已有有效表单先返回 409 `REGISTRATION_ENTRY_RESTART_REQUIRED` 与最小旧/新 scope 信息，不自动覆盖。客户端只在明确确认重新开始后重试（绑定 expected old grant reference/version）；服务端同时校验当前绑定与新 entry 有效性，原子撤销旧 grant/创建新 grant。取消/替换失败保留原 grant，旧页以原 grant reference/version 提交必须被拒，不能借共享 cookie 误用新 grant。成功重放按 C05，不把新的 grant 身份作为 PII 查询授权；同码同会话重试保持原 expiry。M02 提出具体 DTO/锁序/CAS 模型供 coordinator 评审，M03 必须显式校验提交表单上下文。
 
 C08 职员命令幂等：先验证当前 session/role、CSRF、对象/counter 权限，再按 server actorId + operation + targetId + key 查成功记录并比较 request_hash。同 key/body 返回原安全结果、不重新验证旧 SUBMITTED/version、不写第二份审计；同 key 不同 body 为 409 IDEMPOTENCY_CONFLICT。未成功记录才检查合法状态/expectedVersion，分别为 REGISTRATION_STATE_CONFLICT / VERSION_CONFLICT。保留初值 24h；撤销角色/counter 权限后禁止借重放绕过权限。M00 提供 request hash 的版本化 DTO encoding，保留 null/缺失语义，不能用原始 JSON 属性顺序直接散列；日志不得记录原 body/hash 输入中的 PII。
