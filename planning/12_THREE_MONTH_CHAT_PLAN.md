@@ -102,7 +102,7 @@ M00–M04 已创建并完成准备核对；M00/M01 当前本地范围已验收�
 |---|---|---|---|---|
 | M00 | INTEGRATION_VERIFIED（当前本地基础/C01范围）；HTTPS/业务后续验收 | 01a11bcf-a53d-7323-a74e-edffa8092c50 / 模块助手直接实现 | c2b0c316；codex/hsaas-m00-foundation；ced2/FYP Dev | 基础merge a137acd；40tests PASS；真实28wire联调 PASS；gpt-6.1-sol/high |
 | M01 | INTEGRATION_VERIFIED（当前本地UI/C01范围）；HTTPS/后续业务未验收 | 01a11bcf-e448-7be0-88c1-f7910300e82e / 模块助手直接实现 | 基础c2b0c316；联调03fda7f；codex/hsaas-m01-frontend-shell；4156/FYP Dev | 基础merge014d030；联调delivery58b738a/merge e8ca80a；68tests+16隔离+真实28wire PASS；gpt-6.1-sol/high |
-| M02 | IN_PROGRESS；用户已批准并派发实现任务 | 01a11db3-31c9-7da0-bfb2-217e71081355 / 模块助手直接实现 | baseline98a7f7d；codex/hsaas-m02-dynamic-registration；C:/Users/alexy/.codex/worktrees/bd17/FYP Dev | 未交接；V4保留给M02；gpt-6.1-sol/high |
+| M02 | CHANGES_REQUESTED；原许可内直接返修 | 01a11db3-31c9-7da0-bfb2-217e71081355 / 模块助手直接实现 | baseline98a7f7d；codex/hsaas-m02-dynamic-registration；C:/Users/alexy/.codex/worktrees/bd17/FYP Dev | source239caa8/delivery41dede4；独立67backend/84frontend PASS；R1事务回执/R2晚到离线响应/R3未知撤销恢复待返修，见M02 REVIEW；未merge；V4保留；gpt-6.1-sol/high |
 | M03 | PLANNED；一次开发许可待答，接入依赖 M00/M01/M02 | 01a11ba4-e814-7832-bd40-f471edf417b4 / 模块助手直接实现 | Local/main；HEAD b005823；规划未提交；实施隔离待建立 | 无；gpt-6.1-sol/high |
 | M04 | PLANNED；一次开发许可待答，依赖 M03 | 01a11ba4-ecca-7ca3-a224-c3dde42d1edd / 模块助手直接实现 | Local/main；HEAD b005823；规划未提交；实施隔离待建立 | 无；gpt-6.1-sol/high |
 | M05 | PLANNED | 未创建 / 未派工 | 待登记 | 无 |
