@@ -1,6 +1,8 @@
 # M02 Dynamic Registration QR — submitted for coordinator review
 
-**Current viewport return:** source `d6ebe1fc92fe92c7de4a3d5867f91b6044190b00`; [RETURN_R4.md](RETURN_R4.md) contains the UI-only increment and separate R4/ receipts. Frontend 95 tests and 27 browser checks pass; backend remains source-835689f. R1–R3 evidence below stays historical, and coordinator approval is still required.
+**Current fullscreen return:** source `f81512dfe571469386352e73bf54ef234534869b`; [RETURN_R4_FULLSCREEN.md](RETURN_R4_FULLSCREEN.md) fixes the additionally reproduced short/enlarged fullscreen scroll-origin defect. Frontend 95 and browser 28 checks pass; source/backend boundaries are unchanged. Prior R4 default-viewport and R1–R3 receipts remain historical. Coordinator approval is still required.
+
+**Prior default viewport return:** source `d6ebe1fc92fe92c7de4a3d5867f91b6044190b00`; [RETURN_R4.md](RETURN_R4.md) contains the UI-only increment and separate R4/ receipts. That phase's frontend 95 and browser 27 checks passed; backend remains source-835689f. The fullscreen return above is the current increment.
 
 **Prior safety review return:** source `835689f44368596b26198e1db6a7419acfec4050`; R1–R3 and the R2 capability supplement are addressed in [RETURN_R1_R3.md](RETURN_R1_R3.md). That phase verified backend 68 / frontend 95 and the root browser receipt. Initial source 239caa8 and results below are preserved as historical evidence. The R4 viewport return above is current; coordinator approval remains pending.
 
