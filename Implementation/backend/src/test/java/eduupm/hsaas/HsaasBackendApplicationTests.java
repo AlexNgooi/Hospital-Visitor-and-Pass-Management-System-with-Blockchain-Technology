@@ -112,7 +112,8 @@ class HsaasBackendApplicationTests {
         var response=HttpClient.newHttpClient().send(HttpRequest.newBuilder(URI.create("http://localhost:"+port+"/api/health")).GET().build(),HttpResponse.BodyHandlers.ofString());
         assertThat(response.statusCode()).isEqualTo(200);
         assertThat(response.body()).contains("UP");
-        assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM flyway_schema_history WHERE success=TRUE",Integer.class)).isEqualTo(3);
+        // V4 adds the QR domain without changing the immutable foundation migrations.
+        assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM flyway_schema_history WHERE success=TRUE",Integer.class)).isEqualTo(4);
         assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM users",Integer.class)).isEqualTo(2);
     }
 
@@ -359,7 +360,8 @@ class HsaasBackendApplicationTests {
             statement.execute("INSERT INTO counters(code,name) VALUES('UPGRADE_FIXTURE','Synthetic upgrade fixture')");
         }
         var latest=Flyway.configure().dataSource(url,"root",MYSQL.getPassword()).load();
-        assertThat(latest.migrate().migrationsExecuted).isEqualTo(2); latest.validate();
+        // Upgrade the owned disposable V1 database through V2, V3 and the new QR V4.
+        assertThat(latest.migrate().migrationsExecuted).isEqualTo(3); latest.validate();
         assertThat(latest.migrate().migrationsExecuted).isZero();
         try(var connection=java.sql.DriverManager.getConnection(url,"root",MYSQL.getPassword()); var statement=connection.createStatement(); var result=statement.executeQuery("SELECT COUNT(*) FROM counters WHERE code='UPGRADE_FIXTURE'")) {
             assertThat(result.next()).isTrue(); assertThat(result.getInt(1)).isEqualTo(1);

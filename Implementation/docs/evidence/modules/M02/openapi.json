@@ -1,0 +1,813 @@
+{
+  "components" : {
+    "securitySchemes" : {
+      "SessionCookie" : {
+        "in" : "cookie",
+        "name" : "HSAAS_SESSION",
+        "type" : "apiKey"
+      },
+      "CsrfHeader" : {
+        "in" : "header",
+        "name" : "X-CSRF-TOKEN",
+        "type" : "apiKey"
+      }
+    },
+    "schemas" : {
+      "Capabilities" : {
+        "required" : [ "enabled" ],
+        "properties" : {
+          "enabled" : {
+            "type" : "boolean"
+          }
+        },
+        "additionalProperties" : false,
+        "type" : "object"
+      },
+      "CreateRequest" : {
+        "required" : [ "counterId" ],
+        "properties" : {
+          "categoryScope" : {
+            "type" : [ "string", "null" ],
+            "pattern" : "^[0-9]{1,20}$"
+          },
+          "counterId" : {
+            "type" : "string",
+            "pattern" : "^[0-9]{1,20}$"
+          }
+        },
+        "additionalProperties" : false,
+        "type" : "object"
+      },
+      "Created" : {
+        "required" : [ "displaySessionId" ],
+        "properties" : {
+          "displaySessionId" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        },
+        "additionalProperties" : false,
+        "type" : "object"
+      },
+      "Current" : {
+        "required" : [ "displaySessionId", "entryUrl", "scope", "serverNow", "rotateAt", "expiresAt" ],
+        "properties" : {
+          "displaySessionId" : {
+            "type" : "string",
+            "format" : "uuid"
+          },
+          "entryUrl" : {
+            "type" : "string"
+          },
+          "expiresAt" : {
+            "type" : "string",
+            "format" : "date-time",
+            "pattern" : "^.*\\.[0-9]{6}Z$"
+          },
+          "rotateAt" : {
+            "type" : "string",
+            "format" : "date-time",
+            "pattern" : "^.*\\.[0-9]{6}Z$"
+          },
+          "scope" : {
+            "$ref" : "#/components/schemas/Scope"
+          },
+          "serverNow" : {
+            "type" : "string",
+            "format" : "date-time",
+            "pattern" : "^.*\\.[0-9]{6}Z$"
+          }
+        },
+        "additionalProperties" : false,
+        "type" : "object"
+      },
+      "Entry" : {
+        "required" : [ "formContext", "scope", "serverNow", "grantExpiresAt" ],
+        "properties" : {
+          "formContext" : {
+            "$ref" : "#/components/schemas/FormContext"
+          },
+          "grantExpiresAt" : {
+            "type" : "string",
+            "format" : "date-time",
+            "pattern" : "^.*\\.[0-9]{6}Z$"
+          },
+          "scope" : {
+            "$ref" : "#/components/schemas/Scope"
+          },
+          "serverNow" : {
+            "type" : "string",
+            "format" : "date-time",
+            "pattern" : "^.*\\.[0-9]{6}Z$"
+          }
+        },
+        "additionalProperties" : false,
+        "type" : "object"
+      },
+      "Error" : {
+        "type" : "object",
+        "additionalProperties" : false,
+        "required" : [ "timestamp", "status", "code", "message", "correlationId", "fieldErrors" ],
+        "properties" : {
+          "timestamp" : {
+            "type" : "string",
+            "format" : "date-time",
+            "description" : "UTC ISO timestamp."
+          },
+          "status" : {
+            "type" : "integer",
+            "minimum" : 400,
+            "maximum" : 599
+          },
+          "code" : {
+            "type" : "string"
+          },
+          "message" : {
+            "type" : "string"
+          },
+          "correlationId" : {
+            "type" : "string",
+            "format" : "uuid"
+          },
+          "fieldErrors" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/FieldError"
+            }
+          },
+          "details" : {
+            "$ref" : "#/components/schemas/RestartDetails"
+          }
+        },
+        "description" : "Uniform security/filter/controller error. details is omitted except the typed restart code.",
+        "allOf" : [ {
+          "if" : {
+            "required" : [ "details" ]
+          },
+          "then" : {
+            "properties" : {
+              "code" : {
+                "const" : "REGISTRATION_ENTRY_RESTART_REQUIRED"
+              }
+            }
+          }
+        } ]
+      },
+      "ExchangeRequest" : {
+        "required" : [ "entryToken" ],
+        "properties" : {
+          "entryToken" : {
+            "type" : "string",
+            "maxLength" : 2048
+          },
+          "expectedFormContext" : {
+            "anyOf" : [ {
+              "$ref" : "#/components/schemas/FormContext"
+            }, {
+              "type" : "null"
+            } ]
+          },
+          "restartConfirmed" : {
+            "type" : [ "boolean", "null" ]
+          }
+        },
+        "additionalProperties" : false,
+        "type" : "object"
+      },
+      "FieldError" : {
+        "type" : "object",
+        "additionalProperties" : false,
+        "required" : [ "field", "code", "message" ],
+        "properties" : {
+          "field" : {
+            "type" : "string"
+          },
+          "code" : {
+            "type" : "string"
+          },
+          "message" : {
+            "type" : "string"
+          }
+        },
+        "description" : "Safe field diagnostics without rejectedValue."
+      },
+      "FormContext" : {
+        "required" : [ "grantReference", "bindingVersion" ],
+        "properties" : {
+          "bindingVersion" : {
+            "maximum" : 9007199254740991,
+            "minimum" : 0,
+            "type" : "integer"
+          },
+          "grantReference" : {
+            "type" : "string",
+            "maxLength" : 128,
+            "pattern" : "^[A-Za-z0-9_-]{1,128}$"
+          }
+        },
+        "additionalProperties" : false,
+        "type" : "object"
+      },
+      "RestartDetails" : {
+        "required" : [ "currentFormContext", "currentScope", "requestedScope" ],
+        "properties" : {
+          "currentFormContext" : {
+            "$ref" : "#/components/schemas/FormContext"
+          },
+          "currentScope" : {
+            "$ref" : "#/components/schemas/Scope"
+          },
+          "requestedScope" : {
+            "$ref" : "#/components/schemas/Scope"
+          }
+        },
+        "additionalProperties" : false,
+        "type" : "object"
+      },
+      "Scope" : {
+        "required" : [ "environment", "counterId", "categoryScope" ],
+        "properties" : {
+          "categoryScope" : {
+            "type" : [ "string", "null" ],
+            "pattern" : "^[0-9]{1,20}$"
+          },
+          "counterId" : {
+            "type" : "string",
+            "pattern" : "^[0-9]{1,20}$"
+          },
+          "environment" : {
+            "type" : "string"
+          }
+        },
+        "additionalProperties" : false,
+        "type" : "object"
+      }
+    }
+  },
+  "info" : {
+    "version" : "1.0.0",
+    "description" : "Generated from implemented controllers/records. Entry references are not bearer authorization; scope is server-resolved. Enabled state is explicit. No M03 registration submission implementation.",
+    "title" : "HSAAS M02 Dynamic Registration Entry API"
+  },
+  "paths" : {
+    "/api/public/registration-entry" : {
+      "get" : {
+        "operationId" : "qr_entry",
+        "security" : [ {
+          "SessionCookie" : [ ]
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "Confirmed success; no-store and no-referrer",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Entry"
+                }
+              }
+            }
+          },
+          "400" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Error"
+                }
+              }
+            },
+            "description" : "Safe error; 409 includes disabled/context/restart boundaries"
+          },
+          "401" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Error"
+                }
+              }
+            },
+            "description" : "Safe error; 409 includes disabled/context/restart boundaries"
+          },
+          "403" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Error"
+                }
+              }
+            },
+            "description" : "Safe error; 409 includes disabled/context/restart boundaries"
+          },
+          "404" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Error"
+                }
+              }
+            },
+            "description" : "Safe error; 409 includes disabled/context/restart boundaries"
+          },
+          "409" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Error"
+                }
+              }
+            },
+            "description" : "Safe error; 409 includes disabled/context/restart boundaries"
+          },
+          "410" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Error"
+                }
+              }
+            },
+            "description" : "Safe error; 409 includes disabled/context/restart boundaries"
+          },
+          "429" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Error"
+                }
+              }
+            },
+            "description" : "Safe error; 409 includes disabled/context/restart boundaries"
+          },
+          "503" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Error"
+                }
+              }
+            },
+            "description" : "Safe error; 409 includes disabled/context/restart boundaries"
+          }
+        }
+      }
+    },
+    "/api/public/registration-entry/capabilities" : {
+      "get" : {
+        "operationId" : "qr_capabilities",
+        "security" : [ ],
+        "responses" : {
+          "200" : {
+            "description" : "Confirmed success; no-store and no-referrer",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Capabilities"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/public/registration-entry/exchange" : {
+      "post" : {
+        "operationId" : "qr_exchange",
+        "security" : [ {
+          "SessionCookie" : [ ],
+          "CsrfHeader" : [ ]
+        } ],
+        "requestBody" : {
+          "required" : true,
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/ExchangeRequest"
+              }
+            }
+          }
+        },
+        "responses" : {
+          "200" : {
+            "description" : "Confirmed success; no-store and no-referrer",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Entry"
+                }
+              }
+            }
+          },
+          "400" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Error"
+                }
+              }
+            },
+            "description" : "Safe error; 409 includes disabled/context/restart boundaries"
+          },
+          "401" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Error"
+                }
+              }
+            },
+            "description" : "Safe error; 409 includes disabled/context/restart boundaries"
+          },
+          "403" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Error"
+                }
+              }
+            },
+            "description" : "Safe error; 409 includes disabled/context/restart boundaries"
+          },
+          "404" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Error"
+                }
+              }
+            },
+            "description" : "Safe error; 409 includes disabled/context/restart boundaries"
+          },
+          "409" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Error"
+                }
+              }
+            },
+            "description" : "Safe error; 409 includes disabled/context/restart boundaries"
+          },
+          "410" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Error"
+                }
+              }
+            },
+            "description" : "Safe error; 409 includes disabled/context/restart boundaries"
+          },
+          "429" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Error"
+                }
+              }
+            },
+            "description" : "Safe error; 409 includes disabled/context/restart boundaries"
+          },
+          "503" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Error"
+                }
+              }
+            },
+            "description" : "Safe error; 409 includes disabled/context/restart boundaries"
+          }
+        }
+      }
+    },
+    "/api/staff/registration-qr-sessions" : {
+      "post" : {
+        "operationId" : "qr_create",
+        "security" : [ {
+          "SessionCookie" : [ ],
+          "CsrfHeader" : [ ]
+        } ],
+        "x-required-role" : "COUNTER_STAFF",
+        "requestBody" : {
+          "required" : true,
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/CreateRequest"
+              }
+            }
+          }
+        },
+        "responses" : {
+          "201" : {
+            "description" : "Confirmed success; no-store and no-referrer",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Created"
+                }
+              }
+            }
+          },
+          "400" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Error"
+                }
+              }
+            },
+            "description" : "Safe error; 409 includes disabled/context/restart boundaries"
+          },
+          "401" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Error"
+                }
+              }
+            },
+            "description" : "Safe error; 409 includes disabled/context/restart boundaries"
+          },
+          "403" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Error"
+                }
+              }
+            },
+            "description" : "Safe error; 409 includes disabled/context/restart boundaries"
+          },
+          "404" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Error"
+                }
+              }
+            },
+            "description" : "Safe error; 409 includes disabled/context/restart boundaries"
+          },
+          "409" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Error"
+                }
+              }
+            },
+            "description" : "Safe error; 409 includes disabled/context/restart boundaries"
+          },
+          "410" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Error"
+                }
+              }
+            },
+            "description" : "Safe error; 409 includes disabled/context/restart boundaries"
+          },
+          "429" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Error"
+                }
+              }
+            },
+            "description" : "Safe error; 409 includes disabled/context/restart boundaries"
+          },
+          "503" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Error"
+                }
+              }
+            },
+            "description" : "Safe error; 409 includes disabled/context/restart boundaries"
+          }
+        }
+      }
+    },
+    "/api/staff/registration-qr-sessions/{id}/current" : {
+      "get" : {
+        "operationId" : "qr_current",
+        "security" : [ {
+          "SessionCookie" : [ ]
+        } ],
+        "x-required-role" : "COUNTER_STAFF",
+        "parameters" : [ {
+          "required" : true,
+          "in" : "path",
+          "name" : "id",
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "Confirmed success; no-store and no-referrer",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Current"
+                }
+              }
+            }
+          },
+          "400" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Error"
+                }
+              }
+            },
+            "description" : "Safe error; 409 includes disabled/context/restart boundaries"
+          },
+          "401" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Error"
+                }
+              }
+            },
+            "description" : "Safe error; 409 includes disabled/context/restart boundaries"
+          },
+          "403" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Error"
+                }
+              }
+            },
+            "description" : "Safe error; 409 includes disabled/context/restart boundaries"
+          },
+          "404" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Error"
+                }
+              }
+            },
+            "description" : "Safe error; 409 includes disabled/context/restart boundaries"
+          },
+          "409" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Error"
+                }
+              }
+            },
+            "description" : "Safe error; 409 includes disabled/context/restart boundaries"
+          },
+          "410" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Error"
+                }
+              }
+            },
+            "description" : "Safe error; 409 includes disabled/context/restart boundaries"
+          },
+          "429" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Error"
+                }
+              }
+            },
+            "description" : "Safe error; 409 includes disabled/context/restart boundaries"
+          },
+          "503" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Error"
+                }
+              }
+            },
+            "description" : "Safe error; 409 includes disabled/context/restart boundaries"
+          }
+        }
+      }
+    },
+    "/api/staff/registration-qr-sessions/{id}/revoke" : {
+      "post" : {
+        "operationId" : "qr_revoke",
+        "security" : [ {
+          "SessionCookie" : [ ],
+          "CsrfHeader" : [ ]
+        } ],
+        "x-required-role" : "COUNTER_STAFF",
+        "parameters" : [ {
+          "required" : true,
+          "in" : "path",
+          "name" : "id",
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "204" : {
+            "description" : "Confirmed success; no-store and no-referrer"
+          },
+          "400" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Error"
+                }
+              }
+            },
+            "description" : "Safe error; 409 includes disabled/context/restart boundaries"
+          },
+          "401" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Error"
+                }
+              }
+            },
+            "description" : "Safe error; 409 includes disabled/context/restart boundaries"
+          },
+          "403" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Error"
+                }
+              }
+            },
+            "description" : "Safe error; 409 includes disabled/context/restart boundaries"
+          },
+          "404" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Error"
+                }
+              }
+            },
+            "description" : "Safe error; 409 includes disabled/context/restart boundaries"
+          },
+          "409" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Error"
+                }
+              }
+            },
+            "description" : "Safe error; 409 includes disabled/context/restart boundaries"
+          },
+          "410" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Error"
+                }
+              }
+            },
+            "description" : "Safe error; 409 includes disabled/context/restart boundaries"
+          },
+          "429" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Error"
+                }
+              }
+            },
+            "description" : "Safe error; 409 includes disabled/context/restart boundaries"
+          },
+          "503" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Error"
+                }
+              }
+            },
+            "description" : "Safe error; 409 includes disabled/context/restart boundaries"
+          }
+        }
+      }
+    }
+  },
+  "servers" : [ {
+    "url" : "/"
+  } ],
+  "openapi" : "3.1.0"
+}
