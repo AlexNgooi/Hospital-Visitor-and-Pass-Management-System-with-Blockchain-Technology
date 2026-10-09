@@ -45,3 +45,27 @@ human business-policy choice. Module implements/tests and returns exact source
 and bounded evidence; coordinator re-reviews and locally merges only after the
 returns pass. Production TLS/physical camera/OS sleep, actual M03 submission,
 distributed throttling and operational retention remain separate gates.
+
+## R1-R3 returned source and remaining viewport gate
+
+Returned source `835689f44368596b26198e1db6a7419acfec4050`, delivery
+`5c149d020bab4a292f977974d8b5ea6a8e5c6ed7`. Coordinator reviewed the unique
+synchronization-identity check before SQL, availability event epoch across all
+acceptance paths, explicit-scan capability reset, and retained original display
+ID/counter for uncertain revoke recovery. Coordinator independently reran 95
+frontend tests, typing/build/lint from 13:38:30 +08: PASS. Module's real R1 RED
+entered SQL and waited on the outer lock; its returned MySQL regression proves
+immediate SQL-free refusal and correct outer resumption/rollback/commit. The
+coordinator's separate 68-test backend rerun is in progress. Module reports a
+fresh actual 15-check browser run with exact original-path revoke retry.
+
+R4 remains CHANGES_REQUESTED for the human's current viewport requirement.
+Visual review of the original 375x812 live-display capture shows a roughly 1541px
+page with countdown/fullscreen below the first viewport. Compact the feature's
+core display/controls in normal 1366x768 and 375x812 sizes; keep the entire QR and
+quiet zone, readable text, expiry/revoke/fullscreen and 44px actions reachable.
+Long explanatory guidance can use accessible disclosure; unknown revoke must
+not retain a huge empty scan card. Expanded guidance, tiny/zoomed/short screens
+may scroll safely. Measure actual bounds and decode the rendered current QR in
+memory without persisting its capability pixels. No shared UI/API/schema change
+or physical-camera/production acceptance is inferred from these layout tests.
