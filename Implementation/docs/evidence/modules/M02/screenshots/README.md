@@ -1,6 +1,6 @@
 # M02 browser visual receipt
 
-Actual servlet backend and disposable MySQL 8.0.45; synthetic records only. Final tested source 239caa8, capture completed 2026-10-09 13:21:48+08. The live QR is intentionally invisible in delivered screenshots: a temporary CSS rule hides all QR images during capture and is removed immediately afterward. The actual UI renders decodable QR pixels; the component decoder and browser next-slot checks verify that separately.
+Actual servlet backend and disposable MySQL 8.0.45; synthetic records only. Current tested source 835689f, capture completed 2026-10-09 13:38:34+08. The live QR is intentionally invisible in delivered screenshots: a temporary CSS rule hides all QR images during capture and is removed immediately afterward. The actual UI renders decodable QR pixels; the component decoder and browser next-slot checks verify that separately.
 
 | Image | Observed state |
 |---|---|
@@ -12,6 +12,8 @@ Actual servlet backend and disposable MySQL 8.0.45; synthetic records only. Fina
 | visitor-restart-confirmation.png | Exact old/new scope labels, cancel/confirm, visible keyboard focus |
 | visitor-confirmed-restart.png | New counter/category accepted only after explicit confirmation |
 | visitor-unknown-recovered.png | Processed exchange response lost; GET recovered the exact current context |
+| revoke-unknown-hidden.png | Processed revoke response lost; original counter retained, code hidden, explicit retry available |
+| revoke-unknown-counter-changed.png | Selected counter changed, original counter still explicit, retry target unchanged |
 | revoked-display-hidden.png | Explicit revoke confirmed, no scannable code retained |
 
-Visual checks covered all nine delivered images: readable text, reachable actions, accurate unavailable states, no QR pixels or personal records. Axe/geometry/storage/fragment outcomes are in ../browser-verification.json; image SHA-256 values are in ../delivery-manifest.json. This is local CSS zoom evidence, not physical camera/production HTTPS or OS zoom/UAT evidence. Vertical scrolling is intentional for mobile and enlarged content; no content is clipped to force one-screen display.
+Visual checks cover the 11 delivered states: readable text, reachable actions, accurate unavailable states, no QR pixels or personal records. The two new unknown-revoke states and final confirmation were inspected directly, in addition to prior desktop/mobile/zoom/entry visual checks. Axe/geometry/storage/fragment outcomes are in ../browser-verification.json; image SHA-256 values are in ../delivery-manifest.json. This is local CSS zoom evidence, not physical camera/production HTTPS or OS zoom/UAT evidence. Vertical scrolling is intentional for mobile and enlarged content; no content is clipped to force one-screen display.

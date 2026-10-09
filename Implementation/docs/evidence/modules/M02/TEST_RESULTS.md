@@ -1,5 +1,7 @@
 # M02 verification receipt — 2026-10-09
 
+This is the original source-239caa8 receipt. Current source-835689f repairs and newer 68-backend/95-frontend results are in [RETURN_R1_R3.md](RETURN_R1_R3.md); current browser-verification.json and delivery-manifest.json supersede the original browser capture. The failed review cases and successful repairs remain explicitly separate.
+
 All times below use Asia/Singapore (+08). Records are synthetic. MySQL, servlet sessions/CSRF, cryptographic signing and QR pixels are real. Backend tests use Testcontainers MySQL 8.0.45; the browser harness uses its separately owned disposable MySQL. No developer `.env`, native database or production service was used.
 
 | Check | Actual result | Command / time / evidence |

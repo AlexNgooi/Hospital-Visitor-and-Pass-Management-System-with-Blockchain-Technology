@@ -6,6 +6,8 @@ Grants last 20 minutes absolutely. Rotation/natural challenge expiry does not cl
 
 M02 provides entry authority and a transaction port for M03. The current public page accurately says visitor fields are not available and no application was submitted. No visitor-registration aggregate, MRN lookup, review, pass/card issuance or receipt QR is implemented here. QR possession cannot prove physical presence.
 
+An interrupted/hidden public page keeps confirmed context and input but cannot enable submission from a late response. Resumption requires a fresh GET of the same immutable authority; a new accepted context is still saved without automatic POST replay. An uncertain staff revoke retains its original display/counter, hides the old QR permanently and blocks creating a replacement display. The explicit Retry revoke action reissues only that original source; changing the selected counter does not change the pending revoke's target.
+
 ## Configuration
 
 QR is disabled by default. GET `/api/public/registration-entry/capabilities` reports only `{enabled:false}`; stateful entry/display routes return 409 `INTEGRATION_DISABLED` and do not write QR rows. Foundation login remains usable without QR secrets.

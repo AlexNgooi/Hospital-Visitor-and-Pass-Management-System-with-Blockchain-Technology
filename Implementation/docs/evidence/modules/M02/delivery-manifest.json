@@ -1,31 +1,31 @@
 {
-  "sourceCommit": "239caa8d367e7c8eda8c8477595e9ce9a88525e7",
+  "sourceCommit": "835689f44368596b26198e1db6a7419acfec4050",
   "originalBaseline": "98a7f7d5a1869922a752a14ee19492fe97c3cf3f",
   "reviewedM00": "cf10a71adf04c9a533e4c6c7e68a1344b3328276",
   "reviewedSharedUi": "858b74d58c8a990b576f58531cdd388d0fa6943d",
-  "result": "Submitted for coordinator review",
+  "result": "R1-R3 repaired; resubmitted for coordinator review",
   "backend": {
     "skipped": 0,
     "exitCode": 0,
     "errors": 0,
-    "tests": 67,
+    "tests": 68,
     "failures": 0,
-    "finishedAt": "2026-10-09T13:14:46+08:00",
-    "rawLogSha256": "930468ecdba9526b1742cbe076b69d42d104d4d88d7a922007683ec0fcc660f6"
+    "finishedAt": "2026-10-09T13:31:20+08:00",
+    "rawLogSha256": "bdac3f9765a35ebb84fbe7c70d901ad5a8e6e4db70719f41e521cb012c3edeef"
   },
   "frontend": {
     "syntheticProxy": "PASS",
     "exitCode": 0,
-    "tests": 84,
-    "startedAt": "2026-10-09T13:19:15+08:00",
+    "tests": 95,
+    "startedAt": "2026-10-09T13:36:30+08:00",
     "build": "PASS",
     "typecheck": "PASS",
     "lint": "PASS"
   },
   "browser": {
-    "completedAt": "2026-10-09T13:21:48+08:00",
+    "completedAt": "2026-10-09T13:38:34+08:00",
     "mobile": "375x812",
-    "checks": 12,
+    "checks": 15,
     "desktop": "1440x1000",
     "mysql": "8.0.45 disposable",
     "records": "SYNTHETIC",
@@ -57,8 +57,8 @@
     },
     {
       "path": "screenshots/live-display-desktop.png",
-      "sha256": "0503afc84d541a4e6cee9a265212b708549af3d7f9ab6407536a2837ee8ba457",
-      "bytes": 130042
+      "sha256": "25a2db23080fff6fc8fa380da00ef83a2726cf4ab3dd3b8653980aa6dfbcd6b9",
+      "bytes": 129893
     },
     {
       "path": "screenshots/live-display-mobile-zoom200.png",
@@ -67,13 +67,23 @@
     },
     {
       "path": "screenshots/live-display-mobile.png",
-      "sha256": "b9d87bce377935a5c453b5d12eaff1d9a9cce45015fb248d8607b00145458c99",
-      "bytes": 94261
+      "sha256": "db05ef9f4d4d1b8276ea067b6ee70cf701d337cb0a00a4a37ea307a477cd333d",
+      "bytes": 94242
+    },
+    {
+      "path": "screenshots/revoke-unknown-counter-changed.png",
+      "sha256": "994bb18997750f43f5383ff409e638d6112fce18c561a5ae70f1fb2fde7cc294",
+      "bytes": 115490
+    },
+    {
+      "path": "screenshots/revoke-unknown-hidden.png",
+      "sha256": "bab50f886150d403f1c6d2c2653de39c47b6ab8934f2b639e5726d03cd810574",
+      "bytes": 115913
     },
     {
       "path": "screenshots/revoked-display-hidden.png",
-      "sha256": "d54f5b3ba25b84dddd2b053a9ddb8d0782215e66d5fa565ae94f1756dc1d4dff",
-      "bytes": 102573
+      "sha256": "6524cead016bfaab22e4a8a3b6dee637e05d287da664007f397bc872f31cee41",
+      "bytes": 106259
     },
     {
       "path": "screenshots/visitor-confirmed-restart.png",

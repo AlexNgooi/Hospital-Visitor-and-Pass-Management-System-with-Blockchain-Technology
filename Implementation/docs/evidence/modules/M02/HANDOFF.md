@@ -1,11 +1,13 @@
 # M02 Dynamic Registration QR — submitted for coordinator review
 
+**Current review return:** source `835689f44368596b26198e1db6a7419acfec4050`; R1–R3 and the R2 capability supplement are addressed in [RETURN_R1_R3.md](RETURN_R1_R3.md). Latest verification is backend 68 / frontend 95 and the current browser receipt. Initial source 239caa8 and results below are preserved as historical evidence, superseded by that return. Coordinator approval remains pending.
+
 - Module/chat: M02; active isolated chat `01a11db3-31c9-7da0-bfb2-217e71081355`; original `01a11ba4-e2bd-74a3-beee-1f47860bfc01`.
 - Owner: module assistant implements/tests/repairs; coordinator `01a11b84-212d-7273-93a5-5dc16c698bdb` owns review and main merge. All new/modified handwritten code has English responsibility/business/security comments.
 - Human development authorization: user's explicit **“开启m02”**, 2026-10-09, recorded in planning/12 and coordinator START. Prior direct-code instruction replaces old hand-writing guidance. Permission persists within M02 scope; no M03/M04 work was started.
 - Workspace: `C:/Users/alexy/.codex/worktrees/bd17/FYP Dev`; branch `codex/hsaas-m02-dynamic-registration`.
 - Original baseline: `98a7f7d5a1869922a752a14ee19492fe97c3cf3f`.
-- Tested submitted source: **`239caa8d367e7c8eda8c8477595e9ce9a88525e7`**. Includes M02 checkpoint 256b858, reviewed M00 cf10a71 via effaec2, M02 recovery 548b232, reviewed M01 858b74d via 05c8e0c, screenshot helper a639bf0 and countdown correction 239caa8. Evidence delivery is a following documentation/artifact-only commit; its exact SHA is sent to coordinator after commit.
+- Initial tested submitted source: **`239caa8d367e7c8eda8c8477595e9ce9a88525e7`**. Includes M02 checkpoint 256b858, reviewed M00 cf10a71 via effaec2, M02 recovery 548b232, reviewed M01 858b74d via 05c8e0c, screenshot helper a639bf0 and countdown correction 239caa8. Initial evidence delivery was 41dede4. Current source 835689f supersedes this initial version as explained in the review return above.
 - No push, deployment or main merge was performed by this module. REVIEW.md/approval belongs to coordinator.
 
 The staff page renders an actual locally encoded QR from strict HS256 server challenges, anchored to fixed display UTC slots (30s rotation/45s expiry). Visitors exchange the shared challenge for independent anonymous-bound grants lasting 20 minutes absolutely. The one-form pointer supports same-scope reuse and explicit atomic cross-scope replacement with C12 linkage. Display/offline/sleep/expiry, logout/permission/owner validity and server recovery fail closed. Public entry clears the fragment before React/API, keeps capability data in memory and never silently rebinds old input to a new context.

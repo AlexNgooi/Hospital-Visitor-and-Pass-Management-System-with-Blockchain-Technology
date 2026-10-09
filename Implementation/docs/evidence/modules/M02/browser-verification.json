@@ -78,6 +78,29 @@
       "fragmentCleared": true
     },
     {
+      "step": "revoke-unknown-hidden",
+      "violations": [],
+      "horizontalOverflow": false,
+      "storageEmpty": true,
+      "tokenAbsentFromVisibleText": true,
+      "fragmentCleared": true
+    },
+    {
+      "step": "revoke-unknown-counter-changed",
+      "violations": [],
+      "horizontalOverflow": false,
+      "storageEmpty": true,
+      "tokenAbsentFromVisibleText": true,
+      "fragmentCleared": true
+    },
+    {
+      "step": "real-revoke-response-loss-original-source",
+      "originalCounterPreserved": true,
+      "sameOriginalDisplay": true,
+      "writeAttempts": 2,
+      "automaticRetries": 0
+    },
+    {
       "step": "revoked-display-hidden",
       "violations": [],
       "horizontalOverflow": false,
@@ -198,7 +221,7 @@
   "realMysql": true,
   "syntheticRecords": true,
   "cameraAndProductionHttps": "NOT_RUN",
-  "sourceCommit": "239caa8d367e7c8eda8c8477595e9ce9a88525e7",
-  "completedAt": "2026-10-09T13:21:48+08:00",
-  "qrScreenshotRedaction": "Temporary CSS visibility:hidden on all QR images; visually verified; no QR pixels delivered"
+  "sourceCommit": "835689f44368596b26198e1db6a7419acfec4050",
+  "completedAt": "2026-10-09T13:38:34+08:00",
+  "qrScreenshotRedaction": "Temporary CSS visibility:hidden for every QR image, including replaced images and CSS zoom"
 }
