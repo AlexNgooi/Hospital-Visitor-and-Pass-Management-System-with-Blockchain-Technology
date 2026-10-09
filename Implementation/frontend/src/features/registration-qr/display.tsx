@@ -53,6 +53,8 @@ export function RegistrationQrDisplay({ port = qrPort }: { port?: QrPort }) {
         if (!alive || sequence !== requestGeneration || !navigator.onLine || !pageVisible()) return;
         latest = { current, anchor: timing, image };
         if (!displayFresh(current, timing, performance.now())) { latest = null; setValue(null); setMessage("The QR expired while loading. Refresh the current code."); return; }
+        // Update the countdown with the accepted payload, before the next tick can display a previous slot's zero.
+        setRemaining(Math.max(0, Math.ceil((Date.parse(current.rotateAt) - serverTime(timing, performance.now())) / 1000)));
         setValue(latest); setMessage("");
       } catch (error) {
         if (alive && sequence === requestGeneration) { latest = null; setValue(null); setMessage(safeError(error)); }
