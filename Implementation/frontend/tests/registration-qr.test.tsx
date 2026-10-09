@@ -67,6 +67,14 @@ describe("registration QR authority display", () => {
     render(<CounterContext.Provider value="1"><RegistrationQrDisplay port={port} /></CounterContext.Provider>);
     expect(await screen.findByText("Registration QR is not enabled")).toBeTruthy();expect(port.create).not.toHaveBeenCalled();expect(screen.queryByRole("img")).toBeNull();
   });
+  /** Availability failures can recover through a read without accidentally creating a display. */
+  it("rechecks unavailable capabilities without replaying commands", async () => {
+    const port = fixturePort(); vi.mocked(port.capabilities).mockRejectedValueOnce(new ClientError("timeout"));
+    render(<CounterContext.Provider value="1"><RegistrationQrDisplay port={port} /></CounterContext.Provider>);
+    fireEvent.click(await screen.findByRole("button", { name: "Check QR availability" }));
+    await waitFor(() => expect((screen.getByRole("button", { name: "Display registration QR" }) as HTMLButtonElement).disabled).toBe(false));
+    expect(port.capabilities).toHaveBeenCalledTimes(2); expect(port.create).not.toHaveBeenCalled();
+  });
   /** Offline and visibility events hide the code synchronously and only a fresh response restores it. */
   it("hides offline and revalidates after tab sleep", async () => {
     const port = fixturePort();render(<CounterContext.Provider value="1"><RegistrationQrDisplay port={port} /></CounterContext.Provider>);
@@ -125,6 +133,43 @@ describe("public grant entry", () => {
   it("does not exchange when disabled", async () => {
     const port = fixturePort();vi.mocked(port.capabilities).mockResolvedValue({ enabled: false });render(<RegistrationEntry port={port} vault={vault()} />);
     await screen.findByText("Pendaftaran belum diaktifkan");expect(port.exchange).not.toHaveBeenCalled();expect(port.bootstrap).not.toHaveBeenCalled();
+  });
+  /** Losing authority preserves typed input; another tab's replacement cannot silently bind it to a new grant. */
+  it("preserves disabled input offline and resets it only after explicit current-form adoption", async () => {
+    const port = fixturePort(), old = grant(), next = grant("2", 2);
+    vi.mocked(port.exchange).mockResolvedValue(old); vi.mocked(port.entry).mockResolvedValue(old);
+    render(<RegistrationEntry port={port} vault={vault()}>{value => <label>Visitor note<input aria-label="Visitor note" defaultValue="" data-version={value.formContext.bindingVersion} /></label>}</RegistrationEntry>);
+    const input = await screen.findByRole("textbox") as HTMLInputElement;
+    fireEvent.change(input, { target: { value: "Synthetic retained input" } });
+    Object.defineProperty(navigator, "onLine", { configurable: true, value: false }); fireEvent(window, new Event("offline"));
+    expect(input.closest("fieldset")?.disabled).toBe(true); expect(input.value).toBe("Synthetic retained input");
+    Object.defineProperty(navigator, "onLine", { configurable: true, value: true }); fireEvent(window, new Event("online"));
+    await waitFor(() => expect(input.closest("fieldset")?.disabled).toBe(false));
+    expect(input.value).toBe("Synthetic retained input");
+    vi.mocked(port.entry).mockResolvedValue(next); fireEvent(window, new Event("pageshow"));
+    await screen.findByRole("button", { name: "Buka borang semasa" });
+    expect(input.closest("fieldset")?.disabled).toBe(true); expect(input.dataset.version).toBe("1");
+    expect(input.value).toBe("Synthetic retained input"); expect(port.exchange).toHaveBeenCalledTimes(1);
+    fireEvent.click(screen.getByRole("button", { name: "Buka borang semasa" }));
+    await screen.findByText("Kaunter 2 · semua kategori");
+    const fresh = screen.getByRole("textbox") as HTMLInputElement;
+    expect(fresh.dataset.version).toBe("2"); expect(fresh.value).toBe("");
+    expect(port.entry).toHaveBeenCalledTimes(3); expect(port.exchange).toHaveBeenCalledTimes(1);
+  });
+  /** A stale adoption proposal and an altered expiry are rejected before enabling any existing input. */
+  it("rechecks adoption and refuses same-context expiry renewal", async () => {
+    const port = fixturePort(), old = grant(), next = grant("2", 2), latest = grant("3", 3);
+    vi.mocked(port.exchange).mockResolvedValue(old); vi.mocked(port.entry).mockResolvedValue(next);
+    render(<RegistrationEntry port={port} vault={vault()}>{() => <input aria-label="Preserved form" />}</RegistrationEntry>);
+    const input = await screen.findByRole("textbox"); fireEvent(window, new Event("pageshow"));
+    await screen.findByRole("button", { name: "Buka borang semasa" });
+    vi.mocked(port.entry).mockResolvedValue(latest); fireEvent.click(screen.getByRole("button", { name: "Buka borang semasa" }));
+    await screen.findByText("Status borang berubah lagi. Semak borang semasa sebelum membukanya.");
+    expect(screen.queryByText("Kaunter 3 · semua kategori")).toBeNull(); expect(input.closest("fieldset")?.disabled).toBe(true);
+    vi.mocked(port.entry).mockResolvedValue({ ...old, grantExpiresAt: date(Date.parse(old.grantExpiresAt) + 1000) });
+    fireEvent.click(screen.getByRole("button", { name: "Semak status semasa" }));
+    await screen.findByText("Semakan borang tidak dapat disahkan. Sila ke kaunter untuk bantuan.");
+    expect(input.closest("fieldset")?.disabled).toBe(true); expect(port.exchange).toHaveBeenCalledTimes(1);
   });
 });
 describe("server time and URL boundaries", () => {

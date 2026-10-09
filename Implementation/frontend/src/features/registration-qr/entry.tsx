@@ -8,6 +8,14 @@ import { qrPort, type EntryGrant, type QrPort } from "./contracts";
 import { anchor, serverTime, type ServerAnchor } from "./time";
 import "./registration-qr.css";
 
+/** Scope and absolute expiry are immutable for one context; a read must never renew a captured form. */
+function sameAuthority(left: EntryGrant, right: EntryGrant) {
+  return left.formContext.grantReference === right.formContext.grantReference
+    && left.formContext.bindingVersion === right.formContext.bindingVersion
+    && left.scope.environment === right.scope.environment && left.scope.counterId === right.scope.counterId
+    && left.scope.categoryScope === right.scope.categoryScope && left.grantExpiresAt === right.grantExpiresAt;
+}
+
 /** Optional form renderer captures this exact context; M03 must never silently adopt another tab's new grant. */
 export function RegistrationEntry({ port = qrPort, vault = entryVault, children }: {
   port?: QrPort; vault?: EntryVault; children?: (entry: EntryGrant) => ReactNode;
@@ -19,6 +27,7 @@ export function RegistrationEntry({ port = qrPort, vault = entryVault, children 
   const [busy, setBusy] = useState(true);
   const [disabled, setDisabled] = useState(false);
   const [expired, setExpired] = useState(false);
+  const [validated, setValidated] = useState(true);
   const [recovered, setRecovered] = useState<EntryGrant | null>(null);
   const sequence = useRef(0), settled = useRef(false);
   const timing = useRef<ServerAnchor | null>(null);
@@ -27,7 +36,7 @@ export function RegistrationEntry({ port = qrPort, vault = entryVault, children 
   /** Accepted exchange changes the form only after server confirmation; token cleanup is fenced by exact value. */
   const accept = useCallback((value: EntryGrant, usedToken?: string, elapsed = 0) => {
     timing.current = anchor(value.serverNow, performance.now(), elapsed); activeEntry.current = value;
-    setEntry(value); setExpired(false); setRestart(null); setRecovered(null); setMessage("");
+    setEntry(value); setExpired(false); setValidated(true); setRestart(null); setRecovered(null); setMessage("");
     if (usedToken) vault.clear(usedToken);
   }, [vault]);
   useEffect(() => {
@@ -59,6 +68,46 @@ export function RegistrationEntry({ port = qrPort, vault = entryVault, children 
   }, []);
 
   useEffect(() => {
+    if (!entry) return;
+    let alive = true, checking = false;
+    const original = entry;
+    const available = () => navigator.onLine && document.visibilityState !== "hidden";
+    const check = async () => {
+      if (!alive || checking || busy || !available()) return;
+      checking = true; const operation = sequence.current, started = performance.now();
+      try {
+        const value = await port.entry();
+        if (!alive || operation !== sequence.current) return;
+        if (!available()) { setValidated(false); return; }
+        const same = value.formContext.grantReference === original.formContext.grantReference
+          && value.formContext.bindingVersion === original.formContext.bindingVersion;
+        if (!same) {
+          // Preserve old input and disable submission; adopting another tab's current form requires an explicit gesture.
+          setValidated(false); setRecovered(value);
+          setMessage("Borang ini telah berubah. Buka borang semasa hanya jika anda mahu memulakan semula.");
+        } else if (!sameAuthority(value, original)) {
+          setValidated(false); setMessage("Semakan borang tidak dapat disahkan. Sila ke kaunter untuk bantuan.");
+        } else {
+          timing.current = anchor(value.serverNow, performance.now(), performance.now() - started);
+          setValidated(true); setRecovered(null); setMessage("");
+        }
+      } catch (error) {
+        if (alive && operation === sequence.current) { setValidated(false); setMessage(safeError(error, "ms")); }
+      } finally { checking = false; }
+    };
+    const offline = () => { setValidated(false); setMessage("Sambungan terputus. Maklumat borang dikekalkan; semak akses sebelum menghantar."); };
+    const resume = () => { setValidated(false); void check(); };
+    const timer = window.setInterval(() => void check(), 5000);
+    window.addEventListener("offline", offline); window.addEventListener("online", resume);
+    window.addEventListener("pageshow", resume); document.addEventListener("visibilitychange", resume);
+    return () => {
+      alive = false; window.clearInterval(timer); window.removeEventListener("offline", offline);
+      window.removeEventListener("online", resume); window.removeEventListener("pageshow", resume);
+      document.removeEventListener("visibilitychange", resume);
+    };
+  }, [entry, busy, port]);
+
+  useEffect(() => {
     const tick = window.setInterval(() => {
       const value = activeEntry.current, time = timing.current;
       if (value && time && serverTime(time, performance.now()) >= Date.parse(value.grantExpiresAt)) setExpired(true);
@@ -68,14 +117,29 @@ export function RegistrationEntry({ port = qrPort, vault = entryVault, children 
 
   /** Unknown results are read back; a different current context needs explicit adoption, never old-input rebinding. */
   const recover = async (cancelledToken?: string) => {
-    const current = ++sequence.current; setBusy(true);
+    const current = ++sequence.current; setBusy(true); setValidated(false);
     try {
       const started = performance.now();
       const value = await port.entry();
       if (current !== sequence.current) return;
       if (activeEntry.current && JSON.stringify(value.formContext) !== JSON.stringify(activeEntry.current.formContext)) {
         setRecovered(value); setMessage("Status borang telah berubah. Buka borang semasa hanya jika anda mahu memulakan semula.");
+      } else if (activeEntry.current && !sameAuthority(value, activeEntry.current)) {
+        setMessage("Semakan borang tidak dapat disahkan. Sila ke kaunter untuk bantuan.");
       } else accept(value, cancelledToken, performance.now() - started);
+    } catch (error) { if (current === sequence.current) setMessage(safeError(error, "ms")); }
+    finally { if (current === sequence.current) setBusy(false); }
+  };
+  /** An explicit adoption refreshes the proposed context first, so time spent deciding cannot extend its expiry. */
+  const adopt = async () => {
+    if (!recovered || busy) return;
+    const proposed = recovered, current = ++sequence.current; setBusy(true); setValidated(false);
+    try {
+      const started = performance.now(), value = await port.entry();
+      if (current !== sequence.current) return;
+      if (!sameAuthority(value, proposed)) {
+        setRecovered(value); setMessage("Status borang berubah lagi. Semak borang semasa sebelum membukanya.");
+      } else accept(value, token ?? undefined, performance.now() - started);
     } catch (error) { if (current === sequence.current) setMessage(safeError(error, "ms")); }
     finally { if (current === sequence.current) setBusy(false); }
   };
@@ -102,13 +166,13 @@ export function RegistrationEntry({ port = qrPort, vault = entryVault, children 
     <span className="eyebrow">HSAAS · PENDAFTARAN</span><h1>Pendaftaran pelawat</h1><p className="muted">Tiada akaun diperlukan.</p>
     {disabled ? <StatusPanel kind="empty" title="Pendaftaran belum diaktifkan">Sila ke kaunter untuk bantuan.</StatusPanel> : <>
       {busy && <StatusPanel kind="loading" title="Menyemak akses pendaftaran">Sila tunggu.</StatusPanel>}
-      {entry && !expired && <section className="qr-entry-card"><span className="qr-live">Akses borang aktif</span><h2>{label(entry.scope)}</h2>
+      {entry && <section className="qr-entry-card"><span className="qr-live">{validated && !expired ? "Akses borang aktif" : "Akses perlu disahkan"}</span><h2>{label(entry.scope)}</h2>
         <p>Hantar borang sebelum tempoh 20 minit tamat. QR di kaunter boleh berubah tanpa menutup borang ini.</p>
-        {children ? children(entry) : <p className="qr-notice">Borang maklumat pelawat belum tersedia. Sila dapatkan bantuan di kaunter. Tiada permohonan dihantar.</p>}
+        {children ? <fieldset className="qr-bound-form" disabled={busy || !validated || expired} key={`${entry.formContext.grantReference}:${entry.formContext.bindingVersion}`}>{children(entry)}</fieldset> : <p className="qr-notice">Borang maklumat pelawat belum tersedia. Sila dapatkan bantuan di kaunter. Tiada permohonan dihantar.</p>}
       </section>}
       {expired && <StatusPanel kind="error" title="Tempoh borang telah tamat">Sila imbas QR semasa di kaunter.</StatusPanel>}
       {message && <StatusPanel kind="error" title="Semak akses pendaftaran" action={<Button variant="secondary" busy={busy} onClick={() => void recover()}>Semak status semasa</Button>}>{message}</StatusPanel>}
-      {recovered && <Button onClick={() => { accept(recovered); if (token) vault.clear(token); }}>Buka borang semasa</Button>}
+      {recovered && <Button busy={busy} onClick={() => void adopt()}>Buka borang semasa</Button>}
       {!entry && !busy && !message && !restart && <StatusPanel kind="empty" title="Imbas QR di kaunter">Gunakan QR semasa untuk membuka borang.</StatusPanel>}
       <RestartConfirmation open={Boolean(restart)} currentLabel={restart ? label(restart.currentScope) : ""} requestedLabel={restart ? label(restart.requestedScope) : ""}
         busy={busy} error={message || undefined} onCancel={cancel} onConfirm={() => void confirm()} />

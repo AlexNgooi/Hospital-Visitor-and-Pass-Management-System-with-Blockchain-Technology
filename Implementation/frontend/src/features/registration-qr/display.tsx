@@ -19,16 +19,19 @@ export function RegistrationQrDisplay({ port = qrPort }: { port?: QrPort }) {
   const [message, setMessage] = useState("");
   const [busy, setBusy] = useState(false);
   const [remaining, setRemaining] = useState(0);
+  const [capabilityAttempt, setCapabilityAttempt] = useState(0);
   const generation = useRef(0);
   const panel = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const controller = new AbortController();
-    port.capabilities(controller.signal).then(result => setEnabled(result.enabled)).catch(error => {
+    port.capabilities(controller.signal).then(result => {
+      if (!controller.signal.aborted) { setEnabled(result.enabled); setMessage(""); }
+    }).catch(error => {
       if (!controller.signal.aborted) setMessage(safeError(error));
     });
     return () => controller.abort();
-  }, [port]);
+  }, [port, capabilityAttempt]);
 
   useEffect(() => {
     if (!display || display.counter !== counter) return;
@@ -116,6 +119,10 @@ export function RegistrationQrDisplay({ port = qrPort }: { port?: QrPort }) {
           <h2>Scan to register</h2><p>Gunakan kamera telefon anda untuk mengimbas QR semasa.</p>
           {visible && <><span className="qr-live">Live · changes in {remaining} seconds</span><Button variant="ghost" onClick={() => void panel.current?.requestFullscreen?.()}>Full screen</Button></>}
           {message && <p role="status" className="qr-notice">{message}</p>}
+          {enabled === null && message && <Button variant="secondary" onClick={() => {
+            // Retry only the read-only availability probe; never replay an uncertain create or revoke command.
+            setMessage(""); setCapabilityAttempt(value => value + 1);
+          }}>Check QR availability</Button>}
         </div>
         <aside className="qr-guidance" aria-label="Registration entry guidance"><ShieldCheck aria-hidden="true" /><h2>A limited registration entry</h2>
           <p>The server changes this QR every 30 seconds. Each code expires after 45 seconds.</p>
