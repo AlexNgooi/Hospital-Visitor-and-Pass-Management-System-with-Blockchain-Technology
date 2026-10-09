@@ -115,38 +115,45 @@ export function RegistrationQrDisplay({ port = qrPort }: { port?: QrPort }) {
   useEffect(() => () => { generation.current++; }, []);
   const visible = value && display?.counter === counter;
 
-  return <div className="qr-feature">
-    <span className="eyebrow">COUNTER REGISTRATION</span><h1>Visitor registration QR</h1>
-    <p className="muted">A live entry for visitors. No visitor account is required.</p>
+  return <div className="qr-feature qr-display-feature">
+    <header className="qr-intro"><h1>Visitor registration QR</h1><p className="muted">No visitor account is required.</p></header>
     {enabled === false ? <StatusPanel kind="empty" title="Registration QR is not enabled">Contact the administrator to enable the controlled registration entry.</StatusPanel> : <>
       <div className="qr-toolbar"><span className="qr-counter">Counter {counter ?? "not selected"}</span><span className="qr-category">All categories</span>
-        <Button busy={busy} disabled={!enabled || !counter || Boolean(display) || Boolean(revocation)} onClick={() => void create()}>Display registration QR</Button>
-        {display && <Button variant="secondary" busy={busy} onClick={() => void revoke()}>Revoke display</Button>}
+        {!display && !revocation && <Button busy={busy} disabled={!enabled || !counter} onClick={() => void create()}>Display registration QR</Button>}
       </div>
       {display && display.counter !== counter && <p className="qr-notice" role="status">The live display belongs to counter {display.counter}. Revoke it before starting a display for the selected counter.</p>}
-      {revocation && <StatusPanel kind={revocation.status === "pending" ? "loading" : "error"} title={revocation.status === "pending" ? "Revoking the original display" : "Display revocation is unconfirmed"}
-        action={revocation.status === "unknown" ? <Button variant="secondary" busy={busy} onClick={() => void revoke()}>Retry revoke</Button> : undefined}>
-        <p>Original counter {revocation.counter}</p><p>{message || "The original code remains hidden while the server confirms revocation."}</p>
-      </StatusPanel>}
       <div className="qr-display-layout">
-        <div className="qr-display-card" ref={panel}>
-          <div className="qr-display-heading"><QrCode size={24} aria-hidden="true" /><strong>HSAAS · Counter {counter ?? "—"}</strong></div>
-          <div className="qr-scan-area" aria-label="Current registration code">
+        {revocation ? <section className="qr-revocation" role={revocation.status === "unknown" ? "alert" : "status"} aria-busy={revocation.status === "pending"}>
+          {/* Recovery replaces the empty QR card so its original-source action stays near the heading. */}
+          <h2>{revocation.status === "pending" ? "Revoking the original display" : "Display revocation is unconfirmed"}</h2>
+          <p>Original counter {revocation.counter}</p><p>{message || "The original code remains hidden while the server confirms revocation."}</p>
+          {revocation.status === "unknown" && <Button variant="secondary" busy={busy} onClick={() => void revoke()}>Retry revoke</Button>}
+        </section> : <div className="qr-display-card" ref={panel}>
+          <div className="qr-display-heading"><QrCode size={20} aria-hidden="true" /><h2>Scan / Imbas untuk daftar</h2></div>
+          <div className="qr-scan-area" data-available={Boolean(visible)} aria-label="Current registration code">
             {visible ? <img src={value.image} alt="Scan this current QR with your phone camera to register" width={400} height={400} /> : <div className="qr-hidden"><WifiOff size={40} aria-hidden="true" /><strong>{busy ? "Preparing entry…" : display ? "Current code unavailable" : "Start a live display"}</strong><span>No scannable code is shown.</span></div>}
           </div>
-          <h2>Scan to register</h2><p>Gunakan kamera telefon anda untuk mengimbas QR semasa.</p>
-          {visible && <><span className="qr-live">Live · changes in {remaining} seconds</span><Button variant="ghost" onClick={() => void panel.current?.requestFullscreen?.()}>Full screen</Button></>}
+          {visible && <div className="qr-display-meta"><span className="qr-live">Live · changes in {remaining} seconds</span></div>}
+          {display && <div className="qr-controls">
+            {visible && <Button variant="ghost" onClick={() => void panel.current?.requestFullscreen?.()}>Full screen</Button>}
+            <Button variant="secondary" busy={busy} onClick={() => void revoke()}>Revoke display</Button>
+          </div>}
           {message && !revocation && <p role="status" className="qr-notice">{message}</p>}
           {enabled === null && message && <Button variant="secondary" onClick={() => {
             // Retry only the read-only availability probe; never replay an uncertain create or revoke command.
             setMessage(""); setCapabilityAttempt(value => value + 1);
           }}>Check QR availability</Button>}
-        </div>
-        <aside className="qr-guidance" aria-label="Registration entry guidance"><ShieldCheck aria-hidden="true" /><h2>A limited registration entry</h2>
+        </div>}
+        <aside className="qr-guidance" aria-label="Registration entry guidance">
+          <p className="qr-limits">30s rotation · 45s expiry · 20min form</p>
+          <p className="qr-safety">QR does not prove identity or presence. Staff checks still apply.</p>
+          {/* Native details keeps complete guidance keyboard-accessible without displacing the current code/actions. */}
+          <details><summary><ShieldCheck size={18} aria-hidden="true" />Entry limits and connection help</summary><div className="qr-guidance-body">
           <p>The server changes this QR every 30 seconds. Each code expires after 45 seconds.</p>
           <p>Visitors who already opened a valid form have 20 minutes to submit it. Several visitors can scan the same current code.</p>
           <p>Keep this display connected. After a connection loss or sleep, the code stays hidden until revalidated.</p>
           <p className="muted">QR entry does not verify identity or physical presence. Staff verification remains required.</p>
+          </div></details>
         </aside>
       </div>
     </>}

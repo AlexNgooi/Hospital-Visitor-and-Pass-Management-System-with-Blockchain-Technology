@@ -23,3 +23,42 @@
 .qr-feature .status-panel { margin: 24px 0; }
 /* Preserve the QR quiet zone and touch-sized controls on a narrow phone viewport. */
 @media (max-width: 720px) { .qr-display-layout { grid-template-columns: 1fr; } .qr-display-card { padding: 20px; } .qr-guidance { padding: 12px 0; } .qr-toolbar .button { width: 100%; } }
+
+/* Compact only the staff feature; the public form and shared shell retain their own spacing contracts. */
+.qr-display-feature .qr-intro h1 { font-size: 28px; line-height: 1.2; }
+.qr-display-feature .qr-intro p { margin-top: 2px; font-size: 14px; }
+.qr-display-feature .qr-toolbar { margin: 4px 0 8px; gap: 8px; font-size: 14px; }
+.qr-display-feature .qr-display-layout { grid-template-columns: minmax(300px, 1fr) minmax(240px, .8fr); gap: 16px; }
+.qr-display-feature .qr-display-card { padding: 8px; }
+.qr-display-feature .qr-display-heading { margin-bottom: 4px; gap: 6px; }
+.qr-display-feature .qr-display-heading h2 { font-size: 18px; line-height: 24px; }
+.qr-display-feature .qr-scan-area { width: min(100%, 280px); margin-bottom: 8px; }
+/* Nearest-neighbor presentation preserves the encoder's four-module quiet zone and avoids softened grid edges. */
+.qr-display-feature .qr-scan-area img { height: auto; aspect-ratio: 1; image-rendering: pixelated; }
+.qr-display-feature .qr-scan-area[data-available="false"] { width: 100%; aspect-ratio: auto; }
+.qr-display-feature .qr-hidden { min-height: 100px; height: auto; padding: 12px; gap: 6px; font-size: 14px; }
+.qr-display-meta { margin-top: 4px; }
+.qr-display-feature .qr-live { font-size: 14px; line-height: 20px; padding: 2px 8px; }
+.qr-controls { display: flex; justify-content: center; flex-wrap: wrap; gap: 8px; margin-top: 6px; }
+.qr-controls .button { min-height: 44px; }
+.qr-display-feature .qr-guidance { padding: 0; font-size: 14px; }
+.qr-display-feature .qr-guidance p { margin: 0; line-height: 1.5; }
+.qr-display-feature .qr-safety { margin-top: 6px; }
+.qr-guidance details { margin-top: 6px; }
+.qr-guidance summary { min-height: 44px; padding: 8px; border: 1px solid var(--border); border-radius: 7px; cursor: pointer; }
+.qr-guidance summary svg { vertical-align: middle; margin-right: 6px; color: var(--primary); }
+.qr-guidance summary:focus-visible { outline: 3px solid var(--focus); outline-offset: 4px; }
+.qr-display-feature .qr-guidance-body p { margin-top: 10px; }
+.qr-revocation { display: grid; gap: 8px; align-content: start; padding: 16px; border: 1px solid var(--border); border-radius: 12px; background: var(--surface); }
+.qr-revocation h2 { font-size: 20px; }
+.qr-revocation p { font-size: 14px; line-height: 1.5; }
+.qr-revocation .button { justify-self: start; min-height: 44px; }
+.qr-display-feature .qr-notice { margin-top: 8px; padding: 10px; font-size: 14px; }
+/* Fullscreen and enlarged/short viewports may scroll; no safety text or controls are clipped to force a fit. */
+.qr-display-feature .qr-display-card:fullscreen { overflow: auto; }
+.qr-display-feature .qr-display-card:fullscreen .qr-scan-area { width: min(60vmin, 560px); }
+@media (max-width: 720px) {
+  .qr-display-feature .qr-intro h1 { font-size: 24px; }
+  .qr-display-feature .qr-display-layout { grid-template-columns: minmax(0, 1fr); gap: 8px; }
+  .qr-display-feature .qr-scan-area { width: min(100%, 260px); }
+}

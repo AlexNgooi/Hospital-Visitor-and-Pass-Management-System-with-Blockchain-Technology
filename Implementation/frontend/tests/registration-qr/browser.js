@@ -10,7 +10,7 @@ async (page) => {
     if (url.pathname.startsWith("/api/")) responses.push({ path: url.pathname, method: response.request().method(), status: response.status() });
   });
   await page.context().clearCookies(); await page.goto(origin + "/login");
-  await page.setViewportSize({ width: 1440, height: 1000 });
+  await page.setViewportSize({ width: 1366, height: 768 });
   await page.getByLabel("Username / Staff account").fill("staff_integration");
   await page.getByLabel("Password", { exact: true }).fill("Synthetic-only-password_1");
   await page.getByRole("button", { name: "Sign in", exact: true }).click();
@@ -36,12 +36,54 @@ async (page) => {
     try { await target.screenshot({ path: root + step + ".png", fullPage: true }); }
     finally { await redaction.evaluate(element => element.remove()); }
   }
+  /** Measure actual first-screen controls and decode the current PNG at its rendered pixelated size, memory only. */
+  async function primaryFit(target, step, recovery = false) {
+    await target.addScriptTag({ path: "node_modules/jsqr/dist/jsQR.js" });
+    const result = await target.evaluate(recovery => {
+      const bounds = element => {
+        const box = element.getBoundingClientRect();
+        return { left: box.left, top: box.top, right: box.right, bottom: box.bottom, width: box.width, height: box.height };
+      };
+      const items = recovery ? [document.querySelector(".qr-revocation button")] : [document.querySelector(".qr-scan-area img"), document.querySelector(".qr-display-feature .qr-live"), ...document.querySelectorAll(".qr-controls button")];
+      const rectangles = items.map(element => element && bounds(element));
+      const visible = rectangles.every(box => box && box.top >= 0 && box.left >= 0 && box.right <= innerWidth + 1 && box.bottom <= innerHeight + 1);
+      const touchSized = [...document.querySelectorAll(recovery ? ".qr-revocation button" : ".qr-controls button")].every(element => bounds(element).height >= 44 && bounds(element).width >= 44);
+      let decodedAtRenderedSize = null, renderedPixels = null;
+      if (!recovery) {
+        const image = document.querySelector(".qr-scan-area img"), box = bounds(image);
+        const decode = (width, height) => {
+          const canvas = document.createElement("canvas"); canvas.width = width; canvas.height = height;
+          const context = canvas.getContext("2d"); context.imageSmoothingEnabled = false;
+          context.drawImage(image, 0, 0, width, height);
+          return window.jsQR(context.getImageData(0, 0, width, height).data, width, height);
+        };
+        const original = decode(image.naturalWidth, image.naturalHeight), resized = decode(Math.round(box.width), Math.round(box.height));
+        // Compare decoded capabilities only in memory; return no PNG bytes, URL, token or public reference.
+        decodedAtRenderedSize = Boolean(original && resized && original.data === resized.data);
+        renderedPixels = { width: Math.round(box.width), height: Math.round(box.height) };
+      }
+      return { viewport: { width: innerWidth, height: innerHeight }, rectangles, visible, touchSized, decodedAtRenderedSize, renderedPixels,
+        renderedDecoder: recovery ? null : "nearest-neighbor canvas simulation at measured CSS size; physical camera NOT_RUN",
+        documentHeight: document.documentElement.scrollHeight, documentFits: document.documentElement.scrollHeight <= innerHeight + 1 };
+    }, recovery);
+    if (!result.visible || !result.touchSized || !result.documentFits || (!recovery && !result.decodedAtRenderedSize)) throw new Error("QR primary viewport/decode failed: " + step + " " + JSON.stringify(result));
+    checks.push({ step, ...result });
+  }
+  await primaryFit(page, "live-first-screen-desktop1366");
   await audit(page, "live-display-desktop");
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await primaryFit(page, "live-first-screen-desktop1440"); await audit(page, "live-display-desktop1440");
   const image = await page.getByRole("img").getAttribute("src");
   // Observe an actual next-slot image, rather than locally changing an illustrative QR.
   await page.waitForFunction(old => document.querySelector(".qr-scan-area img")?.getAttribute("src") !== old && !!document.querySelector(".qr-scan-area img"), image, { timeout: 40000 });
   checks.push({ step: "server-slot-real-payload-change", changed: true });
-  await page.setViewportSize({ width: 375, height: 812 }); await audit(page, "live-display-mobile");
+  await page.setViewportSize({ width: 375, height: 812 }); await page.evaluate(() => window.scrollTo(0, 0));
+  await primaryFit(page, "live-first-screen-mobile"); await audit(page, "live-display-mobile");
+  await page.locator(".qr-guidance summary").focus(); await page.keyboard.press("Enter");
+  if (!await page.getByText("The server changes this QR every 30 seconds. Each code expires after 45 seconds.").isVisible()) throw new Error("Keyboard guidance disclosure failed");
+  await audit(page, "live-guidance-expanded-mobile"); await page.keyboard.press("Enter"); await page.evaluate(() => window.scrollTo(0, 0));
+  await page.setViewportSize({ width: 375, height: 568 }); await audit(page, "live-display-short-screen");
+  await page.setViewportSize({ width: 375, height: 812 });
   await page.evaluate(() => { document.documentElement.style.zoom = "2"; }); await audit(page, "live-display-mobile-zoom200");
   await page.evaluate(() => { document.documentElement.style.zoom = ""; });
   await page.context().setOffline(true); await page.waitForFunction(() => !document.querySelector(".qr-scan-area img"));
@@ -95,9 +137,16 @@ async (page) => {
   });
   await page.getByRole("button", { name: "Revoke display", exact: true }).click();
   await page.getByText("Display revocation is unconfirmed", { exact: true }).waitFor();
+  await page.evaluate(() => window.scrollTo(0, 0)); await primaryFit(page, "unknown-revoke-retry-first-screen", true);
   await audit(page, "revoke-unknown-hidden");
+  await page.setViewportSize({ width: 1366, height: 768 }); await page.evaluate(() => window.scrollTo(0, 0));
+  await primaryFit(page, "unknown-revoke-first-screen-desktop1366", true); await audit(page, "revoke-unknown-desktop");
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await primaryFit(page, "unknown-revoke-first-screen-desktop1440", true); await audit(page, "revoke-unknown-desktop1440");
+  await page.setViewportSize({ width: 375, height: 812 }); await page.evaluate(() => window.scrollTo(0, 0));
   await page.getByRole("combobox").selectOption("9007199254741002");
   await page.getByText("Original counter 9007199254741001", { exact: true }).waitFor();
+  await primaryFit(page, "unknown-revoke-changed-counter-first-screen", true);
   if (revokePosts !== 1 || await page.getByRole("img").count()) throw new Error("Unknown revoke auto-retried or restored a code");
   await audit(page, "revoke-unknown-counter-changed");
   await page.getByRole("button", { name: "Retry revoke", exact: true }).click(); await page.getByText(/This display was revoked/).waitFor();

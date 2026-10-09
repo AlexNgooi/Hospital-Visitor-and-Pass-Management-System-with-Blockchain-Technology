@@ -121,7 +121,7 @@ describe("registration QR authority display", () => {
     view.rerender(<CounterContext.Provider value="2"><RegistrationQrDisplay port={port} /></CounterContext.Provider>);
     await act(async () => pending.reject(new ClientError("timeout")));
     await screen.findByText("Original counter 1");
-    expect((screen.getByRole("button", { name: "Display registration QR" }) as HTMLButtonElement).disabled).toBe(true);
+    expect(screen.queryByRole("button", { name: "Display registration QR" })).toBeNull();
     fireEvent(window, new Event("pageshow")); fireEvent(window, new Event("online"));
     expect(screen.queryByRole("img")).toBeNull(); expect(port.revoke).toHaveBeenCalledTimes(1); expect(port.create).toHaveBeenCalledTimes(1);
     fireEvent.click(screen.getByRole("button", { name: "Retry revoke" })); await screen.findByText(/This display was revoked/);
