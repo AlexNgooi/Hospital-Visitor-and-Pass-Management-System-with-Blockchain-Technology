@@ -114,7 +114,7 @@ M00–M04 已创建并完成准备核对；M00/M01/M02 当前本地范围已验�
 | M01 | INTEGRATION_VERIFIED（当前本地UI/C01范围）；HTTPS/后续业务未验收 | 01a11bcf-e448-7be0-88c1-f7910300e82e / 模块助手直接实现 | 基础c2b0c316；联调03fda7f；codex/hsaas-m01-frontend-shell；4156/FYP Dev | 基础merge014d030；联调delivery58b738a/merge e8ca80a；68tests+16隔离+真实28wire PASS；gpt-6.1-sol/high |
 | M02 | INTEGRATION_VERIFIED（当前本地动态QR/entry grant范围）；真机/生产/M03待验收 | 01a11db3-31c9-7da0-bfb2-217e71081355 / 模块助手直接实现 | baseline98a7f7d；codex/hsaas-m02-dynamic-registration；C:/Users/alexy/.codex/worktrees/bd17/FYP Dev | sourcef81512d/deliveryd2d745f/merge3c0c229；R1–R4返修已验收；独立28browser PASS；main68backend verify/JAR、95frontend/typing/build/lint/proxy PASS；见M02 REVIEW；V4已合并，未改nativeDB；gpt-6.1-sol/high |
 | M03 | IN_PROGRESS；用户本chat“继续”已许可；S-V1输入选择待答 | 01a11ba4-e814-7832-bd40-f471edf417b4 / 模块助手直接实现 | baselinef59baf3；codex/hsaas-m03-visitor-registration；C:/Users/alexy/.codex/worktrees/m03-visitor-registration/FYP Dev | 无交接/审核/merge；V5候选预留；gpt-6.1-sol/high |
-| M04 | IN_PROGRESS（独立规则/UI）；用户本chat“继续”已许可；真实接入依赖M03 | 01a11ba4-ecca-7ca3-a224-c3dde42d1edd / 模块助手直接实现 | baselinef59baf3；codex/hsaas-m04-counter-review；C:/Users/alexy/.codex/worktrees/hsaas-m04-counter-review/FYP Dev | 无交接/审核/merge；不自建根聚合/迁移；gpt-6.1-sol/high |
+| M04 | IN_PROGRESS；独立检查点已审核，完整真实接入待M03/S-V1 | 01a11ba4-ecca-7ca3-a224-c3dde42d1edd / 模块助手直接实现 | baselinef59baf3；codex/hsaas-m04-counter-review；C:/Users/alexy/.codex/worktrees/hsaas-m04-counter-review/FYP Dev | source03eca76/delivery398a244；bounded独立36backend/122frontend/19synthetic browser PASS；module报告full104/JAR单独记录；未merge/接线，真实审核SQL/HTTP/E2E NOT_RUN；见M04 REVIEW；gpt-6.1-sol/high |
 | M05 | PLANNED | 未创建 / 未派工 | 待登记 | 无 |
 | M06 | PLANNED | 未创建 / 未派工 | 待登记 | 无 |
 | M07 | PLANNED | 未创建 / 未派工 | 待登记 | 无 |
