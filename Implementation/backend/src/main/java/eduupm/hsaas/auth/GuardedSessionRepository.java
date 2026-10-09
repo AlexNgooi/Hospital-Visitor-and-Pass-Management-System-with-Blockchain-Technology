@@ -13,6 +13,7 @@ public class GuardedSessionRepository implements FindByIndexNameSessionRepositor
     private final JdbcIndexedSessionRepository cleanupDelegate;
     private final SessionCapabilities capabilities;
     private final ThreadLocal<Session> current = new ThreadLocal<>();
+    private final ThreadLocal<Boolean> ownerActivity = new ThreadLocal<>();
     /** The JDBC concrete Session is package-private; this adapter uses only sessions created by that repository. */
     @SuppressWarnings("unchecked")
     public GuardedSessionRepository(JdbcIndexedSessionRepository delegate, SessionCapabilities capabilities) {
@@ -33,7 +34,8 @@ public class GuardedSessionRepository implements FindByIndexNameSessionRepositor
                 session.getAttribute(SessionCapabilities.CONTEXT),session.getAttribute(SessionCapabilities.GENERATION));
         delegate.save(session);
         capabilities.confirmedSave(session.getId(), session.getAttribute(SessionCapabilities.BINDING),
-                session.getAttribute(SessionCapabilities.CONTEXT), session.getAttribute(SessionCapabilities.GENERATION));
+                session.getAttribute(SessionCapabilities.CONTEXT), session.getAttribute(SessionCapabilities.GENERATION),
+                Boolean.TRUE.equals(ownerActivity.get()));
     }
 
     /** Deletion cannot run before the domain revocation barrier has committed. */
@@ -52,8 +54,14 @@ public class GuardedSessionRepository implements FindByIndexNameSessionRepositor
         save(session);
     }
 
-    /** Prevents pool-thread reuse from exposing a previous request's Session. */
-    public void clearRequest() { current.remove(); }
+    /** Only server-decoded non-public requests count as owner activity; caller headers cannot opt in. */
+    public void beginRequest(String servletPath) {
+        // All anonymous bootstrap/entry/schema/submit/poll paths share this frozen public namespace.
+        ownerActivity.set(!servletPath.equals("/api/public") && !servletPath.startsWith("/api/public/"));
+    }
+
+    /** Clears both request identity and activity policy; unscoped repository saves never grant/renew authority. */
+    public void clearRequest() { current.remove(); ownerActivity.remove(); }
 
     /** Cleanup is storage maintenance; deadline checks do not depend on this scheduler. */
     @Scheduled(fixedDelay=60000)
