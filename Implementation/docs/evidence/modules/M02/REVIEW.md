@@ -1,9 +1,12 @@
 # M02 coordinator review
 
-Date: 2026-10-09, Asia/Singapore. Status: CHANGES_REQUESTED.
+Date: 2026-10-09, Asia/Singapore. Status: APPROVED (local M02 scope; integration checks follow).
 Original tested source: `239caa8d367e7c8eda8c8477595e9ce9a88525e7`.
 Delivery: `41dede4d8c17f268896c449bb6826a1f2572ad0b`.
-No M02 main merge or downstream module start accompanies this review.
+Final approved source: `f81512dfe571469386352e73bf54ef234534869b`;
+artifact-only delivery: `d2d745fcf913c307ed3bdc0bf65067d217ceb090`.
+Earlier results/returns below remain source-specific history. No downstream
+module start is authorized by this review.
 
 Coordinator independently ran the original candidate's complete Maven verify:
 67 tests, zero failures/errors/skips, JAR PASS at 13:26:33 +08. Frontend 84 tests
@@ -92,3 +95,26 @@ the preceding 27 results remain valid but do not constitute final approval.
 Coordinator stopped its exact owned harness/browser and independently confirmed
 the disposable container and ports 18292/15292/15293 absent. User 5173 and native
 database were not touched. No M02 merge or downstream start yet.
+
+## Final approval
+
+Reviewed source f81512d: feature-only fullscreen safe alignment on both axes,
+with start fallback, and actual enlarged-fullscreen recovery regression.
+Coordinator independently repeated the complete disposable MySQL/servlet/Vite
+browser suite on that exact source: **28 checks PASS, zero page exceptions**,
+captured at **18:51:50 +08**. Final receipt is
+coordinator-browser-verification-final.json; the earlier receipt retains the
+confirmed failure and is not relabeled. At 375x568/200% CSS zoom the heading is
+18px from top/left at scrollTop 0, the actual revoke control scrolls into view,
+and returning to origin recovers the heading. All previous normal fit/decode,
+guidance/offline/entry/restart/response-loss/revoke checks also passed.
+
+Final supplement PNG hash matched its singular manifest artifact; previous 16
+R4 PNG hashes also matched. Software resized decode is explicitly separate from
+physical camera evidence. Backend is byte-for-byte source-tree unchanged from
+the independently verified 835689f return (68 tests). English comments explain
+the changed UI, availability, command and exact-transaction boundaries.
+Coordinator stopped its own harness/browser and independently confirmed exact
+owned container/listener absence; existing 5173/native DB/.env were untouched.
+R1-R4 are resolved in current local scope. Local main integration is approved;
+production and future M03/live gates above remain pending.
