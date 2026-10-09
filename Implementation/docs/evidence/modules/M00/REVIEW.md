@@ -58,3 +58,27 @@ logout/role errors and DB outage recovery passed. Final accepted integration mer
 is `e8ca80ab56ae676a2dd97b34d6fb2a05979a0331`; backend production code/schema were
 unchanged. M01 REVIEW records frontend recovery, isolation returns and acceptance.
 This completes local C01 foundation integration, not HTTPS/full-domain acceptance.
+# Public owner-activity maintenance review (2026-10-09)
+
+Approved source `1fd99b6263d2c94597a993deaf656b14beb4a13a`, delivery
+`12940cb5734cf5466fa8b1d008156534be034550`, baseline `6bb3893`.
+Local integration merge: `cf10a71adf04c9a533e4c6c7e68a1344b3328276`.
+
+Coordinator reviewed decoded servlet namespace classification, the outer filter's
+scope over explicit and request-end persistence, finally cleanup, default-denied
+unscoped saves, and the no-update return after all metadata/mapping/epoch/prior
+deadline checks. Public requests still validate and persist framework state;
+they cannot activate or renew the owner. Normal staff/login activity retains
+renewal. No business endpoint, DTO, migration or domain lock order changed.
+
+Coordinator independently ran the exact delivery's full Maven verify in ced2:
+45 tests, zero failures/errors/skips, JAR PASS, finished 2026-10-09 12:55:16 +08.
+After merge, the backend tree exactly matches the reviewed delivery; main package
+with tests skipped passed at 12:56:14 +08. The latter is a packaging check, not a
+second 45-test run. Native database and .env were not used.
+
+M02's actual entry same-cookie test had reproduced a +600ms owner renewal on the
+previous baseline. M02 has been directed to consume this reviewed merge and prove
+that exact test GREEN before its QR acceptance. M00's public fixture evidence is
+accepted; complete QR/domain behavior, HTTPS and live integrations remain separate
+gates. Original security review and its historical evidence are retained below.
