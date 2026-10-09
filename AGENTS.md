@@ -30,4 +30,4 @@
 
 需要人类裁决时：模块仍先报 coordinator；coordinator 遇到实质 conflict、需求不清或不能确定如何选择，必须在本 coordinator chat 向用户提问，说明事实、选项、建议与影响，不能猜测后替用户决定。依赖该决定的动作等待答复，独立工作可继续。模块 chat 只请求自身开发许可，不把跨模块问题分散询问用户。
 
-当前优先前端、基础后端、动态 QR；实体卡/reader 与 live MRN 待条件，WhatsApp/blockchain 默认 disabled。当前 chat 为 coordinator，各模块独立 chat。M00/M01/M02 当前本地范围已验收；2026-10-09 用户明确要求“开启m02”，M02 已按持续有效许可隔离实施、返修并经 coordinator 本地合并3c0c229，main68后端/95前端与独立28浏览器检查通过，准确边界见 M02 REVIEW。M03/M04 与后续模块仍未获开发许可，不自动启动。许可原文与工作协议见 planning/12。
+当前优先前端、基础后端、动态 QR；实体卡/reader 与 live MRN 待条件，WhatsApp/blockchain 默认 disabled。当前 chat 为 coordinator，各模块独立 chat。M00/M01/M02 当前本地范围已验收，M02 main68后端/95前端与独立28浏览器检查通过，准确边界见 M02 REVIEW。2026-10-09 用户分别在M03/M04各自chat回复“继续”，coordinator已直接核实其承接各chat模块许可申请，现已在独立worktree启动，不重复求许可。M03 owns登记根聚合/V5候选，M04 owns审核子域并依赖M03 port，限定共享例外与基线见planning/12；S-V1证件/MRN输入选择待本coordinator chat用户答复，独立工作继续。M05及后续仍未获开发许可，不自动启动。

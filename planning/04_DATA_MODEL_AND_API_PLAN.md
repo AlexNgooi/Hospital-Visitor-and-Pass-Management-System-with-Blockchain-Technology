@@ -215,8 +215,23 @@ API 不接收 caller 自选 actor、UID、category 或 status 来替代扫描证
 
 ## 7. Migration 顺序与验收
 
+### C13 M03/M04 根接口与审核编排（2026-10-09）
+
+用户已在各自chat启动两模块；M03唯一拥有 `RegistrationReviewPort` 与登记根adapter，M04引用同一接口实现审核command/controller/UI，不复制根SQL/实体或另建migration。接口职责冻结，准确Java records草稿交coordinator复核，读取字段与待定S-V1一起冻结：
+
+- `discover(registrationId)` 返回内部 `ReviewCoordinates(id,counterId)`，只发现锁前资源，不授予授权、不能作公开存在查询。M04取真实server owner context/current role与CSRF，按全局staff user→counter→binding/context前缀锁定再进入root。
+- `lock(coordinates)` 返回不可由HTTP构造的 `LockedRegistration`；必须原READ_COMMITTED事务、唯一exact synchronization identity，锁registration后重读immutable coordinates，不持后序锁追新counter。可加载合法已审核状态，不在lock阶段提前检查SUBMITTED/version，成功幂等重放优先。
+- `recordDecision(receipt,expectedVersion,serverOwnerContextId,Decision)` 返回M00 `SafeResult`；Decision为Verified/Rejected结构化union，使用C09字段/理由。M03 root从server context/Clock/环境取得actor/time/source，验证同TX回执与C09，再CAS SUBMITTED/version并更新根状态和结构化review metadata；不独立commit、不自行写audit/idempotency。M03已有C09 `ManualEvidence/SyntheticReviewRules` 是唯一可复用backend规则，M04引用，避免两套validator漂移。
+- M04外层编排：当前授权前缀 → 成功idem replay（优先旧state/version） → miss时root lock → 再查idem成功记录防并发赢家 → root decision + LocalAuditPort + IdempotencyPort.success同事务。若使用 `requireHuman` 作预读，它必须在外层写事务前；不能先锁binding/context再追counter。实际权限撤销/并发重放/审计失败回滚由两模块联合真实MySQL验证。
+- M00 `lockOwners` 的401保留为失效会话；review对象/counter不可见的410 QR内部语义在M04边界转换为404，不向审核页返回扫码错误；role403仍由角色边界保持。成功重放仍受当前session/counter权限检查。
+- `readMaskedQueue/readMaskedDetail` 由根adapter查询和掩码，只接受服务端已核实的当前counter scope，SQL过滤，不能用caller自填counterIds授予授权，不暴露raw form_data或新增PII reveal接口。queue wire选page/pageSize/items/total/serverNow，page从0、默认pageSize10/上限50、稳定submittedAt/id排序，UI可用更小页数适配视口；本版不并列另一套cursor wire。
+
+当前synthetic categoryCode为 `EXECUTIVE/PENJAGA/VENDOR/CONTRACTOR`；数据库categoryScope ID仍是C10 decimal string。MRN反馈 `NOT_CHECKED/MATCH/NO_MATCH/TIMEOUT/UNAVAILABLE` 与staff verification分开，MATCH不表示身份/MRN/ward已核实，U03/C09人工核实规则不变。拟定验证token仅为受控反馈关联，最多5min且不超grant期限，绑定anonymous scope/formContext/MRN fingerprint/ward/mode/adapterVersion，改变字段或上下文拒绝旧token；超时/no token不阻止进入待人工审核，不能存病历或借token替代核实。具体wire/DDL仍需S-V1评审。
+
+S-V1四类字段/长度与 `synthetic-privacy-v1` 是demo提案，不代表O01医院字段/用途/保留批准。证件/MRN采用DEMO-only还是接近正式IC/Passport输入，由coordinator集中询问用户，依赖该选择的API/schema/V5最终DDL等待答复；已有冻结契约的独立工作继续。WhatsApp disabled时不采集发送opt-in、不建job。真实医院数据、MRN/live、生产privacy政策继续deferred。
+
 以下是依赖批次，不是已执行的 Flyway V 编号：identity/reference/session/idempotency/local audit → QR display/challenge/grant → registration/consent → synthetic cards/device/scan → assignment/active unique/lifecycle/alerts/lost → reporting/settings。M00 登记实际编号，每个 module 申请后使用；先检查库中已有 migration，不重写共享环境已应用版本。
 
-M00 当前迁移登记（2026-10-09）：V1 `foundation_identity_reference`、V2 `spring_session_jdbc`、V3 `session_capability_guards` 已审核合并，临时MySQL clean/upgrade验证通过；已应用版本冻结，其他模块不得重用或重写。真实开发/生产库未在本次验证中使用。后续号继续由M00/coordinator台账登记；安全前缀已放行，但后续模块完整业务图仍需自己的验证。
+当前迁移登记（2026-10-09）：V1 `foundation_identity_reference`、V2 `spring_session_jdbc`、V3 `session_capability_guards`、M02 V4 `dynamic_registration_entry` 已审核合并，临时MySQL clean/upgrade验证通过；已应用版本冻结，其他模块不得重用或重写。V5预留获用户许可的M03 registration/consent与确有必要的MRN临时验证，具体DDL先交coordinator审核；M04审核metadata由M03根模型存储，不独立新建登记迁移或重复实体。真实开发/生产库未在本次验证中使用。后续号继续由M00/coordinator台账登记；完整实际登记/review事务图仍需所属模块验证。
 
 M08 增加真设备/profile；M09 增加获批 MRN adapter 所需最少字段；M10 增 notification/receipts；M11 增 audit_outbox/verification jobs/链绑定。后两者在启用前完成 clean + upgrade、模式默认 disabled 与故障恢复验收。历史本地事件不自动入队，canonical snapshot 缺失或版本不兼容不能伪造历史承诺。表设计落地后生成 ERD/OpenAPI；当前仍为规划。
