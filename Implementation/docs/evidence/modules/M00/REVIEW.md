@@ -82,3 +82,8 @@ previous baseline. M02 has been directed to consume this reviewed merge and prov
 that exact test GREEN before its QR acceptance. M00's public fixture evidence is
 accepted; complete QR/domain behavior, HTTPS and live integrations remain separate
 gates. Original security review and its historical evidence are retained below.
+M02 subsequently reported the exact actual-entry RED-to-GREEN regression PASS
+on its isolated branch after merging reviewed `cf10a71`: 1 test, zero failures/
+errors/skips, completed 2026-10-09 12:58:44 +08. This is M02's reported business
+test, not an independent coordinator QR run. It closes the specific owner-renewal
+return; the full M02 candidate still requires its own review and acceptance.

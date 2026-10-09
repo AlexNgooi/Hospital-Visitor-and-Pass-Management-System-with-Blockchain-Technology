@@ -23,8 +23,10 @@ strict test typing, build and lint on the integrated snapshot in main, beginning
 Testing Library role options incorrectly included `exact`; the module removed
 those options and the coordinator rechecked typing successfully. The later
 source merge changes only browser helpers; its overview standalone expression
-has one reported lint warning awaiting the already-approved explanatory pragma.
-No product behavior or blocking test failure accompanies that warning.
+had one lint warning, resolved by the approved explanatory pragma in delivery
+`fafd74c406876935c38d48a1cb3739b2a1b8f300`. Final local merge is
+`9f5b7a1fd9ee9943271dde7343b3910565aa8461`; coordinator's main lint exits 0
+with no warnings. All 20 delivered screenshot hashes/byte counts were verified.
 
 Coordinator browser evidence distinguishes synthetic preview checks from main.
 Before repair, main's empty submission plus session failure measured 1092px
@@ -52,8 +54,8 @@ Snapshot patch SHA256:
 Six integrated files matched the module after normalizing Windows line endings;
 raw hashes initially differed solely for CRLF/LF and were not mistaken for a
 runtime difference. A subsequent Git diff confirms runtime/app tests exactly
-match the committed module source. Local maintenance is accepted; fuller module
-receipt/pragma delivery may be appended without changing this acceptance. No
+match the committed module source. Local maintenance and final receipt/pragma
+delivery are accepted; no runtime change followed the verified source. No
 new module, native database action, push or deployment was started.
 
 - Review date: 2026-10-09 (Asia/Singapore).
