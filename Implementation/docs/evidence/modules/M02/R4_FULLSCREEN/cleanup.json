@@ -1,0 +1,7 @@
+{
+  "ownedProcessesStopped": true,
+  "ownedContainerRemoved": true,
+  "independentContainerAbsent": true,
+  "independentListenersAbsent": true,
+  "ownedPlaywrightSessionClosed": true
+}

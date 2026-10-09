@@ -1,0 +1,70 @@
+{
+  "sourceCommit": "f81512dfe571469386352e73bf54ef234534869b",
+  "parentDelivery": "1299abc6aa447a96c9ced8e36c623546293eef35",
+  "result": "Fullscreen return submitted for coordinator review",
+  "frontend": {
+    "startedAt": "2026-10-09T18:44:22+08:00",
+    "lint": "PASS",
+    "typecheck": "PASS",
+    "build": "PASS",
+    "rawTestLogSha256": "700f5a2c0c5fb47545c65247014ad1c65f968184be3cdacfae7073471b7c4911",
+    "tests": 95,
+    "exitCode": 0
+  },
+  "backend": {
+    "phaseTests": "NOT_RERUN UI-only",
+    "gitTree": "099d9dcb3f2d6c8b1676b957342b13679c655e9c",
+    "unchangedFrom": "835689f44368596b26198e1db6a7419acfec4050"
+  },
+  "browser": {
+    "completedAt": "2026-10-09T18:47:14+08:00",
+    "prior27ChecksRetained": true,
+    "geometry": {
+      "step": "fullscreen-short-zoom200-safe-scroll",
+      "fullscreen": true,
+      "viewport": {
+        "width": 375,
+        "height": 568
+      },
+      "headingTop": 18,
+      "headingLeft": 18,
+      "imageTop": 122,
+      "imageLeft": 18,
+      "imageWidth": 450,
+      "imageHeight": 450,
+      "scrollTop": 0,
+      "scrollHeight": 453,
+      "clientHeight": 282,
+      "scrollWidth": 241,
+      "clientWidth": 186,
+      "justifyContent": "safe center",
+      "alignItems": "safe center",
+      "bottomAccessible": true,
+      "topRecoverable": true
+    },
+    "fullscreenViewport": "375x568",
+    "pageExceptions": 0,
+    "checks": 28,
+    "zoom": "200% CSS simulation"
+  },
+  "artifact": {
+    "sha256": "70e33ca67fd5159230eff9d91d0c099f4a4c3f29f04c0e5d066d6ec9be42aa32",
+    "path": "fullscreen-short-zoom200-controls.png",
+    "bytes": 19793,
+    "qrPixels": "REMOVED via CSS during screenshot"
+  },
+  "cleanup": {
+    "ownedContainerAbsent": true,
+    "nativeDatabaseTouched": false,
+    "ownedListenersAbsent": true,
+    "ownedPlaywrightSessionClosed": true,
+    "userPort5173Touched": false
+  },
+  "notRun": [
+    "Physical camera",
+    "Production HTTPS",
+    "Actual M03 registration",
+    "Physical OS sleep/native zoom",
+    "Production load/distributed throttle/retention"
+  ]
+}

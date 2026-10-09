@@ -1,0 +1,22 @@
+# M02 R4 viewport return
+
+Source: **d6ebe1fc92fe92c7de4a3d5867f91b6044190b00**, parent R1–R3 delivery 5c149d0. Only the existing feature display.tsx, registration-qr.css, component semantic test and browser helper changed. Backend, V4, API, shared CSS and public-entry logic are unchanged from reviewed source 835689f. R1–R3 receipts remain historical and unchanged; this phase's browser/screenshots/manifest/cleanup are under `R4/`.
+
+The staff page no longer renders a full disabled Create row while a display is active. Its scoped heading, margins and card padding are compact; the actual code is 280px on desktop and 260px on the normal phone, preserving the encoder's complete four-module quiet zone. Countdown, Full screen and Revoke are grouped next to the QR. Unknown/pending revoke replaces the empty QR card with the original counter and explicit retry, keeping the code hidden and preventing a new display from replacing the original command.
+
+The rotation/expiry/form deadlines and the identity/presence limitation stay visible. Native details discloses the complete connection/multiple-visitor/expiry/verification guidance, with a 44px summary and explicit focus style; keyboard Enter opens/closes it. Expanded guidance, short screens and CSS zoom can safely scroll. No overflow clipping, shared shell modification, reduced touch targets or static QR fallback was introduced.
+
+## Scope and validation
+
+- Complete frontend: **95 tests PASS**, start 2026-10-09 **18:32:30+08**, followed by test TypeScript/build/lint exit 0. Final browser helper also linted at 18:34. Production bundle 460.17kB / gzip 144.62kB; CSS 19.78kB / gzip 4.97kB.
+- Existing actual rendered-image encoding/decoding and R1–R3 behaviors are retained. The changed semantic assertion checks that creating another display is unavailable during unknown revoke, while the original explicit retry and confirmed cleanup stay intact.
+- The browser helper asserts complete document fit, QR/countdown/action bounds, 44px controls and successful decode at normal 1366×768, 1440×900 and 375×812. It checks unknown revoke at all three sizes, including the original counter after selection changes. Expanded guidance, 375×568 and 200% CSS zoom use accessible-scroll/axe/no-horizontal-overflow checks rather than forcing a single screen.
+- Final actual backend/MySQL/Vite browser capture: **27 checks PASS / 0 uncaught page exceptions**, completed **2026-10-09 18:35:45+08**. Default collapsed live and UNKNOWN revoke documents measure **768/768**, **900/900**, **812/812** respectively at the three normal viewports. Both mobile original-counter states fit; every measured interactive control is at least 44×44px. Live PNG resized decoding is true at 280×280px desktop and 260×260px phone. The same 15 prior-flow checks are retained alongside the added viewport/decode/disclosure/short-screen checks.
+- Rendered decoder evidence uses the actual in-memory PNG and measured CSS size, then **nearest-neighbor canvas simulation** corresponding to the pixelated presentation. It compares decoded capability strings in memory and returns only booleans/dimensions. It is not physical phone-camera evidence and no token, URL or PNG bytes are printed/saved by the decoder.
+- Backend was not rerun by M02 for this UI-only phase. Its files are unchanged from 835689f; coordinator reported its independent 68-test PASS at 13:44:55+08. That is separate from this phase's frontend/browser receipt.
+
+The interrupted earlier harness left only owned container a1d8d1d60dff, with module listeners absent. At 18:31 it was recovered only after exact ownership-label verification, then removed by ID. A fresh harness was used for this phase. Its final cleanup and independent container/port checks are in R4/cleanup.json. User port5173, native DB and `.env` were untouched.
+
+The initial pre-interruption viewport receipt fit QR/actions but had phone document height827 vs812. Before final source, feature toolbar margins and card padding were reduced by 16px in total without shrinking the 260px QR or text/targets; document fit is now an asserted gate rather than a reported-only metric. The stale receipt is not final acceptance evidence.
+
+Actual final metrics and source/capture/image hashes are in R4/browser-verification.json and R4/delivery-manifest.json. Coordinator must independently review before main merge; physical camera, production HTTPS, actual M03 registration, physical OS sleep/power loss and deployment load/retention remain NOT_RUN.

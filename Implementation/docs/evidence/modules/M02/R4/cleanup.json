@@ -1,0 +1,8 @@
+{
+  "ownedProcessesStopped": true,
+  "ownedContainerRemoved": true,
+  "independentContainerAbsent": true,
+  "independentListenersAbsent": true,
+  "staleHarnessRecovery": "Removed exact a1d8d1d60dff only after ownership-label verification; no old module listeners existed",
+  "ownedPlaywrightSessionClosed": true
+}

@@ -7,12 +7,13 @@ import "@fontsource/geist/latin-600.css";
 import "./index.css";
 import App from "./App.tsx";
 import "./app/entry";
+import { registrationQrFeatures } from "./features/registration-qr";
 
 // Capture/clear the entry fragment before React bootstrap or any API request runs.
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
     <BrowserRouter>
-      <App />
+      <App features={registrationQrFeatures} />
     </BrowserRouter>
   </StrictMode>,
 );
