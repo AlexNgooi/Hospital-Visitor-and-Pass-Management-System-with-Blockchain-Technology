@@ -9,12 +9,14 @@ import { anchor, displayFresh, safeEntryUrl, serverTime, type ServerAnchor } fro
 import "./registration-qr.css";
 
 interface DisplayValue { current: CurrentQr; anchor: ServerAnchor; image: string }
+interface DisplayReference { id: string; counter: string }
 
 /** Staff display fences stale async results and hides authority before any offline/resume recovery begins. */
 export function RegistrationQrDisplay({ port = qrPort }: { port?: QrPort }) {
   const counter = useCounterScope();
   const [enabled, setEnabled] = useState<boolean | null>(null);
-  const [display, setDisplay] = useState<{ id: string; counter: string } | null>(null);
+  const [display, setDisplay] = useState<DisplayReference | null>(null);
+  const [revocation, setRevocation] = useState<(DisplayReference & { status: "pending" | "unknown" }) | null>(null);
   const [value, setValue] = useState<DisplayValue | null>(null);
   const [message, setMessage] = useState("");
   const [busy, setBusy] = useState(false);
@@ -85,7 +87,7 @@ export function RegistrationQrDisplay({ port = qrPort }: { port?: QrPort }) {
 
   /** Creating and revoking are explicit commands; failed/unknown mutations never claim success or restore a code. */
   const create = async () => {
-    if (!counter || busy) return;
+    if (!counter || busy || display || revocation) return;
     const sequence = ++generation.current; setBusy(true); setValue(null); setMessage("");
     try {
       const result = await port.create(counter);
@@ -94,11 +96,20 @@ export function RegistrationQrDisplay({ port = qrPort }: { port?: QrPort }) {
     finally { if (sequence === generation.current) setBusy(false); }
   };
   const revoke = async () => {
-    if (!display || busy) return;
-    const sequence = ++generation.current; setBusy(true); setValue(null);
-    const old = display; setDisplay(null);
-    try { await port.revoke(old.id); if (sequence === generation.current) setMessage("This display was revoked. Unsubmitted forms from it are no longer valid."); }
-    catch (error) { if (sequence === generation.current) setMessage(`${safeError(error)} Revocation is unconfirmed; the code remains hidden.`); }
+    const old = revocation ?? display;
+    if (!old || busy) return;
+    const sequence = ++generation.current; setBusy(true); setValue(null); setMessage("");
+    // Stop polling/rendering immediately, while retaining the original source for an explicit uncertain-result retry.
+    setRevocation({ id: old.id, counter: old.counter, status: "pending" }); setDisplay(null);
+    try {
+      await port.revoke(old.id);
+      if (sequence === generation.current) { setRevocation(null); setMessage(`This display was revoked. Counter ${old.counter}: unsubmitted forms from it are no longer valid.`); }
+    } catch (error) {
+      if (sequence === generation.current) {
+        setRevocation({ id: old.id, counter: old.counter, status: "unknown" });
+        setMessage(`${safeError(error)} Revocation is unconfirmed; the code remains hidden.`);
+      }
+    }
     finally { if (sequence === generation.current) setBusy(false); }
   };
   useEffect(() => () => { generation.current++; }, []);
@@ -109,9 +120,14 @@ export function RegistrationQrDisplay({ port = qrPort }: { port?: QrPort }) {
     <p className="muted">A live entry for visitors. No visitor account is required.</p>
     {enabled === false ? <StatusPanel kind="empty" title="Registration QR is not enabled">Contact the administrator to enable the controlled registration entry.</StatusPanel> : <>
       <div className="qr-toolbar"><span className="qr-counter">Counter {counter ?? "not selected"}</span><span className="qr-category">All categories</span>
-        <Button busy={busy} disabled={!enabled || !counter || Boolean(display)} onClick={() => void create()}>Display registration QR</Button>
+        <Button busy={busy} disabled={!enabled || !counter || Boolean(display) || Boolean(revocation)} onClick={() => void create()}>Display registration QR</Button>
         {display && <Button variant="secondary" busy={busy} onClick={() => void revoke()}>Revoke display</Button>}
       </div>
+      {display && display.counter !== counter && <p className="qr-notice" role="status">The live display belongs to counter {display.counter}. Revoke it before starting a display for the selected counter.</p>}
+      {revocation && <StatusPanel kind={revocation.status === "pending" ? "loading" : "error"} title={revocation.status === "pending" ? "Revoking the original display" : "Display revocation is unconfirmed"}
+        action={revocation.status === "unknown" ? <Button variant="secondary" busy={busy} onClick={() => void revoke()}>Retry revoke</Button> : undefined}>
+        <p>Original counter {revocation.counter}</p><p>{message || "The original code remains hidden while the server confirms revocation."}</p>
+      </StatusPanel>}
       <div className="qr-display-layout">
         <div className="qr-display-card" ref={panel}>
           <div className="qr-display-heading"><QrCode size={24} aria-hidden="true" /><strong>HSAAS · Counter {counter ?? "—"}</strong></div>
@@ -120,7 +136,7 @@ export function RegistrationQrDisplay({ port = qrPort }: { port?: QrPort }) {
           </div>
           <h2>Scan to register</h2><p>Gunakan kamera telefon anda untuk mengimbas QR semasa.</p>
           {visible && <><span className="qr-live">Live · changes in {remaining} seconds</span><Button variant="ghost" onClick={() => void panel.current?.requestFullscreen?.()}>Full screen</Button></>}
-          {message && <p role="status" className="qr-notice">{message}</p>}
+          {message && !revocation && <p role="status" className="qr-notice">{message}</p>}
           {enabled === null && message && <Button variant="secondary" onClick={() => {
             // Retry only the read-only availability probe; never replay an uncertain create or revoke command.
             setMessage(""); setCapabilityAttempt(value => value + 1);

@@ -1,5 +1,5 @@
 import { createRequire } from "node:module";
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import QRCode from "qrcode";
 import jsQR from "jsqr";
@@ -40,6 +40,23 @@ function vault(token: string | null = fixtureToken) {
 }
 function failure(code: string, status: number, details?: ClientError["restartDetails"]) {
   return new ClientError("api", { timestamp: date(Date.now()), status, code, message: "ignored raw message", correlationId: "synthetic-test", fieldErrors: [] }, details);
+}
+/** Controlled responses reproduce an offline/hidden event after dispatch but before server success is delivered. */
+function deferred<T>() {
+  let resolve!: (value: T) => void;
+  let reject!: (reason: unknown) => void;
+  const promise = new Promise<T>((complete, fail) => { resolve = complete; reject = fail; });
+  return { promise, resolve, reject };
+}
+/** Both interruption kinds require a new GET after resumption; neither may silently replay a POST. */
+function availability(kind: "offline" | "hidden", available: boolean) {
+  if (kind === "offline") {
+    Object.defineProperty(navigator, "onLine", { configurable: true, value: available });
+    fireEvent(window, new Event(available ? "online" : "offline"));
+  } else {
+    Object.defineProperty(document, "visibilityState", { configurable: true, value: available ? "visible" : "hidden" });
+    fireEvent(document, new Event("visibilitychange"));
+  }
 }
 beforeEach(() => {
   Object.defineProperty(navigator, "onLine", { configurable: true, value: true });
@@ -93,6 +110,26 @@ describe("registration QR authority display", () => {
     await waitFor(() => expect((screen.getByRole("button", { name: "Display registration QR" }) as HTMLButtonElement).disabled).toBe(false));fireEvent.click(screen.getByRole("button", { name: "Display registration QR" }));await screen.findByRole("img");
     fireEvent.click(screen.getByRole("button", { name: "Revoke display" }));await screen.findByText(/Revocation is unconfirmed/);expect(screen.queryByRole("img")).toBeNull();
   });
+  /** An uncertain revoke retains its exact source across counter changes; only explicit retry reissues that command. */
+  it("retains the original revoke source and retries it explicitly after a counter change", async () => {
+    const port = fixturePort(), pending = deferred<void>();
+    vi.mocked(port.revoke).mockImplementationOnce(() => pending.promise).mockResolvedValueOnce(undefined);
+    const view = render(<CounterContext.Provider value="1"><RegistrationQrDisplay port={port} /></CounterContext.Provider>);
+    await waitFor(() => expect((screen.getByRole("button", { name: "Display registration QR" }) as HTMLButtonElement).disabled).toBe(false));
+    fireEvent.click(screen.getByRole("button", { name: "Display registration QR" })); await screen.findByRole("img");
+    fireEvent.click(screen.getByRole("button", { name: "Revoke display" })); expect(screen.queryByRole("img")).toBeNull();
+    view.rerender(<CounterContext.Provider value="2"><RegistrationQrDisplay port={port} /></CounterContext.Provider>);
+    await act(async () => pending.reject(new ClientError("timeout")));
+    await screen.findByText("Original counter 1");
+    expect((screen.getByRole("button", { name: "Display registration QR" }) as HTMLButtonElement).disabled).toBe(true);
+    fireEvent(window, new Event("pageshow")); fireEvent(window, new Event("online"));
+    expect(screen.queryByRole("img")).toBeNull(); expect(port.revoke).toHaveBeenCalledTimes(1); expect(port.create).toHaveBeenCalledTimes(1);
+    fireEvent.click(screen.getByRole("button", { name: "Retry revoke" })); await screen.findByText(/This display was revoked/);
+    expect(vi.mocked(port.revoke).mock.calls).toEqual([[DISPLAY], [DISPLAY]]); expect(screen.queryByText("Original counter 1")).toBeNull();
+    expect(screen.queryByRole("img")).toBeNull();
+    expect((screen.getByRole("button", { name: "Display registration QR" }) as HTMLButtonElement).disabled).toBe(false);
+    expect(port.create).toHaveBeenCalledTimes(1);
+  });
   /** A server/proxy returning another origin cannot make this display transport a token to that site. */
   it("rejects an untrusted entry URL", async () => {
     const port = fixturePort();vi.mocked(port.current).mockResolvedValue({ ...current(), entryUrl: `https://other.example.test/register#entry=${fixtureToken}` });
@@ -134,6 +171,15 @@ describe("public grant entry", () => {
     const port = fixturePort();vi.mocked(port.capabilities).mockResolvedValue({ enabled: false });render(<RegistrationEntry port={port} vault={vault()} />);
     await screen.findByText("Pendaftaran belum diaktifkan");expect(port.exchange).not.toHaveBeenCalled();expect(port.bootstrap).not.toHaveBeenCalled();
   });
+  /** An explicit newly captured scan rechecks capability and clears a previous disabled view without write replay. */
+  it("shows enabled server entry after an explicit new scan following disabled capability", async () => {
+    const port = fixturePort(); vi.mocked(port.capabilities).mockResolvedValueOnce({ enabled: false }).mockResolvedValue({ enabled: true });
+    const view = render(<RegistrationEntry port={port} vault={vault()} />);
+    await screen.findByText("Pendaftaran belum diaktifkan"); expect(port.exchange).not.toHaveBeenCalled();
+    view.rerender(<RegistrationEntry port={port} vault={vault()} />);
+    await screen.findByText("Akses borang aktif"); expect(screen.queryByText("Pendaftaran belum diaktifkan")).toBeNull();
+    expect(port.capabilities).toHaveBeenCalledTimes(2); expect(port.bootstrap).toHaveBeenCalledTimes(1); expect(port.exchange).toHaveBeenCalledTimes(1);
+  });
   /** Losing authority preserves typed input; another tab's replacement cannot silently bind it to a new grant. */
   it("preserves disabled input offline and resets it only after explicit current-form adoption", async () => {
     const port = fixturePort(), old = grant(), next = grant("2", 2);
@@ -170,6 +216,75 @@ describe("public grant entry", () => {
     fireEvent.click(screen.getByRole("button", { name: "Semak status semasa" }));
     await screen.findByText("Semakan borang tidak dapat disahkan. Sila ke kaunter untuk bantuan.");
     expect(input.closest("fieldset")?.disabled).toBe(true); expect(port.exchange).toHaveBeenCalledTimes(1);
+  });
+  it.each(["offline", "hidden"] as const)("keeps a late initial exchange disabled while %s", async kind => {
+    const port = fixturePort(), value = grant(), pending = deferred<EntryGrant>();
+    vi.mocked(port.exchange).mockImplementation(() => pending.promise); vi.mocked(port.entry).mockResolvedValue(value);
+    render(<RegistrationEntry port={port} vault={vault()}>{() => <input aria-label="Late initial form" />}</RegistrationEntry>);
+    await waitFor(() => expect(port.exchange).toHaveBeenCalledTimes(1)); availability(kind, false);
+    await act(async () => pending.resolve(value));
+    const input = await screen.findByRole("textbox"); expect(input.closest("fieldset")?.disabled).toBe(true);
+    expect(port.entry).not.toHaveBeenCalled(); availability(kind, true);
+    await waitFor(() => expect(input.closest("fieldset")?.disabled).toBe(false));
+    expect(port.entry).toHaveBeenCalledTimes(1); expect(port.exchange).toHaveBeenCalledTimes(1);
+  });
+  /** Returning online before an interrupted write resolves still requires a separate successful authority GET. */
+  it("does not enable an interrupted exchange merely because the browser resumed before its response", async () => {
+    const port = fixturePort(), value = grant(), exchange = deferred<EntryGrant>(), verification = deferred<EntryGrant>();
+    vi.mocked(port.exchange).mockImplementation(() => exchange.promise); vi.mocked(port.entry).mockImplementation(() => verification.promise);
+    render(<RegistrationEntry port={port} vault={vault()}>{() => <input aria-label="Interrupted initial form" />}</RegistrationEntry>);
+    await waitFor(() => expect(port.exchange).toHaveBeenCalledTimes(1)); availability("offline", false); availability("offline", true);
+    await act(async () => exchange.resolve(value));
+    const input = await screen.findByRole("textbox"); await waitFor(() => expect(port.entry).toHaveBeenCalledTimes(1));
+    expect(input.closest("fieldset")?.disabled).toBe(true);
+    await act(async () => verification.resolve(value)); await waitFor(() => expect(input.closest("fieldset")?.disabled).toBe(false));
+    expect(port.exchange).toHaveBeenCalledTimes(1);
+  });
+  it.each(["offline", "hidden"] as const)("preserves input after a late manual recovery while %s", async kind => {
+    const port = fixturePort(), value = grant(), pending = deferred<EntryGrant>();
+    vi.mocked(port.exchange).mockResolvedValue(value);
+    vi.mocked(port.entry).mockRejectedValueOnce(new ClientError("timeout")).mockImplementationOnce(() => pending.promise).mockResolvedValue(value);
+    render(<RegistrationEntry port={port} vault={vault()}>{() => <input aria-label="Recovery input" />}</RegistrationEntry>);
+    const input = await screen.findByRole("textbox") as HTMLInputElement;
+    fireEvent.change(input, { target: { value: "Retained synthetic input" } }); fireEvent(window, new Event("pageshow"));
+    fireEvent.click(await screen.findByRole("button", { name: "Semak status semasa" }));
+    await waitFor(() => expect(port.entry).toHaveBeenCalledTimes(2)); availability(kind, false);
+    await act(async () => pending.resolve(value));
+    expect(input.closest("fieldset")?.disabled).toBe(true); expect(input.value).toBe("Retained synthetic input");
+    availability(kind, true); await waitFor(() => expect(input.closest("fieldset")?.disabled).toBe(false));
+    expect(input.value).toBe("Retained synthetic input"); expect(port.entry).toHaveBeenCalledTimes(3); expect(port.exchange).toHaveBeenCalledTimes(1);
+  });
+  it.each(["offline", "hidden"] as const)("keeps the confirmed replacement context disabled after a late response while %s", async kind => {
+    const port = fixturePort(), old = grant(), next = grant("2", 2), pending = deferred<EntryGrant>();
+    const children = () => <input aria-label="Confirmation input" defaultValue="" />;
+    vi.mocked(port.entry).mockResolvedValue(old);
+    vi.mocked(port.exchange).mockRejectedValueOnce(failure("REGISTRATION_ENTRY_RESTART_REQUIRED", 409, { currentFormContext: old.formContext, currentScope: old.scope, requestedScope: next.scope }))
+      .mockImplementationOnce(() => pending.promise);
+    const view = render(<RegistrationEntry port={port} vault={vault(null)}>{children}</RegistrationEntry>);
+    const input = await screen.findByRole("textbox") as HTMLInputElement; fireEvent.change(input, { target: { value: "Old context input" } });
+    view.rerender(<RegistrationEntry port={port} vault={vault()}>{children}</RegistrationEntry>);
+    await screen.findByRole("dialog"); fireEvent.click(screen.getByRole("button", { name: "Mulakan semula" }));
+    await waitFor(() => expect(port.exchange).toHaveBeenCalledTimes(2)); availability(kind, false);
+    await act(async () => pending.resolve(next)); await screen.findByText("Kaunter 2 · semua kategori");
+    const fresh = screen.getByRole("textbox") as HTMLInputElement;
+    expect(fresh.value).toBe(""); expect(fresh.closest("fieldset")?.disabled).toBe(true);
+    vi.mocked(port.entry).mockResolvedValue(next); availability(kind, true);
+    await waitFor(() => expect(fresh.closest("fieldset")?.disabled).toBe(false));
+    expect(port.exchange).toHaveBeenCalledTimes(2); expect(port.exchange).toHaveBeenLastCalledWith(fixtureToken, old.formContext);
+  });
+  it.each(["offline", "hidden"] as const)("keeps an explicitly adopted context disabled after a late response while %s", async kind => {
+    const port = fixturePort(), old = grant(), next = grant("2", 2), pending = deferred<EntryGrant>();
+    vi.mocked(port.exchange).mockResolvedValue(old);
+    vi.mocked(port.entry).mockResolvedValueOnce(next).mockImplementationOnce(() => pending.promise).mockResolvedValue(next);
+    render(<RegistrationEntry port={port} vault={vault()}>{() => <input aria-label="Adoption input" defaultValue="" />}</RegistrationEntry>);
+    const input = await screen.findByRole("textbox") as HTMLInputElement; fireEvent.change(input, { target: { value: "Old context input" } });
+    fireEvent(window, new Event("pageshow")); fireEvent.click(await screen.findByRole("button", { name: "Buka borang semasa" }));
+    await waitFor(() => expect(port.entry).toHaveBeenCalledTimes(2)); availability(kind, false);
+    await act(async () => pending.resolve(next)); await screen.findByText("Kaunter 2 · semua kategori");
+    const fresh = screen.getByRole("textbox") as HTMLInputElement;
+    expect(fresh.value).toBe(""); expect(fresh.closest("fieldset")?.disabled).toBe(true);
+    availability(kind, true); await waitFor(() => expect(fresh.closest("fieldset")?.disabled).toBe(false));
+    expect(port.entry).toHaveBeenCalledTimes(3); expect(port.exchange).toHaveBeenCalledTimes(1);
   });
 });
 describe("server time and URL boundaries", () => {

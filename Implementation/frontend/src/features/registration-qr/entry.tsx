@@ -16,6 +16,9 @@ function sameAuthority(left: EntryGrant, right: EntryGrant) {
     && left.scope.categoryScope === right.scope.categoryScope && left.grantExpiresAt === right.grantExpiresAt;
 }
 
+/** Availability is sampled after each response; a request dispatched online may finish after interruption. */
+function entryAvailable() { return navigator.onLine && document.visibilityState !== "hidden"; }
+
 /** Optional form renderer captures this exact context; M03 must never silently adopt another tab's new grant. */
 export function RegistrationEntry({ port = qrPort, vault = entryVault, children }: {
   port?: QrPort; vault?: EntryVault; children?: (entry: EntryGrant) => ReactNode;
@@ -32,11 +35,27 @@ export function RegistrationEntry({ port = qrPort, vault = entryVault, children 
   const sequence = useRef(0), settled = useRef(false);
   const timing = useRef<ServerAnchor | null>(null);
   const activeEntry = useRef<EntryGrant | null>(null);
+  const availabilityEpoch = useRef(0), validationNeeded = useRef(false);
+
+  useEffect(() => {
+    const invalidate = () => { availabilityEpoch.current++; validationNeeded.current = true; setValidated(false); };
+    // Install before an entry exists so initial exchange/bootstrap interruptions cannot evade the fence.
+    window.addEventListener("offline", invalidate); window.addEventListener("online", invalidate);
+    window.addEventListener("pageshow", invalidate); document.addEventListener("visibilitychange", invalidate);
+    return () => {
+      window.removeEventListener("offline", invalidate); window.removeEventListener("online", invalidate);
+      window.removeEventListener("pageshow", invalidate); document.removeEventListener("visibilitychange", invalidate);
+    };
+  }, []);
 
   /** Accepted exchange changes the form only after server confirmation; token cleanup is fenced by exact value. */
-  const accept = useCallback((value: EntryGrant, usedToken?: string, elapsed = 0) => {
+  const accept = useCallback((value: EntryGrant, usedToken: string | undefined, elapsed: number, requestEpoch: number) => {
     timing.current = anchor(value.serverNow, performance.now(), elapsed); activeEntry.current = value;
-    setEntry(value); setExpired(false); setValidated(true); setRestart(null); setRecovered(null); setMessage("");
+    const available = entryAvailable() && requestEpoch === availabilityEpoch.current;
+    // Preserve a confirmed server context, but only a fresh visible/online response may enable its inputs.
+    validationNeeded.current = !available;
+    setEntry(value); setExpired(false); setValidated(available); setRestart(null); setRecovered(null);
+    setMessage(available ? "" : "Maklumat borang dikekalkan. Semak akses selepas sambungan atau paparan dipulihkan.");
     if (usedToken) vault.clear(usedToken);
   }, [vault]);
   useEffect(() => {
@@ -47,10 +66,12 @@ export function RegistrationEntry({ port = qrPort, vault = entryVault, children 
         const capability = await port.capabilities();
         if (!alive || current !== sequence.current) return;
         if (!capability.enabled) { setDisabled(true); return; }
+        // An explicit new scan can observe enabled capability after an earlier disabled response.
+        setDisabled(false);
         await port.bootstrap();
-        const started = performance.now();
+        const started = performance.now(), requestEpoch = availabilityEpoch.current;
         const value = token ? await port.exchange(token) : await port.entry();
-        if (alive && current === sequence.current) accept(value, token ?? undefined, performance.now() - started);
+        if (alive && current === sequence.current) accept(value, token ?? undefined, performance.now() - started, requestEpoch);
       } catch (error) {
         if (!alive || current !== sequence.current) return;
         if (error instanceof ClientError && error.restartDetails) setRestart(error.restartDetails);
@@ -71,14 +92,13 @@ export function RegistrationEntry({ port = qrPort, vault = entryVault, children 
     if (!entry) return;
     let alive = true, checking = false;
     const original = entry;
-    const available = () => navigator.onLine && document.visibilityState !== "hidden";
     const check = async () => {
-      if (!alive || checking || busy || !available()) return;
-      checking = true; const operation = sequence.current, started = performance.now();
+      if (!alive || checking || busy || !entryAvailable()) return;
+      checking = true; const operation = sequence.current, started = performance.now(), requestEpoch = availabilityEpoch.current;
       try {
         const value = await port.entry();
         if (!alive || operation !== sequence.current) return;
-        if (!available()) { setValidated(false); return; }
+        if (!entryAvailable() || requestEpoch !== availabilityEpoch.current) { validationNeeded.current = true; setValidated(false); return; }
         const same = value.formContext.grantReference === original.formContext.grantReference
           && value.formContext.bindingVersion === original.formContext.bindingVersion;
         if (!same) {
@@ -89,7 +109,7 @@ export function RegistrationEntry({ port = qrPort, vault = entryVault, children 
           setValidated(false); setMessage("Semakan borang tidak dapat disahkan. Sila ke kaunter untuk bantuan.");
         } else {
           timing.current = anchor(value.serverNow, performance.now(), performance.now() - started);
-          setValidated(true); setRecovered(null); setMessage("");
+          validationNeeded.current = false; setValidated(true); setRecovered(null); setMessage("");
         }
       } catch (error) {
         if (alive && operation === sequence.current) { setValidated(false); setMessage(safeError(error, "ms")); }
@@ -100,6 +120,8 @@ export function RegistrationEntry({ port = qrPort, vault = entryVault, children 
     const timer = window.setInterval(() => void check(), 5000);
     window.addEventListener("offline", offline); window.addEventListener("online", resume);
     window.addEventListener("pageshow", resume); document.addEventListener("visibilitychange", resume);
+    // A resume during an in-flight command is read back once its confirmed context and busy state settle.
+    if (validationNeeded.current) void check();
     return () => {
       alive = false; window.clearInterval(timer); window.removeEventListener("offline", offline);
       window.removeEventListener("online", resume); window.removeEventListener("pageshow", resume);
@@ -119,14 +141,14 @@ export function RegistrationEntry({ port = qrPort, vault = entryVault, children 
   const recover = async (cancelledToken?: string) => {
     const current = ++sequence.current; setBusy(true); setValidated(false);
     try {
-      const started = performance.now();
+      const started = performance.now(), requestEpoch = availabilityEpoch.current;
       const value = await port.entry();
       if (current !== sequence.current) return;
       if (activeEntry.current && JSON.stringify(value.formContext) !== JSON.stringify(activeEntry.current.formContext)) {
         setRecovered(value); setMessage("Status borang telah berubah. Buka borang semasa hanya jika anda mahu memulakan semula.");
       } else if (activeEntry.current && !sameAuthority(value, activeEntry.current)) {
         setMessage("Semakan borang tidak dapat disahkan. Sila ke kaunter untuk bantuan.");
-      } else accept(value, cancelledToken, performance.now() - started);
+      } else accept(value, cancelledToken, performance.now() - started, requestEpoch);
     } catch (error) { if (current === sequence.current) setMessage(safeError(error, "ms")); }
     finally { if (current === sequence.current) setBusy(false); }
   };
@@ -135,11 +157,11 @@ export function RegistrationEntry({ port = qrPort, vault = entryVault, children 
     if (!recovered || busy) return;
     const proposed = recovered, current = ++sequence.current; setBusy(true); setValidated(false);
     try {
-      const started = performance.now(), value = await port.entry();
+      const started = performance.now(), requestEpoch = availabilityEpoch.current, value = await port.entry();
       if (current !== sequence.current) return;
       if (!sameAuthority(value, proposed)) {
         setRecovered(value); setMessage("Status borang berubah lagi. Semak borang semasa sebelum membukanya.");
-      } else accept(value, token ?? undefined, performance.now() - started);
+      } else accept(value, token ?? undefined, performance.now() - started, requestEpoch);
     } catch (error) { if (current === sequence.current) setMessage(safeError(error, "ms")); }
     finally { if (current === sequence.current) setBusy(false); }
   };
@@ -148,9 +170,9 @@ export function RegistrationEntry({ port = qrPort, vault = entryVault, children 
     if (!restart || !token) return;
     const current = ++sequence.current; setBusy(true);
     try {
-      const started = performance.now();
+      const started = performance.now(), requestEpoch = availabilityEpoch.current;
       const value = await port.exchange(token, restart.currentFormContext);
-      if (current === sequence.current) accept(value, token, performance.now() - started);
+      if (current === sequence.current) accept(value, token, performance.now() - started, requestEpoch);
     } catch (error) { if (current === sequence.current) setMessage(safeError(error, "ms")); }
     finally { if (current === sequence.current) setBusy(false); }
   };

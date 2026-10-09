@@ -153,18 +153,25 @@ public class QrEntryService {
         var anonymous=new SessionCapabilities.Binding(binding,null,rows.getFirst(),null,null,0,false);
         Grant value=lockGrantInternal(anonymous,form);
         var access=new GrantAccess(value.id(),binding,value.scope(),value.form());
-        // A receipt cannot cross transactions or be fabricated by another module; its exact identity is fenced.
-        TransactionSynchronizationManager.bindResource(access,Boolean.TRUE);
-        TransactionSynchronizationManager.registerSynchronization(new org.springframework.transaction.support.TransactionSynchronization() {
+        // Arbitrary thread resources survive REQUIRES_NEW suspension; the current synchronization list does not.
+        // Bind this unique marker to the private receipt and require its exact identity in the active transaction.
+        var marker=new org.springframework.transaction.support.TransactionSynchronization() {
             @Override public void afterCompletion(int status) { TransactionSynchronizationManager.unbindResourceIfPossible(access); }
-        });
+        };
+        TransactionSynchronizationManager.bindResource(access,marker);
+        TransactionSynchronizationManager.registerSynchronization(marker);
         return access;
     }
 
     /** Joins M03's transaction: creation/audit/idempotency failures roll back the grant and pointer together. */
     public void consume(GrantAccess access,long registrationId) {
         requireTransaction();
-        if(!TransactionSynchronizationManager.hasResource(access)) { throw new IllegalStateException("Lock this grant in the current transaction before consuming it"); }
+        Object marker=TransactionSynchronizationManager.getResource(access);
+        if(marker==null || !TransactionSynchronizationManager.isSynchronizationActive()
+                || TransactionSynchronizationManager.getSynchronizations().stream().noneMatch(current->current==marker)) {
+            // Reject a suspended or completed transaction's receipt before any SQL read, lock or mutation.
+            throw new IllegalStateException("Lock this grant in the current transaction before consuming it");
+        }
         if(registrationId<=0) { throw invalid(); }
         Grant current=grant(access.grantId(),false);
         if(!current.binding().equals(access.bindingId()) || !current.form().equals(access.formContext())) { throw changed(); }

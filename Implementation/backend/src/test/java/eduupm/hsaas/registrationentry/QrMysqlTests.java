@@ -18,6 +18,7 @@ import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
 import org.springframework.transaction.support.TransactionTemplate;
+import org.springframework.transaction.TransactionDefinition;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.mysql.MySQLContainer;
@@ -35,7 +36,7 @@ import static org.mockito.Mockito.*;
 class QrMysqlTests {
     @Container static final MySQLContainer MYSQL=new MySQLContainer("mysql:8.0.45").withCommand("--log-bin-trust-function-creators=1");
     @LocalServerPort int port;
-    @Autowired JdbcTemplate jdbc;
+    @MockitoSpyBean JdbcTemplate jdbc;
     @Autowired JsonMapper json;
     @Autowired PasswordEncoder passwords;
     @Autowired QrEntryService entries;
@@ -151,6 +152,38 @@ class QrMysqlTests {
         tx.executeWithoutResult(status->{ var access=entries.lockGrant(visitor.binding(),value.formContext());entries.consume(access,101); });
         assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM registration_entry_grants WHERE consumed_at IS NOT NULL",Integer.class)).isEqualTo(1);
         assertThatThrownBy(()->tx.executeWithoutResult(status->entries.lockGrant(visitor.binding(),value.formContext()))).isInstanceOf(ApiFailure.class);
+    }
+    /** Suspending the outer transaction cannot lend its receipt to REQUIRES_NEW; resumption preserves rollback/commit. */
+    @Test void suspendedOuterReceiptRejectsRequiresNewBeforeSqlAndResumes() throws Exception {
+        Browser staff=staff();String display=staff.create("1",null);Browser visitor=new Browser();visitor.csrf();
+        var value=json.readValue(visitor.exchange(token(staff.get("/api/staff/registration-qr-sessions/"+display+"/current"))).body(),QrEntryService.Entry.class);
+        String binding=visitor.binding();
+        var independent=new TransactionTemplate(Objects.requireNonNull(tx.getTransactionManager()));
+        independent.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRES_NEW);
+        independent.setIsolationLevel(TransactionDefinition.ISOLATION_READ_COMMITTED);
+        independent.setTimeout(5);
+        for(boolean rollback:List.of(true,false)) {
+            tx.executeWithoutResult(outer->{
+                var access=entries.lockGrant(binding,value.formContext());
+                independent.executeWithoutResult(inner->{
+                    // Bound the unfixed regression's MySQL wait; the fixed gate must call no JdbcTemplate method at all.
+                    jdbc.execute("SET SESSION innodb_lock_wait_timeout=1");clearInvocations(jdbc);
+                    try {
+                        assertThatThrownBy(()->entries.consume(access,211)).isInstanceOf(IllegalStateException.class)
+                                .hasMessage("Lock this grant in the current transaction before consuming it");
+                        verifyNoInteractions(jdbc);
+                    } finally { jdbc.execute("SET SESSION innodb_lock_wait_timeout=50"); }
+                });
+                // The same receipt is still owned by the resumed outer transaction, not spent by inner rejection.
+                entries.consume(access,211);if(rollback) { outer.setRollbackOnly(); }
+            });
+            if(rollback) {
+                assertThat(entries.entry(binding).formContext()).isEqualTo(value.formContext());
+                assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM registration_entry_grants WHERE consumed_at IS NOT NULL",Integer.class)).isZero();
+            }
+        }
+        assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM registration_entry_grants WHERE consumed_at IS NOT NULL AND registration_id=211",Integer.class)).isEqualTo(1);
+        assertThatThrownBy(()->entries.entry(binding)).isInstanceOf(ApiFailure.class);
     }
     /** Initial pointer uniqueness and replacement CAS are exercised with real competing MySQL transactions. */
     @Test void concurrentFirstExchangeAndReplace() throws Exception {

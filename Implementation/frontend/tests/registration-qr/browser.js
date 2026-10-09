@@ -82,7 +82,28 @@ async (page) => {
   if (!same || commandPosts !== 1) throw new Error("Unknown entry response caused a new command/context");
   checks.push({ step: "real-response-loss-recovery", sameContext: same, writeAttempts: commandPosts });
   await visitor.unroute("**/api/public/registration-entry/exchange");await audit(visitor, "visitor-unknown-recovered");
-  await page.getByRole("button", { name: "Revoke display", exact: true }).click();await page.getByText(/This display was revoked/).waitFor();
+  // Lose the actual successful revoke response, then retry only the original source after changing selected counter.
+  let revokePosts = 0, originalRevokePath;
+  await page.route("**/api/staff/registration-qr-sessions/*/revoke", async route => {
+    const path = new URL(route.request().url()).pathname; revokePosts++;
+    if (revokePosts === 1) {
+      originalRevokePath = path; const response = await route.fetch(); await response.dispose(); await route.abort("failed");
+    } else {
+      if (path !== originalRevokePath) throw new Error("Revoke retry changed the original source");
+      await route.continue();
+    }
+  });
+  await page.getByRole("button", { name: "Revoke display", exact: true }).click();
+  await page.getByText("Display revocation is unconfirmed", { exact: true }).waitFor();
+  await audit(page, "revoke-unknown-hidden");
+  await page.getByRole("combobox").selectOption("9007199254741002");
+  await page.getByText("Original counter 9007199254741001", { exact: true }).waitFor();
+  if (revokePosts !== 1 || await page.getByRole("img").count()) throw new Error("Unknown revoke auto-retried or restored a code");
+  await audit(page, "revoke-unknown-counter-changed");
+  await page.getByRole("button", { name: "Retry revoke", exact: true }).click(); await page.getByText(/This display was revoked/).waitFor();
+  if (revokePosts !== 2) throw new Error("Explicit revoke retry did not preserve one original command");
+  checks.push({ step: "real-revoke-response-loss-original-source", originalCounterPreserved: true, sameOriginalDisplay: true, writeAttempts: revokePosts, automaticRetries: 0 });
+  await page.unroute("**/api/staff/registration-qr-sessions/*/revoke");
   await audit(page, "revoked-display-hidden");
   if (errors.length) throw new Error("Unexpected browser exception");
   await visitorContext.close();
