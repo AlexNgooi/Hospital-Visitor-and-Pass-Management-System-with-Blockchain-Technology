@@ -1,0 +1,233 @@
+{
+  "source": "03eca76ba860f0e0c5590006a8137a493c1d4d6f",
+  "observedAt": "2026-10-09T20:30:52+08:00",
+  "scope": "Dedicated synthetic M04 browser harness; no production or persisted review acceptance",
+  "count": 28,
+  "nativeToolbarZoom": "NOT_RUN; css-zoom-200-reflow uses CSS zoom simulation",
+  "frames": [
+    {
+      "path": "browser/css-zoom-200-reflow-viewport.png",
+      "sha256": "204665ac724cbd30bc7f8e1f7f7abd6de55ea446075531a19e7d536a29f46b26",
+      "bytes": 110273,
+      "width": 1366,
+      "height": 768,
+      "framing": "viewport"
+    },
+    {
+      "path": "browser/css-zoom-200-reflow.png",
+      "sha256": "557bdd72bb085b2eb6a78cc6a576e13e30e6deefa50fced85a90ccb4801b5a1b",
+      "bytes": 379133,
+      "width": 1366,
+      "height": 3593,
+      "framing": "full-page"
+    },
+    {
+      "path": "browser/desktop-approved-viewport.png",
+      "sha256": "1976087503d93613b281aa3f7526ec49035e4a7e9d076bd9d129966c53973b89",
+      "bytes": 126968,
+      "width": 1366,
+      "height": 768,
+      "framing": "viewport"
+    },
+    {
+      "path": "browser/desktop-approved.png",
+      "sha256": "30f3ee8e14e262a11e803901c68ba413d00c80d2d00db9090955b08163535bef",
+      "bytes": 148010,
+      "width": 1366,
+      "height": 943,
+      "framing": "full-page"
+    },
+    {
+      "path": "browser/desktop-conflict-viewport.png",
+      "sha256": "d242fe8f1e363cb6c17a8b10aea4b8276b95e952df62a9ae0e256e9772f1277b",
+      "bytes": 132186,
+      "width": 1366,
+      "height": 768,
+      "framing": "viewport"
+    },
+    {
+      "path": "browser/desktop-conflict.png",
+      "sha256": "6b8a589c23bbebb041226bc020048e72ad747f3847ffa25b88f94956961c3998",
+      "bytes": 162776,
+      "width": 1366,
+      "height": 1023,
+      "framing": "full-page"
+    },
+    {
+      "path": "browser/desktop-detail-viewport.png",
+      "sha256": "04b7bd22d02ccb861e90ac6d2283e942b6c2e056e5c205e4862f6a911d16e9d6",
+      "bytes": 134006,
+      "width": 1366,
+      "height": 768,
+      "framing": "viewport"
+    },
+    {
+      "path": "browser/desktop-detail.png",
+      "sha256": "d6ed84083fe528582c7cfe1aec048f692b6018d79ed3e84fc76ecc966e34381b",
+      "bytes": 150294,
+      "width": 1366,
+      "height": 916,
+      "framing": "full-page"
+    },
+    {
+      "path": "browser/desktop-queue-viewport.png",
+      "sha256": "1dd5dfd688f8ff3497ad887f1ac72f24c80d0b8aa74d4c8624837cad898d89ab",
+      "bytes": 99655,
+      "width": 1366,
+      "height": 768,
+      "framing": "viewport"
+    },
+    {
+      "path": "browser/desktop-queue.png",
+      "sha256": "f267e8d14a243aa9b52a4dd4a449ec3cf37de16e7ce14e4835b3ced981c8b4ef",
+      "bytes": 104038,
+      "width": 1366,
+      "height": 842,
+      "framing": "full-page"
+    },
+    {
+      "path": "browser/desktop-rejected-viewport.png",
+      "sha256": "c24a23fd136f75f670c2fe2cbd8dee42e45562549752c9cd538088fe0ebdfdf9",
+      "bytes": 128178,
+      "width": 1366,
+      "height": 768,
+      "framing": "viewport"
+    },
+    {
+      "path": "browser/desktop-rejected.png",
+      "sha256": "66f0f5c8bdd6e9add273616d9a139c327af06fd1027ba861b3c92e6856f44d85",
+      "bytes": 148784,
+      "width": 1366,
+      "height": 971,
+      "framing": "full-page"
+    },
+    {
+      "path": "browser/desktop-rejection-required-viewport.png",
+      "sha256": "94e061abf38475ee0a108fc96a4a22720413840d012f69eb1d97c023e3d1e798",
+      "bytes": 134644,
+      "width": 1366,
+      "height": 768,
+      "framing": "viewport"
+    },
+    {
+      "path": "browser/desktop-rejection-required.png",
+      "sha256": "9adbf5006022702719e480e78017e3b7fc1b9aa3f1cd4480195cb93ca2b9347d",
+      "bytes": 151391,
+      "width": 1366,
+      "height": 916,
+      "framing": "full-page"
+    },
+    {
+      "path": "browser/desktop-unknown-viewport.png",
+      "sha256": "ec45bab10139a3667abb6bc10d075b9cea467968f219858b85ae93d65c07be3c",
+      "bytes": 129642,
+      "width": 1366,
+      "height": 768,
+      "framing": "viewport"
+    },
+    {
+      "path": "browser/desktop-unknown.png",
+      "sha256": "516eed85afd12261c3bde9197a50dd0983aafb212161a840e6dbd91f4a1213ae",
+      "bytes": 163043,
+      "width": 1366,
+      "height": 1030,
+      "framing": "full-page"
+    },
+    {
+      "path": "browser/landscape-reduced-motion-viewport.png",
+      "sha256": "83f6ed5038337bc255cae6bb035200002ba904530a56f55a319f445c52615bf9",
+      "bytes": 46829,
+      "width": 812,
+      "height": 375,
+      "framing": "viewport"
+    },
+    {
+      "path": "browser/landscape-reduced-motion.png",
+      "sha256": "6e6e25b84268580e9e89d38b0d299d68f262b46e80014284ab0c5cd07753731d",
+      "bytes": 162718,
+      "width": 812,
+      "height": 1738,
+      "framing": "full-page"
+    },
+    {
+      "path": "browser/mobile-access-revoked-viewport.png",
+      "sha256": "8bb89d708aabce46aafef083671a24782c8e9fd71e0c485cb841d5bbb591e1f1",
+      "bytes": 29261,
+      "width": 375,
+      "height": 812,
+      "framing": "viewport"
+    },
+    {
+      "path": "browser/mobile-access-revoked.png",
+      "sha256": "8bb89d708aabce46aafef083671a24782c8e9fd71e0c485cb841d5bbb591e1f1",
+      "bytes": 29261,
+      "width": 375,
+      "height": 812,
+      "framing": "full-page"
+    },
+    {
+      "path": "browser/mobile-detail-viewport.png",
+      "sha256": "c24ce0e34cae2bccd258fe8d01b64f4256a5e7125e7c20613b354d807c9a1d48",
+      "bytes": 59587,
+      "width": 375,
+      "height": 812,
+      "framing": "viewport"
+    },
+    {
+      "path": "browser/mobile-detail.png",
+      "sha256": "0f2946ac2949ab5a00e33a02b39ebf69d9138b094f515523dcf63051c23fc568",
+      "bytes": 134988,
+      "width": 375,
+      "height": 1884,
+      "framing": "full-page"
+    },
+    {
+      "path": "browser/mobile-queue-viewport.png",
+      "sha256": "44f5181c1780b914c35d86f43ef9488132f0c8bcb6f9d87c12d11d2769ba6ac6",
+      "bytes": 59477,
+      "width": 375,
+      "height": 812,
+      "framing": "viewport"
+    },
+    {
+      "path": "browser/mobile-queue.png",
+      "sha256": "f27927547cf1db8335b696eccc462a1780c65eac35e41ceeafc1de4e24440f92",
+      "bytes": 87657,
+      "width": 375,
+      "height": 1326,
+      "framing": "full-page"
+    },
+    {
+      "path": "browser/mobile-rejection-viewport.png",
+      "sha256": "28eeea1869164cd5a9e1c9f26e8eb3a464e492cbffda48e71098316c761f27b7",
+      "bytes": 60938,
+      "width": 375,
+      "height": 812,
+      "framing": "viewport"
+    },
+    {
+      "path": "browser/mobile-rejection.png",
+      "sha256": "5e4c3a1034c5021eff9c3b1d811d8aee8e29ae49b2fea4c0ec29116b33e5f3cc",
+      "bytes": 136628,
+      "width": 375,
+      "height": 1884,
+      "framing": "full-page"
+    },
+    {
+      "path": "browser/mobile-stale-queue-viewport.png",
+      "sha256": "2c6fccd76561c0076b364ba426b0f8678b8ee0e0b793fb3c4cce6589a5fb0e1c",
+      "bytes": 60932,
+      "width": 375,
+      "height": 812,
+      "framing": "viewport"
+    },
+    {
+      "path": "browser/mobile-stale-queue.png",
+      "sha256": "087191df670ec00800b97c1625b698560f850dc4907ca3e443fab293879bb9b0",
+      "bytes": 145825,
+      "width": 375,
+      "height": 2003,
+      "framing": "full-page"
+    }
+  ]
+}
