@@ -1,5 +1,61 @@
 # M01 coordinator review
 
+## Compact viewport maintenance accepted (2026-10-09)
+
+Source: `ed5875ae4a803f6abe040c098e2b402693b30bf9`, baseline `6bb3893`.
+Local source merge: `1da1925b7fa93c48a511030a0c21fc7972ea419d`.
+The stable, reviewed working-tree snapshot was first integrated as `858b74d`;
+the subsequent formal source merge coalesced identical runtime/test blobs and
+added three browser-only helper scripts. No auth/client/API/backend behavior or
+dependency changed with this UI maintenance.
+
+Login removes duplicate long rules from its focusable summary, keeps full inline
+guidance and field links, places explicit sign-in/session-check actions together,
+and reduces spacing. Workspace navigation/availability remains complete while
+redundant introductory copy is removed. Controls retain 44px minimum targets;
+long opaque counter options stay within their container without changing values.
+Dialogs and navigation allow necessary scrolling in short viewports. English
+comments explain the layout and retained recovery/security boundaries.
+
+Coordinator independently reviewed all runtime/test diffs and ran 69 tests,
+strict test typing, build and lint on the integrated snapshot in main, beginning
+2026-10-09 13:11:54 +08: all exited 0. Earlier candidate typing failed because
+Testing Library role options incorrectly included `exact`; the module removed
+those options and the coordinator rechecked typing successfully. The later
+source merge changes only browser helpers; its overview standalone expression
+has one reported lint warning awaiting the already-approved explanatory pragma.
+No product behavior or blocking test failure accompanies that warning.
+
+Coordinator browser evidence distinguishes synthetic preview checks from main.
+Before repair, main's empty submission plus session failure measured 1092px
+document height at 790x885 and 1101px at 375x812. After removing the earlier
+preview's mock route and reloading the actual running main server on port5173,
+the same state measured 885px at 790x885 (footer803.2) and 812px at 375x812
+(footer767.9); summary focus was preserved and the phone axe run had zero
+violations. No credentials were submitted, native database was not used, and
+the backend's current unavailability was not hidden. The first main capture
+still had a synthetic route and was superseded, rather than claimed unmocked.
+The retained [main phone capture](screenshots/ui-maintenance/coordinator-main-login-375-after.png)
+is from the corrected unmocked run.
+
+Module-reported synthetic evidence covers 37 current UI states plus targeted
+staff/admin phone overview, long-ID chooser and effective-viewport reflow checks.
+The final phone overviews fit 375x812/390x844. The long-ID chooser retains all
+16-digit values under CSS zoom simulation. Native browser toolbar zoom is
+NOT_RUN; small/short/zoomed or growing-content pages retain accessible necessary
+scrolling. These observations do not guarantee every future page or arbitrary
+viewport can display unlimited content without scrolling. Module receipts are
+preserved separately from the coordinator's independent observations.
+
+Snapshot patch SHA256:
+`626d91fb7001128dadf3dc0739843c198729767ed1c1ae883bfd829284058bf1`.
+Six integrated files matched the module after normalizing Windows line endings;
+raw hashes initially differed solely for CRLF/LF and were not mistaken for a
+runtime difference. A subsequent Git diff confirms runtime/app tests exactly
+match the committed module source. Local maintenance is accepted; fuller module
+receipt/pragma delivery may be appended without changing this acceptance. No
+new module, native database action, push or deployment was started.
+
 - Review date: 2026-10-09 (Asia/Singapore).
 - Status: INTEGRATION_VERIFIED for the approved local frontend/C01 slice; production HTTPS and downstream business gates NOT_RUN.
 - Reviewed delivery: `c8b9804e6653408fd49db7d1d95069c585a58ceb`.

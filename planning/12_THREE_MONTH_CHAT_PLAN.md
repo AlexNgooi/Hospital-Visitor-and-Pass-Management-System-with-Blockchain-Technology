@@ -115,7 +115,7 @@ M00–M04 已创建并完成准备核对；M00/M01 当前本地范围已验收�
 
 状态路径：PLANNED → READY → IN_PROGRESS → REVIEW_READY → CHANGES_REQUESTED / APPROVED → MERGED → INTEGRATION_VERIFIED。DEFERRED 满足条件后回 READY；BLOCKED 必须记录问题、owner 与下次动作。测试状态与模块状态独立，APPROVED 仍未 merge。
 
-2026-10-09 M01 维护任务 IN_PROGRESS：用户要求修复登录错误/会话提示叠加后的视口布局，并检查现有各页。已向原 M01 chat 派发，沿用其开发许可与 4156 隔离 worktree，baseline `ed6fff7`；原本地 UI/C01 验收结论保留，本次候选仍需单独 review/merge。范围限现有 app/ui/index.css 与相关测试、证据，不改变 auth/API、后端、入口或依赖；标准 shadcn 迁移未包含。视口与可达性验收见 07，不把必要滚动误判为隐藏内容的理由。
+2026-10-09 M01 维护任务 INTEGRATION_VERIFIED（已实现当前 UI 范围）：用户要求修复登录错误/会话提示叠加后的视口布局，并检查现有各页。原 M01 chat 沿用其开发许可与 4156 隔离 worktree，最终准备 baseline `6bb3893`；源 `ed5875a`，稳定快照先集成 `858b74d`，正式本地 merge `1da1925`。main 69tests/typing/build通过；实际5173错误页375×812及790×885完整呈现、手机axe0，coordinator独立事实见 M01 REVIEW。模块synthetic37状态及定点总览/长ID/放大模拟分开记录，真实toolbarzoom NOT_RUN；模块receipt及无行为lint说明可随后补交。范围限现有 app/ui/index.css 与相关测试、证据，不改变 auth/API、后端、入口或依赖；标准 shadcn 迁移未包含。视口与可达性验收见 07，不把必要滚动误判为隐藏内容的理由。M02当前仍独立实施，未因这次维护启动其他模块。
 
 ## Module chat 共同工作约定
 
