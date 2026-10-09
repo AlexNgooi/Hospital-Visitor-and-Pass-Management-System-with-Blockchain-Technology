@@ -20,6 +20,8 @@ public class SessionResponseFilter extends OncePerRequestFilter {
     /** A late save failure yields a safe failure response, never a buffered login success or cookie. */
     @Override protected void doFilterInternal(HttpServletRequest request,HttpServletResponse response,FilterChain chain)
             throws ServletException,IOException {
+        // The policy surrounds explicit controller saves and the automatic SessionRepositoryFilter tail save.
+        sessions.beginRequest(request.getServletPath());
         if(!request.getServletPath().startsWith("/api/")) {
             // Non-API responses do not need API buffering, but pool threads must release any tracked Session.
             try { chain.doFilter(request,response); } finally { sessions.clearRequest(); }

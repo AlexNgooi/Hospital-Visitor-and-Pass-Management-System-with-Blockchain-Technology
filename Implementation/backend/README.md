@@ -22,7 +22,7 @@ No real database/bootstrap was run by M00. Console interaction is NOT_RUN; the s
 
 ## Security and command configuration
 
-Cookie `HSAAS_SESSION` is HttpOnly, SameSite=Lax, Path=/, host-only and browser-session scoped. Request idle defaults to 30m; staff absolute is 8h, anonymous identity absolute 24h, pending activation 1m. These engineering defaults are not hospital O07 approval. Polling can refresh request idle; absolute deadlines never refresh.
+Cookie `HSAAS_SESSION` is HttpOnly, SameSite=Lax, Path=/, host-only and browser-session scoped. Request idle defaults to 30m; staff absolute is 8h, anonymous identity absolute 24h, pending activation 1m. These engineering defaults are not hospital O07 approval. Normal staff polling can refresh the confirmed owner idle deadline; public anonymous traffic under `/api/public/**` cannot activate or renew a staff owner even with the same signed-in cookie. Public Session saves retain all validation and persistence-failure behavior. Absolute deadlines never refresh.
 
 Frontend uses a same-origin `/api` proxy, `credentials: include`, framework CSRF bootstrap and `X-CSRF-TOKEN` on writes. Refetch CSRF after login/logout; do not cache it or cookies in localStorage. Login failure, session save failure and database outage return safe JSON; a 503 may follow a committed business command, so preserve its original command key and retry only under that domain's idempotency protocol. See [API baseline](../docs/evidence/modules/M00/API_BASELINE.md).
 

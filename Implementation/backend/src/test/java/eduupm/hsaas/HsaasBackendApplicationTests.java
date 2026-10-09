@@ -71,6 +71,8 @@ class HsaasBackendApplicationTests {
     @Autowired LocalAuditPort audit;
     @Autowired IdempotencyPort commands;
     @Autowired LoginLimiter limiter;
+    @Autowired @org.springframework.beans.factory.annotation.Qualifier("requestMappingHandlerMapping")
+    org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerMapping mappings;
     @MockitoSpyBean GuardedSessionRepository sessions;
     @MockitoSpyBean Accounts accountLoader;
     @MockitoSpyBean SessionCapabilities capabilityHooks;
@@ -402,7 +404,7 @@ class HsaasBackendApplicationTests {
         doAnswer(invocation->{
             if(invocation.getArgument(2)!=null) { throw new DataAccessResourceFailureException("synthetic activation failure"); }
             return invocation.callRealMethod();
-        }).when(capabilityHooks).confirmedSave(any(),any(),any(),any());
+        }).when(capabilityHooks).confirmedSave(any(),any(),any(),any(),anyBoolean());
         var response=browser.post("/api/auth/login",Map.of("login","staff_test","password",FIXTURE_PASSWORD),true);
         assertThat(response.statusCode()).isEqualTo(503);
         assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM auth_session_contexts WHERE state='ACTIVE'",Integer.class)).isZero();
@@ -421,6 +423,120 @@ class HsaasBackendApplicationTests {
             assertThat(jdbc.queryForObject("SELECT confirmed_idle_expires_at FROM auth_session_contexts WHERE actor_id=?",java.time.LocalDateTime.class,staffId)).isEqualTo(before);
         } finally { jdbc.execute("DROP TRIGGER synthetic_session_save_failure"); }
         assertThat(browser.get("/api/auth/me").statusCode()).isEqualTo(200);
+    }
+
+    /** Public entry traffic, including failure responses and CSRF bootstrap, is not staff owner activity. */
+    @Test void publicRequestsKeepOwnerDeadlineButStaffRequestRenews() throws Exception {
+        Browser browser=new Browser(); browser.login("staff_test"); browser.csrf();
+        Session current=sessions.findById(browser.sessionId()); String context=current.getAttribute(SessionCapabilities.CONTEXT);
+        jdbc.update("UPDATE auth_session_contexts SET confirmed_idle_expires_at=? WHERE id=?",DatabaseTime.sql(Instant.now().plusSeconds(300)),context);
+        var before=ownerDeadline(context); var absolute=jdbc.queryForObject("SELECT absolute_expires_at FROM auth_session_contexts WHERE id=?",java.time.LocalDateTime.class,context);
+        String binding=current.getAttribute(SessionCapabilities.BINDING);
+        var anonymous=jdbc.queryForObject("SELECT anonymous_expires_at FROM app_session_bindings WHERE id=?",java.time.LocalDateTime.class,binding);
+        var probe=new PublicActivityProbe();
+        try(var routes=publicProbeRoutes(probe)) {
+            for(String path:List.of(PUBLIC_PROBE,PUBLIC_PROBE+"/capabilities",PUBLIC_PROBE+"/schema",PUBLIC_PROBE+"/poll",
+                    "/%61pi/public/m00-owner-activity-fixture/registration-entry","/api/public/config/registration","/api/public/csrf")) {
+                assertThat(browser.get(path).statusCode()).isEqualTo(200); assertThat(ownerDeadline(context)).isEqualTo(before);
+            }
+            for(String path:List.of(PUBLIC_PROBE+"/exchange",PUBLIC_PROBE+"/submit")) {
+                assertThat(browser.post(path,Map.of(),true).statusCode()).isEqualTo(200); assertThat(ownerDeadline(context)).isEqualTo(before);
+            }
+            probe.fail=true;
+            assertThat(browser.post(PUBLIC_PROBE+"/exchange",Map.of(),true).statusCode()).isEqualTo(409);
+            assertThat(ownerDeadline(context)).isEqualTo(before);
+            assertThat(jdbc.queryForObject("SELECT absolute_expires_at FROM auth_session_contexts WHERE id=?",java.time.LocalDateTime.class,context)).isEqualTo(absolute);
+            assertThat(jdbc.queryForObject("SELECT anonymous_expires_at FROM app_session_bindings WHERE id=?",java.time.LocalDateTime.class,binding)).isEqualTo(anonymous);
+            probe.fail=false;
+            assertThat(browser.get(STAFF_PROBE).statusCode()).isEqualTo(200);
+            assertThat(ownerDeadline(context)).isAfter(before);
+        }
+    }
+
+    /** Even a successfully persisted owner-bearing PENDING Session cannot be activated by public HTTP. */
+    @Test void publicRequestsCannotActivatePendingOwner() throws Exception {
+        Browser browser=new Browser(); browser.login("staff_test"); browser.csrf();
+        Session current=sessions.findById(browser.sessionId()); String binding=current.getAttribute(SessionCapabilities.BINDING);
+        var pending=capabilities.prepareLogin(binding,staffId,0);
+        current.setAttribute(SessionCapabilities.CONTEXT,pending.id()); current.setAttribute(SessionCapabilities.GENERATION,pending.generation());
+        // No HTTP owner scope exists here: this prepares an actual JDBC fixture, without activating it.
+        sessions.save(current); sessions.clearRequest();
+        var probe=new PublicActivityProbe();
+        try(var routes=publicProbeRoutes(probe)) {
+            assertThat(browser.get(PUBLIC_PROBE).statusCode()).isEqualTo(200);
+            assertThat(browser.post(PUBLIC_PROBE+"/exchange",Map.of(),true).statusCode()).isEqualTo(200);
+            probe.fail=true; assertThat(browser.post(PUBLIC_PROBE+"/exchange",Map.of(),true).statusCode()).isEqualTo(409);
+            assertThat(jdbc.queryForObject("SELECT state FROM auth_session_contexts WHERE id=?",String.class,pending.id())).isEqualTo("PENDING");
+            assertThat(ownerDeadline(pending.id())).isNull();
+            assertThatThrownBy(()->capabilities.requireHuman(binding,pending.id(),pending.generation(),"staff_test")).isInstanceOf(ApiFailure.class);
+        }
+    }
+
+    /** Public exclusion is not an expiry/revocation bypass: stale authority never becomes usable again. */
+    @Test void publicRequestsCannotReviveInvalidOwner() throws Exception {
+        try(var routes=publicProbeRoutes(new PublicActivityProbe())) {
+            for(String invalid:List.of("confirmed","absolute","anonymous","revoked","epoch","superseded","framework")) {
+                Browser browser=new Browser(); browser.login("staff_test");
+                Session current=sessions.findById(browser.sessionId()); String context=current.getAttribute(SessionCapabilities.CONTEXT);
+                String binding=current.getAttribute(SessionCapabilities.BINDING); Long generation=current.getAttribute(SessionCapabilities.GENERATION);
+                String next=null;
+                switch(invalid) {
+                    case "confirmed" -> jdbc.update("UPDATE auth_session_contexts SET confirmed_idle_expires_at=? WHERE id=?",DatabaseTime.sql(Instant.now().minusSeconds(1)),context);
+                    case "absolute" -> jdbc.update("UPDATE auth_session_contexts SET absolute_expires_at=? WHERE id=?",DatabaseTime.sql(Instant.now().minusSeconds(1)),context);
+                    case "anonymous" -> jdbc.update("UPDATE app_session_bindings SET anonymous_expires_at=? WHERE id=?",DatabaseTime.sql(Instant.now().minusSeconds(1)),binding);
+                    case "revoked" -> jdbc.update("UPDATE auth_session_contexts SET state='REVOKED',revoked_at=? WHERE id=?",DatabaseTime.sql(Instant.now()),context);
+                    case "epoch" -> jdbc.update("UPDATE users SET security_epoch=security_epoch+1 WHERE id=?",staffId);
+                    case "superseded" -> next=capabilities.prepareLogin(binding,staffId,accountLoader.find("staff_test").epoch()).id();
+                    case "framework" -> jdbc.update("UPDATE SPRING_SESSION SET EXPIRY_TIME=? WHERE SESSION_ID=?",Instant.now().minusSeconds(1).toEpochMilli(),browser.sessionId());
+                    default -> throw new IllegalStateException("Unknown synthetic invalidity");
+                }
+                var before=ownerDeadline(context);
+                var response=browser.get(PUBLIC_PROBE);
+                // The fixture still carries the old Session; persisted-expiry denial must reach the safe tail boundary.
+                assertThat(response.statusCode()).isEqualTo(503);
+                assertThat(ownerDeadline(context)).isEqualTo(before);
+                assertThatThrownBy(()->capabilities.requireHuman(binding,context,generation,"staff_test")).isInstanceOf(ApiFailure.class);
+                if(next!=null) { assertThat(jdbc.queryForObject("SELECT state FROM auth_session_contexts WHERE id=?",String.class,next)).isEqualTo("PENDING"); }
+            }
+        }
+    }
+
+    /** A deadline crossing after the real framework save is rejected by confirmation, without resurrection. */
+    @Test void latePublicConfirmationCannotRenewOwner() throws Exception {
+        Browser browser=new Browser(); browser.login("staff_test");
+        Session current=sessions.findById(browser.sessionId()); String context=current.getAttribute(SessionCapabilities.CONTEXT);
+        var expired=DatabaseTime.sql(Instant.now().minusSeconds(1));
+        doAnswer(invocation->{
+            if(context.equals(invocation.getArgument(2)) && !((Boolean)invocation.getArgument(4))) {
+                jdbc.update("UPDATE auth_session_contexts SET confirmed_idle_expires_at=? WHERE id=?",expired,context);
+            }
+            return invocation.callRealMethod();
+        }).when(capabilityHooks).confirmedSave(any(),any(),any(),any(),anyBoolean());
+        try(var routes=publicProbeRoutes(new PublicActivityProbe())) {
+            var response=browser.get(PUBLIC_PROBE); assertThat(response.statusCode()).isEqualTo(503);
+            assertThat(body(response).get("code")).isEqualTo("SERVICE_UNAVAILABLE");
+            assertThat(ownerDeadline(context)).isEqualTo(expired);
+            assertThat(browser.get("/api/auth/me").statusCode()).isEqualTo(401);
+            assertThat(jdbc.queryForObject("SELECT state FROM auth_session_contexts WHERE id=?",String.class,context)).isEqualTo("REVOKED");
+        }
+    }
+
+    /** Public success followed by a real Session UPDATE fault remains an unknown response, not success. */
+    @Test void publicFrameworkFailureStillReturnsUnknown() throws Exception {
+        Browser browser=new Browser(); browser.login("staff_test"); browser.csrf();
+        Session current=sessions.findById(browser.sessionId()); String context=current.getAttribute(SessionCapabilities.CONTEXT);
+        var before=ownerDeadline(context);
+        try(var routes=publicProbeRoutes(new PublicActivityProbe())) {
+            jdbc.execute("CREATE TRIGGER synthetic_public_save_failure BEFORE UPDATE ON SPRING_SESSION FOR EACH ROW SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='SYNTHETIC_PUBLIC_SAVE_FAILURE'");
+            try {
+                var response=browser.post(PUBLIC_PROBE+"/exchange",Map.of(),true);
+                assertThat(response.statusCode()).isEqualTo(503); assertThat(body(response).get("code")).isEqualTo("SERVICE_UNAVAILABLE");
+                assertThat(response.body()).contains("original command key").doesNotContain("SYNTHETIC_SUCCESS","SQLException");
+                assertThat(response.headers().allValues("Set-Cookie")).isEmpty(); assertThat(ownerDeadline(context)).isEqualTo(before);
+            } finally { jdbc.execute("DROP TRIGGER synthetic_public_save_failure"); }
+            assertThat(browser.post(PUBLIC_PROBE+"/exchange",Map.of(),true).statusCode()).isEqualTo(200);
+            assertThat(ownerDeadline(context)).isEqualTo(before);
+        }
     }
 
     /** Password verification at an old epoch cannot activate a new role granted concurrently. */
@@ -454,10 +570,16 @@ class HsaasBackendApplicationTests {
     @Test void secondApplicationReadsPersistedSession() throws Exception {
         Browser browser=new Browser(); browser.login("admin_test");
         String oldSession=browser.sessionId();
+        Session persisted=sessions.findById(oldSession); String context=persisted.getAttribute(SessionCapabilities.CONTEXT);
+        jdbc.update("UPDATE auth_session_contexts SET confirmed_idle_expires_at=? WHERE id=?",DatabaseTime.sql(Instant.now().plusSeconds(300)),context);
+        var before=ownerDeadline(context);
         try(var second=startApplication(WebApplicationType.SERVLET,false)) {
             int secondPort=Integer.parseInt(second.getEnvironment().getProperty("local.server.port"));
+            var bootstrapResponse=browser.client.send(HttpRequest.newBuilder(URI.create("http://localhost:"+secondPort+"/foundation/api/public/csrf")).GET().build(),HttpResponse.BodyHandlers.ofString());
+            assertThat(bootstrapResponse.statusCode()).isEqualTo(200); assertThat(ownerDeadline(context)).isEqualTo(before);
             var response=browser.client.send(HttpRequest.newBuilder(URI.create("http://localhost:"+secondPort+"/foundation/api/auth/me")).GET().build(),HttpResponse.BodyHandlers.ofString());
             assertThat(response.statusCode()).isEqualTo(200); assertThat(body(response).get("id")).isEqualTo(Long.toString(adminId));
+            assertThat(ownerDeadline(context)).isAfter(before);
             assertThat(browser.sessionId().equals(oldSession)).isTrue();
             jdbc.update("UPDATE users SET security_epoch=security_epoch+1 WHERE id=?",adminId);
             var denied=browser.client.send(HttpRequest.newBuilder(URI.create("http://localhost:"+secondPort+"/foundation/api/admin/integrations")).GET().build(),HttpResponse.BodyHandlers.ofString());
@@ -529,7 +651,8 @@ class HsaasBackendApplicationTests {
     @Test @Order(999) void databaseOfflineReadinessAndRecovery() throws Exception {
         MYSQL.getDockerClient().pauseContainerCmd(MYSQL.getContainerId()).exec();
         try {
-            var request=HttpRequest.newBuilder(URI.create("http://localhost:"+port+"/api/health")).timeout(java.time.Duration.ofSeconds(10)).GET().build();
+            // Allow the bounded pool-validation and SQL timeouts to complete under concurrent Docker test load.
+            var request=HttpRequest.newBuilder(URI.create("http://localhost:"+port+"/api/health")).timeout(java.time.Duration.ofSeconds(30)).GET().build();
             var response=HttpClient.newHttpClient().send(request,HttpResponse.BodyHandlers.ofString());
             assertThat(response.statusCode()).isEqualTo(503); assertThat(body(response).get("code")).isEqualTo("SERVICE_UNAVAILABLE");
             assertThat(response.body()).doesNotContain("jdbc:","SQLException","stackTrace");
@@ -546,6 +669,38 @@ class HsaasBackendApplicationTests {
         if(web==WebApplicationType.SERVLET) { settings.put("server.servlet.context-path","/foundation"); }
         environment.getPropertySources().addFirst(new MapPropertySource("isolated-container",settings));
         return new SpringApplicationBuilder(HsaasBackendApplication.class).environment(environment).profiles("test").web(web).logStartupInfo(false).run();
+    }
+
+    private static final String PUBLIC_PROBE="/api/public/m00-owner-activity-fixture/registration-entry";
+    private static final String STAFF_PROBE="/api/staff/m00-owner-activity-fixture";
+
+    /** Uses real servlet/filter dispatch without creating or shadowing any production entry/registration endpoint. */
+    private AutoCloseable publicProbeRoutes(PublicActivityProbe probe) throws NoSuchMethodException {
+        var get=org.springframework.web.servlet.mvc.method.RequestMappingInfo.paths(PUBLIC_PROBE,PUBLIC_PROBE+"/capabilities",
+                PUBLIC_PROBE+"/schema",PUBLIC_PROBE+"/poll",STAFF_PROBE)
+                .methods(org.springframework.web.bind.annotation.RequestMethod.GET).options(mappings.getBuilderConfiguration()).build();
+        var post=org.springframework.web.servlet.mvc.method.RequestMappingInfo.paths(PUBLIC_PROBE+"/exchange",PUBLIC_PROBE+"/submit")
+                .methods(org.springframework.web.bind.annotation.RequestMethod.POST).options(mappings.getBuilderConfiguration()).build();
+        var method=PublicActivityProbe.class.getMethod("visit",jakarta.servlet.http.HttpServletRequest.class);
+        mappings.registerMapping(get,probe,method); mappings.registerMapping(post,probe,method);
+        return ()->{ mappings.unregisterMapping(get); mappings.unregisterMapping(post); };
+    }
+
+    /** Response-body fixture is registered only for each test; it is neither scanned nor packaged as a controller. */
+    @org.springframework.web.bind.annotation.ResponseBody
+    static final class PublicActivityProbe {
+        private volatile boolean fail;
+        /** Touches the actual HttpSession so the real request-end JDBC save runs on success and failure. */
+        public Map<String,String> visit(jakarta.servlet.http.HttpServletRequest request) {
+            request.getSession().setAttribute("M00_SYNTHETIC_PUBLIC_ACTIVITY","VISIT");
+            if(fail) { throw new ApiFailure(409,"VERSION_CONFLICT","Synthetic public request conflict."); }
+            return Map.of("status","SYNTHETIC_SUCCESS");
+        }
+    }
+
+    /** Reads the authoritative guard deadline directly from disposable MySQL, preserving its microseconds. */
+    private java.time.LocalDateTime ownerDeadline(String context) {
+        return jdbc.queryForObject("SELECT confirmed_idle_expires_at FROM auth_session_contexts WHERE id=?",java.time.LocalDateTime.class,context);
     }
 
     /** Keeps test coordination bounded so a deadlock fails rather than hanging verification. */
