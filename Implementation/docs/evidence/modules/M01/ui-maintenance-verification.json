@@ -1,0 +1,2375 @@
+{
+  "module": "M01",
+  "task": "Viewport and error-state UI maintenance",
+  "baselineCommit": "6bb3893f3f056db6a15e16f2bca6f955b4623d40",
+  "runtimeSourceCommit": "ed5875ae4a803f6abe040c098e2b402693b30bf9",
+  "deliveryDelta": "This evidence commit adds only one explanatory eslint pragma to tests/browser-ui-overview-check.js; runtime source is unchanged.",
+  "coordinatorReportedSourceMerge": "1da1925b7fa93c48a511030a0c21fc7972ea419d",
+  "scope": "Local Chromium final dist preview; explicit synthetic HTTP fixture. No new real backend/authentication or QR business acceptance.",
+  "generatedAtUtc": "2026-10-09T05:16:19.734283+00:00",
+  "commands": [
+    {
+      "command": "pnpm run typecheck:test",
+      "exitCode": 0,
+      "stage": "ed5875a source"
+    },
+    {
+      "command": "pnpm run build",
+      "exitCode": 0,
+      "stage": "ed5875a source",
+      "cssAsset": "index-DThfgyrs.css",
+      "jsAsset": "index-qAlHeHkz.js"
+    },
+    {
+      "command": "pnpm test -- --reporter=json --outputFile=output/playwright/ui-unit-results.json",
+      "exitCode": 0,
+      "stage": "ed5875a source",
+      "total": 69,
+      "passed": 69,
+      "failed": 0,
+      "success": true,
+      "startedAtUtc": "2026-10-09T05:11:53.435000+00:00"
+    },
+    {
+      "command": "pnpm run lint",
+      "exitCode": 0,
+      "stage": "ed5875a source",
+      "warnings": 1,
+      "warning": "Standalone overview CLI expression had no-unused-expressions warning."
+    },
+    {
+      "command": "pnpm run lint",
+      "exitCode": 0,
+      "stage": "Approved English pragma delta; resumed turn",
+      "warnings": 0
+    }
+  ],
+  "browserCommands": "npx --yes --package @playwright/cli playwright-cli -s=hsaas-m01-ui run-code --filename=tests/<browser-ui-*-check.js>; output receipts captured individually. Raw CLI logs are excluded because snippets include synthetic credentials.",
+  "receipts": {
+    "browser-results.json": {
+      "stage": "37-state matrix after compact mobile spacing; before final counter-select width constraint; fit assertions for overview were subsequently tightened",
+      "originalReceiptLastWriteUtc": "2026-10-09T04:55:24.440558+00:00",
+      "receipt": {
+        "synthetic": true,
+        "engine": "Chromium / final dist preview / explicit synthetic HTTP fixture",
+        "zoomScope": "200% desktop reflow simulation via CDP: 1366x768 physical CSS window -> 683x384 effective CSS viewport with doubled DPR; not native toolbar zoom",
+        "nativeBrowserZoom": "NOT_RUN",
+        "noUncaughtJavaScriptErrors": true,
+        "invalidInputLoginPosts": 0,
+        "results": [
+          {
+            "state": "login-normal-1366",
+            "viewport": {
+              "width": 1366,
+              "height": 768,
+              "devicePixelRatio": 1.0000000149011612
+            },
+            "document": {
+              "scrollHeight": 768,
+              "clientHeight": 768,
+              "scrollWidth": 1366
+            },
+            "stylesLoaded": true,
+            "signIn": {
+              "top": 455.82501220703125,
+              "bottom": 499.82501220703125,
+              "width": 216,
+              "height": 44
+            },
+            "sessionCheck": {
+              "top": 455.82501220703125,
+              "bottom": 499.82501220703125,
+              "width": 216,
+              "height": 44
+            },
+            "retryLogout": null,
+            "security": {
+              "top": 543.9750366210938,
+              "bottom": 573.375036239624,
+              "width": 440,
+              "height": 29.399999618530273
+            },
+            "footer": {
+              "top": 589.375,
+              "bottom": 607.9750003814697,
+              "width": 192.03750610351562,
+              "height": 18.600000381469727
+            },
+            "summaryFocused": false,
+            "summaryLinks": [],
+            "controls": [
+              {
+                "tag": "INPUT",
+                "height": 44,
+                "width": 440
+              },
+              {
+                "tag": "INPUT",
+                "height": 44,
+                "width": 440
+              },
+              {
+                "tag": "BUTTON",
+                "height": 44,
+                "width": 44
+              },
+              {
+                "tag": "BUTTON",
+                "height": 44,
+                "width": 216
+              },
+              {
+                "tag": "BUTTON",
+                "height": 44,
+                "width": 216
+              }
+            ],
+            "violations": [],
+            "hasVerticalScroll": false,
+            "footerReachable": true
+          },
+          {
+            "state": "login-error-session-1366",
+            "viewport": {
+              "width": 1366,
+              "height": 768,
+              "devicePixelRatio": 1.0000000149011612
+            },
+            "document": {
+              "scrollHeight": 768,
+              "clientHeight": 768,
+              "scrollWidth": 1366
+            },
+            "stylesLoaded": true,
+            "signIn": {
+              "top": 552.5,
+              "bottom": 596.5,
+              "width": 216,
+              "height": 44
+            },
+            "sessionCheck": {
+              "top": 552.5,
+              "bottom": 596.5,
+              "width": 216,
+              "height": 44
+            },
+            "retryLogout": null,
+            "security": {
+              "top": 640.6500244140625,
+              "bottom": 670.0500240325928,
+              "width": 440,
+              "height": 29.399999618530273
+            },
+            "footer": {
+              "top": 686.0499877929688,
+              "bottom": 704.6499881744385,
+              "width": 192.03750610351562,
+              "height": 18.600000381469727
+            },
+            "summaryFocused": true,
+            "summaryLinks": [
+              {
+                "field": "login",
+                "height": 44,
+                "width": 72.7874984741211
+              },
+              {
+                "field": "password",
+                "height": 44,
+                "width": 70.5625
+              }
+            ],
+            "controls": [
+              {
+                "tag": "INPUT",
+                "height": 44,
+                "width": 440
+              },
+              {
+                "tag": "INPUT",
+                "height": 44,
+                "width": 440
+              },
+              {
+                "tag": "BUTTON",
+                "height": 44,
+                "width": 44
+              },
+              {
+                "tag": "BUTTON",
+                "height": 44,
+                "width": 216
+              },
+              {
+                "tag": "BUTTON",
+                "height": 44,
+                "width": 216
+              }
+            ],
+            "violations": [],
+            "hasVerticalScroll": false,
+            "footerReachable": true
+          },
+          {
+            "state": "login-normal-1440",
+            "viewport": {
+              "width": 1440,
+              "height": 900,
+              "devicePixelRatio": 1.0000000149011612
+            },
+            "document": {
+              "scrollHeight": 900,
+              "clientHeight": 900,
+              "scrollWidth": 1440
+            },
+            "stylesLoaded": true,
+            "signIn": {
+              "top": 521.8250122070312,
+              "bottom": 565.8250122070312,
+              "width": 216,
+              "height": 44
+            },
+            "sessionCheck": {
+              "top": 521.8250122070312,
+              "bottom": 565.8250122070312,
+              "width": 216,
+              "height": 44
+            },
+            "retryLogout": null,
+            "security": {
+              "top": 609.9750366210938,
+              "bottom": 639.375036239624,
+              "width": 440,
+              "height": 29.399999618530273
+            },
+            "footer": {
+              "top": 655.375,
+              "bottom": 673.9750003814697,
+              "width": 192.03750610351562,
+              "height": 18.600000381469727
+            },
+            "summaryFocused": false,
+            "summaryLinks": [],
+            "controls": [
+              {
+                "tag": "INPUT",
+                "height": 44,
+                "width": 440
+              },
+              {
+                "tag": "INPUT",
+                "height": 44,
+                "width": 440
+              },
+              {
+                "tag": "BUTTON",
+                "height": 44,
+                "width": 44
+              },
+              {
+                "tag": "BUTTON",
+                "height": 44,
+                "width": 216
+              },
+              {
+                "tag": "BUTTON",
+                "height": 44,
+                "width": 216
+              }
+            ],
+            "violations": [],
+            "hasVerticalScroll": false,
+            "footerReachable": true
+          },
+          {
+            "state": "login-error-session-1440",
+            "viewport": {
+              "width": 1440,
+              "height": 900,
+              "devicePixelRatio": 1.0000000149011612
+            },
+            "document": {
+              "scrollHeight": 900,
+              "clientHeight": 900,
+              "scrollWidth": 1440
+            },
+            "stylesLoaded": true,
+            "signIn": {
+              "top": 618.5,
+              "bottom": 662.5,
+              "width": 216,
+              "height": 44
+            },
+            "sessionCheck": {
+              "top": 618.5,
+              "bottom": 662.5,
+              "width": 216,
+              "height": 44
+            },
+            "retryLogout": null,
+            "security": {
+              "top": 706.6500244140625,
+              "bottom": 736.0500240325928,
+              "width": 440,
+              "height": 29.399999618530273
+            },
+            "footer": {
+              "top": 752.0499877929688,
+              "bottom": 770.6499881744385,
+              "width": 192.03750610351562,
+              "height": 18.600000381469727
+            },
+            "summaryFocused": true,
+            "summaryLinks": [
+              {
+                "field": "login",
+                "height": 44,
+                "width": 72.7874984741211
+              },
+              {
+                "field": "password",
+                "height": 44,
+                "width": 70.5625
+              }
+            ],
+            "controls": [
+              {
+                "tag": "INPUT",
+                "height": 44,
+                "width": 440
+              },
+              {
+                "tag": "INPUT",
+                "height": 44,
+                "width": 440
+              },
+              {
+                "tag": "BUTTON",
+                "height": 44,
+                "width": 44
+              },
+              {
+                "tag": "BUTTON",
+                "height": 44,
+                "width": 216
+              },
+              {
+                "tag": "BUTTON",
+                "height": 44,
+                "width": 216
+              }
+            ],
+            "violations": [],
+            "hasVerticalScroll": false,
+            "footerReachable": true
+          },
+          {
+            "state": "login-normal-790",
+            "viewport": {
+              "width": 790,
+              "height": 886,
+              "devicePixelRatio": 1.0000000149011612
+            },
+            "document": {
+              "scrollHeight": 886,
+              "clientHeight": 886,
+              "scrollWidth": 790
+            },
+            "stylesLoaded": true,
+            "signIn": {
+              "top": 557.9249877929688,
+              "bottom": 601.9249877929688,
+              "width": 216,
+              "height": 44
+            },
+            "sessionCheck": {
+              "top": 557.9249877929688,
+              "bottom": 601.9249877929688,
+              "width": 216,
+              "height": 44
+            },
+            "retryLogout": null,
+            "security": {
+              "top": 646.0750122070312,
+              "bottom": 675.4750118255615,
+              "width": 440,
+              "height": 29.399999618530273
+            },
+            "footer": {
+              "top": 687.4750366210938,
+              "bottom": 706.0750370025635,
+              "width": 192.03750610351562,
+              "height": 18.600000381469727
+            },
+            "summaryFocused": false,
+            "summaryLinks": [],
+            "controls": [
+              {
+                "tag": "INPUT",
+                "height": 44,
+                "width": 440
+              },
+              {
+                "tag": "INPUT",
+                "height": 44,
+                "width": 440
+              },
+              {
+                "tag": "BUTTON",
+                "height": 44,
+                "width": 44
+              },
+              {
+                "tag": "BUTTON",
+                "height": 44,
+                "width": 216
+              },
+              {
+                "tag": "BUTTON",
+                "height": 44,
+                "width": 216
+              }
+            ],
+            "violations": [],
+            "hasVerticalScroll": false,
+            "footerReachable": true
+          },
+          {
+            "state": "login-error-session-790",
+            "viewport": {
+              "width": 790,
+              "height": 886,
+              "devicePixelRatio": 1.0000000149011612
+            },
+            "document": {
+              "scrollHeight": 886,
+              "clientHeight": 886,
+              "scrollWidth": 790
+            },
+            "stylesLoaded": true,
+            "signIn": {
+              "top": 654.6000366210938,
+              "bottom": 698.6000366210938,
+              "width": 216,
+              "height": 44
+            },
+            "sessionCheck": {
+              "top": 654.6000366210938,
+              "bottom": 698.6000366210938,
+              "width": 216,
+              "height": 44
+            },
+            "retryLogout": null,
+            "security": {
+              "top": 742.75,
+              "bottom": 772.1499996185303,
+              "width": 440,
+              "height": 29.399999618530273
+            },
+            "footer": {
+              "top": 784.1500244140625,
+              "bottom": 802.7500247955322,
+              "width": 192.03750610351562,
+              "height": 18.600000381469727
+            },
+            "summaryFocused": true,
+            "summaryLinks": [
+              {
+                "field": "login",
+                "height": 44,
+                "width": 72.7874984741211
+              },
+              {
+                "field": "password",
+                "height": 44,
+                "width": 70.5625
+              }
+            ],
+            "controls": [
+              {
+                "tag": "INPUT",
+                "height": 44,
+                "width": 440
+              },
+              {
+                "tag": "INPUT",
+                "height": 44,
+                "width": 440
+              },
+              {
+                "tag": "BUTTON",
+                "height": 44,
+                "width": 44
+              },
+              {
+                "tag": "BUTTON",
+                "height": 44,
+                "width": 216
+              },
+              {
+                "tag": "BUTTON",
+                "height": 44,
+                "width": 216
+              }
+            ],
+            "violations": [],
+            "hasVerticalScroll": false,
+            "footerReachable": true
+          },
+          {
+            "state": "login-normal-375",
+            "viewport": {
+              "width": 375,
+              "height": 812,
+              "devicePixelRatio": 1.0000000149011612
+            },
+            "document": {
+              "scrollHeight": 812,
+              "clientHeight": 812,
+              "scrollWidth": 375
+            },
+            "stylesLoaded": true,
+            "signIn": {
+              "top": 512.1000366210938,
+              "bottom": 566.1000366210938,
+              "width": 163.60000610351562,
+              "height": 54
+            },
+            "sessionCheck": {
+              "top": 512.1000366210938,
+              "bottom": 566.1000366210938,
+              "width": 163.60000610351562,
+              "height": 54
+            },
+            "retryLogout": null,
+            "security": {
+              "top": 610.25,
+              "bottom": 639.6499996185303,
+              "width": 335.20001220703125,
+              "height": 29.399999618530273
+            },
+            "footer": {
+              "top": 651.6500244140625,
+              "bottom": 670.2500247955322,
+              "width": 192.03750610351562,
+              "height": 18.600000381469727
+            },
+            "summaryFocused": false,
+            "summaryLinks": [],
+            "controls": [
+              {
+                "tag": "INPUT",
+                "height": 44,
+                "width": 335.20001220703125
+              },
+              {
+                "tag": "INPUT",
+                "height": 44,
+                "width": 335.20001220703125
+              },
+              {
+                "tag": "BUTTON",
+                "height": 44,
+                "width": 44
+              },
+              {
+                "tag": "BUTTON",
+                "height": 54,
+                "width": 163.60000610351562
+              },
+              {
+                "tag": "BUTTON",
+                "height": 54,
+                "width": 163.60000610351562
+              }
+            ],
+            "violations": [],
+            "hasVerticalScroll": false,
+            "footerReachable": true
+          },
+          {
+            "state": "login-error-session-375",
+            "viewport": {
+              "width": 375,
+              "height": 812,
+              "devicePixelRatio": 1.0000000149011612
+            },
+            "document": {
+              "scrollHeight": 812,
+              "clientHeight": 812,
+              "scrollWidth": 375
+            },
+            "stylesLoaded": true,
+            "signIn": {
+              "top": 608.7750244140625,
+              "bottom": 662.7750244140625,
+              "width": 163.60000610351562,
+              "height": 54
+            },
+            "sessionCheck": {
+              "top": 608.7750244140625,
+              "bottom": 662.7750244140625,
+              "width": 163.60000610351562,
+              "height": 54
+            },
+            "retryLogout": null,
+            "security": {
+              "top": 706.9249877929688,
+              "bottom": 736.324987411499,
+              "width": 335.20001220703125,
+              "height": 29.399999618530273
+            },
+            "footer": {
+              "top": 748.3250122070312,
+              "bottom": 766.925012588501,
+              "width": 192.03750610351562,
+              "height": 18.600000381469727
+            },
+            "summaryFocused": true,
+            "summaryLinks": [
+              {
+                "field": "login",
+                "height": 44,
+                "width": 72.7874984741211
+              },
+              {
+                "field": "password",
+                "height": 44,
+                "width": 70.5625
+              }
+            ],
+            "controls": [
+              {
+                "tag": "INPUT",
+                "height": 44,
+                "width": 335.20001220703125
+              },
+              {
+                "tag": "INPUT",
+                "height": 44,
+                "width": 335.20001220703125
+              },
+              {
+                "tag": "BUTTON",
+                "height": 44,
+                "width": 44
+              },
+              {
+                "tag": "BUTTON",
+                "height": 54,
+                "width": 163.60000610351562
+              },
+              {
+                "tag": "BUTTON",
+                "height": 54,
+                "width": 163.60000610351562
+              }
+            ],
+            "violations": [],
+            "hasVerticalScroll": false,
+            "footerReachable": true
+          },
+          {
+            "state": "login-normal-390",
+            "viewport": {
+              "width": 390,
+              "height": 844,
+              "devicePixelRatio": 1.0000000149011612
+            },
+            "document": {
+              "scrollHeight": 844,
+              "clientHeight": 844,
+              "scrollWidth": 390
+            },
+            "stylesLoaded": true,
+            "signIn": {
+              "top": 528.1000366210938,
+              "bottom": 582.1000366210938,
+              "width": 171.1999969482422,
+              "height": 54
+            },
+            "sessionCheck": {
+              "top": 528.1000366210938,
+              "bottom": 582.1000366210938,
+              "width": 171.1999969482422,
+              "height": 54
+            },
+            "retryLogout": null,
+            "security": {
+              "top": 626.25,
+              "bottom": 655.6499996185303,
+              "width": 350.3999938964844,
+              "height": 29.399999618530273
+            },
+            "footer": {
+              "top": 667.6500244140625,
+              "bottom": 686.2500247955322,
+              "width": 192.03750610351562,
+              "height": 18.600000381469727
+            },
+            "summaryFocused": false,
+            "summaryLinks": [],
+            "controls": [
+              {
+                "tag": "INPUT",
+                "height": 44,
+                "width": 350.3999938964844
+              },
+              {
+                "tag": "INPUT",
+                "height": 44,
+                "width": 350.3999938964844
+              },
+              {
+                "tag": "BUTTON",
+                "height": 44,
+                "width": 44
+              },
+              {
+                "tag": "BUTTON",
+                "height": 54,
+                "width": 171.1999969482422
+              },
+              {
+                "tag": "BUTTON",
+                "height": 54,
+                "width": 171.1999969482422
+              }
+            ],
+            "violations": [],
+            "hasVerticalScroll": false,
+            "footerReachable": true
+          },
+          {
+            "state": "login-error-session-390",
+            "viewport": {
+              "width": 390,
+              "height": 844,
+              "devicePixelRatio": 1.0000000149011612
+            },
+            "document": {
+              "scrollHeight": 844,
+              "clientHeight": 844,
+              "scrollWidth": 390
+            },
+            "stylesLoaded": true,
+            "signIn": {
+              "top": 624.7750244140625,
+              "bottom": 678.7750244140625,
+              "width": 171.1999969482422,
+              "height": 54
+            },
+            "sessionCheck": {
+              "top": 624.7750244140625,
+              "bottom": 678.7750244140625,
+              "width": 171.1999969482422,
+              "height": 54
+            },
+            "retryLogout": null,
+            "security": {
+              "top": 722.9249877929688,
+              "bottom": 752.324987411499,
+              "width": 350.3999938964844,
+              "height": 29.399999618530273
+            },
+            "footer": {
+              "top": 764.3250122070312,
+              "bottom": 782.925012588501,
+              "width": 192.03750610351562,
+              "height": 18.600000381469727
+            },
+            "summaryFocused": true,
+            "summaryLinks": [
+              {
+                "field": "login",
+                "height": 44,
+                "width": 72.7874984741211
+              },
+              {
+                "field": "password",
+                "height": 44,
+                "width": 70.5625
+              }
+            ],
+            "controls": [
+              {
+                "tag": "INPUT",
+                "height": 44,
+                "width": 350.3999938964844
+              },
+              {
+                "tag": "INPUT",
+                "height": 44,
+                "width": 350.3999938964844
+              },
+              {
+                "tag": "BUTTON",
+                "height": 44,
+                "width": 44
+              },
+              {
+                "tag": "BUTTON",
+                "height": 54,
+                "width": 171.1999969482422
+              },
+              {
+                "tag": "BUTTON",
+                "height": 54,
+                "width": 171.1999969482422
+              }
+            ],
+            "violations": [],
+            "hasVerticalScroll": false,
+            "footerReachable": true
+          },
+          {
+            "state": "login-200-percent-reflow",
+            "viewport": {
+              "width": 683,
+              "height": 384,
+              "devicePixelRatio": 2.5
+            },
+            "document": {
+              "scrollHeight": 760,
+              "clientHeight": 384,
+              "scrollWidth": 668
+            },
+            "stylesLoaded": true,
+            "signIn": {
+              "top": 358.1499938964844,
+              "bottom": 402.1499938964844,
+              "width": 216,
+              "height": 44
+            },
+            "sessionCheck": {
+              "top": 358.1499938964844,
+              "bottom": 402.1499938964844,
+              "width": 216,
+              "height": 44
+            },
+            "retryLogout": null,
+            "security": {
+              "top": 446.3000183105469,
+              "bottom": 475.70001792907715,
+              "width": 440,
+              "height": 29.399999618530273
+            },
+            "footer": {
+              "top": 487.70001220703125,
+              "bottom": 506.300012588501,
+              "width": 192.03750610351562,
+              "height": 18.600000381469727
+            },
+            "summaryFocused": true,
+            "summaryLinks": [
+              {
+                "field": "login",
+                "height": 44,
+                "width": 72.7874984741211
+              },
+              {
+                "field": "password",
+                "height": 44,
+                "width": 70.5625
+              }
+            ],
+            "controls": [
+              {
+                "tag": "INPUT",
+                "height": 44,
+                "width": 440
+              },
+              {
+                "tag": "INPUT",
+                "height": 44,
+                "width": 440
+              },
+              {
+                "tag": "BUTTON",
+                "height": 44,
+                "width": 44
+              },
+              {
+                "tag": "BUTTON",
+                "height": 44,
+                "width": 216
+              },
+              {
+                "tag": "BUTTON",
+                "height": 44,
+                "width": 216
+              }
+            ],
+            "violations": [],
+            "hasVerticalScroll": true,
+            "footerReachable": true
+          },
+          {
+            "state": "login-short-landscape",
+            "viewport": {
+              "width": 812,
+              "height": 375,
+              "devicePixelRatio": 1.0000000149011612
+            },
+            "document": {
+              "scrollHeight": 690,
+              "clientHeight": 375,
+              "scrollWidth": 797
+            },
+            "stylesLoaded": true,
+            "signIn": {
+              "top": 469.95001220703125,
+              "bottom": 513.9500122070312,
+              "width": 179.125,
+              "height": 44
+            },
+            "sessionCheck": {
+              "top": 469.95001220703125,
+              "bottom": 513.9500122070312,
+              "width": 179.1374969482422,
+              "height": 44
+            },
+            "retryLogout": null,
+            "security": {
+              "top": 558.1000366210938,
+              "bottom": 587.500036239624,
+              "width": 366.26251220703125,
+              "height": 29.399999618530273
+            },
+            "footer": {
+              "top": 603.5,
+              "bottom": 622.1000003814697,
+              "width": 192.03750610351562,
+              "height": 18.600000381469727
+            },
+            "summaryFocused": true,
+            "summaryLinks": [
+              {
+                "field": "login",
+                "height": 44,
+                "width": 72.7874984741211
+              },
+              {
+                "field": "password",
+                "height": 44,
+                "width": 70.5625
+              }
+            ],
+            "controls": [
+              {
+                "tag": "INPUT",
+                "height": 44,
+                "width": 366.26251220703125
+              },
+              {
+                "tag": "INPUT",
+                "height": 44,
+                "width": 366.26251220703125
+              },
+              {
+                "tag": "BUTTON",
+                "height": 44,
+                "width": 44
+              },
+              {
+                "tag": "BUTTON",
+                "height": 44,
+                "width": 179.125
+              },
+              {
+                "tag": "BUTTON",
+                "height": 44,
+                "width": 179.1374969482422
+              }
+            ],
+            "violations": [],
+            "hasVerticalScroll": true,
+            "footerReachable": true
+          },
+          {
+            "state": "COUNTER_STAFF-overview-desktop",
+            "viewport": {
+              "width": 1366,
+              "height": 768,
+              "devicePixelRatio": 1.0000000149011612
+            },
+            "document": {
+              "scrollHeight": 768,
+              "clientHeight": 768,
+              "scrollWidth": 1366
+            },
+            "stylesLoaded": true,
+            "signIn": null,
+            "sessionCheck": null,
+            "retryLogout": null,
+            "security": null,
+            "footer": {
+              "top": 713.7000122070312,
+              "bottom": 768.0000114440918,
+              "width": 1118.4000244140625,
+              "height": 54.29999923706055
+            },
+            "summaryFocused": false,
+            "summaryLinks": [],
+            "controls": [
+              {
+                "tag": "BUTTON",
+                "height": 44,
+                "width": 96.45000457763672
+              },
+              {
+                "tag": "SELECT",
+                "height": 44,
+                "width": 128.8000030517578
+              },
+              {
+                "tag": "A",
+                "height": 88,
+                "width": 346.125
+              },
+              {
+                "tag": "A",
+                "height": 88,
+                "width": 346.13751220703125
+              },
+              {
+                "tag": "A",
+                "height": 88,
+                "width": 346.125
+              }
+            ],
+            "violations": [],
+            "hasVerticalScroll": false
+          },
+          {
+            "state": "COUNTER_STAFF-overview-1366",
+            "viewport": {
+              "width": 1366,
+              "height": 768,
+              "devicePixelRatio": 1.0000000149011612
+            },
+            "document": {
+              "scrollHeight": 768,
+              "clientHeight": 768,
+              "scrollWidth": 1366
+            },
+            "stylesLoaded": true,
+            "signIn": null,
+            "sessionCheck": null,
+            "retryLogout": null,
+            "security": null,
+            "footer": {
+              "top": 713.7000122070312,
+              "bottom": 768.0000114440918,
+              "width": 1118.4000244140625,
+              "height": 54.29999923706055
+            },
+            "summaryFocused": false,
+            "summaryLinks": [],
+            "controls": [
+              {
+                "tag": "BUTTON",
+                "height": 44,
+                "width": 96.45000457763672
+              },
+              {
+                "tag": "SELECT",
+                "height": 44,
+                "width": 128.8000030517578
+              },
+              {
+                "tag": "A",
+                "height": 88,
+                "width": 346.125
+              },
+              {
+                "tag": "A",
+                "height": 88,
+                "width": 346.13751220703125
+              },
+              {
+                "tag": "A",
+                "height": 88,
+                "width": 346.125
+              }
+            ],
+            "violations": [],
+            "hasVerticalScroll": false
+          },
+          {
+            "state": "COUNTER_STAFF-reserved-registrations-1366",
+            "viewport": {
+              "width": 1366,
+              "height": 768,
+              "devicePixelRatio": 1.0000000149011612
+            },
+            "document": {
+              "scrollHeight": 768,
+              "clientHeight": 768,
+              "scrollWidth": 1366
+            },
+            "stylesLoaded": true,
+            "signIn": null,
+            "sessionCheck": null,
+            "retryLogout": null,
+            "security": null,
+            "footer": {
+              "top": 713.7000122070312,
+              "bottom": 768.0000114440918,
+              "width": 1118.4000244140625,
+              "height": 54.29999923706055
+            },
+            "summaryFocused": false,
+            "summaryLinks": [],
+            "controls": [
+              {
+                "tag": "BUTTON",
+                "height": 44,
+                "width": 96.45000457763672
+              },
+              {
+                "tag": "SELECT",
+                "height": 44,
+                "width": 128.8000030517578
+              }
+            ],
+            "violations": [],
+            "hasVerticalScroll": false
+          },
+          {
+            "state": "COUNTER_STAFF-reserved-registration-qr-1366",
+            "viewport": {
+              "width": 1366,
+              "height": 768,
+              "devicePixelRatio": 1.0000000149011612
+            },
+            "document": {
+              "scrollHeight": 768,
+              "clientHeight": 768,
+              "scrollWidth": 1366
+            },
+            "stylesLoaded": true,
+            "signIn": null,
+            "sessionCheck": null,
+            "retryLogout": null,
+            "security": null,
+            "footer": {
+              "top": 713.7000122070312,
+              "bottom": 768.0000114440918,
+              "width": 1118.4000244140625,
+              "height": 54.29999923706055
+            },
+            "summaryFocused": false,
+            "summaryLinks": [],
+            "controls": [
+              {
+                "tag": "BUTTON",
+                "height": 44,
+                "width": 96.45000457763672
+              },
+              {
+                "tag": "SELECT",
+                "height": 44,
+                "width": 128.8000030517578
+              }
+            ],
+            "violations": [],
+            "hasVerticalScroll": false
+          },
+          {
+            "state": "COUNTER_STAFF-reserved-passes-1366",
+            "viewport": {
+              "width": 1366,
+              "height": 768,
+              "devicePixelRatio": 1.0000000149011612
+            },
+            "document": {
+              "scrollHeight": 768,
+              "clientHeight": 768,
+              "scrollWidth": 1366
+            },
+            "stylesLoaded": true,
+            "signIn": null,
+            "sessionCheck": null,
+            "retryLogout": null,
+            "security": null,
+            "footer": {
+              "top": 713.7000122070312,
+              "bottom": 768.0000114440918,
+              "width": 1118.4000244140625,
+              "height": 54.29999923706055
+            },
+            "summaryFocused": false,
+            "summaryLinks": [],
+            "controls": [
+              {
+                "tag": "BUTTON",
+                "height": 44,
+                "width": 96.45000457763672
+              },
+              {
+                "tag": "SELECT",
+                "height": 44,
+                "width": 128.8000030517578
+              }
+            ],
+            "violations": [],
+            "hasVerticalScroll": false
+          },
+          {
+            "state": "COUNTER_STAFF-overview-375",
+            "viewport": {
+              "width": 375,
+              "height": 812,
+              "devicePixelRatio": 1.0000000149011612
+            },
+            "document": {
+              "scrollHeight": 812,
+              "clientHeight": 812,
+              "scrollWidth": 375
+            },
+            "stylesLoaded": true,
+            "signIn": null,
+            "sessionCheck": null,
+            "retryLogout": null,
+            "security": null,
+            "footer": {
+              "top": 771.7000122070312,
+              "bottom": 812.0000114440918,
+              "width": 375.20001220703125,
+              "height": 40.29999923706055
+            },
+            "summaryFocused": false,
+            "summaryLinks": [],
+            "controls": [
+              {
+                "tag": "BUTTON",
+                "height": 44,
+                "width": 58.60000228881836
+              },
+              {
+                "tag": "BUTTON",
+                "height": 44,
+                "width": 44
+              },
+              {
+                "tag": "SELECT",
+                "height": 44,
+                "width": 128.8000030517578
+              },
+              {
+                "tag": "A",
+                "height": 68,
+                "width": 335.20001220703125
+              },
+              {
+                "tag": "A",
+                "height": 68,
+                "width": 335.20001220703125
+              },
+              {
+                "tag": "A",
+                "height": 68,
+                "width": 335.20001220703125
+              }
+            ],
+            "violations": [],
+            "hasVerticalScroll": false
+          },
+          {
+            "state": "COUNTER_STAFF-reserved-registrations-375",
+            "viewport": {
+              "width": 375,
+              "height": 812,
+              "devicePixelRatio": 1.0000000149011612
+            },
+            "document": {
+              "scrollHeight": 812,
+              "clientHeight": 812,
+              "scrollWidth": 375
+            },
+            "stylesLoaded": true,
+            "signIn": null,
+            "sessionCheck": null,
+            "retryLogout": null,
+            "security": null,
+            "footer": {
+              "top": 771.7000122070312,
+              "bottom": 812.0000114440918,
+              "width": 375.20001220703125,
+              "height": 40.29999923706055
+            },
+            "summaryFocused": false,
+            "summaryLinks": [],
+            "controls": [
+              {
+                "tag": "BUTTON",
+                "height": 44,
+                "width": 58.60000228881836
+              },
+              {
+                "tag": "BUTTON",
+                "height": 44,
+                "width": 44
+              },
+              {
+                "tag": "SELECT",
+                "height": 44,
+                "width": 128.8000030517578
+              }
+            ],
+            "violations": [],
+            "hasVerticalScroll": false
+          },
+          {
+            "state": "COUNTER_STAFF-reserved-registration-qr-375",
+            "viewport": {
+              "width": 375,
+              "height": 812,
+              "devicePixelRatio": 1.0000000149011612
+            },
+            "document": {
+              "scrollHeight": 812,
+              "clientHeight": 812,
+              "scrollWidth": 375
+            },
+            "stylesLoaded": true,
+            "signIn": null,
+            "sessionCheck": null,
+            "retryLogout": null,
+            "security": null,
+            "footer": {
+              "top": 771.7000122070312,
+              "bottom": 812.0000114440918,
+              "width": 375.20001220703125,
+              "height": 40.29999923706055
+            },
+            "summaryFocused": false,
+            "summaryLinks": [],
+            "controls": [
+              {
+                "tag": "BUTTON",
+                "height": 44,
+                "width": 58.60000228881836
+              },
+              {
+                "tag": "BUTTON",
+                "height": 44,
+                "width": 44
+              },
+              {
+                "tag": "SELECT",
+                "height": 44,
+                "width": 128.8000030517578
+              }
+            ],
+            "violations": [],
+            "hasVerticalScroll": false
+          },
+          {
+            "state": "COUNTER_STAFF-reserved-passes-375",
+            "viewport": {
+              "width": 375,
+              "height": 812,
+              "devicePixelRatio": 1.0000000149011612
+            },
+            "document": {
+              "scrollHeight": 812,
+              "clientHeight": 812,
+              "scrollWidth": 375
+            },
+            "stylesLoaded": true,
+            "signIn": null,
+            "sessionCheck": null,
+            "retryLogout": null,
+            "security": null,
+            "footer": {
+              "top": 771.7000122070312,
+              "bottom": 812.0000114440918,
+              "width": 375.20001220703125,
+              "height": 40.29999923706055
+            },
+            "summaryFocused": false,
+            "summaryLinks": [],
+            "controls": [
+              {
+                "tag": "BUTTON",
+                "height": 44,
+                "width": 58.60000228881836
+              },
+              {
+                "tag": "BUTTON",
+                "height": 44,
+                "width": 44
+              },
+              {
+                "tag": "SELECT",
+                "height": 44,
+                "width": 128.8000030517578
+              }
+            ],
+            "violations": [],
+            "hasVerticalScroll": false
+          },
+          {
+            "state": "COUNTER_STAFF-access-restricted-mobile",
+            "viewport": {
+              "width": 375,
+              "height": 812,
+              "devicePixelRatio": 1.0000000149011612
+            },
+            "document": {
+              "scrollHeight": 812,
+              "clientHeight": 812,
+              "scrollWidth": 375
+            },
+            "stylesLoaded": true,
+            "signIn": null,
+            "sessionCheck": null,
+            "retryLogout": null,
+            "security": null,
+            "footer": null,
+            "summaryFocused": false,
+            "summaryLinks": [],
+            "controls": [
+              {
+                "tag": "A",
+                "height": 44,
+                "width": 199.5500030517578
+              }
+            ],
+            "violations": [],
+            "hasVerticalScroll": false
+          },
+          {
+            "state": "ADMIN-overview-desktop",
+            "viewport": {
+              "width": 1366,
+              "height": 768,
+              "devicePixelRatio": 1.0000000149011612
+            },
+            "document": {
+              "scrollHeight": 768,
+              "clientHeight": 768,
+              "scrollWidth": 1366
+            },
+            "stylesLoaded": true,
+            "signIn": null,
+            "sessionCheck": null,
+            "retryLogout": null,
+            "security": null,
+            "footer": {
+              "top": 713.7000122070312,
+              "bottom": 768.0000114440918,
+              "width": 1118.4000244140625,
+              "height": 54.29999923706055
+            },
+            "summaryFocused": false,
+            "summaryLinks": [],
+            "controls": [
+              {
+                "tag": "BUTTON",
+                "height": 44,
+                "width": 96.45000457763672
+              },
+              {
+                "tag": "A",
+                "height": 88,
+                "width": 346.125
+              },
+              {
+                "tag": "A",
+                "height": 88,
+                "width": 346.13751220703125
+              },
+              {
+                "tag": "A",
+                "height": 88,
+                "width": 346.125
+              }
+            ],
+            "violations": [],
+            "hasVerticalScroll": false
+          },
+          {
+            "state": "ADMIN-overview-1366",
+            "viewport": {
+              "width": 1366,
+              "height": 768,
+              "devicePixelRatio": 1.0000000149011612
+            },
+            "document": {
+              "scrollHeight": 768,
+              "clientHeight": 768,
+              "scrollWidth": 1366
+            },
+            "stylesLoaded": true,
+            "signIn": null,
+            "sessionCheck": null,
+            "retryLogout": null,
+            "security": null,
+            "footer": {
+              "top": 713.7000122070312,
+              "bottom": 768.0000114440918,
+              "width": 1118.4000244140625,
+              "height": 54.29999923706055
+            },
+            "summaryFocused": false,
+            "summaryLinks": [],
+            "controls": [
+              {
+                "tag": "BUTTON",
+                "height": 44,
+                "width": 96.45000457763672
+              },
+              {
+                "tag": "A",
+                "height": 88,
+                "width": 346.125
+              },
+              {
+                "tag": "A",
+                "height": 88,
+                "width": 346.13751220703125
+              },
+              {
+                "tag": "A",
+                "height": 88,
+                "width": 346.125
+              }
+            ],
+            "violations": [],
+            "hasVerticalScroll": false
+          },
+          {
+            "state": "ADMIN-reserved-users-1366",
+            "viewport": {
+              "width": 1366,
+              "height": 768,
+              "devicePixelRatio": 1.0000000149011612
+            },
+            "document": {
+              "scrollHeight": 768,
+              "clientHeight": 768,
+              "scrollWidth": 1366
+            },
+            "stylesLoaded": true,
+            "signIn": null,
+            "sessionCheck": null,
+            "retryLogout": null,
+            "security": null,
+            "footer": {
+              "top": 713.7000122070312,
+              "bottom": 768.0000114440918,
+              "width": 1118.4000244140625,
+              "height": 54.29999923706055
+            },
+            "summaryFocused": false,
+            "summaryLinks": [],
+            "controls": [
+              {
+                "tag": "BUTTON",
+                "height": 44,
+                "width": 96.45000457763672
+              }
+            ],
+            "violations": [],
+            "hasVerticalScroll": false
+          },
+          {
+            "state": "ADMIN-reserved-settings-1366",
+            "viewport": {
+              "width": 1366,
+              "height": 768,
+              "devicePixelRatio": 1.0000000149011612
+            },
+            "document": {
+              "scrollHeight": 768,
+              "clientHeight": 768,
+              "scrollWidth": 1366
+            },
+            "stylesLoaded": true,
+            "signIn": null,
+            "sessionCheck": null,
+            "retryLogout": null,
+            "security": null,
+            "footer": {
+              "top": 713.7000122070312,
+              "bottom": 768.0000114440918,
+              "width": 1118.4000244140625,
+              "height": 54.29999923706055
+            },
+            "summaryFocused": false,
+            "summaryLinks": [],
+            "controls": [
+              {
+                "tag": "BUTTON",
+                "height": 44,
+                "width": 96.45000457763672
+              }
+            ],
+            "violations": [],
+            "hasVerticalScroll": false
+          },
+          {
+            "state": "ADMIN-reserved-audit-1366",
+            "viewport": {
+              "width": 1366,
+              "height": 768,
+              "devicePixelRatio": 1.0000000149011612
+            },
+            "document": {
+              "scrollHeight": 768,
+              "clientHeight": 768,
+              "scrollWidth": 1366
+            },
+            "stylesLoaded": true,
+            "signIn": null,
+            "sessionCheck": null,
+            "retryLogout": null,
+            "security": null,
+            "footer": {
+              "top": 713.7000122070312,
+              "bottom": 768.0000114440918,
+              "width": 1118.4000244140625,
+              "height": 54.29999923706055
+            },
+            "summaryFocused": false,
+            "summaryLinks": [],
+            "controls": [
+              {
+                "tag": "BUTTON",
+                "height": 44,
+                "width": 96.45000457763672
+              }
+            ],
+            "violations": [],
+            "hasVerticalScroll": false
+          },
+          {
+            "state": "ADMIN-overview-375",
+            "viewport": {
+              "width": 375,
+              "height": 812,
+              "devicePixelRatio": 1.0000000149011612
+            },
+            "document": {
+              "scrollHeight": 812,
+              "clientHeight": 812,
+              "scrollWidth": 375
+            },
+            "stylesLoaded": true,
+            "signIn": null,
+            "sessionCheck": null,
+            "retryLogout": null,
+            "security": null,
+            "footer": {
+              "top": 771.7000122070312,
+              "bottom": 812.0000114440918,
+              "width": 375.20001220703125,
+              "height": 40.29999923706055
+            },
+            "summaryFocused": false,
+            "summaryLinks": [],
+            "controls": [
+              {
+                "tag": "BUTTON",
+                "height": 44,
+                "width": 58.60000228881836
+              },
+              {
+                "tag": "BUTTON",
+                "height": 44,
+                "width": 44
+              },
+              {
+                "tag": "A",
+                "height": 68,
+                "width": 335.20001220703125
+              },
+              {
+                "tag": "A",
+                "height": 68,
+                "width": 335.20001220703125
+              },
+              {
+                "tag": "A",
+                "height": 68,
+                "width": 335.20001220703125
+              }
+            ],
+            "violations": [],
+            "hasVerticalScroll": false
+          },
+          {
+            "state": "ADMIN-reserved-users-375",
+            "viewport": {
+              "width": 375,
+              "height": 812,
+              "devicePixelRatio": 1.0000000149011612
+            },
+            "document": {
+              "scrollHeight": 812,
+              "clientHeight": 812,
+              "scrollWidth": 375
+            },
+            "stylesLoaded": true,
+            "signIn": null,
+            "sessionCheck": null,
+            "retryLogout": null,
+            "security": null,
+            "footer": {
+              "top": 771.7000122070312,
+              "bottom": 812.0000114440918,
+              "width": 375.20001220703125,
+              "height": 40.29999923706055
+            },
+            "summaryFocused": false,
+            "summaryLinks": [],
+            "controls": [
+              {
+                "tag": "BUTTON",
+                "height": 44,
+                "width": 58.60000228881836
+              },
+              {
+                "tag": "BUTTON",
+                "height": 44,
+                "width": 44
+              }
+            ],
+            "violations": [],
+            "hasVerticalScroll": false
+          },
+          {
+            "state": "ADMIN-reserved-settings-375",
+            "viewport": {
+              "width": 375,
+              "height": 812,
+              "devicePixelRatio": 1.0000000149011612
+            },
+            "document": {
+              "scrollHeight": 812,
+              "clientHeight": 812,
+              "scrollWidth": 375
+            },
+            "stylesLoaded": true,
+            "signIn": null,
+            "sessionCheck": null,
+            "retryLogout": null,
+            "security": null,
+            "footer": {
+              "top": 771.7000122070312,
+              "bottom": 812.0000114440918,
+              "width": 375.20001220703125,
+              "height": 40.29999923706055
+            },
+            "summaryFocused": false,
+            "summaryLinks": [],
+            "controls": [
+              {
+                "tag": "BUTTON",
+                "height": 44,
+                "width": 58.60000228881836
+              },
+              {
+                "tag": "BUTTON",
+                "height": 44,
+                "width": 44
+              }
+            ],
+            "violations": [],
+            "hasVerticalScroll": false
+          },
+          {
+            "state": "ADMIN-reserved-audit-375",
+            "viewport": {
+              "width": 375,
+              "height": 812,
+              "devicePixelRatio": 1.0000000149011612
+            },
+            "document": {
+              "scrollHeight": 812,
+              "clientHeight": 812,
+              "scrollWidth": 375
+            },
+            "stylesLoaded": true,
+            "signIn": null,
+            "sessionCheck": null,
+            "retryLogout": null,
+            "security": null,
+            "footer": {
+              "top": 771.7000122070312,
+              "bottom": 812.0000114440918,
+              "width": 375.20001220703125,
+              "height": 40.29999923706055
+            },
+            "summaryFocused": false,
+            "summaryLinks": [],
+            "controls": [
+              {
+                "tag": "BUTTON",
+                "height": 44,
+                "width": 58.60000228881836
+              },
+              {
+                "tag": "BUTTON",
+                "height": 44,
+                "width": 44
+              }
+            ],
+            "violations": [],
+            "hasVerticalScroll": false
+          },
+          {
+            "state": "ADMIN-access-restricted-mobile",
+            "viewport": {
+              "width": 375,
+              "height": 812,
+              "devicePixelRatio": 1.0000000149011612
+            },
+            "document": {
+              "scrollHeight": 812,
+              "clientHeight": 812,
+              "scrollWidth": 375
+            },
+            "stylesLoaded": true,
+            "signIn": null,
+            "sessionCheck": null,
+            "retryLogout": null,
+            "security": null,
+            "footer": null,
+            "summaryFocused": false,
+            "summaryLinks": [],
+            "controls": [
+              {
+                "tag": "A",
+                "height": 44,
+                "width": 199.5500030517578
+              }
+            ],
+            "violations": [],
+            "hasVerticalScroll": false
+          },
+          {
+            "state": "logout-unknown-mobile",
+            "viewport": {
+              "width": 375,
+              "height": 812,
+              "devicePixelRatio": 1.0000000149011612
+            },
+            "document": {
+              "scrollHeight": 812,
+              "clientHeight": 812,
+              "scrollWidth": 375
+            },
+            "stylesLoaded": true,
+            "signIn": {
+              "top": 584.9500122070312,
+              "bottom": 638.9500122070312,
+              "width": 163.60000610351562,
+              "height": 54
+            },
+            "sessionCheck": {
+              "top": 584.9500122070312,
+              "bottom": 638.9500122070312,
+              "width": 163.60000610351562,
+              "height": 54
+            },
+            "retryLogout": {
+              "top": 352.75,
+              "bottom": 396.75,
+              "width": 131.58750915527344,
+              "height": 44
+            },
+            "security": {
+              "top": 683.1000366210938,
+              "bottom": 712.500036239624,
+              "width": 335.20001220703125,
+              "height": 29.399999618530273
+            },
+            "footer": {
+              "top": 724.5,
+              "bottom": 743.1000003814697,
+              "width": 192.03750610351562,
+              "height": 18.600000381469727
+            },
+            "summaryFocused": false,
+            "summaryLinks": [],
+            "controls": [
+              {
+                "tag": "BUTTON",
+                "height": 44,
+                "width": 131.58750915527344
+              },
+              {
+                "tag": "INPUT",
+                "height": 44,
+                "width": 335.20001220703125
+              },
+              {
+                "tag": "INPUT",
+                "height": 44,
+                "width": 335.20001220703125
+              },
+              {
+                "tag": "BUTTON",
+                "height": 44,
+                "width": 44
+              },
+              {
+                "tag": "BUTTON",
+                "height": 54,
+                "width": 163.60000610351562
+              },
+              {
+                "tag": "BUTTON",
+                "height": 54,
+                "width": 163.60000610351562
+              }
+            ],
+            "violations": [],
+            "hasVerticalScroll": false,
+            "footerReachable": true
+          },
+          {
+            "state": "visitor-pending-mobile",
+            "viewport": {
+              "width": 375,
+              "height": 812,
+              "devicePixelRatio": 1.0000000149011612
+            },
+            "document": {
+              "scrollHeight": 812,
+              "clientHeight": 812,
+              "scrollWidth": 375
+            },
+            "stylesLoaded": true,
+            "signIn": null,
+            "sessionCheck": null,
+            "retryLogout": null,
+            "security": null,
+            "footer": null,
+            "summaryFocused": false,
+            "summaryLinks": [],
+            "controls": [],
+            "violations": [],
+            "hasVerticalScroll": false
+          },
+          {
+            "state": "page-not-found-mobile",
+            "viewport": {
+              "width": 375,
+              "height": 812,
+              "devicePixelRatio": 1.0000000149011612
+            },
+            "document": {
+              "scrollHeight": 812,
+              "clientHeight": 812,
+              "scrollWidth": 375
+            },
+            "stylesLoaded": true,
+            "signIn": null,
+            "sessionCheck": null,
+            "retryLogout": null,
+            "security": null,
+            "footer": null,
+            "summaryFocused": false,
+            "summaryLinks": [],
+            "controls": [
+              {
+                "tag": "A",
+                "height": 44,
+                "width": 136.71250915527344
+              }
+            ],
+            "violations": [],
+            "hasVerticalScroll": false
+          },
+          {
+            "state": "bootstrap-error-mobile",
+            "viewport": {
+              "width": 375,
+              "height": 812,
+              "devicePixelRatio": 1.0000000149011612
+            },
+            "document": {
+              "scrollHeight": 812,
+              "clientHeight": 812,
+              "scrollWidth": 375
+            },
+            "stylesLoaded": true,
+            "signIn": null,
+            "sessionCheck": null,
+            "retryLogout": null,
+            "security": null,
+            "footer": null,
+            "summaryFocused": false,
+            "summaryLinks": [],
+            "controls": [
+              {
+                "tag": "BUTTON",
+                "height": 44,
+                "width": 74.3375015258789
+              }
+            ],
+            "violations": [],
+            "hasVerticalScroll": false
+          },
+          {
+            "state": "bootstrap-loading-mobile",
+            "viewport": {
+              "width": 375,
+              "height": 812,
+              "devicePixelRatio": 1.0000000149011612
+            },
+            "document": {
+              "scrollHeight": 812,
+              "clientHeight": 812,
+              "scrollWidth": 375
+            },
+            "stylesLoaded": true,
+            "signIn": null,
+            "sessionCheck": null,
+            "retryLogout": null,
+            "security": null,
+            "footer": null,
+            "summaryFocused": false,
+            "summaryLinks": [],
+            "controls": [],
+            "violations": [],
+            "hasVerticalScroll": false
+          }
+        ]
+      }
+    },
+    "overview-targeted-results.json": {
+      "stage": "4 strict mobile overview fit checks after final counter-select CSS",
+      "originalReceiptLastWriteUtc": "2026-10-09T05:11:22.712859+00:00",
+      "receipt": {
+        "synthetic": true,
+        "fitAssertions": true,
+        "results": [
+          {
+            "role": "COUNTER_STAFF",
+            "viewport": {
+              "width": 375,
+              "height": 812
+            },
+            "scrollHeight": 812,
+            "clientHeight": 812,
+            "scrollWidth": 375,
+            "footerBottom": 812.0000114440918,
+            "violations": []
+          },
+          {
+            "role": "COUNTER_STAFF",
+            "viewport": {
+              "width": 390,
+              "height": 844
+            },
+            "scrollHeight": 844,
+            "clientHeight": 844,
+            "scrollWidth": 390,
+            "footerBottom": 844.0000114440918,
+            "violations": []
+          },
+          {
+            "role": "ADMIN",
+            "viewport": {
+              "width": 375,
+              "height": 812
+            },
+            "scrollHeight": 812,
+            "clientHeight": 812,
+            "scrollWidth": 375,
+            "footerBottom": 812.0000114440918,
+            "violations": []
+          },
+          {
+            "role": "ADMIN",
+            "viewport": {
+              "width": 390,
+              "height": 844
+            },
+            "scrollHeight": 844,
+            "clientHeight": 844,
+            "scrollWidth": 390,
+            "footerBottom": 844.0000114440918,
+            "violations": []
+          }
+        ]
+      }
+    },
+    "counter-long-id-results.json": {
+      "stage": "2 shared chooser checks after final counter-select CSS; CSS zoom simulation only",
+      "originalReceiptLastWriteUtc": "2026-10-09T05:03:36.287735+00:00",
+      "receipt": {
+        "synthetic": true,
+        "scope": "Shared counter chooser only; CSS zoom simulation, no M02 source or business operation",
+        "results": [
+          {
+            "cssZoom": 1,
+            "nativeBrowserZoom": "NOT_RUN",
+            "viewport": {
+              "width": 375,
+              "height": 812
+            },
+            "scrollWidth": 375,
+            "select": {
+              "left": 121.9749984741211,
+              "right": 331.9749984741211,
+              "top": 84,
+              "bottom": 128,
+              "width": 210,
+              "height": 44
+            },
+            "container": {
+              "left": 20,
+              "right": 355.20001220703125,
+              "top": 84,
+              "bottom": 136.79999923706055,
+              "width": 335.20001220703125,
+              "height": 52.79999923706055
+            },
+            "selectedValue": "9007199254741002",
+            "optionValues": [
+              "9007199254741001",
+              "9007199254741002"
+            ],
+            "violations": []
+          },
+          {
+            "cssZoom": 2,
+            "nativeBrowserZoom": "NOT_RUN",
+            "viewport": {
+              "width": 375,
+              "height": 812
+            },
+            "scrollWidth": 360,
+            "select": {
+              "left": 40,
+              "right": 320,
+              "top": 229.1999969482422,
+              "bottom": 317.1999969482422,
+              "width": 280,
+              "height": 88
+            },
+            "container": {
+              "left": 40,
+              "right": 320,
+              "top": 168,
+              "bottom": 334.8000030517578,
+              "width": 280,
+              "height": 166.8000030517578
+            },
+            "selectedValue": "9007199254741002",
+            "optionValues": [
+              "9007199254741001",
+              "9007199254741002"
+            ],
+            "violations": []
+          }
+        ]
+      }
+    },
+    "reflow-targeted-results.json": {
+      "stage": "1 corrected CDP reflow check after synchronizing Playwright viewport; replaces prior reflow screenshot",
+      "originalReceiptLastWriteUtc": "2026-10-09T05:11:16.802461+00:00",
+      "receipt": {
+        "synthetic": true,
+        "nativeBrowserZoom": "NOT_RUN",
+        "mode": "CDP 200% desktop reflow simulation with effective 683x384 CSS viewport and doubled DPR2.5",
+        "footerReachable": true,
+        "viewport": {
+          "width": 683,
+          "height": 384,
+          "devicePixelRatio": 2.5
+        },
+        "scrollHeight": 760,
+        "clientHeight": 384,
+        "scrollWidth": 668,
+        "violations": []
+      }
+    }
+  },
+  "visualQa": {
+    "method": "Representative screenshot inspection plus measured bounds and axe; not a manual inspection claim for every image.",
+    "resumedTurnInspected": [
+      "login-200-percent-reflow.png",
+      "login-short-landscape.png",
+      "COUNTER_STAFF-overview-375.png",
+      "ADMIN-reserved-users-375.png",
+      "visitor-pending-mobile.png",
+      "counter-long-id-css-zoom-2.png"
+    ]
+  },
+  "screenshots": [
+    {
+      "path": "screenshots/ui-maintenance/ADMIN-overview-375.png",
+      "bytes": 48170,
+      "sha256": "5a42a39bda8b8e9fa5a30533ca6ed962c4f24ccf28e6bf2deef5875a019929e6",
+      "captureLastWriteUtc": "2026-10-09T04:55:18.254682+00:00",
+      "receiptSource": "browser-results.json"
+    },
+    {
+      "path": "screenshots/ui-maintenance/ADMIN-overview-desktop.png",
+      "bytes": 72877,
+      "sha256": "439846d7e608bd8e69a53052dc16bbe507cddc4ddaab18a77a2d6165b5cda16d",
+      "captureLastWriteUtc": "2026-10-09T04:55:15.185498+00:00",
+      "receiptSource": "browser-results.json"
+    },
+    {
+      "path": "screenshots/ui-maintenance/ADMIN-reserved-users-375.png",
+      "bytes": 29745,
+      "sha256": "b58fa495d2e7441ab2a2e7e8e29db515488e533238254d257fb82595fb3e326c",
+      "captureLastWriteUtc": "2026-10-09T04:55:18.743783+00:00",
+      "receiptSource": "browser-results.json"
+    },
+    {
+      "path": "screenshots/ui-maintenance/bootstrap-error-mobile.png",
+      "bytes": 15142,
+      "sha256": "00d44678dc2bb56adaef7bb95b38239494759b27670ef6605103f45c22b7f4d4",
+      "captureLastWriteUtc": "2026-10-09T04:55:23.253001+00:00",
+      "receiptSource": "browser-results.json"
+    },
+    {
+      "path": "screenshots/ui-maintenance/counter-long-id-css-zoom-1.png",
+      "bytes": 52837,
+      "sha256": "507ad9c4625ffa430666428a24cd631cea5ce29c40638e4aaca092608e4599bf",
+      "captureLastWriteUtc": "2026-10-09T05:03:35.325087+00:00",
+      "receiptSource": "counter-long-id-results.json"
+    },
+    {
+      "path": "screenshots/ui-maintenance/counter-long-id-css-zoom-2.png",
+      "bytes": 124728,
+      "sha256": "eceaa5cf965f3ef589c0fec3cd00b847658a17d454d9923a28ae56f611ef7f34",
+      "captureLastWriteUtc": "2026-10-09T05:03:35.551123+00:00",
+      "receiptSource": "counter-long-id-results.json"
+    },
+    {
+      "path": "screenshots/ui-maintenance/COUNTER_STAFF-overview-375.png",
+      "bytes": 51626,
+      "sha256": "90b85533b7419e99e29260652697851f58a5a870af34cd077e17ed7689aef338",
+      "captureLastWriteUtc": "2026-10-09T04:55:11.207402+00:00",
+      "receiptSource": "browser-results.json"
+    },
+    {
+      "path": "screenshots/ui-maintenance/COUNTER_STAFF-overview-desktop.png",
+      "bytes": 78337,
+      "sha256": "76b2a21eabc11664b177211cd9a6d5e6512df3bc8df46cff74fd7a8aa0768007",
+      "captureLastWriteUtc": "2026-10-09T04:55:08.753573+00:00",
+      "receiptSource": "browser-results.json"
+    },
+    {
+      "path": "screenshots/ui-maintenance/COUNTER_STAFF-reserved-registrations-375.png",
+      "bytes": 33741,
+      "sha256": "1bb0932c82a6864e97d692edd48f4c28a8522f3d2597e7c4b1c51adb864b1fd5",
+      "captureLastWriteUtc": "2026-10-09T04:55:11.768998+00:00",
+      "receiptSource": "browser-results.json"
+    },
+    {
+      "path": "screenshots/ui-maintenance/login-200-percent-reflow.png",
+      "bytes": 52332,
+      "sha256": "d9809294566d9958756ea4c9d63aabbb306d86c6398747d3d8a12eecfb4f6870",
+      "captureLastWriteUtc": "2026-10-09T05:11:15.952453+00:00",
+      "receiptSource": "reflow-targeted-results.json"
+    },
+    {
+      "path": "screenshots/ui-maintenance/login-error-session-1366.png",
+      "bytes": 97987,
+      "sha256": "32aeb69ce4eca0471fbbfc8c12063648180e48f4e38c163108d1d72375c25058",
+      "captureLastWriteUtc": "2026-10-09T04:55:01.276177+00:00",
+      "receiptSource": "browser-results.json"
+    },
+    {
+      "path": "screenshots/ui-maintenance/login-error-session-1440.png",
+      "bytes": 100247,
+      "sha256": "9dba40b66841b0a18e481591a45f51a4474b252da4ca04e42eef5c2adcd7682b",
+      "captureLastWriteUtc": "2026-10-09T04:55:02.624744+00:00",
+      "receiptSource": "browser-results.json"
+    },
+    {
+      "path": "screenshots/ui-maintenance/login-error-session-375.png",
+      "bytes": 49697,
+      "sha256": "4609351b9507e79510c27e02929accad01f667766afb6df06f4c82353367219c",
+      "captureLastWriteUtc": "2026-10-09T04:55:04.842300+00:00",
+      "receiptSource": "browser-results.json"
+    },
+    {
+      "path": "screenshots/ui-maintenance/login-error-session-390.png",
+      "bytes": 50272,
+      "sha256": "c024fed4f3714495d8170440e9db640ab950c14dd8a9fda2135bda639cc63526",
+      "captureLastWriteUtc": "2026-10-09T04:55:06.063855+00:00",
+      "receiptSource": "browser-results.json"
+    },
+    {
+      "path": "screenshots/ui-maintenance/login-error-session-790.png",
+      "bytes": 54518,
+      "sha256": "89aa8d3e4190f68cd8c669413df98cfec362bc1750aeeabe9617c2b231df7e1c",
+      "captureLastWriteUtc": "2026-10-09T04:55:03.732503+00:00",
+      "receiptSource": "browser-results.json"
+    },
+    {
+      "path": "screenshots/ui-maintenance/login-normal-1366.png",
+      "bytes": 82410,
+      "sha256": "99b10e3fa4479bebc8ab5cb54fda83c0c2c8154d8d6212303b6185f94031bec9",
+      "captureLastWriteUtc": "2026-10-09T04:55:00.621992+00:00",
+      "receiptSource": "browser-results.json"
+    },
+    {
+      "path": "screenshots/ui-maintenance/login-normal-375.png",
+      "bytes": 35139,
+      "sha256": "542793c78a8f221c861a1b443d9187c1b3175d7d500823207cbac23f63210c4d",
+      "captureLastWriteUtc": "2026-10-09T04:55:04.291119+00:00",
+      "receiptSource": "browser-results.json"
+    },
+    {
+      "path": "screenshots/ui-maintenance/login-short-landscape.png",
+      "bytes": 87847,
+      "sha256": "0f00b08082ee8f09e1abf3fa74a3a08b866fb4ca9af906ac95fa15a0c222deb8",
+      "captureLastWriteUtc": "2026-10-09T04:55:07.639360+00:00",
+      "receiptSource": "browser-results.json"
+    },
+    {
+      "path": "screenshots/ui-maintenance/logout-unknown-mobile.png",
+      "bytes": 46758,
+      "sha256": "0597b60f98d3d1172aff468bf379abfbfe19528e20ec889979c4a54dd2b75e9b",
+      "captureLastWriteUtc": "2026-10-09T04:55:21.473251+00:00",
+      "receiptSource": "browser-results.json"
+    },
+    {
+      "path": "screenshots/ui-maintenance/visitor-pending-mobile.png",
+      "bytes": 26194,
+      "sha256": "0d8e2ef3c07158b751dcd90725eabab588d58608e455d13e22742bc96b8635ed",
+      "captureLastWriteUtc": "2026-10-09T04:55:22.296084+00:00",
+      "receiptSource": "browser-results.json"
+    }
+  ],
+  "limitations": [
+    "Native browser toolbar zoom NOT_RUN. CDP desktop reflow and CSS zoom are simulations.",
+    "CSS zoom 2 chooser check proves chooser containment and exact string option values only. Workspace badge/long-title crowding is visible in this extreme CSS zoom specimen; full workspace native 200% zoom is not claimed.",
+    "790x885 requested viewport measured inner height 886 due device-pixel rounding; footer remains inside requested 885px.",
+    "Production HTTPS, physical phone/camera, real backend and M02 QR business tests NOT_RUN in this maintenance pass. Historical real integration receipts remain separate."
+  ],
+  "cleanup": {
+    "ownBrowserSession": "hsaas-m01-ui closed",
+    "ownPorts": {
+      "15196": "NOT_LISTENING",
+      "15197": "NOT_LISTENING"
+    },
+    "userPort5173": {
+      "state": "LISTENING",
+      "pid": 11516
+    },
+    "nativeDatabase": "NOT_TOUCHED",
+    "reportedAtUtc": "2026-10-09T05:15:40+00:00"
+  },
+  "corrections": [
+    "Incorrect preliminary root/file searches were corrected without product changes.",
+    "Unsupported Testing Library getByRole exact option caused TS2769; removed and final typecheck passed.",
+    "Initial mobile sign-out target was 38px wide; shared button minimum width increased to 44px.",
+    "Initial staff mobile overview height 853px at 812px viewport; compact gaps/padding corrected it, then strict targeted staff/admin checks passed.",
+    "Initial CDP screenshot used inconsistent Playwright viewport bookkeeping; synchronized viewport and replaced screenshot with targeted receipt. Original matrix measurement is retained as historical stage."
+  ]
+}

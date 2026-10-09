@@ -1,4 +1,5 @@
 // Targeted confirmation of the final mobile spacing change against explicit synthetic UI identities.
+/* eslint-disable no-unused-expressions -- Standalone Playwright CLI expression. */
 async (page) => {
   const results = [];
   await page.context().clearCookies();
