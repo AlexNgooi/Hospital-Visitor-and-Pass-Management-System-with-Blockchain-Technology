@@ -223,12 +223,14 @@ API 不接收 caller 自选 actor、UID、category 或 status 来替代扫描证
 - `lock(coordinates)` 返回不可由HTTP构造的 `LockedRegistration`；必须原READ_COMMITTED事务、唯一exact synchronization identity，锁registration后重读immutable coordinates，不持后序锁追新counter。recordDecision的receipt/resource/one-use校验必须在任何SQL前完成，尤其挂起外层后的REQUIRES_NEW拒绝不能先读或锁owner/root。可加载合法已审核状态，不在lock阶段提前检查SUBMITTED/version，成功幂等重放优先；expected/current version限JS-safe范围，增加超过上限拒绝而不回绕。
 - `recordDecision(receipt,expectedVersion,serverOwnerContextId,Decision)` 返回M00 `SafeResult`；Decision为Verified/Rejected结构化union，使用C09字段/理由。M03 root从server context/Clock/环境取得actor/time/source，验证同TX回执与C09，再CAS SUBMITTED/version并更新根状态和结构化review metadata；不独立commit、不自行写audit/idempotency。M03已有C09 `ManualEvidence/SyntheticReviewRules` 是唯一可复用backend规则，M04引用，避免两套validator漂移。
 - M04外层编排：当前授权前缀 → 成功idem replay（优先旧state/version） → miss时root lock → 再查idem成功记录防并发赢家 → root decision + LocalAuditPort + IdempotencyPort.success同事务。若使用 `requireHuman` 作预读，它必须在外层写事务前；不能先锁binding/context再追counter。实际权限撤销/并发重放/审计失败回滚由两模块联合真实MySQL验证。
-- M00 `lockOwners` 的401保留为失效会话；review对象/counter不可见的410 QR内部语义在M04边界转换为404，不向审核页返回扫码错误；role403仍由角色边界保持。成功重放仍受当前session/counter权限检查。
+- M00 `lockOwners` 的401保留为失效会话；review对象/counter不可见的410 QR内部语义在M04边界转换为404 `NOT_FOUND` 与固定无对象/柜台信息message，不新增另一套404业务码；role403仍由角色边界保持。成功重放仍受当前session/counter权限检查。
 - `readMaskedQueue/readMaskedDetail` 由根adapter查询和掩码，只接受服务端已核实的当前counter scope，SQL过滤，不能用caller自填counterIds授予授权，不暴露raw form_data或新增PII reveal接口。queue wire选page/pageSize/items/total/serverNow，page从0、默认pageSize10/上限50、稳定submittedAt/id排序，UI可用更小页数适配视口；本版不并列另一套cursor wire。
 
 当前synthetic categoryCode为 `EXECUTIVE/PENJAGA/VENDOR/CONTRACTOR`；数据库categoryScope ID仍是C10 decimal string。MRN反馈 `NOT_CHECKED/MATCH/NO_MATCH/TIMEOUT/UNAVAILABLE` 与staff verification分开，MATCH不表示身份/MRN/ward已核实，U03/C09人工核实规则不变。拟定验证token仅为受控反馈关联，最多5min且不超grant期限，绑定anonymous scope/formContext/MRN fingerprint/ward/mode/adapterVersion，改变字段或上下文拒绝旧token；超时/no token不阻止进入待人工审核，不能存病历或借token替代核实。具体wire/DDL仍需S-V1评审。
 
 S-V1四类字段/长度与 `synthetic-privacy-v1` 是demo提案，不代表O01医院字段/用途/保留批准。证件/MRN采用DEMO-only还是接近正式IC/Passport输入，由coordinator集中询问用户，依赖该选择的API/schema/V5最终DDL等待答复；已有冻结契约的独立工作继续。WhatsApp disabled时不采集发送opt-in、不建job。真实医院数据、MRN/live、生产privacy政策继续deferred。
+
+M04审核编排增量决定：`hsaas.review.enabled` 默认不装配真实command服务；显式启用但缺真实M03 `RegistrationReviewPort` 必须启动失败，不静默使用mock，mockroot限测试。`DuplicateKeyException` 必须先退出整个原事务并回滚，再以新READ_COMMITTED事务重新校验当前session/role/counter和相同namespace/body/key的成功重放。新事务只作授权/查询/replay，不继续root decision、audit或idem写入；无成功结果则返回明确冲突，等待用户明确原命令重试，不自动再做审核或换key。其他DB/审计错误不走“重复key即成功”的路径。事务边界、权限撤销、不同body和零reapply先做mock服务测试；真实SQL/权限/审核E2E仍待M03接入后验收。
 
 以下是依赖批次，不是已执行的 Flyway V 编号：identity/reference/session/idempotency/local audit → QR display/challenge/grant → registration/consent → synthetic cards/device/scan → assignment/active unique/lifecycle/alerts/lost → reporting/settings。M00 登记实际编号，每个 module 申请后使用；先检查库中已有 migration，不重写共享环境已应用版本。
 
