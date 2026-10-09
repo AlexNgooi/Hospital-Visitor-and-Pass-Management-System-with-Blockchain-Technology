@@ -15,7 +15,7 @@ async (page) => {
   await page.getByLabel("Password", { exact: true }).fill("Synthetic-only-password_1");
   await page.getByRole("button", { name: "Sign in", exact: true }).click();
   await page.waitForURL("**/staff");
-  await page.getByRole("link", { name: "Registration QR", exact: true }).click();
+  await page.getByRole("navigation", { name: "Counter navigation" }).getByRole("link", { name: "Registration QR", exact: true }).click();
   await page.getByRole("button", { name: "Display registration QR", exact: true }).click();
   await page.getByRole("img", { name: /Scan this current QR/ }).waitFor();
 
@@ -31,7 +31,10 @@ async (page) => {
     }));
     if (result.violations.length || result.horizontalOverflow || !result.storageEmpty || !result.tokenAbsentFromVisibleText || !result.fragmentCleared) throw new Error("QR browser audit failed: " + step + " " + JSON.stringify(result));
     checks.push({ step, ...result });
-    await target.screenshot({ path: root + step + ".png", fullPage: true, mask: [target.locator(".qr-scan-area img")], maskColor: "#d9dde3" });
+    // CSS zoom can misplace Playwright's coordinate mask. Hide every current/replaced image through CSS instead.
+    const redaction = await target.addStyleTag({ content: ".qr-scan-area img { visibility: hidden !important; }" });
+    try { await target.screenshot({ path: root + step + ".png", fullPage: true }); }
+    finally { await redaction.evaluate(element => element.remove()); }
   }
   await audit(page, "live-display-desktop");
   const image = await page.getByRole("img").getAttribute("src");
