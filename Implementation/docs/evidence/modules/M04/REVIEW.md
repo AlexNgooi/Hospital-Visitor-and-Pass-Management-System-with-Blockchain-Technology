@@ -80,10 +80,38 @@ browser ports do not substitute for those gates. Enabled real application
 assembly/missing-root behavior must also be exercised with the full reviewed
 M03 dependency when integration is available.
 
-S-V1 identity/MRN input choice still awaits the human answer in the coordinator
-chat. Dependent read projections/root adapter/API/V5 final DDL wait. Under
-continuing module permission, coordinate the next exact M03 read/root snapshot,
-then implement/test actual integration and shared wiring before full acceptance.
+On 2026-10-10 the human chose DEMO-only identity/MRN input (C14), and the
+coordinator approved the synthetic schema/V5/public API/read direction (C15).
+Under continuing permission, implement/test actual root integration and shared
+wiring before full acceptance. The input-choice blocker is resolved.
 Production TLS/native zoom, real patient/card/reader/provider/chain work remains
 deferred. This approval preserves a reusable independent checkpoint; it does
 not start M05, deploy, push or mark M04 complete.
+
+## C15 GET orchestration checkpoint — 2026-10-10
+
+Source `cb8de73d7da5a297a74e8e138fd13e4ba909fc44` includes strict multi-value
+queue queries, current staff read orchestration, GET routes and shared server
+session transport extraction. Exact read dependency imported in
+`9bddf1a1c407d5ad2d331fc56922b50343d969fe` matches M03 `f5a9c7f` by Git comparison;
+the previous six C13 files also remain unchanged. M03 retains root-port ownership.
+
+Coordinator inspected query/controller/helper/config/service/tests, including
+pre-transaction requireHuman, current role before the ordered counter/session
+prefix, one selected counter, typed root-coordinate checks and no-store headers.
+Explicit enablement requires both root facets; absence has no mock fallback.
+
+Independent clean coordinator worktree at the exact source ran:
+`mvnw.cmd -B -Dtest=SyntheticReviewRulesTests,RegistrationReviewPortTests,RegistrationReadPortTests,ReviewCommandsTests,ReviewServiceTests,ReviewQueriesTests,ReviewReadServiceTests,ReviewHttpTests,ReviewControllerTests test`.
+Finished **07:57:01 +08**, exit0: **65 tests**, zero failure/error/skip; ignored
+raw log backend/target/coordinator-m04-get.log. Counts are 14 root contracts and
+51 M04 cases (11 commands,16 write service,6 query,11 read service,5 HTTP context,
+2 standalone servlet bindings). Expected missing-bean context warnings belong
+to assertions and are not test failures.
+
+This independently reproduces the GET checkpoint only. Root SQL/current actual
+permissions and protected servlet HTTP are mocked in these cases; standalone
+bindings omit the security chain. No new frontend/browser result is claimed and
+the module's forthcoming full verify must be recorded separately. The new root
+adapter/V5 and complete real review integration remain pending; no M04 runtime
+source is merged to main by this record.
