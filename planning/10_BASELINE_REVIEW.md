@@ -10,6 +10,8 @@ status: m00-m02-local-integration-verified
 
 ## 2026-10-08 当前决定与实际状态
 
+2026-10-09 最新模块启动（优先于下方阶段记录）：coordinator直接read_thread核实用户在M03/M04各自chat分别回复“继续”，承接各chat一次开发许可申请；两模块已从f59baf3在独立managed worktree推进。M03 owns登记根聚合/V5候选，M04 owns审核子域并经M03 root port接入；准确许可turn IDs/路径/限定共享例外见12，接口职责见04 C13。S-V1证件/MRN采用DEMO-only或接近正式IC/Passport输入，已集中向本coordinator chat用户提问；依赖该选择的字段/API/schema/V5最终DDL等待答复，已有冻结契约的独立工作继续。M03/M04未验收、未merge，M05及后续未启动。
+
 2026-10-09 18:55 最新实施状态（优先于下方阶段记录）：M00/M01/M02 当前本地基础/UI/动态QR与entry grant范围已 INTEGRATION_VERIFIED。M02 source f81512d、delivery d2d745f、coordinator本地merge3c0c229；R1事务回执、R2晚到离线/隐藏响应、R3未知撤销、R4首屏与放大全屏返修均通过。coordinator独立真实临时MySQL/servlet/Vite浏览器28项通过；主分支95前端tests/typing/build/lint/proxy通过，18:55:01后端verify68项零失败/错误/跳过、JAR通过。完整证据与历史失败见M02 REVIEW。QR配置默认disabled；物理相机、生产HTTPS、实际M03登记提交与live集成仍NOT_RUN。M03/M04仍未获开发许可、不自动启动；native数据库checksum选择仍待人类答复，未repair/migrate。
 
 以下保留各阶段决定的追踪依据；其中“未许可/未实现/NOT_RUN”按该段当时阶段理解，当前验收状态以上段和各模块REVIEW为准。
