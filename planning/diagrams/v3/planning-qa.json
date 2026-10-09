@@ -1,6 +1,6 @@
 {
   "status": "pass",
-  "local_links_checked": 111,
+  "local_links_checked": 113,
   "functional_requirements": 25,
   "artifact_verified_diagrams": 6,
   "diagram_semantics": "PENDING_SYNC: dynamic QR, coordinator/module chats, disabled integration modes (2026-10-08)",

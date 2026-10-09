@@ -2,13 +2,17 @@
 type: baseline-review
 revision: current
 updated: 2026-10-09
-status: foundation-local-integration-verified
+status: m00-m02-local-integration-verified
 ---
 # 当前基线评审、来源与未决项
 
 最近规划评审日期 2026-10-08（Asia/Singapore）。这是用户范围/协作变更的规划记录，不是医院签字、真实硬件/API 验收或业务实现完成声明。
 
 ## 2026-10-08 当前决定与实际状态
+
+2026-10-09 18:55 最新实施状态（优先于下方阶段记录）：M00/M01/M02 当前本地基础/UI/动态QR与entry grant范围已 INTEGRATION_VERIFIED。M02 source f81512d、delivery d2d745f、coordinator本地merge3c0c229；R1事务回执、R2晚到离线/隐藏响应、R3未知撤销、R4首屏与放大全屏返修均通过。coordinator独立真实临时MySQL/servlet/Vite浏览器28项通过；主分支95前端tests/typing/build/lint/proxy通过，18:55:01后端verify68项零失败/错误/跳过、JAR通过。完整证据与历史失败见M02 REVIEW。QR配置默认disabled；物理相机、生产HTTPS、实际M03登记提交与live集成仍NOT_RUN。M03/M04仍未获开发许可、不自动启动；native数据库checksum选择仍待人类答复，未repair/migrate。
+
+以下保留各阶段决定的追踪依据；其中“未许可/未实现/NOT_RUN”按该段当时阶段理解，当前验收状态以上段和各模块REVIEW为准。
 
 2026-10-09 最新启动：人类明确要求“开启m02”，M02 现已获开发许可；coordinator 固定基线/隔离后派发，V4保留给QR/entry schema。M03/M04仍未获许可。独立运行请求的 native 库只读检查发现旧V1 checksum不匹配（当前4表、users0）；未migrate/repair/baseline/clean，前端5173已启动，后端数据库选择待人类答复。该运行阻塞不影响 M02 隔离测试环境开发。
 

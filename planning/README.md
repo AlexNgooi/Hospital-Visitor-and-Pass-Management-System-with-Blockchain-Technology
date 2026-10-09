@@ -1,6 +1,6 @@
 # HSAAS FYP 当前规划入口
 
-更新日期：2026-10-09。当前 chat 为 project coordinator；每个模块使用独立 chat，完成后交回审核、本地 merge 与集成复验。M00/M01 当前本地范围已验收，用户已明确启动 M02 动态 QR；M03/M04 仍待开发许可，其他模块未开启。
+更新日期：2026-10-09。当前 chat 为 project coordinator；每个模块使用独立 chat，完成后交回审核、本地 merge 与集成复验。M00/M01/M02 当前本地范围已验收，M02 动态 QR 已审核并本地合并 3c0c229；准确验证与限制见 M02 REVIEW。M03/M04 仍待开发许可，其他模块未开启。
 
 每个 module 的 chat 和开发必须由用户手动开启和启动；coordinator/助手准备任务和开工条件，不代开、不自动启动下一模块。
 
@@ -10,7 +10,7 @@
 
 需要用户裁决的 conflict、需求不清或无法确定的选择，统一由 coordinator 在本 chat 整理选项后询问用户，再将决定发回模块。
 
-当前优先前端、基础 backend/MySQL、动态 QR 扫码登记。实体卡/reader 与医院病人 API 未准备，先以 synthetic simulation / MRN mock/manual 建立边界；WhatsApp 和 blockchain 默认 disabled。当前验证：backend40、frontend68、harness隔离16与真实28wire通过；访客/QR/登记/审核业务仍未实施/验收，生产HTTPS仍NOT_RUN。历史初始化见 [P0](../Implementation/docs/evidence/foundation/P0_REVIEW.md)，当前证据见 [M00 REVIEW](../Implementation/docs/evidence/modules/M00/REVIEW.md) / [M01 REVIEW](../Implementation/docs/evidence/modules/M01/REVIEW.md)。
+当前优先前端、基础 backend/MySQL、动态 QR 扫码登记。实体卡/reader 与医院病人 API 未准备，先以 synthetic simulation / MRN mock/manual 建立边界；WhatsApp 和 blockchain 默认 disabled。M02 当前签名轮换/entry grant 本地范围已验收：coordinator 独立浏览器28项通过，主分支后端verify68项/JAR及前端95项/typing/build/lint/proxy通过，见 [M02 REVIEW](../Implementation/docs/evidence/modules/M02/REVIEW.md)。实际访客字段/提交与审核仍属 M03/M04 未开发，物理相机与生产HTTPS NOT_RUN，QR配置默认disabled。历史初始化见 [P0](../Implementation/docs/evidence/foundation/P0_REVIEW.md)，基础/UI证据见 [M00 REVIEW](../Implementation/docs/evidence/modules/M00/REVIEW.md) / [M01 REVIEW](../Implementation/docs/evidence/modules/M01/REVIEW.md)。
 
 ## 从这里进入
 
@@ -42,4 +42,4 @@ v3 六张图保留完整长期集成设计，图源和视觉收据未重绘：**
 - sync_mermaid.py 更新文本镜像；build_delivery_hub.py 更新导航、哈希与范围提示。
 - [旧图交付清单](diagrams/v3/delivery-manifest.json)、[人工截图评审](diagrams/v3/review-receipt.json)、[规划 QA](diagrams/v3/planning-qa.json)。
 
-本轮不更新外部 [Trello board](https://trello.com/b/XnospkpS/fyp-hsaas-visitor-pass-management-system) 或 Figma。M00/M01 已完成当前本地验收与类型生成，M02 按用户明确指令隔离后开工，M03/M04 不自动启动。模块交接后仍由 coordinator 审核合并。
+本轮不更新外部 [Trello board](https://trello.com/b/XnospkpS/fyp-hsaas-visitor-pass-management-system) 或 Figma。M00/M01 已完成当前本地验收与类型生成，M02 按用户明确指令隔离实施并经 coordinator 审核合并；M03/M04 不自动启动。模块交接/审核与准确验收边界继续见12及各REVIEW。

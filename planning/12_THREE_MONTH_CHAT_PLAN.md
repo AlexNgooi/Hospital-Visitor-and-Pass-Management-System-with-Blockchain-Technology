@@ -96,13 +96,13 @@ M08–M11 当前为 DEFERRED，不启动运行进程、不安装依赖来阻塞�
 
 基本依赖为 M00 → M01 → M02 → M03 → M04 → M05 → M06 → M07。M01 可先对冻结契约 mock；M06 的账号/配置可在 M00 后提前，报表等候生命周期数据。WIP ≤2，分支隔离不替代依赖验收。
 
-M00–M04 已创建并完成准备核对；M00/M01 当前本地范围已验收，M02 已隔离并启动；M03/M04 仍只读，其他模块未启动。此表由 coordinator 更新；业务完成需实际交接/审核/验收。
+M00–M04 已创建并完成准备核对；M00/M01/M02 当前本地范围已验收，M02 已经原chat返修、独立审核、本地合并及主分支复验；M03/M04 仍只读，其他模块未启动。此表由 coordinator 更新；本地QR/grant验收不等于实际登记提交或生产扫码验收。
 
 | 模块 | 状态 | chat ID / owner | baseline / branch / worktree | handoff / review / merge |
 |---|---|---|---|---|
 | M00 | INTEGRATION_VERIFIED（当前本地基础/C01范围）；HTTPS/业务后续验收 | 01a11bcf-a53d-7323-a74e-edffa8092c50 / 模块助手直接实现 | c2b0c316；codex/hsaas-m00-foundation；ced2/FYP Dev | 基础merge a137acd；40tests PASS；真实28wire联调 PASS；gpt-6.1-sol/high |
 | M01 | INTEGRATION_VERIFIED（当前本地UI/C01范围）；HTTPS/后续业务未验收 | 01a11bcf-e448-7be0-88c1-f7910300e82e / 模块助手直接实现 | 基础c2b0c316；联调03fda7f；codex/hsaas-m01-frontend-shell；4156/FYP Dev | 基础merge014d030；联调delivery58b738a/merge e8ca80a；68tests+16隔离+真实28wire PASS；gpt-6.1-sol/high |
-| M02 | CHANGES_REQUESTED；原许可内直接返修 | 01a11db3-31c9-7da0-bfb2-217e71081355 / 模块助手直接实现 | baseline98a7f7d；codex/hsaas-m02-dynamic-registration；C:/Users/alexy/.codex/worktrees/bd17/FYP Dev | source239caa8/delivery41dede4；独立67backend/84frontend PASS；R1事务回执/R2晚到离线响应/R3未知撤销恢复待返修，见M02 REVIEW；未merge；V4保留；gpt-6.1-sol/high |
+| M02 | INTEGRATION_VERIFIED（当前本地动态QR/entry grant范围）；真机/生产/M03待验收 | 01a11db3-31c9-7da0-bfb2-217e71081355 / 模块助手直接实现 | baseline98a7f7d；codex/hsaas-m02-dynamic-registration；C:/Users/alexy/.codex/worktrees/bd17/FYP Dev | sourcef81512d/deliveryd2d745f/merge3c0c229；R1–R4返修已验收；独立28browser PASS；main68backend verify/JAR、95frontend/typing/build/lint/proxy PASS；见M02 REVIEW；V4已合并，未改nativeDB；gpt-6.1-sol/high |
 | M03 | PLANNED；一次开发许可待答，接入依赖 M00/M01/M02 | 01a11ba4-e814-7832-bd40-f471edf417b4 / 模块助手直接实现 | Local/main；HEAD b005823；规划未提交；实施隔离待建立 | 无；gpt-6.1-sol/high |
 | M04 | PLANNED；一次开发许可待答，依赖 M03 | 01a11ba4-ecca-7ca3-a224-c3dde42d1edd / 模块助手直接实现 | Local/main；HEAD b005823；规划未提交；实施隔离待建立 | 无；gpt-6.1-sol/high |
 | M05 | PLANNED | 未创建 / 未派工 | 待登记 | 无 |
@@ -147,4 +147,4 @@ coordinator 记录答复/decision ID、影响规范与 owner，通过 send_messa
 
 ## 下一项具体计划
 
-M00/M01 当前本地范围已验收，M02 已获用户明确启动许可。coordinator 固定新基线、隔离后派发真正轮换的动态 QR/challenge/grant 实施；模块直接写代码/测试/交接。生产HTTPS/完整业务图仍需其所属关卡验收。M03/M04 与后续模块不自动启动，保持各自许可和依赖。未来多模块 OpenAPI 汇总由 coordinator 协调，原 M00 spec 不被下游修改。
+M00/M01/M02 当前本地范围已验收；真正轮换的动态 QR/challenge/grant 已按用户许可隔离实施、返修并本地合并3c0c229。M03 的接入基线与消费/原始formContext契约现可供只读准备，开发仍须其自身用户明确许可；不代替用户启动。生产HTTPS/真机扫码/完整实际登记图仍需所属关卡验收。M03/M04 与后续模块不自动启动。未来多模块 OpenAPI 汇总由 coordinator 协调，原 M00 spec 不被下游修改。

@@ -1,6 +1,6 @@
 # M02 coordinator review
 
-Date: 2026-10-09, Asia/Singapore. Status: APPROVED (local M02 scope; integration checks follow).
+Date: 2026-10-09, Asia/Singapore. Status: INTEGRATION_VERIFIED (current local M02 scope).
 Original tested source: `239caa8d367e7c8eda8c8477595e9ce9a88525e7`.
 Delivery: `41dede4d8c17f268896c449bb6826a1f2572ad0b`.
 Final approved source: `f81512dfe571469386352e73bf54ef234534869b`;
@@ -118,3 +118,27 @@ Coordinator stopped its own harness/browser and independently confirmed exact
 owned container/listener absence; existing 5173/native DB/.env were untouched.
 R1-R4 are resolved in current local scope. Local main integration is approved;
 production and future M03/live gates above remain pending.
+
+## Main integration verification
+
+Local merge **3c0c229ffa8caaa9b9d88d1609da2c94049ced19** preserved the reviewed
+M01 UI/runtime/evidence without conflict. Main backend Git tree matches the
+final module tree exactly (`099d9dcb3f2d6c8b1676b957342b13679c655e9c`);
+frontend src/package/lock also match. Main retains three additional previously
+approved M01 browser helpers, with no application-source difference.
+
+- Main frozen pnpm install, **95 tests** (start 18:52:45 +08), test typing,
+  production build, lint (zero warnings) and synthetic proxy: PASS.
+- Main full Maven **verify: 68 tests, zero failures/errors/skips, JAR PASS**,
+  finished **18:55:01 +08**, exit 0. Ignored raw log:
+  backend/target/coordinator-m02-postmerge-verify.log.
+- V4 canonical LF source SHA-256 remains
+  `05c0dae3fe31d93ecc63845932cc66e585afda44c5acac2f827e11c2c88fe4d8`.
+  Windows main checkout uses CRLF (raw-file hash differs); Git backend tree and
+  normalized LF hash both match. No migration was edited or native DB changed.
+
+This completes current local M02 review/merge/integration. QR remains disabled
+by default until explicit valid configuration. The existing local backend's
+native-database checksum decision remains pending separately; these disposable
+tests do not repair or initialize that database. M03/M04 remain unstarted and
+require their own human development permission. No push/deployment occurred.
