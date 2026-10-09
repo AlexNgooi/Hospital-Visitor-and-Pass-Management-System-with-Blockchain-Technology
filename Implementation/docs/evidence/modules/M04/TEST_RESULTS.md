@@ -1,6 +1,25 @@
 # M04 verification results
 
-Final code source: `03eca76ba860f0e0c5590006a8137a493c1d4d6f`, tested after its commit with a clean tracked worktree. Times below use Asia/Singapore. Delivery only adds evidence.
+## C15 GET increment — 2026-10-10
+
+Fixed backend source: `cb8de73d7da5a297a74e8e138fd13e4ba909fc44`; approved read dependency `f5a9c7f` pinned in `9bddf1a`. Runtime files were unchanged after the source commit. Evidence-only edits were made while verify ran. Times use Asia/Singapore.
+
+| Check / owner | Result | Time and actual scope |
+|---|---|---|
+| Module selected backend suite | PASS; 65 tests, 0 failure/error/skip, exit 0 | Observed `07:54:47`; 14 root contracts + 51 M04 tests. Includes RC mock-facet orchestration, session helper, duplicate-preserving standalone servlet binding, default-off/missing-read assembly. |
+| Coordinator independent bounded review | PASS; 9 classes / 65 tests, 0 failure/error/skip, exit 0 | Coordinator reported its separate isolated worktree on exact `cb8de73`, finished `07:57:01+08:00`, source clean. This is independent bounded evidence, separate from the module full run. |
+| Module full backend verify / JAR | PASS; 133 tests, 0 failure/error/skip, JAR success, exit 0 | Fixed `cb8de73`; finished `2026-10-10T07:57:45+08:00`, duration 02:24. Existing foundation/QR tests used temporary Testcontainers MySQL; no native fallback. |
+| Approved dependencies | PASS; source diffs empty | Two read files match `f5a9c7f`; original six write/C09 files match `4d70df4`. M03 owns these files. |
+| Frontend/browser | NOT_RERUN for C15 | No frontend source changed. The prior 122 tests/19 synthetic browser checks below remain historical UI evidence, not real backend UI integration. |
+| Actual M04 SQL / protected HTTP / E2E | NOT_RUN | Awaiting coordinator-approved actual M03 root adapter/V5/API candidate baseline. No mock service/binding count establishes durable review or real HTTP authority. |
+
+Full133 = 68 existing foundation/QR + 14 imported M03 contract + 51 M04 (11 command, 16 write service, 6 query, 11 read service, 5 helper, 2 standalone binding). Intentional missing-root/read/invalid-config startup failures were asserted by tests; the suite still finished with zero failures/errors/skips. No new runtime repair was required after the first C15 targeted run. No additional services or browser were launched for this increment; Maven completed and its tests used disposable resources.
+
+See [GET_HANDOFF.md](GET_HANDOFF.md) for the latest source/dependency boundaries and [INTEGRATION_TEST_PLAN.md](INTEGRATION_TEST_PLAN.md) for the real acceptance matrix. The complete module remains IN_PROGRESS; this increment is accepted for subsequent actual root integration, without a partial main runtime merge.
+
+## Historical independent checkpoint — 2026-10-09
+
+Historical final code source: `03eca76ba860f0e0c5590006a8137a493c1d4d6f`, tested after its commit with a clean tracked worktree. Delivery only added evidence. The tables below preserve that checkpoint and its intermediate history.
 
 ## Final checks on the fixed source
 

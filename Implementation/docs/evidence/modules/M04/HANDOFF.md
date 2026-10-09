@@ -1,5 +1,7 @@
 # M04 independent checkpoint handoff
 
+Historical 2026-10-09 source/delivery checkpoint below. Latest C14/C15 follow-up and GET source are recorded separately in [GET_HANDOFF.md](GET_HANDOFF.md); complete M04 is still IN_PROGRESS pending actual root integration.
+
 Status: **IN_PROGRESS; bounded independent-checkpoint review requested**. Full M04 is not accepted or merged. S-V1 and M03 actual root/read integration remain external dependencies handled by coordinator.
 
 ## Identity and versions
