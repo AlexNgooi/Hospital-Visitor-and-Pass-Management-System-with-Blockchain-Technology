@@ -55,3 +55,33 @@ remaining fields/read wire/V5 must receive technical review before implementatio
 Real hospital data/MRN, production privacy, hardware and external integrations
 remain deferred. No native DB/.env, service startup, push or deployment was used
 for this dependency verification.
+
+## C15 read dependency snapshot — 2026-10-10
+
+**APPROVED_READ_DEPENDENCY_SNAPSHOT**, exact source
+`f5a9c7f388ec6232ca9be8f9677e3c8872f32756`. New dependency files only:
+RegistrationReadPort.java and RegistrationReadPortTests.java under the same root
+source/test package. The six previous C13 files are unchanged by Git comparison.
+M04 may import these exact two files and must preserve M03 ownership.
+
+Coordinator checked the owner-only factory signature, private/package-captured
+scope, original RC/exact synchronization/resource guard before reads, one-operation
+release, completion cleanup, suspended-inner rejection and outer resume. Jackson
+explicitly denies scope serialization/deserialization. DTOs retain M04 flat fields
+and required nulls; lists are copied; query offset/size/null-filter rules agree.
+
+Independent clean source worktree:
+C:/Users/alexy/.codex/worktrees/coordinator-m03-m04-review/FYP Dev, at the exact
+source above. Command `mvnw.cmd -B -Dtest=RegistrationReadPortTests,SyntheticReviewRulesTests,RegistrationReviewPortTests test`
+finished **07:53:01 +08**, exit0: **14 tests**, zero failure/error/skip.
+Ignored raw log: backend/target/coordinator-c15-read.log. An initial shell redirect
+could not create the log because target did not exist; no test ran in that command.
+After creating the ignored directory, the actual command above passed. No source
+repair or dirty module files participated in this independent reproduction.
+
+These are five read lifecycle/projection cases plus the previous nine C13 cases;
+the datastore/permission implementation is modeled. Actual root factory/current
+authority/SQL, V5, HTTP and complete visitor/review flow remain pending. Module's
+additional six local decision/masking tests are not in this source and are not
+included in the coordinator's count. All modified handwritten dependency code has
+English responsibilities/security comments. No runtime source was merged to main.
