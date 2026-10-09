@@ -217,10 +217,10 @@ API 不接收 caller 自选 actor、UID、category 或 status 来替代扫描证
 
 ### C13 M03/M04 根接口与审核编排（2026-10-09）
 
-用户已在各自chat启动两模块；M03唯一拥有 `RegistrationReviewPort` 与登记根adapter，M04引用同一接口实现审核command/controller/UI，不复制根SQL/实体或另建migration。接口职责冻结，准确Java records草稿交coordinator复核，读取字段与待定S-V1一起冻结：
+用户已在各自chat启动两模块；M03唯一拥有 `RegistrationReviewPort` 与登记根adapter，M04引用同一接口实现审核command/controller/UI，不复制根SQL/实体或另建migration。coordinator已阅读M03 `REVIEW_PORT_DRAFT.md`，批准write interface/ReviewCoordinates/Verified与Rejected union/LockedRegistration方向；模块提交独立契约checkpoint供M04引用，不表示root持久化或端到端已验收。读取字段与待定S-V1一起冻结：
 
 - `discover(registrationId)` 返回内部 `ReviewCoordinates(id,counterId)`，只发现锁前资源，不授予授权、不能作公开存在查询。M04取真实server owner context/current role与CSRF，按全局staff user→counter→binding/context前缀锁定再进入root。
-- `lock(coordinates)` 返回不可由HTTP构造的 `LockedRegistration`；必须原READ_COMMITTED事务、唯一exact synchronization identity，锁registration后重读immutable coordinates，不持后序锁追新counter。可加载合法已审核状态，不在lock阶段提前检查SUBMITTED/version，成功幂等重放优先。
+- `lock(coordinates)` 返回不可由HTTP构造的 `LockedRegistration`；必须原READ_COMMITTED事务、唯一exact synchronization identity，锁registration后重读immutable coordinates，不持后序锁追新counter。recordDecision的receipt/resource/one-use校验必须在任何SQL前完成，尤其挂起外层后的REQUIRES_NEW拒绝不能先读或锁owner/root。可加载合法已审核状态，不在lock阶段提前检查SUBMITTED/version，成功幂等重放优先；expected/current version限JS-safe范围，增加超过上限拒绝而不回绕。
 - `recordDecision(receipt,expectedVersion,serverOwnerContextId,Decision)` 返回M00 `SafeResult`；Decision为Verified/Rejected结构化union，使用C09字段/理由。M03 root从server context/Clock/环境取得actor/time/source，验证同TX回执与C09，再CAS SUBMITTED/version并更新根状态和结构化review metadata；不独立commit、不自行写audit/idempotency。M03已有C09 `ManualEvidence/SyntheticReviewRules` 是唯一可复用backend规则，M04引用，避免两套validator漂移。
 - M04外层编排：当前授权前缀 → 成功idem replay（优先旧state/version） → miss时root lock → 再查idem成功记录防并发赢家 → root decision + LocalAuditPort + IdempotencyPort.success同事务。若使用 `requireHuman` 作预读，它必须在外层写事务前；不能先锁binding/context再追counter。实际权限撤销/并发重放/审计失败回滚由两模块联合真实MySQL验证。
 - M00 `lockOwners` 的401保留为失效会话；review对象/counter不可见的410 QR内部语义在M04边界转换为404，不向审核页返回扫码错误；role403仍由角色边界保持。成功重放仍受当前session/counter权限检查。
