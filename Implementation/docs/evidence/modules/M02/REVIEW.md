@@ -56,7 +56,9 @@ ID/counter for uncertain revoke recovery. Coordinator independently reran 95
 frontend tests, typing/build/lint from 13:38:30 +08: PASS. Module's real R1 RED
 entered SQL and waited on the outer lock; its returned MySQL regression proves
 immediate SQL-free refusal and correct outer resumption/rollback/commit. The
-coordinator's separate 68-test backend rerun is in progress. Module reports a
+coordinator's separate backend test run completed at 13:44:55 +08: 68 tests,
+zero failures/errors/skips, BUILD SUCCESS. This was `test`, without JAR
+repackaging while the module harness owned the JAR. Module reports a
 fresh actual 15-check browser run with exact original-path revoke retry.
 
 R4 remains CHANGES_REQUESTED for the human's current viewport requirement.
