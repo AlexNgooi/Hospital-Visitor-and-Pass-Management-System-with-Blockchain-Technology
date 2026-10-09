@@ -232,6 +232,21 @@ C14 / S-V1用户决定（2026-10-10）：用户明确选择“仅演示数据：
 
 M04审核编排增量决定：`hsaas.review.enabled` 默认不装配真实command服务；显式启用但缺真实M03 `RegistrationReviewPort` 必须启动失败，不静默使用mock，mockroot限测试。`DuplicateKeyException` 必须先退出整个原事务并回滚，再以新READ_COMMITTED事务重新校验当前session/role/counter和相同namespace/body/key的成功重放。新事务只作授权/查询/replay，不继续root decision、audit或idem写入；无成功结果则返回明确冲突，等待用户明确原命令重试，不自动再做审核或换key。其他DB/审计错误不走“重复key即成功”的路径。事务边界、权限撤销、不同body和零reapply先做mock服务测试；真实SQL/权限/审核E2E仍待M03接入后验收。
 
+### C15 S-V1实施与masked read技术放行（2026-10-10）
+
+coordinator已审阅M03 `IMPLEMENTATION_CONTRACT.md`、`V5_CANDIDATE.sql`、`READ_PORT_CANDIDATE.md`，批准实际V5/SQL/API/UI实施，必须采用下列对齐修正；此记录不是模块验收、DDL执行或真实业务测试PASS。
+
+- common：fullName 1–100 Unicode code points、TEST_ID/DEMO-、phone为+后8–15digits；text持久化NFC+outer trim，不截断，拒绝invalid Unicode/control。HMAC保留原始解析string/presence及固定schema order，不能用归一化后的值掩盖同key不同body。
+- Penjaga：DEMO-MRN-、active wardCode<=32、relationship白名单PARENT/SPOUSE/SIBLING/CHILD/OTHER。Executive：organisation<=120、contactPerson<=100、active destinationCode<=32、visitPurpose<=500。Vendor/Contractor：company<=120、contactPerson<=100、active destinationCode<=32、分别deliveryPurpose/workPurpose<=500，以上均必填。目录只提供符合当前schema的code；历史登记不因reference停用而消失。严格reject跨类别/未知字段和caller counter/status/actor/source/expiry/WhatsApp字段。
+- `synthetic-privacy-v1`必需ack=true，server captureTime；BM说明只用synthetic data且没有医院真实隐私批准。所有登记SYNTHETIC，enabled限development/synthetic/test，production显式开启此演示schema须fail startup。
+- moduleowned POST `/api/public/registration-schema`仅原formContext，valid grant/CSRF且无consume/renew；POST `/api/public/mrn-validations`原formContext/mrn/wardCode、服务器模式，反馈token最多5min且不超grant期限、不保存raw MRN/token、反馈不代表verified；POST `/api/public/registrations`严格context/category/schema/formData/privacy及可选mrnValidationToken，201只publicReference。optional token MISSING/NULL都无反馈但HMAC不同，所有raw值/能力都不输出诊断。
+- V5仅per-registration root、PRIVACY_ACK consent、digest/fingerprint临时MRN反馈和grant.registration_id真实FK；父行先插再consume，同事务含审计/幂等。暂存过期删除索引化、每分钟最多500/batch，不删除history或生成通知/outbox。
+- submit先在短RC事务持匿名authority做success replay，miss释放后序binding锁，再进入M02原完整user→counter→binding/context等grant前缀。第二replay、登记/ack、exact receipt consume、audit/idem同事务；unique/changed-pointer loser全回滚后新事务重新anonymous guard/query-only replay，无winner返回明确冲突，无automatic reapply/newkey。
+- root新增`RegistrationReadPort`独立facet，同一adapter实现root write/read，C13六dependency文件不改。最终methods：`captureReadScope(serverOwnerContextId,counterId)`、`readMaskedQueue(scope,ReadQuery)`、`readMaskedDetail(scope,id)`。owner来自真实server session，不由caller body/URL指定。Factory先original RC检查、discover actor→Accounts.lock currentrole(403)→M00 lockOwners完整同组前缀/actual metadata；QR-specific410对象不可见映射404 NOT_FOUND、401保留。opaque scope private构造/package-only capture、original exactsync/resource、一read operation、before ANY SQL校验、completion cleanup，REQUIRES_NEW拒绝且outerresume可用。
+- queue只selected single counter、SQL当前active user/role/permission/counter过滤，无caller counterIds授权；stable submittedAt DESC/id DESC，category/status缺省null表示ALL，不发送ALL码。page>=0/int、size1..50/default10、offset<=INT_MAX，默认page0。count/items在同RC authority锁内。queue/detail字段匹配M04 source03eca76 strict contracts，required nullable字段明确null；names最多首letter+***、证件/MRN最多安全后4+***、phone后4+***，无raw form/reveal。
+
+候选原稿的ASC与page1m cap已由此修正覆盖；M03提交精确read source/tests checkpoint供独立复跑后M04引用。根真实SQL/current权限/事务/HTTP/UI及联合审核仍需实际实现与测试。
+
 以下是依赖批次，不是已执行的 Flyway V 编号：identity/reference/session/idempotency/local audit → QR display/challenge/grant → registration/consent → synthetic cards/device/scan → assignment/active unique/lifecycle/alerts/lost → reporting/settings。M00 登记实际编号，每个 module 申请后使用；先检查库中已有 migration，不重写共享环境已应用版本。
 
 当前迁移登记（2026-10-09）：V1 `foundation_identity_reference`、V2 `spring_session_jdbc`、V3 `session_capability_guards`、M02 V4 `dynamic_registration_entry` 已审核合并，临时MySQL clean/upgrade验证通过；已应用版本冻结，其他模块不得重用或重写。V5预留获用户许可的M03 registration/consent与确有必要的MRN临时验证，具体DDL先交coordinator审核；M04审核metadata由M03根模型存储，不独立新建登记迁移或重复实体。真实开发/生产库未在本次验证中使用。后续号继续由M00/coordinator台账登记；完整实际登记/review事务图仍需所属模块验证。
