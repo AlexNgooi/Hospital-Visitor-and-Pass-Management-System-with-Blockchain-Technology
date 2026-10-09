@@ -127,6 +127,7 @@ h2[tabindex]:focus {
   justify-content: center;
   gap: 9px;
   min-height: 44px;
+  min-width: 44px;
   padding: 10px 18px;
   border: 1px solid transparent;
   border-radius: 8px;
@@ -284,7 +285,7 @@ h2[tabindex]:focus {
   position: relative;
   display: flex;
   flex-direction: column;
-  padding: 48px 56px;
+  padding: 32px 40px;
   background: #a90021;
   color: white;
   overflow: hidden;
@@ -306,6 +307,7 @@ h2[tabindex]:focus {
 .wordmark,
 .shell-brand {
   display: flex;
+  min-height: 44px;
   align-items: center;
   gap: 13px;
   text-decoration: none;
@@ -335,7 +337,7 @@ h2[tabindex]:focus {
 }
 .brand-copy {
   margin: auto 0;
-  padding: 80px 0 70px;
+  padding: 40px 0;
   position: relative;
   z-index: 1;
 }
@@ -381,34 +383,34 @@ h2[tabindex]:focus {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 80px 32px 40px;
+  padding: 24px 32px;
   position: relative;
 }
 .login-card {
   width: 100%;
-  max-width: 390px;
+  max-width: 440px;
 }
 .login-card h2 {
   font-size: 32px;
   letter-spacing: -1px;
-  margin-top: 19px;
+  margin-top: 12px;
 }
 .login-intro {
   color: var(--muted);
   font-size: 15px;
-  margin: 9px 0 32px;
+  margin: 6px 0 16px;
 }
 .sign-in {
   width: 100%;
-  margin-top: 5px;
+  margin-top: 0;
   justify-content: space-between;
-  padding: 13px 18px;
+  padding: 10px 14px;
 }
 .login-help {
   font-size: 13px;
   color: var(--muted);
   text-align: center;
-  margin: 26px 0 30px;
+  margin: 12px 0;
 }
 .login-help strong {
   font-weight: 500;
@@ -416,18 +418,80 @@ h2[tabindex]:focus {
 }
 .login-security {
   border-top: 1px solid var(--border);
-  padding-top: 22px;
+  padding-top: 10px;
   color: var(--muted);
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
-  font-size: 11px;
+  font-size: 12px;
 }
 .login-footer {
   color: #707780;
-  font-size: 11px;
-  margin-top: 64px;
+  font-size: 12px;
+  margin-top: 16px;
+}
+/* Density comes from spacing and duplicate-copy removal; errors, focus and 44px controls stay intact. */
+.login-feedback:empty {
+  display: none;
+}
+.login-feedback {
+  display: grid;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+.login-feedback .notice,
+.login-feedback .error-summary {
+  margin: 0;
+  padding: 8px 12px;
+}
+.login-feedback .notice p {
+  margin: 0;
+}
+.login-feedback .error-summary:has(ul:not(:empty)):not(:has(p)) {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px 8px;
+}
+.login-feedback ul {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 8px;
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+.login-feedback li a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  min-width: 44px;
+  padding: 0 4px;
+}
+.login-card .field {
+  gap: 6px;
+  margin-bottom: 12px;
+}
+.login-card .field input {
+  height: 44px;
+  padding-top: 9px;
+  padding-bottom: 9px;
+}
+.login-card .password-toggle {
+  top: 28px;
+}
+.login-actions {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 8px;
+}
+.login-actions .button {
+  padding: 8px 10px;
+  line-height: 1.3;
+}
+.login-security svg {
+  flex-shrink: 0;
 }
 /* Role shell stays neutral so page content, selected navigation and alerts remain distinct. */
 .workspace {
@@ -444,6 +508,7 @@ h2[tabindex]:focus {
   display: flex;
   flex-direction: column;
   padding: 28px 18px 20px;
+  overflow-y: auto;
 }
 .shell-brand {
   font-size: 23px;
@@ -508,7 +573,7 @@ h2[tabindex]:focus {
   flex-direction: column;
 }
 .topbar {
-  height: 76px;
+  min-height: 64px;
   background: #fff;
   border-bottom: 1px solid var(--border);
   display: flex;
@@ -560,7 +625,7 @@ h2[tabindex]:focus {
   font-size: 12px;
 }
 .workspace-main {
-  padding: 28px 36px 40px;
+  padding: 20px 28px;
   flex: 1;
   max-width: 1440px;
   width: 100%;
@@ -571,21 +636,25 @@ h2[tabindex]:focus {
   align-items: center;
   gap: 12px;
   border-bottom: 1px solid var(--border);
-  padding-bottom: 20px;
-  margin-bottom: 30px;
+  padding-bottom: 12px;
+  margin-bottom: 20px;
   font-size: 12px;
 }
 .counter-bar label {
   font-weight: 550;
 }
 .counter-bar select {
+  /* Opaque long option labels must not impose intrinsic width beyond their available container. */
+  min-width: 0;
+  width: min(260px, 100%);
+  max-width: 100%;
+  flex: 0 1 auto;
   min-height: 44px;
   background: white;
   border: 1px solid #cfd4dc;
   border-radius: 7px;
   padding: 7px 32px 7px 12px;
   font-size: 12px;
-  max-width: 260px;
 }
 .counter-bar > .muted {
   margin-left: auto;
@@ -593,11 +662,15 @@ h2[tabindex]:focus {
 }
 .page-heading h1 {
   font-size: 32px;
-  margin-bottom: 12px;
+  margin-bottom: 8px;
 }
 .page-heading p {
   font-size: 14px;
   color: var(--muted);
+}
+/* Page headers and role links form a compact overview without inventing dashboard metrics. */
+.workspace-main > .page-heading {
+  margin-bottom: 20px;
 }
 .welcome-banner {
   display: flex;
@@ -633,7 +706,7 @@ h2[tabindex]:focus {
   align-items: center;
   justify-content: space-between;
   gap: 16px;
-  margin-bottom: 16px;
+  margin-bottom: 12px;
 }
 .section-heading h2 {
   font-size: 17px;
@@ -644,13 +717,17 @@ h2[tabindex]:focus {
 .area-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 18px;
+  gap: 12px;
 }
 .area-card {
   background: white;
   border: 1px solid var(--border);
   border-radius: 10px;
-  padding: 22px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 88px;
+  padding: 16px;
   text-decoration: none;
   transition:
     border-color 0.2s,
@@ -675,18 +752,25 @@ h2[tabindex]:focus {
   border-radius: 9px;
   background: #f6f7f9;
   color: #59616e;
+  flex-shrink: 0;
 }
 .area-card h3 {
   font-size: 15px;
-  margin-bottom: 6px;
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+.area-card > svg {
+  margin-left: auto;
+  flex-shrink: 0;
+  color: var(--muted);
 }
 .area-card p {
   font-size: 11px;
   color: var(--muted);
 }
 .capabilities {
-  margin-top: 34px;
-  padding: 24px 26px;
+  margin-top: 20px;
+  padding: 18px 20px;
   background: white;
   border: 1px solid var(--border);
   border-radius: 10px;
@@ -701,14 +785,14 @@ h2[tabindex]:focus {
 .capability-grid {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  margin-top: 22px;
+  margin-top: 12px;
   gap: 16px;
 }
 .capability-grid > div {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  gap: 9px;
+  gap: 6px;
   font-size: 12px;
 }
 .workspace-footer {
@@ -725,21 +809,27 @@ h2[tabindex]:focus {
 }
 /* Shared asynchronous states and dialogs provide labelled feedback and managed focus. */
 .bootstrap {
-  max-width: 640px;
-  margin: 80px auto;
+  width: min(640px, 100%);
+  min-height: 100svh;
+  margin: 0 auto;
   padding: 24px;
+  display: grid;
+  align-content: center;
 }
 .status-panel {
   background: white;
   border: 1px solid var(--border);
   border-radius: 12px;
-  padding: 36px;
+  padding: 24px;
   display: flex;
   flex-direction: column;
   align-items: center;
   text-align: center;
-  gap: 16px;
-  margin-top: 26px;
+  gap: 12px;
+  margin-top: 20px;
+}
+.bootstrap .status-panel {
+  margin-top: 0;
 }
 .status-panel .muted {
   font-size: 14px;
@@ -789,6 +879,9 @@ h2[tabindex]:focus {
   border-radius: 12px;
   z-index: 51;
   box-shadow: 0 20px 80px #0002;
+  /* Short viewports and zoom retain reachable actions rather than clipping dialog content. */
+  max-height: calc(100svh - 32px);
+  overflow-y: auto;
 }
 .dialog-content h2 {
   font-size: 22px;
@@ -814,6 +907,7 @@ h2[tabindex]:focus {
   z-index: 51;
   display: flex;
   flex-direction: column;
+  overflow-y: auto;
 }
 .drawer-close {
   align-self: flex-end;
@@ -874,20 +968,20 @@ h2[tabindex]:focus {
 @media (max-width: 800px) {
   .login-layout {
     grid-template-columns: 1fr;
+    grid-template-rows: auto 1fr;
   }
   .brand-panel {
-    padding: 24px 28px;
+    padding: 16px 24px;
   }
   .brand-copy,
   .brand-footer {
     display: none;
   }
   .login-main {
-    padding: 44px 24px 28px;
-    justify-content: flex-start;
+    padding: 20px 24px;
   }
   .login-footer {
-    margin-top: 40px;
+    margin-top: 12px;
   }
   .wordmark {
     font-size: 22px;
@@ -912,7 +1006,7 @@ h2[tabindex]:focus {
     display: none;
   }
   .topbar {
-    height: 70px;
+    min-height: 64px;
     padding: 0 16px;
     gap: 8px;
   }
@@ -923,13 +1017,22 @@ h2[tabindex]:focus {
     display: none;
   }
   .workspace-main {
-    padding: 24px 20px;
+    padding: 20px;
+  }
+  /* Compact mobile spacing keeps current route/status content visible without reducing text or targets. */
+  .workspace-main > .page-heading {
+    margin-bottom: 16px;
+  }
+  .counter-bar {
+    padding-bottom: 8px;
+    margin-bottom: 16px;
   }
   .page-heading h1 {
     font-size: 28px;
   }
   .area-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
   }
   .welcome-banner {
     padding: 22px;
@@ -941,6 +1044,7 @@ h2[tabindex]:focus {
     align-items: flex-start;
     flex-direction: column;
     gap: 6px;
+    margin-bottom: 10px;
   }
   .counter-bar {
     flex-wrap: wrap;
@@ -949,14 +1053,13 @@ h2[tabindex]:focus {
     display: none;
   }
   .workspace-footer {
-    padding: 16px 20px;
+    padding: 12px 20px;
     flex-wrap: wrap;
   }
   .dialog-content {
     padding: 22px;
   }
   .login-security {
-    font-size: 11px;
     text-align: center;
   }
 }
@@ -968,16 +1071,18 @@ h2[tabindex]:focus {
     margin-bottom: 16px;
   }
   .area-card {
-    padding: 18px;
+    min-height: 68px;
+    padding: 12px;
   }
   .capabilities {
-    padding: 20px;
+    padding: 14px 16px;
+    margin-top: 16px;
   }
   .capability-grid {
-    gap: 18px 12px;
+    gap: 10px 12px;
   }
   .counter-bar select {
-    max-width: 210px;
+    width: min(210px, 100%);
   }
   .account-avatar {
     display: none;
@@ -989,10 +1094,13 @@ h2[tabindex]:focus {
     font-size: 21px;
   }
   .brand-panel {
-    padding: 20px 24px;
+    padding: 14px 20px;
   }
   .login-card h2 {
     font-size: 29px;
+  }
+  .login-main {
+    padding: 16px 20px;
   }
 }
 @media (prefers-reduced-motion: reduce) {

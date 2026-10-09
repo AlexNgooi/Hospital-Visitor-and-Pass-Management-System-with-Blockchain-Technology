@@ -170,7 +170,7 @@ export function WorkspaceShell({ slots }: { slots: readonly FeatureSlot[] }) {
   );
 }
 
-/** Workspace overview is navigation and capability information, not an invented dashboard. */
+/** Compact role overview keeps real navigation and explicit availability in a readable hierarchy. */
 export function WorkspaceOverview({
   slots,
 }: {
@@ -189,27 +189,10 @@ export function WorkspaceOverview({
         <h1>Your workspace, ready.</h1>
         <p>
           {staff
-            ? "Welcome back. Choose an area to continue your counter workflow."
-            : "Welcome back. Manage access and explore your administration workspace."}
+            ? "Choose an area to continue your counter workflow."
+            : "Manage your administration workspace."}
         </p>
       </div>
-      <section className="welcome-banner">
-        <div>
-          <span className="label-chip">AUTHENTICATED SESSION</span>
-          <h2>
-            {staff
-              ? "One clear flow, from arrival to review."
-              : "A clear view of access and accountability."}
-          </h2>
-          <p>Your account permissions define the areas available below.</p>
-        </div>
-        <ShieldCheck
-          className="welcome-icon"
-          size={72}
-          strokeWidth={1.2}
-          aria-hidden="true"
-        />
-      </section>
       <div className="section-heading">
         <h2>Workspace areas</h2>
         <span className="muted">Connect modules as they become available</span>
@@ -217,22 +200,16 @@ export function WorkspaceOverview({
       <div className="area-grid">
         {choices.map(({ path, label, icon: Icon }) => (
           <Link key={path} to={path} className="area-card">
-            <div className="area-card-top">
-              <span className="area-icon">
-                {Icon && <Icon size={22} aria-hidden="true" />}
-              </span>
-              <ArrowUpRight size={18} aria-hidden="true" />
-            </div>
+            <span className="area-icon">
+              {Icon && <Icon size={22} aria-hidden="true" />}
+            </span>
             <h3>{label}</h3>
-            <p>Open this workspace area</p>
+            <ArrowUpRight size={18} aria-hidden="true" />
           </Link>
         ))}
       </div>
       <section className="capabilities">
         <h2>Integration availability</h2>
-        <p className="muted">
-          External capabilities remain unavailable in this baseline.
-        </p>
         <div className="capability-grid">
           <Capability title="WhatsApp" state="Not enabled" />
           <Capability title="Blockchain" state="Not enabled" />

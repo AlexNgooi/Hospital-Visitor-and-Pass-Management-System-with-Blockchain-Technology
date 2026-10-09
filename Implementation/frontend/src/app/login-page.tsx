@@ -117,83 +117,90 @@ export function LoginPage() {
           </span>
           <h2>Welcome back</h2>
           <p className="login-intro">Sign in to your HSAAS workspace.</p>
-          {auth.state.kind === "anonymous" && auth.state.expired && (
-            <p className="notice" role="status">
-              Your session has ended. Sign in again.
-            </p>
-          )}
-          {auth.state.kind === "error" && (
-            <div className="notice">
-              <p role="status">Unable to check your current session.</p>
-            </div>
-          )}
-          {checkedSession &&
-            auth.state.kind === "anonymous" &&
-            auth.logoutState.kind === "idle" && (
+          {/* Keep concurrent session and form feedback together; field rules appear only beside their input. */}
+          <div className="login-feedback">
+            {auth.state.kind === "anonymous" && auth.state.expired && (
               <p className="notice" role="status">
-                No authorised staff session was found. You can sign in.
+                Your session has ended. Sign in again.
               </p>
             )}
-          {auth.logoutState.kind === "pending" && (
-            <p className="notice" role="status">
-              Signing out… Local staff access has been cleared.
-            </p>
-          )}
-          {auth.logoutState.kind === "unknown" && (
-            <div className="error-summary" role="alert">
-              <strong>Server sign-out could not be confirmed.</strong>
-              <p>
-                Local staff access remains cleared. {auth.logoutState.message}
-              </p>
-              <Button
-                variant="secondary"
-                disabled={auth.mutationPending || checking}
-                onClick={() => {
-                  void auth.logout().catch(() => {});
-                }}
-              >
-                Retry sign out
-              </Button>
-            </div>
-          )}
-          {auth.logoutState.kind === "confirmed" && (
-            <p className="notice" role="status">
-              Local staff access is cleared. Your staff session is no longer
-              authorised.
-            </p>
-          )}
-          {(message || Object.keys(errors).length > 0) && (
-            <div
-              className="error-summary"
-              role="alert"
-              tabIndex={-1}
-              ref={summary}
-            >
-              <strong>Please check your sign-in details</strong>
-              {message && <p>{message}</p>}
-              <ul>
-                {Object.entries(errors).map(([field, error]) => (
-                  <li key={field}>
-                    <a
-                      href={`#${field}`}
-                      onClick={(event) => {
-                        event.preventDefault();
-                        document.getElementById(field)?.focus();
-                      }}
-                    >
-                      {error}
-                    </a>
-                  </li>
-                ))}
-              </ul>
-              {message && (
-                <p className="field-hint">
-                  If a request timed out, use the session check before trying
-                  again.
+            {auth.state.kind === "error" && (
+              <div className="notice">
+                <p role="status">Unable to check your current session.</p>
+              </div>
+            )}
+            {checkedSession &&
+              auth.state.kind === "anonymous" &&
+              auth.logoutState.kind === "idle" && (
+                <p className="notice" role="status">
+                  No authorised staff session was found. You can sign in.
                 </p>
               )}
-            </div>
-          )}
+            {auth.logoutState.kind === "pending" && (
+              <p className="notice" role="status">
+                Signing out… Local staff access has been cleared.
+              </p>
+            )}
+            {auth.logoutState.kind === "unknown" && (
+              <div className="error-summary" role="alert">
+                <strong>Server sign-out could not be confirmed.</strong>
+                <p>
+                  Local staff access remains cleared. {auth.logoutState.message}
+                </p>
+                <Button
+                  variant="secondary"
+                  disabled={auth.mutationPending || checking}
+                  onClick={() => {
+                    void auth.logout().catch(() => {});
+                  }}
+                >
+                  Retry sign out
+                </Button>
+              </div>
+            )}
+            {auth.logoutState.kind === "confirmed" && (
+              <p className="notice" role="status">
+                Local staff access is cleared. Your staff session is no longer
+                authorised.
+              </p>
+            )}
+            {(message || Object.keys(errors).length > 0) && (
+              <div
+                className="error-summary"
+                role="alert"
+                aria-label="Please check your sign-in details"
+                tabIndex={-1}
+                ref={summary}
+              >
+                <strong>
+                  {message
+                    ? "Sign-in could not be completed"
+                    : "Check details:"}
+                </strong>
+                {message && <p>{message}</p>}
+                <ul>
+                  {Object.keys(errors).map((field) => (
+                    <li key={field}>
+                      <a
+                        href={`#${field}`}
+                        onClick={(event) => {
+                          event.preventDefault();
+                          document.getElementById(field)?.focus();
+                        }}
+                      >
+                        {field === "login" ? "Username" : "Password"}
+                      </a>
+                    </li>
+                  ))}
+                </ul>
+                {message && (
+                  <p className="field-hint">
+                    Check your current session before trying again.
+                  </p>
+                )}
+              </div>
+            )}
+          </div>
           <form onSubmit={submit} noValidate aria-busy={busy}>
             <InputField
               id="login"
@@ -232,32 +239,35 @@ export function LoginPage() {
                 )}
               </button>
             </div>
-            <Button
-              type="submit"
-              busy={busy}
-              disabled={disabled}
-              className="sign-in"
-            >
-              {busy ? "Signing in…" : "Sign in"}
-              {!busy && <ArrowRight size={18} aria-hidden="true" />}
-            </Button>
+            {/* Both explicit actions share a row without shrinking their touch targets or changing auth behavior. */}
+            <div className="login-actions">
+              <Button
+                type="submit"
+                busy={busy}
+                disabled={disabled}
+                className="sign-in"
+              >
+                {busy ? "Signing in…" : "Sign in"}
+                {!busy && <ArrowRight size={18} aria-hidden="true" />}
+              </Button>
+              {/* Always available for ambiguous login and post-login CSRF failures; never replays login. */}
+              <Button
+                variant="ghost"
+                onClick={() => {
+                  // A read resolves the ambiguous result without resubmitting credentials or retaining stale copy.
+                  setCheckedSession(true);
+                  setMessage("");
+                  auth.refresh();
+                }}
+                disabled={auth.mutationPending}
+                busy={checking}
+              >
+                {logoutUnresolved
+                  ? "Check sign-out status"
+                  : "Check current session"}
+              </Button>
+            </div>
           </form>
-          {/* Always available for ambiguous login and post-login CSRF failures; never replays login. */}
-          <Button
-            variant="ghost"
-            onClick={() => {
-              // A read resolves the ambiguous result without resubmitting credentials or retaining stale copy.
-              setCheckedSession(true);
-              setMessage("");
-              auth.refresh();
-            }}
-            disabled={auth.mutationPending}
-            busy={checking}
-          >
-            {logoutUnresolved
-              ? "Check sign-out status"
-              : "Check current session"}
-          </Button>
           <p className="login-help">
             Need an account? <strong>Contact your administrator.</strong>
           </p>

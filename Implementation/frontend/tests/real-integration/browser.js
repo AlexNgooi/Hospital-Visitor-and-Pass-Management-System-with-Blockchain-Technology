@@ -104,7 +104,7 @@ async (page) => {
   await page.setViewportSize({ width: 1440, height: 1024 });
   // History changes before React commits the new route; audit the ready administrator shell, not that transition.
   await page.getByRole('navigation', { name: 'Administrator navigation' }).waitFor();
-  await page.getByRole('heading', { name: 'A clear view of access and accountability.', exact: true }).waitFor();
+  await page.getByRole('heading', { name: 'Your workspace, ready.', exact: true }).waitFor();
   await audit('real-admin-desktop');
   await page.getByRole('button', { name: 'Sign out', exact: true }).click();
   await page.getByText('Local staff access is cleared. Your staff session is no longer authorised.', { exact: true }).waitFor();
