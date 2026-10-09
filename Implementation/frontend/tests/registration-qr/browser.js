@@ -85,6 +85,39 @@ async (page) => {
   await page.setViewportSize({ width: 375, height: 568 }); await audit(page, "live-display-short-screen");
   await page.setViewportSize({ width: 375, height: 812 });
   await page.evaluate(() => { document.documentElement.style.zoom = "2"; }); await audit(page, "live-display-mobile-zoom200");
+  // Actual fullscreen must preserve scroll origin under short-screen CSS zoom, not just normal-page scrolling.
+  await page.setViewportSize({ width: 375, height: 568 });
+  await page.getByRole("button", { name: "Full screen", exact: true }).click();
+  await page.waitForFunction(() => Boolean(document.fullscreenElement));
+  const fullscreen = await page.evaluate(() => {
+    const card = document.fullscreenElement;
+    card.scrollTop = 0; card.scrollLeft = 0;
+    const heading = card.querySelector(".qr-display-heading").getBoundingClientRect();
+    const image = card.querySelector(".qr-scan-area img").getBoundingClientRect();
+    return { fullscreen: true, viewport: { width: innerWidth, height: innerHeight }, headingTop: heading.top, headingLeft: heading.left,
+      imageTop: image.top, imageLeft: image.left, imageWidth: image.width, imageHeight: image.height,
+      scrollTop: card.scrollTop, scrollHeight: card.scrollHeight, clientHeight: card.clientHeight, scrollWidth: card.scrollWidth, clientWidth: card.clientWidth,
+      justifyContent: getComputedStyle(card).justifyContent, alignItems: getComputedStyle(card).alignItems };
+  });
+  if (fullscreen.headingTop < 0 || fullscreen.headingLeft < 0 || fullscreen.imageTop < 0 || fullscreen.imageLeft < 0 || fullscreen.scrollTop !== 0) throw new Error("Fullscreen content precedes scroll origin: " + JSON.stringify(fullscreen));
+  const revokeControl = page.getByRole("button", { name: "Revoke display", exact: true });
+  await revokeControl.scrollIntoViewIfNeeded();
+  const bottomAccessible = await revokeControl.evaluate(element => {
+    const box = element.getBoundingClientRect(); return box.top >= 0 && box.bottom <= innerHeight + 1 && box.left >= 0 && box.right <= innerWidth + 1;
+  });
+  if (!bottomAccessible) throw new Error("Enlarged fullscreen revoke cannot be scrolled into view");
+  // Hide the capability before any screenshot; preserve its native dimensions and interactive target sizes.
+  const fullscreenRedaction = await page.addStyleTag({ content: ".qr-scan-area img { visibility: hidden !important; }" });
+  try { await page.screenshot({ path: root + "fullscreen-short-zoom200-controls.png" }); }
+  finally { await fullscreenRedaction.evaluate(element => element.remove()); }
+  const topRecoverable = await page.evaluate(() => {
+    document.fullscreenElement.scrollTop = 0; document.fullscreenElement.scrollLeft = 0;
+    return document.fullscreenElement.querySelector(".qr-display-heading").getBoundingClientRect().top >= 0;
+  });
+  if (!topRecoverable) throw new Error("Fullscreen heading cannot be recovered by scrolling back to origin");
+  checks.push({ step: "fullscreen-short-zoom200-safe-scroll", ...fullscreen, bottomAccessible, topRecoverable });
+  await page.evaluate(() => document.exitFullscreen()); await page.waitForFunction(() => !document.fullscreenElement);
+  await page.setViewportSize({ width: 375, height: 812 });
   await page.evaluate(() => { document.documentElement.style.zoom = ""; });
   await page.context().setOffline(true); await page.waitForFunction(() => !document.querySelector(".qr-scan-area img"));
   await audit(page, "display-offline-hidden");
