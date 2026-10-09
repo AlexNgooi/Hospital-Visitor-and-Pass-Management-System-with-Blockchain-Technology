@@ -1,0 +1,204 @@
+{
+  "checks": [
+    {
+      "step": "live-display-desktop",
+      "violations": [],
+      "horizontalOverflow": false,
+      "storageEmpty": true,
+      "tokenAbsentFromVisibleText": true,
+      "fragmentCleared": true
+    },
+    {
+      "step": "server-slot-real-payload-change",
+      "changed": true
+    },
+    {
+      "step": "live-display-mobile",
+      "violations": [],
+      "horizontalOverflow": false,
+      "storageEmpty": true,
+      "tokenAbsentFromVisibleText": true,
+      "fragmentCleared": true
+    },
+    {
+      "step": "live-display-mobile-zoom200",
+      "violations": [],
+      "horizontalOverflow": false,
+      "storageEmpty": true,
+      "tokenAbsentFromVisibleText": true,
+      "fragmentCleared": true
+    },
+    {
+      "step": "display-offline-hidden",
+      "violations": [],
+      "horizontalOverflow": false,
+      "storageEmpty": true,
+      "tokenAbsentFromVisibleText": true,
+      "fragmentCleared": true
+    },
+    {
+      "step": "visitor-entry-mobile",
+      "violations": [],
+      "horizontalOverflow": false,
+      "storageEmpty": true,
+      "tokenAbsentFromVisibleText": true,
+      "fragmentCleared": true
+    },
+    {
+      "step": "visitor-restart-confirmation",
+      "violations": [],
+      "horizontalOverflow": false,
+      "storageEmpty": true,
+      "tokenAbsentFromVisibleText": true,
+      "fragmentCleared": true
+    },
+    {
+      "step": "cancel-keeps-existing-form",
+      "oldCounterVisible": true
+    },
+    {
+      "step": "visitor-confirmed-restart",
+      "violations": [],
+      "horizontalOverflow": false,
+      "storageEmpty": true,
+      "tokenAbsentFromVisibleText": true,
+      "fragmentCleared": true
+    },
+    {
+      "step": "real-response-loss-recovery",
+      "sameContext": true,
+      "writeAttempts": 1
+    },
+    {
+      "step": "visitor-unknown-recovered",
+      "violations": [],
+      "horizontalOverflow": false,
+      "storageEmpty": true,
+      "tokenAbsentFromVisibleText": true,
+      "fragmentCleared": true
+    },
+    {
+      "step": "revoked-display-hidden",
+      "violations": [],
+      "horizontalOverflow": false,
+      "storageEmpty": true,
+      "tokenAbsentFromVisibleText": true,
+      "fragmentCleared": true
+    }
+  ],
+  "responseStatuses": [
+    {
+      "path": "/api/auth/me",
+      "method": "GET",
+      "status": 401
+    },
+    {
+      "path": "/api/public/csrf",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/auth/login",
+      "method": "POST",
+      "status": 200
+    },
+    {
+      "path": "/api/public/csrf",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/public/registration-entry/capabilities",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/staff/registration-qr-sessions",
+      "method": "POST",
+      "status": 201
+    },
+    {
+      "path": "/api/staff/registration-qr-sessions/{id}/current",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/staff/registration-qr-sessions/{id}/current",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/staff/registration-qr-sessions/{id}/current",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/staff/registration-qr-sessions/{id}/current",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/staff/registration-qr-sessions/{id}/current",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/staff/registration-qr-sessions/{id}/current",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/staff/registration-qr-sessions/{id}/current",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/staff/registration-qr-sessions/{id}/current",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/public/csrf",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/staff/registration-qr-sessions",
+      "method": "POST",
+      "status": 201
+    },
+    {
+      "path": "/api/staff/registration-qr-sessions/{id}/current",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/public/csrf",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/staff/registration-qr-sessions",
+      "method": "POST",
+      "status": 201
+    },
+    {
+      "path": "/api/staff/registration-qr-sessions/{id}/current",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/staff/registration-qr-sessions/{id}/revoke",
+      "method": "POST",
+      "status": 204
+    }
+  ],
+  "browserErrors": [],
+  "realBackend": true,
+  "realMysql": true,
+  "syntheticRecords": true,
+  "cameraAndProductionHttps": "NOT_RUN",
+  "sourceCommit": "239caa8d367e7c8eda8c8477595e9ce9a88525e7",
+  "completedAt": "2026-10-09T13:21:48+08:00",
+  "qrScreenshotRedaction": "Temporary CSS visibility:hidden on all QR images; visually verified; no QR pixels delivered"
+}

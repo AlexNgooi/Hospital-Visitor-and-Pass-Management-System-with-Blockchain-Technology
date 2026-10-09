@@ -1,0 +1,99 @@
+{
+  "sourceCommit": "239caa8d367e7c8eda8c8477595e9ce9a88525e7",
+  "originalBaseline": "98a7f7d5a1869922a752a14ee19492fe97c3cf3f",
+  "reviewedM00": "cf10a71adf04c9a533e4c6c7e68a1344b3328276",
+  "reviewedSharedUi": "858b74d58c8a990b576f58531cdd388d0fa6943d",
+  "result": "Submitted for coordinator review",
+  "backend": {
+    "skipped": 0,
+    "exitCode": 0,
+    "errors": 0,
+    "tests": 67,
+    "failures": 0,
+    "finishedAt": "2026-10-09T13:14:46+08:00",
+    "rawLogSha256": "930468ecdba9526b1742cbe076b69d42d104d4d88d7a922007683ec0fcc660f6"
+  },
+  "frontend": {
+    "syntheticProxy": "PASS",
+    "exitCode": 0,
+    "tests": 84,
+    "startedAt": "2026-10-09T13:19:15+08:00",
+    "build": "PASS",
+    "typecheck": "PASS",
+    "lint": "PASS"
+  },
+  "browser": {
+    "completedAt": "2026-10-09T13:21:48+08:00",
+    "mobile": "375x812",
+    "checks": 12,
+    "desktop": "1440x1000",
+    "mysql": "8.0.45 disposable",
+    "records": "SYNTHETIC",
+    "zoom": "200% CSS simulation",
+    "pageExceptions": 0,
+    "qrPixels": "REMOVED"
+  },
+  "v4Sha256": "05c0dae3fe31d93ecc63845932cc66e585afda44c5acac2f827e11c2c88fe4d8",
+  "openapiSha256": "d12fb228a5baa8157d2780e0f606c3e3f6b39826efa811d40b4c91c1e1c0d232",
+  "cleanup": {
+    "ownedContainerAbsent": true,
+    "ownedListeningPortsAbsent": true,
+    "userPort5173Touched": false,
+    "nativeDatabaseTouched": false
+  },
+  "notRun": [
+    "Physical phone camera",
+    "Production HTTPS",
+    "M03 actual registration API",
+    "Real hospital MRN/card/reader",
+    "Production load/distributed limiter/retention",
+    "Physical OS sleep/power loss"
+  ],
+  "artifacts": [
+    {
+      "path": "screenshots/display-offline-hidden.png",
+      "sha256": "7831d90722d6ac7c5946c094b64a12d07ba23fb15932d09b292640f679bb9fff",
+      "bytes": 103312
+    },
+    {
+      "path": "screenshots/live-display-desktop.png",
+      "sha256": "0503afc84d541a4e6cee9a265212b708549af3d7f9ab6407536a2837ee8ba457",
+      "bytes": 130042
+    },
+    {
+      "path": "screenshots/live-display-mobile-zoom200.png",
+      "sha256": "eef6c8b9781ef2de319244ceb6ef0740cacc1a51e5b39d98082d8f90d0d6e4cf",
+      "bytes": 244267
+    },
+    {
+      "path": "screenshots/live-display-mobile.png",
+      "sha256": "b9d87bce377935a5c453b5d12eaff1d9a9cce45015fb248d8607b00145458c99",
+      "bytes": 94261
+    },
+    {
+      "path": "screenshots/revoked-display-hidden.png",
+      "sha256": "d54f5b3ba25b84dddd2b053a9ddb8d0782215e66d5fa565ae94f1756dc1d4dff",
+      "bytes": 102573
+    },
+    {
+      "path": "screenshots/visitor-confirmed-restart.png",
+      "sha256": "e39d392afd6741569f0cf53c3b67fb37dfecc593853d572d281a7c78cc60599f",
+      "bytes": 47421
+    },
+    {
+      "path": "screenshots/visitor-entry-mobile.png",
+      "sha256": "4dead04e403423f3127ebac193409dd46411f66f92ebbec5e0c098facf0e3efb",
+      "bytes": 48499
+    },
+    {
+      "path": "screenshots/visitor-restart-confirmation.png",
+      "sha256": "4bfb0800acf25b69885b8fe61b948d0f7a9e440acefd4be8f62c3b51bce1538a",
+      "bytes": 55583
+    },
+    {
+      "path": "screenshots/visitor-unknown-recovered.png",
+      "sha256": "e39d392afd6741569f0cf53c3b67fb37dfecc593853d572d281a7c78cc60599f",
+      "bytes": 47421
+    }
+  ]
+}
