@@ -100,13 +100,47 @@ describe("shell auth and role interactions", () => {
     expect(port.login).not.toHaveBeenCalled();
     const summary = screen.getByRole("alert");
     expect(document.activeElement).toBe(summary);
-    await user.click(screen.getByRole("link", { name: /Use 3–64/ }));
+    await user.click(screen.getByRole("link", { name: "Username" }));
     expect(document.activeElement).toBe(
       screen.getByLabelText("Username / Staff account"),
     );
     expect(screen.getByLabelText("Password").getAttribute("aria-invalid")).toBe(
       "true",
     );
+  });
+  it("keeps full inline rules once and linked focus when bootstrap and validation feedback coexist", async () => {
+    // Compact copy must preserve field guidance, live feedback and recovery without an auth write.
+    const { port } = mockPort();
+    vi.mocked(port.me).mockRejectedValue(new ClientError("network"));
+    mount("/login", port);
+    await screen.findByText("Unable to check your current session.");
+    const user = userEvent.setup();
+    await user.click(
+      screen.getByRole("button", { name: "Sign in" }),
+    );
+    const summary = screen.getByRole("alert", {
+      name: "Please check your sign-in details",
+    });
+    expect(document.activeElement).toBe(summary);
+    expect(screen.getAllByText(/^Use 3–64 letters/)).toHaveLength(1);
+    expect(screen.getAllByText("Enter your password.")).toHaveLength(1);
+    expect(
+      screen
+        .getByLabelText("Username / Staff account")
+        .getAttribute("aria-describedby"),
+    ).toContain("login-error");
+    await user.click(
+      screen.getByRole("link", { name: "Password" }),
+    );
+    expect(document.activeElement).toBe(
+      screen.getByLabelText("Password", { exact: true }),
+    );
+    expect(port.login).not.toHaveBeenCalled();
+    expect(
+      screen
+        .getByRole("button", { name: "Check current session" })
+        .getAttribute("type"),
+    ).toBe("button");
   });
   it("signs in using username (not email), preserves password bytes and navigates to role workspace", async () => {
     const { port } = mockPort();
