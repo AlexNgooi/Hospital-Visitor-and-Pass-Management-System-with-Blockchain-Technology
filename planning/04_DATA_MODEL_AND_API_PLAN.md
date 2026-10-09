@@ -122,6 +122,8 @@ M00 owner guard 采用“先冻结 port，再做登录持久化/失效 spike”�
 
 framework save/flush/delete 阶段不持领域锁、不在领域事务内；成功 save 后用有界 REQUIRED 领域事务按 user→binding→context 重新校验并激活 PENDING 或续期 ACTIVE，hook 不再调用 save。首次登录必须确认持久化和激活才响应成功，PENDING 使用独立短 activation TTL。续期只允许正常已登录 owner 的成功 save；必须尚未超过旧 confirmed/absolute deadline 且全部映射有效，新上限不得超过持久化 expiry/absolute deadline。匿名 exchange/submit 不续 owner 期限，失败保存、迟到/旧 generation 保存不得复活失效或撤销能力。8h/24h 起点固定。
 
+2026-10-09 M02 请求结束保存审计发现：职员同一浏览器访问 public entry 会携带其 staff Session，纯 QR service 不调用 save 仍不足以保证上述边界。已冻结的“匿名 exchange/submit 不续 owner”也适用于此情形，不仅是另一访客延长 display owner。public entry capabilities/exchange/GET 与未来匿名登记 schema/submit/poll 均不能通过框架成功保存激活或续期 owner；正常 staff 操作的续期保留，保存前映射/撤销/期限检查不能跳过。不因此禁止职员浏览器使用匿名入口。已交 M00 最小共享安全返修、M02 真实路径回归；该增量验收尚未完成，不将原 M00 安全前缀 PASS 扩大为此路径已通过。
+
 logout 先按 user→binding→context 提交逻辑撤销，再删除框架 Session；delete 失败仍拒绝能力。账号/角色/权限更新与 target user epoch/audit 同事务；counter 关闭按 actor user→counter→actor binding/context 校验并停用，不反向追锁所有 owner。grant/display 可依据当前权威 guard 逻辑失效，物理清理为后续工作；API 不把仍 OPEN 的失效 grant 显示为有效。业务已提交但请求结束自动 save 失败为响应 UNKNOWN，不宣称业务回滚或换幂等 key；按 C05/C08 在有效会话内核查原命令。框架 reaper 不直接调用领域 hook。
 
 M00 已直接实现 spike，并经 coordinator 独立及合并后 verify40tests和真实C01联调验证、审核合并。安全前缀可供获自身用户许可后的 M02/M03 接入；新模块必须验证自己的完整QR/grant/registration事务图，不把基础前缀通过当全图通过。
