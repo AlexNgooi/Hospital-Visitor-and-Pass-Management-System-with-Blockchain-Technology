@@ -23,6 +23,8 @@ To enable a deployment, supply these explicit backend properties through its con
 
 Only explicit foundation `development`/`test` allows HTTP on localhost/127.0.0.1/IPv6 loopback. Enabled configuration with missing/invalid keys or origin fails startup. There is no fallback secret. Keys stay backend-only. Configuration and exchange request `toString()` redact their secret/token values.
 
+The current minimal frontend is same-origin: the staff display and public `/register` entry must be served from the same frontend origin, and `hsaas.qr.origin` must match it. The staff feature rejects an entry URL with another origin. Backend origin validation does not imply this frontend supports an arbitrary separate registration site; that deployment would require a separately reviewed frontend/session design.
+
 Rotate by deploying the old and new keys together, selecting the new active key, and retaining every old key until its last unrevoked challenge has expired in server UTC. Startup compares live challenge key versions against the configured keyring and refuses early removal. Keep the same retained keyring on every serving instance. This implementation does not provide an operator key-management UI or a distributed deployment rollout.
 
 ## Migration and API

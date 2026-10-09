@@ -1,6 +1,8 @@
 # M02 Dynamic Registration QR — submitted for coordinator review
 
-**Current review return:** source `835689f44368596b26198e1db6a7419acfec4050`; R1–R3 and the R2 capability supplement are addressed in [RETURN_R1_R3.md](RETURN_R1_R3.md). Latest verification is backend 68 / frontend 95 and the current browser receipt. Initial source 239caa8 and results below are preserved as historical evidence, superseded by that return. Coordinator approval remains pending.
+**Current viewport return:** source `d6ebe1fc92fe92c7de4a3d5867f91b6044190b00`; [RETURN_R4.md](RETURN_R4.md) contains the UI-only increment and separate R4/ receipts. Frontend 95 tests and 27 browser checks pass; backend remains source-835689f. R1–R3 evidence below stays historical, and coordinator approval is still required.
+
+**Prior safety review return:** source `835689f44368596b26198e1db6a7419acfec4050`; R1–R3 and the R2 capability supplement are addressed in [RETURN_R1_R3.md](RETURN_R1_R3.md). That phase verified backend 68 / frontend 95 and the root browser receipt. Initial source 239caa8 and results below are preserved as historical evidence. The R4 viewport return above is current; coordinator approval remains pending.
 
 - Module/chat: M02; active isolated chat `01a11db3-31c9-7da0-bfb2-217e71081355`; original `01a11ba4-e2bd-74a3-beee-1f47860bfc01`.
 - Owner: module assistant implements/tests/repairs; coordinator `01a11b84-212d-7273-93a5-5dc16c698bdb` owns review and main merge. All new/modified handwritten code has English responsibility/business/security comments.

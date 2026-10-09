@@ -1,0 +1,138 @@
+{
+  "sourceCommit": "d6ebe1fc92fe92c7de4a3d5867f91b6044190b00",
+  "parentDelivery": "5c149d020bab4a292f977974d8b5ea6a8e5c6ed7",
+  "result": "R4 submitted for coordinator review",
+  "frontend": {
+    "exitCode": 0,
+    "typecheck": "PASS",
+    "lint": "PASS",
+    "tests": 95,
+    "startedAt": "2026-10-09T18:32:30+08:00",
+    "build": "PASS",
+    "rawTestLogSha256": "0f2290f91ab41de0e0c609c45fa2d9a314348e198986979d5f44a00d6f995479"
+  },
+  "backend": {
+    "reportedCompletedAt": "2026-10-09T13:44:55+08:00",
+    "phaseTests": "NOT_RERUN UI-only",
+    "coordinatorReportedIndependentTests": 68,
+    "unchangedFrom": "835689f44368596b26198e1db6a7419acfec4050",
+    "gitTree": "099d9dcb3f2d6c8b1676b957342b13679c655e9c"
+  },
+  "browser": {
+    "interactiveMinimumCssPixels": 44,
+    "pageExceptions": 0,
+    "normalViewports": [
+      "1366x768",
+      "1440x900",
+      "375x812"
+    ],
+    "qrCssPixels": [
+      280,
+      260
+    ],
+    "defaultLiveAndUnknownDocumentFits": true,
+    "decoder": "Actual PNG resized by nearest-neighbor canvas at measured CSS dimensions; physical camera NOT_RUN",
+    "mysql": "8.0.45 disposable",
+    "completedAt": "2026-10-09T18:35:45+08:00",
+    "records": "SYNTHETIC",
+    "checks": 27,
+    "zoom": "200% CSS simulation safe scroll",
+    "shortScreen": "375x568 safe scroll"
+  },
+  "cleanup": {
+    "ownedContainerAbsent": true,
+    "nativeDatabaseTouched": false,
+    "userPort5173Touched": false,
+    "ownedListenersAbsent": true,
+    "ownedPlaywrightSessionClosed": true
+  },
+  "notRun": [
+    "Physical phone camera",
+    "Production HTTPS",
+    "Actual M03 registration",
+    "Physical OS sleep/zoom",
+    "Production load/distributed throttle/retention"
+  ],
+  "artifacts": [
+    {
+      "path": "screenshots/display-offline-hidden.png",
+      "sha256": "c0ce160bd29ba4213c2dd8a5ce4b5526d0428547730f936b10afd7e6809c4538",
+      "bytes": 56580
+    },
+    {
+      "path": "screenshots/live-display-desktop.png",
+      "sha256": "64749cfb71bd301886fb6a2f7d94e5fbff0c1f83efbad73356ce3ba4d6e6d19d",
+      "bytes": 76912
+    },
+    {
+      "path": "screenshots/live-display-desktop1440.png",
+      "sha256": "6c404b0d6c634cb843cfb3fcca7937a78158375449201ef5105b20e9b5bee7b2",
+      "bytes": 78229
+    },
+    {
+      "path": "screenshots/live-display-mobile-zoom200.png",
+      "sha256": "68959c914cb919648b58a35b1851ff943ea244971014125d7429d237dfc7bd93",
+      "bytes": 113530
+    },
+    {
+      "path": "screenshots/live-display-mobile.png",
+      "sha256": "479ed5841603813d9a047211a686a7193fe264fb688e65f00a2761b35cef6682",
+      "bytes": 47685
+    },
+    {
+      "path": "screenshots/live-display-short-screen.png",
+      "sha256": "cffcd676d078053dc511ced4623db22b1391c5500405168f7e6db9713e77bb9d",
+      "bytes": 48499
+    },
+    {
+      "path": "screenshots/live-guidance-expanded-mobile.png",
+      "sha256": "7fc85a9ba24734d87ddea5d8ba995b59d9cf00dd250f7a1572a80223469d3a80",
+      "bytes": 75174
+    },
+    {
+      "path": "screenshots/revoke-unknown-counter-changed.png",
+      "sha256": "ea86741613fdd7a42fea61733905af0e384d0142d1c74ff317fe29d8d1f311b2",
+      "bytes": 53486
+    },
+    {
+      "path": "screenshots/revoke-unknown-desktop.png",
+      "sha256": "ce8b4e96d545d9d2f802941636e9ac092f794dba57c8263af9385de5231326d6",
+      "bytes": 83204
+    },
+    {
+      "path": "screenshots/revoke-unknown-desktop1440.png",
+      "sha256": "c3ad84b24960e57ccfca3d5b1c15fd133b3e91e78dc9c477d6d4e726fc96341b",
+      "bytes": 84743
+    },
+    {
+      "path": "screenshots/revoke-unknown-hidden.png",
+      "sha256": "22d592f3d20db62f77ab0cb1e0ae9d25e31c7abdcef8a04c3c35ee438f169f85",
+      "bytes": 53176
+    },
+    {
+      "path": "screenshots/revoked-display-hidden.png",
+      "sha256": "5073b3ba830d467a6b24a63922dbfe08015a83ac4376b59db0719459e7673a6c",
+      "bytes": 60620
+    },
+    {
+      "path": "screenshots/visitor-confirmed-restart.png",
+      "sha256": "e39d392afd6741569f0cf53c3b67fb37dfecc593853d572d281a7c78cc60599f",
+      "bytes": 47421
+    },
+    {
+      "path": "screenshots/visitor-entry-mobile.png",
+      "sha256": "4dead04e403423f3127ebac193409dd46411f66f92ebbec5e0c098facf0e3efb",
+      "bytes": 48499
+    },
+    {
+      "path": "screenshots/visitor-restart-confirmation.png",
+      "sha256": "4bfb0800acf25b69885b8fe61b948d0f7a9e440acefd4be8f62c3b51bce1538a",
+      "bytes": 55583
+    },
+    {
+      "path": "screenshots/visitor-unknown-recovered.png",
+      "sha256": "e39d392afd6741569f0cf53c3b67fb37dfecc593853d572d281a7c78cc60599f",
+      "bytes": 47421
+    }
+  ]
+}
