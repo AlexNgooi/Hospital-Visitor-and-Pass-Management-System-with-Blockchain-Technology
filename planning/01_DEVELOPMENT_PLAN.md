@@ -9,6 +9,8 @@ status: coordinator-planning
 
 本 chat 是 HSAAS project coordinator，负责范围、模块分配、契约、答疑、审核与本地合并。每个模块使用自己的独立 chat；阶段只是时间和集成关卡，不再对应一个开发 chat。模块与协作协议的事实归属在 [12](12_THREE_MONTH_CHAT_PLAN.md)。本轮仅修改规划，不创建模块 chat，不实施业务代码。
 
+2026-10-10用户决定覆盖后续协调安排：本chat继续完成已许可M03/M04、审核/本地merge/复验，之后M05–M11由用户自己coordinate。下列未来阶段中的coordinator职责由用户承担，不是本chat的自动任务。每模块新chat的启动消息、依赖与人工审核交接见[用户启动指南](13_USER_MODULE_START_GUIDE.md)；当前模块实际状态见12/REVIEW，日期不证明完成。
+
 最新状态：2026-10-08 用户随后明确要求代开 M00–M04，五个独立 chat 已创建，统一 gpt-6.1-sol/high，初始仅 Local 只读准备；最新开发方式改为模块助手直接实现、测试和交接，英文注释必需，各模块仍一次开发许可。实际登记见 12，其他模块不自动开启。
 
 所有 module 的 chat 与开发均由用户手动开启和启动；coordinator 只准备分配计划、任务单与依赖条件，不代开或自动启动。阶段日期、依赖通过和 merge 完成不会自动启动下一模块。
