@@ -71,3 +71,24 @@ not retain a huge empty scan card. Expanded guidance, tiny/zoomed/short screens
 may scroll safely. Measure actual bounds and decode the rendered current QR in
 memory without persisting its capability pixels. No shared UI/API/schema change
 or physical-camera/production acceptance is inferred from these layout tests.
+
+## R4 first return and fullscreen supplement
+
+Source `d6ebe1fc92fe92c7de4a3d5867f91b6044190b00`, artifact-only delivery
+`1299abc6aa447a96c9ced8e36c623546293eef35`: four feature/test files changed,
+backend/API/V4/shared UI unchanged. All 16 delivered PNG hashes matched their
+manifest. Coordinator independently ran the actual disposable MySQL/servlet/Vite
+browser suite: 27 checks, zero page exceptions, PASS; receipt captured at
+18:41:57 +08 in coordinator-browser-verification.json. Default live/unknown
+revocation pages fit 1366x768, 1440x900 and 375x812 completely; code decoded at
+280px/260px through the stated nearest-neighbor canvas simulation. Physical
+camera remains NOT_RUN. Module's earlier capture is separate in R4/.
+
+Additional actual fullscreen check found a remaining R4 defect: 375x568 with
+200% CSS zoom positions the heading at -153px while scrollTop is 0. The centered
+overflow cannot reveal its beginning (scrollHeight 368, clientHeight 282).
+Returned to M02 for feature-only overflow alignment and browser regression;
+the preceding 27 results remain valid but do not constitute final approval.
+Coordinator stopped its exact owned harness/browser and independently confirmed
+the disposable container and ports 18292/15292/15293 absent. User 5173 and native
+database were not touched. No M02 merge or downstream start yet.

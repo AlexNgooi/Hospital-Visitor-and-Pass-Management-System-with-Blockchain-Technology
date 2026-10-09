@@ -1,0 +1,531 @@
+{
+  "checks": [
+    {
+      "step": "live-first-screen-desktop1366",
+      "viewport": {
+        "width": 1366,
+        "height": 768
+      },
+      "rectangles": [
+        {
+          "left": 426.546875,
+          "top": 288.96875,
+          "right": 706.546875,
+          "bottom": 568.96875,
+          "width": 280,
+          "height": 280
+        },
+        {
+          "left": 463.84375,
+          "top": 576.96875,
+          "right": 669.265625,
+          "bottom": 602.96875,
+          "width": 205.421875,
+          "height": 26
+        },
+        {
+          "left": 437.421875,
+          "top": 608.96875,
+          "right": 548.671875,
+          "bottom": 652.96875,
+          "width": 111.25,
+          "height": 44
+        },
+        {
+          "left": 556.671875,
+          "top": 608.96875,
+          "right": 695.671875,
+          "bottom": 652.96875,
+          "width": 139,
+          "height": 44
+        }
+      ],
+      "visible": true,
+      "touchSized": true,
+      "decodedAtRenderedSize": true,
+      "renderedPixels": {
+        "width": 280,
+        "height": 280
+      },
+      "renderedDecoder": "nearest-neighbor canvas simulation at measured CSS size; physical camera NOT_RUN",
+      "documentHeight": 768,
+      "documentFits": true
+    },
+    {
+      "step": "live-display-desktop",
+      "violations": [],
+      "horizontalOverflow": false,
+      "storageEmpty": true,
+      "tokenAbsentFromVisibleText": true,
+      "fragmentCleared": true
+    },
+    {
+      "step": "live-first-screen-desktop1440",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "rectangles": [
+        {
+          "left": 450.65625,
+          "top": 288.96875,
+          "right": 730.65625,
+          "bottom": 568.96875,
+          "width": 280,
+          "height": 280
+        },
+        {
+          "left": 487.953125,
+          "top": 576.96875,
+          "right": 693.375,
+          "bottom": 602.96875,
+          "width": 205.421875,
+          "height": 26
+        },
+        {
+          "left": 461.53125,
+          "top": 608.96875,
+          "right": 572.78125,
+          "bottom": 652.96875,
+          "width": 111.25,
+          "height": 44
+        },
+        {
+          "left": 580.78125,
+          "top": 608.96875,
+          "right": 719.78125,
+          "bottom": 652.96875,
+          "width": 139,
+          "height": 44
+        }
+      ],
+      "visible": true,
+      "touchSized": true,
+      "decodedAtRenderedSize": true,
+      "renderedPixels": {
+        "width": 280,
+        "height": 280
+      },
+      "renderedDecoder": "nearest-neighbor canvas simulation at measured CSS size; physical camera NOT_RUN",
+      "documentHeight": 900,
+      "documentFits": true
+    },
+    {
+      "step": "live-display-desktop1440",
+      "violations": [],
+      "horizontalOverflow": false,
+      "storageEmpty": true,
+      "tokenAbsentFromVisibleText": true,
+      "fragmentCleared": true
+    },
+    {
+      "step": "server-slot-real-payload-change",
+      "changed": true
+    },
+    {
+      "step": "live-first-screen-mobile",
+      "viewport": {
+        "width": 375,
+        "height": 812
+      },
+      "rectangles": [
+        {
+          "left": 57.5,
+          "top": 276.171875,
+          "right": 317.5,
+          "bottom": 536.171875,
+          "width": 260,
+          "height": 260
+        },
+        {
+          "left": 84.78125,
+          "top": 544.171875,
+          "right": 290.203125,
+          "bottom": 570.171875,
+          "width": 205.421875,
+          "height": 26
+        },
+        {
+          "left": 58.375,
+          "top": 576.171875,
+          "right": 169.625,
+          "bottom": 620.171875,
+          "width": 111.25,
+          "height": 44
+        },
+        {
+          "left": 177.625,
+          "top": 576.171875,
+          "right": 316.625,
+          "bottom": 620.171875,
+          "width": 139,
+          "height": 44
+        }
+      ],
+      "visible": true,
+      "touchSized": true,
+      "decodedAtRenderedSize": true,
+      "renderedPixels": {
+        "width": 260,
+        "height": 260
+      },
+      "renderedDecoder": "nearest-neighbor canvas simulation at measured CSS size; physical camera NOT_RUN",
+      "documentHeight": 812,
+      "documentFits": true
+    },
+    {
+      "step": "live-display-mobile",
+      "violations": [],
+      "horizontalOverflow": false,
+      "storageEmpty": true,
+      "tokenAbsentFromVisibleText": true,
+      "fragmentCleared": true
+    },
+    {
+      "step": "live-guidance-expanded-mobile",
+      "violations": [],
+      "horizontalOverflow": false,
+      "storageEmpty": true,
+      "tokenAbsentFromVisibleText": true,
+      "fragmentCleared": true
+    },
+    {
+      "step": "live-display-short-screen",
+      "violations": [],
+      "horizontalOverflow": false,
+      "storageEmpty": true,
+      "tokenAbsentFromVisibleText": true,
+      "fragmentCleared": true
+    },
+    {
+      "step": "live-display-mobile-zoom200",
+      "violations": [],
+      "horizontalOverflow": false,
+      "storageEmpty": true,
+      "tokenAbsentFromVisibleText": true,
+      "fragmentCleared": true
+    },
+    {
+      "step": "display-offline-hidden",
+      "violations": [],
+      "horizontalOverflow": false,
+      "storageEmpty": true,
+      "tokenAbsentFromVisibleText": true,
+      "fragmentCleared": true
+    },
+    {
+      "step": "visitor-entry-mobile",
+      "violations": [],
+      "horizontalOverflow": false,
+      "storageEmpty": true,
+      "tokenAbsentFromVisibleText": true,
+      "fragmentCleared": true
+    },
+    {
+      "step": "visitor-restart-confirmation",
+      "violations": [],
+      "horizontalOverflow": false,
+      "storageEmpty": true,
+      "tokenAbsentFromVisibleText": true,
+      "fragmentCleared": true
+    },
+    {
+      "step": "cancel-keeps-existing-form",
+      "oldCounterVisible": true
+    },
+    {
+      "step": "visitor-confirmed-restart",
+      "violations": [],
+      "horizontalOverflow": false,
+      "storageEmpty": true,
+      "tokenAbsentFromVisibleText": true,
+      "fragmentCleared": true
+    },
+    {
+      "step": "real-response-loss-recovery",
+      "sameContext": true,
+      "writeAttempts": 1
+    },
+    {
+      "step": "visitor-unknown-recovered",
+      "violations": [],
+      "horizontalOverflow": false,
+      "storageEmpty": true,
+      "tokenAbsentFromVisibleText": true,
+      "fragmentCleared": true
+    },
+    {
+      "step": "unknown-revoke-retry-first-screen",
+      "viewport": {
+        "width": 375,
+        "height": 812
+      },
+      "rectangles": [
+        {
+          "left": 37,
+          "top": 418.171875,
+          "right": 160.359375,
+          "bottom": 462.171875,
+          "width": 123.359375,
+          "height": 44
+        }
+      ],
+      "visible": true,
+      "touchSized": true,
+      "decodedAtRenderedSize": null,
+      "renderedPixels": null,
+      "renderedDecoder": null,
+      "documentHeight": 812,
+      "documentFits": true
+    },
+    {
+      "step": "revoke-unknown-hidden",
+      "violations": [],
+      "horizontalOverflow": false,
+      "storageEmpty": true,
+      "tokenAbsentFromVisibleText": true,
+      "fragmentCleared": true
+    },
+    {
+      "step": "unknown-revoke-first-screen-desktop1366",
+      "viewport": {
+        "width": 1366,
+        "height": 768
+      },
+      "rectangles": [
+        {
+          "left": 293,
+          "top": 382.96875,
+          "right": 416.359375,
+          "bottom": 426.96875,
+          "width": 123.359375,
+          "height": 44
+        }
+      ],
+      "visible": true,
+      "touchSized": true,
+      "decodedAtRenderedSize": null,
+      "renderedPixels": null,
+      "renderedDecoder": null,
+      "documentHeight": 768,
+      "documentFits": true
+    },
+    {
+      "step": "revoke-unknown-desktop",
+      "violations": [],
+      "horizontalOverflow": false,
+      "storageEmpty": true,
+      "tokenAbsentFromVisibleText": true,
+      "fragmentCleared": true
+    },
+    {
+      "step": "unknown-revoke-first-screen-desktop1440",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "rectangles": [
+        {
+          "left": 301,
+          "top": 382.96875,
+          "right": 424.359375,
+          "bottom": 426.96875,
+          "width": 123.359375,
+          "height": 44
+        }
+      ],
+      "visible": true,
+      "touchSized": true,
+      "decodedAtRenderedSize": null,
+      "renderedPixels": null,
+      "renderedDecoder": null,
+      "documentHeight": 900,
+      "documentFits": true
+    },
+    {
+      "step": "revoke-unknown-desktop1440",
+      "violations": [],
+      "horizontalOverflow": false,
+      "storageEmpty": true,
+      "tokenAbsentFromVisibleText": true,
+      "fragmentCleared": true
+    },
+    {
+      "step": "unknown-revoke-changed-counter-first-screen",
+      "viewport": {
+        "width": 375,
+        "height": 812
+      },
+      "rectangles": [
+        {
+          "left": 37,
+          "top": 418.171875,
+          "right": 160.359375,
+          "bottom": 462.171875,
+          "width": 123.359375,
+          "height": 44
+        }
+      ],
+      "visible": true,
+      "touchSized": true,
+      "decodedAtRenderedSize": null,
+      "renderedPixels": null,
+      "renderedDecoder": null,
+      "documentHeight": 812,
+      "documentFits": true
+    },
+    {
+      "step": "revoke-unknown-counter-changed",
+      "violations": [],
+      "horizontalOverflow": false,
+      "storageEmpty": true,
+      "tokenAbsentFromVisibleText": true,
+      "fragmentCleared": true
+    },
+    {
+      "step": "real-revoke-response-loss-original-source",
+      "originalCounterPreserved": true,
+      "sameOriginalDisplay": true,
+      "writeAttempts": 2,
+      "automaticRetries": 0
+    },
+    {
+      "step": "revoked-display-hidden",
+      "violations": [],
+      "horizontalOverflow": false,
+      "storageEmpty": true,
+      "tokenAbsentFromVisibleText": true,
+      "fragmentCleared": true
+    }
+  ],
+  "responseStatuses": [
+    {
+      "path": "/api/auth/me",
+      "method": "GET",
+      "status": 401
+    },
+    {
+      "path": "/api/public/csrf",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/auth/login",
+      "method": "POST",
+      "status": 200
+    },
+    {
+      "path": "/api/public/csrf",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/public/registration-entry/capabilities",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/staff/registration-qr-sessions",
+      "method": "POST",
+      "status": 201
+    },
+    {
+      "path": "/api/staff/registration-qr-sessions/519a6df6-a27e-4e36-89ec-e84623a791be/current",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/staff/registration-qr-sessions/519a6df6-a27e-4e36-89ec-e84623a791be/current",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/staff/registration-qr-sessions/519a6df6-a27e-4e36-89ec-e84623a791be/current",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/staff/registration-qr-sessions/519a6df6-a27e-4e36-89ec-e84623a791be/current",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/staff/registration-qr-sessions/519a6df6-a27e-4e36-89ec-e84623a791be/current",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/staff/registration-qr-sessions/519a6df6-a27e-4e36-89ec-e84623a791be/current",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/staff/registration-qr-sessions/519a6df6-a27e-4e36-89ec-e84623a791be/current",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/staff/registration-qr-sessions/519a6df6-a27e-4e36-89ec-e84623a791be/current",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/public/csrf",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/staff/registration-qr-sessions",
+      "method": "POST",
+      "status": 201
+    },
+    {
+      "path": "/api/staff/registration-qr-sessions/884e3989-39b6-4994-aeb4-22a7c150412c/current",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/public/csrf",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/staff/registration-qr-sessions",
+      "method": "POST",
+      "status": 201
+    },
+    {
+      "path": "/api/staff/registration-qr-sessions/d2fc2c01-277c-4c3b-9aec-29cef2250a8e/current",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/staff/registration-qr-sessions/519a6df6-a27e-4e36-89ec-e84623a791be/revoke",
+      "method": "POST",
+      "status": 204
+    }
+  ],
+  "browserErrors": [],
+  "realBackend": true,
+  "realMysql": true,
+  "syntheticRecords": true,
+  "cameraAndProductionHttps": "NOT_RUN",
+  "coordinatorVerification": {
+    "independentOwnedHarness": true,
+    "checks": 27,
+    "sourceCommit": "d6ebe1fc92fe92c7de4a3d5867f91b6044190b00",
+    "deliveryCommit": "1299abc6aa447a96c9ced8e36c623546293eef35",
+    "result": "PASS",
+    "capturedAt": "2026-10-09T18:41:57+08:00"
+  },
+  "fullscreenSupplement": {
+    "clientHeight": 282,
+    "scrollTop": 0,
+    "headingTop": -153,
+    "reason": "Centered overflowing fullscreen content above reachable scroll origin",
+    "cssZoom": "200%",
+    "result": "FAIL returned to M02",
+    "viewport": "375x568",
+    "scrollHeight": 368
+  }
+}
