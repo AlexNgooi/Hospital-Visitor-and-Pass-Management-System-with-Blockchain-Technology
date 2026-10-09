@@ -1,0 +1,315 @@
+{
+  "module": "M00",
+  "note": "Only names/counts/durations extracted from JUnit XML; no properties, logs, credentials, cookies, tokens or native DB input.",
+  "totalTests": 45.0,
+  "maintenance": "public owner renewal exclusion",
+  "mavenDuration": "01:37 min",
+  "exitCode": 0,
+  "schemaVersion": 1,
+  "baseline": "6bb3893f3f056db6a15e16f2bca6f955b4623d40",
+  "implementationCommit": "1fd99b6263d2c94597a993deaf656b14beb4a13a",
+  "command": ".\\mvnw.cmd -B verify",
+  "suites": [
+    {
+      "skipped": 0,
+      "cases": [
+        {
+          "className": "eduupm.hsaas.FoundationContractTests",
+          "result": "PASS",
+          "seconds": 0.741,
+          "name": "productionCookieAndSafeErrorDetails"
+        },
+        {
+          "className": "eduupm.hsaas.FoundationContractTests",
+          "result": "PASS",
+          "seconds": 0.006,
+          "name": "modeValidation"
+        },
+        {
+          "className": "eduupm.hsaas.FoundationContractTests",
+          "result": "PASS",
+          "seconds": 0.011,
+          "name": "loginThrottleAndMinuteReset"
+        },
+        {
+          "className": "eduupm.hsaas.FoundationContractTests",
+          "result": "PASS",
+          "seconds": 1.06,
+          "name": "versionedHmacKeyRetention"
+        },
+        {
+          "className": "eduupm.hsaas.FoundationContractTests",
+          "result": "PASS",
+          "seconds": 0.036,
+          "name": "encodingGoldenVectorAndPresence"
+        },
+        {
+          "className": "eduupm.hsaas.FoundationContractTests",
+          "result": "PASS",
+          "seconds": 0.007,
+          "name": "canonicalAccountsRejectAliases"
+        },
+        {
+          "className": "eduupm.hsaas.FoundationContractTests",
+          "result": "PASS",
+          "seconds": 0.0,
+          "name": "commandKeyContract"
+        }
+      ],
+      "tests": 7,
+      "seconds": 1.921,
+      "name": "eduupm.hsaas.FoundationContractTests",
+      "errors": 0,
+      "failures": 0
+    },
+    {
+      "skipped": 0,
+      "cases": [
+        {
+          "className": "eduupm.hsaas.HsaasBackendApplicationTests",
+          "result": "PASS",
+          "seconds": 10.868,
+          "name": "databaseOfflineReadinessAndRecovery"
+        },
+        {
+          "className": "eduupm.hsaas.HsaasBackendApplicationTests",
+          "result": "PASS",
+          "seconds": 0.787,
+          "name": "activationFailureAfterRealSaveDoesNotLogin"
+        },
+        {
+          "className": "eduupm.hsaas.HsaasBackendApplicationTests",
+          "result": "PASS",
+          "seconds": 0.693,
+          "name": "rotationKeepsStablePrimaryAndRetrieval"
+        },
+        {
+          "className": "eduupm.hsaas.HsaasBackendApplicationTests",
+          "result": "PASS",
+          "seconds": 0.615,
+          "name": "idempotentConcurrencyWritesOneAuditAndVersion"
+        },
+        {
+          "className": "eduupm.hsaas.HsaasBackendApplicationTests",
+          "result": "PASS",
+          "seconds": 1.576,
+          "name": "offlineBootstrapWithoutConsoleFailsClosed"
+        },
+        {
+          "className": "eduupm.hsaas.HsaasBackendApplicationTests",
+          "result": "PASS",
+          "seconds": 1.142,
+          "name": "ownerGuardAndLogoutCompetition"
+        },
+        {
+          "className": "eduupm.hsaas.HsaasBackendApplicationTests",
+          "result": "PASS",
+          "seconds": 0.969,
+          "name": "actualJdbcSaveFailureDoesNotRenew"
+        },
+        {
+          "className": "eduupm.hsaas.HsaasBackendApplicationTests",
+          "result": "PASS",
+          "seconds": 1.074,
+          "name": "expiredSessionCanBootstrapAgain"
+        },
+        {
+          "className": "eduupm.hsaas.HsaasBackendApplicationTests",
+          "result": "PASS",
+          "seconds": 0.738,
+          "name": "frameworkExpiryAndLateSaveCannotRevive"
+        },
+        {
+          "className": "eduupm.hsaas.HsaasBackendApplicationTests",
+          "result": "PASS",
+          "seconds": 0.308,
+          "name": "jdbcAuditFailureRollsBackJpaAndIdempotency"
+        },
+        {
+          "className": "eduupm.hsaas.HsaasBackendApplicationTests",
+          "result": "PASS",
+          "seconds": 1.183,
+          "name": "permissionRevocationAndLastAdministrator"
+        },
+        {
+          "className": "eduupm.hsaas.HsaasBackendApplicationTests",
+          "result": "PASS",
+          "seconds": 1.1,
+          "name": "loginSessionCsrfAndLogout"
+        },
+        {
+          "className": "eduupm.hsaas.HsaasBackendApplicationTests",
+          "result": "PASS",
+          "seconds": 0.406,
+          "name": "bootstrapCompetitionCreatesOneAdministrator"
+        },
+        {
+          "className": "eduupm.hsaas.HsaasBackendApplicationTests",
+          "result": "PASS",
+          "seconds": 0.31,
+          "name": "jpaJdbcCommitAndRollbackUseOneConnection"
+        },
+        {
+          "className": "eduupm.hsaas.HsaasBackendApplicationTests",
+          "result": "PASS",
+          "seconds": 0.657,
+          "name": "pendingActivationAndSupersededSaveFailClosed"
+        },
+        {
+          "className": "eduupm.hsaas.HsaasBackendApplicationTests",
+          "result": "PASS",
+          "seconds": 1.408,
+          "name": "publicRequestsKeepOwnerDeadlineButStaffRequestRenews"
+        },
+        {
+          "className": "eduupm.hsaas.HsaasBackendApplicationTests",
+          "result": "PASS",
+          "seconds": 0.81,
+          "name": "encodedPathsKeepSecurityGuards"
+        },
+        {
+          "className": "eduupm.hsaas.HsaasBackendApplicationTests",
+          "result": "PASS",
+          "seconds": 0.466,
+          "name": "explicitSaveFailureKeepsPending"
+        },
+        {
+          "className": "eduupm.hsaas.HsaasBackendApplicationTests",
+          "result": "PASS",
+          "seconds": 0.205,
+          "name": "concurrentAnonymousBindingHasOneScope"
+        },
+        {
+          "className": "eduupm.hsaas.HsaasBackendApplicationTests",
+          "result": "PASS",
+          "seconds": 0.617,
+          "name": "savingWhileDomainLockedIsRejected"
+        },
+        {
+          "className": "eduupm.hsaas.HsaasBackendApplicationTests",
+          "result": "PASS",
+          "seconds": 0.777,
+          "name": "latePublicConfirmationCannotRenewOwner"
+        },
+        {
+          "className": "eduupm.hsaas.HsaasBackendApplicationTests",
+          "result": "PASS",
+          "seconds": 3.271,
+          "name": "publicRequestsCannotReviveInvalidOwner"
+        },
+        {
+          "className": "eduupm.hsaas.HsaasBackendApplicationTests",
+          "result": "PASS",
+          "seconds": 0.725,
+          "name": "logoutBarrierSurvivesFrameworkDeleteFailure"
+        },
+        {
+          "className": "eduupm.hsaas.HsaasBackendApplicationTests",
+          "result": "PASS",
+          "seconds": 0.913,
+          "name": "authorizationAndSafeErrors"
+        },
+        {
+          "className": "eduupm.hsaas.HsaasBackendApplicationTests",
+          "result": "PASS",
+          "seconds": 1.234,
+          "name": "logoutRevokesOnlyOneOwner"
+        },
+        {
+          "className": "eduupm.hsaas.HsaasBackendApplicationTests",
+          "result": "PASS",
+          "seconds": 0.81,
+          "name": "policyEditDuringPasswordVerificationRejectsLogin"
+        },
+        {
+          "className": "eduupm.hsaas.HsaasBackendApplicationTests",
+          "result": "PASS",
+          "seconds": 0.752,
+          "name": "publicFrameworkFailureStillReturnsUnknown"
+        },
+        {
+          "className": "eduupm.hsaas.HsaasBackendApplicationTests",
+          "result": "PASS",
+          "seconds": 0.268,
+          "name": "contextLoads"
+        },
+        {
+          "className": "eduupm.hsaas.HsaasBackendApplicationTests",
+          "result": "PASS",
+          "seconds": 0.277,
+          "name": "auditAndIdempotencyAtomicity"
+        },
+        {
+          "className": "eduupm.hsaas.HsaasBackendApplicationTests",
+          "result": "PASS",
+          "seconds": 0.729,
+          "name": "confirmedDeadlineAndAbsoluteBoundary"
+        },
+        {
+          "className": "eduupm.hsaas.HsaasBackendApplicationTests",
+          "result": "PASS",
+          "seconds": 0.494,
+          "name": "bootstrapIsSingleUse"
+        },
+        {
+          "className": "eduupm.hsaas.HsaasBackendApplicationTests",
+          "result": "PASS",
+          "seconds": 1.805,
+          "name": "cleanAndUpgradeMigration"
+        },
+        {
+          "className": "eduupm.hsaas.HsaasBackendApplicationTests",
+          "result": "PASS",
+          "seconds": 0.278,
+          "name": "mysqlAccountConstraints"
+        },
+        {
+          "className": "eduupm.hsaas.HsaasBackendApplicationTests",
+          "result": "PASS",
+          "seconds": 0.886,
+          "name": "invalidCredentialsAndStrictInput"
+        },
+        {
+          "className": "eduupm.hsaas.HsaasBackendApplicationTests",
+          "result": "PASS",
+          "seconds": 0.764,
+          "name": "publicRequestsCannotActivatePendingOwner"
+        },
+        {
+          "className": "eduupm.hsaas.HsaasBackendApplicationTests",
+          "result": "PASS",
+          "seconds": 0.57,
+          "name": "requestEndSaveFailureIsNotLoginSuccess"
+        },
+        {
+          "className": "eduupm.hsaas.HsaasBackendApplicationTests",
+          "result": "PASS",
+          "seconds": 2.664,
+          "name": "secondApplicationReadsPersistedSession"
+        }
+      ],
+      "tests": 37,
+      "seconds": 75.867,
+      "name": "eduupm.hsaas.HsaasBackendApplicationTests",
+      "errors": 0,
+      "failures": 0
+    },
+    {
+      "skipped": 0,
+      "cases": [
+        {
+          "className": "eduupm.hsaas.SigningCompatibilityTests",
+          "result": "PASS",
+          "seconds": 0.125,
+          "name": "hs256IntegrityAndKeyLength"
+        }
+      ],
+      "tests": 1,
+      "seconds": 0.127,
+      "name": "eduupm.hsaas.SigningCompatibilityTests",
+      "errors": 0,
+      "failures": 0
+    }
+  ],
+  "finishedAt": "2026-10-09T12:51:43+08:00"
+}

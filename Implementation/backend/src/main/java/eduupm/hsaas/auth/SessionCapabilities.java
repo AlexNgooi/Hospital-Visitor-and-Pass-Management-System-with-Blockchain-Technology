@@ -104,8 +104,8 @@ public class SessionCapabilities {
         if(failure!=null) { throw failure; }
     }
 
-    /** Runs only after successful framework save; it never performs a framework save while holding domain locks. */
-    public void confirmedSave(String sessionId, String bindingId, String contextId, Long generation) {
+    /** Always validates successful persistence; only eligible owner requests may activate or renew authority. */
+    public void confirmedSave(String sessionId, String bindingId, String contextId, Long generation, boolean ownerActivity) {
         if (bindingId == null) { return; }
         Context discovered = contextId == null ? null : findContext(contextId, false);
         tx.executeWithoutResult(status -> {
@@ -127,6 +127,9 @@ public class SessionCapabilities {
                 // A successful but late framework save must never resurrect a capability.
                 throw ApiFailure.unauthenticated();
             }
+            // Anonymous/public traffic may persist Spring idle state, but cannot activate or extend this owner.
+            // This return follows every mapping, epoch, actual-row and prior-deadline check; it is not a bypass.
+            if(!ownerActivity) { return; }
             Instant deadline=actual.expiresAt().isBefore(context.absolute()) ? actual.expiresAt() : context.absolute();
             jdbc.update("UPDATE auth_session_contexts SET state='ACTIVE',confirmed_idle_expires_at=? WHERE id=?",
                     DatabaseTime.sql(deadline), context.id());

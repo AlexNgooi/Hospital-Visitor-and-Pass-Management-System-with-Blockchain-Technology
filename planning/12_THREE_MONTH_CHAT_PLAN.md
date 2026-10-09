@@ -2,7 +2,7 @@
 type: module-chat-coordination
 updated: 2026-10-09
 window: 2026-10-08..2027-01-03
-status: m02-development-authorized
+status: m02-in-progress
 ---
 # Coordinator 与每模块独立 Chat 执行指南
 
@@ -35,6 +35,8 @@ status: m02-development-authorized
 人类用户在 coordinator chat 明确要求“开启m02”。M00/M01 当前本地基础与真实 C01 已验收，该请求授予 M02 Dynamic Registration QR 一次开发许可；coordinator 固定最新规划基线并隔离原模块 chat，再派发直接实施任务，M02 不重复求许可。范围为真正轮换的 QR/display/challenge/exchange/grant、单份表单上下文/CAS、对应前后端和隔离测试；所有新写/修改代码有英文注释。M03/M04 的表单/审核业务不随之启动，WhatsApp/blockchain 保持 disabled。
 
 启动现有系统时发现 native 开发库旧 V1 CHECKSUM_MISMATCH，前端已运行，后端数据库选择仍待人类答复；这个运行环境问题不阻塞 M02 使用新建临时 MySQL/Testcontainers 实施。M02 不读取/复制 .env、不修改该旧库、不调用真实bootstrap。V1–V3 已冻结，coordinator 将 V4 migration 名额保留给 M02 的 QR/entry 表，具体DDL由 M02交回审核；M03未来registration FK/schema另行登记，不提前创建其聚合。
+
+实际派发：许可与契约基线已提交为98a7f7d5a1869922a752a14ee19492fe97c3cf3f；app handoff成功将原M02 chat移至独立bd17工作树/新目标thread ID（下表）。启动前HEAD为该基线且工作树clean。已发直接代码任务，显式保持gpt-6.1-sol/high；wait_threads确认active/inProgress，尚无业务完成/测试声明。
 
 ### M00/M01 开发许可（2026-10-08）
 
@@ -94,13 +96,13 @@ M08–M11 当前为 DEFERRED，不启动运行进程、不安装依赖来阻塞�
 
 基本依赖为 M00 → M01 → M02 → M03 → M04 → M05 → M06 → M07。M01 可先对冻结契约 mock；M06 的账号/配置可在 M00 后提前，报表等候生命周期数据。WIP ≤2，分支隔离不替代依赖验收。
 
-M00–M04 已创建并完成准备核对；M00/M01 已隔离并派发直接实施任务。M02–M04 仍只读，其他模块未启动。此表由 coordinator 更新；业务完成需实际交接/审核/验收。
+M00–M04 已创建并完成准备核对；M00/M01 当前本地范围已验收，M02 已隔离并启动；M03/M04 仍只读，其他模块未启动。此表由 coordinator 更新；业务完成需实际交接/审核/验收。
 
 | 模块 | 状态 | chat ID / owner | baseline / branch / worktree | handoff / review / merge |
 |---|---|---|---|---|
 | M00 | INTEGRATION_VERIFIED（当前本地基础/C01范围）；HTTPS/业务后续验收 | 01a11bcf-a53d-7323-a74e-edffa8092c50 / 模块助手直接实现 | c2b0c316；codex/hsaas-m00-foundation；ced2/FYP Dev | 基础merge a137acd；40tests PASS；真实28wire联调 PASS；gpt-6.1-sol/high |
 | M01 | INTEGRATION_VERIFIED（当前本地UI/C01范围）；HTTPS/后续业务未验收 | 01a11bcf-e448-7be0-88c1-f7910300e82e / 模块助手直接实现 | 基础c2b0c316；联调03fda7f；codex/hsaas-m01-frontend-shell；4156/FYP Dev | 基础merge014d030；联调delivery58b738a/merge e8ca80a；68tests+16隔离+真实28wire PASS；gpt-6.1-sol/high |
-| M02 | READY；用户已批准开发，隔离后派发 | 01a11ba4-e2bd-74a3-beee-1f47860bfc01 / 模块助手直接实现 | coordinator 固定最新main并建立隔离 | 尚未实施；V4保留给M02；gpt-6.1-sol/high |
+| M02 | IN_PROGRESS；用户已批准并派发实现任务 | 01a11db3-31c9-7da0-bfb2-217e71081355 / 模块助手直接实现 | baseline98a7f7d；codex/hsaas-m02-dynamic-registration；C:/Users/alexy/.codex/worktrees/bd17/FYP Dev | 未交接；V4保留给M02；gpt-6.1-sol/high |
 | M03 | PLANNED；一次开发许可待答，接入依赖 M00/M01/M02 | 01a11ba4-e814-7832-bd40-f471edf417b4 / 模块助手直接实现 | Local/main；HEAD b005823；规划未提交；实施隔离待建立 | 无；gpt-6.1-sol/high |
 | M04 | PLANNED；一次开发许可待答，依赖 M03 | 01a11ba4-ecca-7ca3-a224-c3dde42d1edd / 模块助手直接实现 | Local/main；HEAD b005823；规划未提交；实施隔离待建立 | 无；gpt-6.1-sol/high |
 | M05 | PLANNED | 未创建 / 未派工 | 待登记 | 无 |
@@ -112,6 +114,8 @@ M00–M04 已创建并完成准备核对；M00/M01 已隔离并派发直接实�
 | M11 | DEFERRED：用户要求暂不启用 | 未创建 / 未派工 | disabled | live NOT_RUN |
 
 状态路径：PLANNED → READY → IN_PROGRESS → REVIEW_READY → CHANGES_REQUESTED / APPROVED → MERGED → INTEGRATION_VERIFIED。DEFERRED 满足条件后回 READY；BLOCKED 必须记录问题、owner 与下次动作。测试状态与模块状态独立，APPROVED 仍未 merge。
+
+2026-10-09 M01 维护任务 IN_PROGRESS：用户要求修复登录错误/会话提示叠加后的视口布局，并检查现有各页。已向原 M01 chat 派发，沿用其开发许可与 4156 隔离 worktree，baseline `ed6fff7`；原本地 UI/C01 验收结论保留，本次候选仍需单独 review/merge。范围限现有 app/ui/index.css 与相关测试、证据，不改变 auth/API、后端、入口或依赖；标准 shadcn 迁移未包含。视口与可达性验收见 07，不把必要滚动误判为隐藏内容的理由。
 
 ## Module chat 共同工作约定
 
