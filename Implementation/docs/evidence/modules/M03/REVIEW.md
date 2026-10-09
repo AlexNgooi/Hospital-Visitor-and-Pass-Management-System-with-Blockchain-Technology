@@ -49,8 +49,9 @@ or treat this dependency approval as main/module acceptance. Future contract
 changes require coordinator/M04 version coordination. No partial runtime was
 merged to main; current main application remains the accepted M00-M02 source.
 
-S-V1 identity/MRN input choice is pending the human answer in the coordinator
-chat. Dependent fields/API/schema/V5 final DDL wait; other frozen work continues.
+On 2026-10-10 the human selected DEMO-only identity/MRN input in the coordinator
+chat (C14): TEST_ID / DEMO- and DEMO-MRN-. This removes the input-choice blocker;
+remaining fields/read wire/V5 must receive technical review before implementation.
 Real hospital data/MRN, production privacy, hardware and external integrations
 remain deferred. No native DB/.env, service startup, push or deployment was used
 for this dependency verification.

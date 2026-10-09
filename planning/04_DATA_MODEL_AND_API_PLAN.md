@@ -228,7 +228,7 @@ API 不接收 caller 自选 actor、UID、category 或 status 来替代扫描证
 
 当前synthetic categoryCode为 `EXECUTIVE/PENJAGA/VENDOR/CONTRACTOR`；数据库categoryScope ID仍是C10 decimal string。MRN反馈 `NOT_CHECKED/MATCH/NO_MATCH/TIMEOUT/UNAVAILABLE` 与staff verification分开，MATCH不表示身份/MRN/ward已核实，U03/C09人工核实规则不变。拟定验证token仅为受控反馈关联，最多5min且不超grant期限，绑定anonymous scope/formContext/MRN fingerprint/ward/mode/adapterVersion，改变字段或上下文拒绝旧token；超时/no token不阻止进入待人工审核，不能存病历或借token替代核实。具体wire/DDL仍需S-V1评审。
 
-S-V1四类字段/长度与 `synthetic-privacy-v1` 是demo提案，不代表O01医院字段/用途/保留批准。证件/MRN采用DEMO-only还是接近正式IC/Passport输入，由coordinator集中询问用户，依赖该选择的API/schema/V5最终DDL等待答复；已有冻结契约的独立工作继续。WhatsApp disabled时不采集发送opt-in、不建job。真实医院数据、MRN/live、生产privacy政策继续deferred。
+C14 / S-V1用户决定（2026-10-10）：用户明确选择“仅演示数据：证件使用DEMO-，MRN使用DEMO-MRN-；正式医院格式以后接入”。当前所有登记source=SYNTHETIC，证件类型TEST_ID，号码DEMO-后4–24位大写ASCII字母/数字，Penjaga MRN为DEMO-MRN-后4–16位大写ASCII字母/数字。四类其余字段、masked read wire与V5须技术审核后实施，不再等待该输入选择。公共reference统一R-后128bit随机base64url；reference不授予公开查询PII权限。synthetic-registration-v1 / synthetic-privacy-v1仅是演示契约，不代表O01医院字段/用途/保留批准。WhatsApp disabled时不采集发送opt-in、不建job。真实医院数据、MRN/live、生产privacy政策继续deferred。
 
 M04审核编排增量决定：`hsaas.review.enabled` 默认不装配真实command服务；显式启用但缺真实M03 `RegistrationReviewPort` 必须启动失败，不静默使用mock，mockroot限测试。`DuplicateKeyException` 必须先退出整个原事务并回滚，再以新READ_COMMITTED事务重新校验当前session/role/counter和相同namespace/body/key的成功重放。新事务只作授权/查询/replay，不继续root decision、audit或idem写入；无成功结果则返回明确冲突，等待用户明确原命令重试，不自动再做审核或换key。其他DB/审计错误不走“重复key即成功”的路径。事务边界、权限撤销、不同body和零reapply先做mock服务测试；真实SQL/权限/审核E2E仍待M03接入后验收。
 

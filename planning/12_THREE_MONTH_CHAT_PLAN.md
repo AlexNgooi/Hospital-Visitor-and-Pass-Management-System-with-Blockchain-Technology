@@ -1,12 +1,20 @@
 ---
 type: module-chat-coordination
-updated: 2026-10-09
+updated: 2026-10-10
 window: 2026-10-08..2027-01-03
 status: m03-m04-in-progress
 ---
 # Coordinator 与每模块独立 Chat 执行指南
 
 本 chat 固定为 coordinator。开发按模块拆分，每个模块有自己的 chat，不共用一个阶段开发 chat；模块返修继续用原模块 chat。coordinator 管规划、契约、分配、问题裁决、审核与本地 merge。阶段时间表见 [01](01_DEVELOPMENT_PLAN.md)，业务事实以 02/03/04 为准。
+
+## 2026-10-10 协调权交接边界（覆盖后续模块旧规则）
+
+用户明确要求“继续完成m03 和04 完成这俩个后接下来的module就不需要你coordinate了 我自己coordinate 只需要告诉我 要怎么开始每个module 在新的chat”。本coordinator继续负责已许可M03/M04的实现协调、独立审核、返修、本地merge和合并后复验；当前仍IN_PROGRESS，不能提前标完成。M03输入格式已获2026-10-10用户C14答复：仅DEMO演示数据，实际医院字段仍deferred；两模块继续实际接入。
+
+M03/M04完成后，本chat不自动推进M05–M11。用户亲自选择模块、新chat、开发许可、共享契约/迁移编号、依赖放行与最终审核/merge；后续模块的问题直接交用户，不继续把旧coordinator当审批入口，也不自动发送跨chat消息。模块助手仍负责有英文注释的直接实现、适当测试、修复和HANDOFF，不让用户手写源码。用户可在原模块chat明确要求返修或在相应review chat明确授权审核/merge，但这些均不由本chat自动触发。
+
+后续新chat的具体输入、范围、依赖和可复制启动消息见[用户模块启动指南](13_USER_MODULE_START_GUIDE.md)。这份指南是启动准备，不是M05及以后模块的开发许可或完成证据。本文其他coordinator表述对M00–M04保留历史/当前含义；M05及以后由用户承担该角色。
 
 默认由用户手动开启 module chat 并启动开发，coordinator 不自动派发或用子代理/自动化替代用户启动。本次用户明确授权的 M00–M04 例外及实际登记见下。最新用户已分别授权 M00–M04 开发；M00–M02 当前本地范围已验收，M03/M04 在自身chat收到用户启动后进入独立worktree开发。chat 存在、READY、依赖完成或日期到达均不代表已启动源码实施。
 
@@ -38,7 +46,7 @@ status: m03-m04-in-progress
 
 本次限定共享例外指定M03执行：V5若增加grant.registration_id FK，仅适配 `QrMysqlTests` synthetic registration parent fixture与清理顺序，保留原race/receipt/audit/replay断言；`HsaasBackendApplicationTests` applied count4→5、upgrade3→4且英文说明，不能skip原测试。M03可最小修改 `main.tsx` 注入组合FeatureSlots，仅一个PUBLIC `/register`，保留M02 staff slot与pre-bootstrap entry capture顺序，复用 `RegistrationEntry` 的原始EntryGrant child保护。不改M02生产源码、V1–V4、App/auth/client/generated/全局CSS/依赖。M04先导出自有 `/staff/registrations` FeatureSlot；未验收模块不提前主分支接线，后续coordinator组合。
 
-V5仅预留M03，具体DDL/最少数据/约束/清理交回审核后实施；真实M04读写待M03 port/迁移合并或明确候选联调基线，独立pure rules/mock UI可先推进。S-V1证件/MRN采用DEMO-only还是接近正式IC/Passport输入，由coordinator在本chat集中询问用户；依赖该选择的schema/字段/DDL保持候选，其他已有冻结契约的工作继续。所有synthetic结果不冒充医院字段批准、真实MRN核验或完整业务验收。
+V5仅预留M03，具体DDL/最少数据/约束/清理交回审核后实施；真实M04读写待M03 port/迁移合并或明确候选联调基线，独立pure rules/mock UI可先推进。S-V1已获2026-10-10用户C14答复：仅DEMO演示输入。其余字段/read/V5候选经技术审核后实施。所有synthetic结果不冒充医院字段批准、真实MRN核验或完整业务验收。
 
 ### M02 开发许可（2026-10-09）
 
@@ -113,8 +121,8 @@ M00–M04 已创建并完成准备核对；M00/M01/M02 当前本地范围已验�
 | M00 | INTEGRATION_VERIFIED（当前本地基础/C01范围）；HTTPS/业务后续验收 | 01a11bcf-a53d-7323-a74e-edffa8092c50 / 模块助手直接实现 | c2b0c316；codex/hsaas-m00-foundation；ced2/FYP Dev | 基础merge a137acd；40tests PASS；真实28wire联调 PASS；gpt-6.1-sol/high |
 | M01 | INTEGRATION_VERIFIED（当前本地UI/C01范围）；HTTPS/后续业务未验收 | 01a11bcf-e448-7be0-88c1-f7910300e82e / 模块助手直接实现 | 基础c2b0c316；联调03fda7f；codex/hsaas-m01-frontend-shell；4156/FYP Dev | 基础merge014d030；联调delivery58b738a/merge e8ca80a；68tests+16隔离+真实28wire PASS；gpt-6.1-sol/high |
 | M02 | INTEGRATION_VERIFIED（当前本地动态QR/entry grant范围）；真机/生产/M03待验收 | 01a11db3-31c9-7da0-bfb2-217e71081355 / 模块助手直接实现 | baseline98a7f7d；codex/hsaas-m02-dynamic-registration；C:/Users/alexy/.codex/worktrees/bd17/FYP Dev | sourcef81512d/deliveryd2d745f/merge3c0c229；R1–R4返修已验收；独立28browser PASS；main68backend verify/JAR、95frontend/typing/build/lint/proxy PASS；见M02 REVIEW；V4已合并，未改nativeDB；gpt-6.1-sol/high |
-| M03 | IN_PROGRESS；用户本chat“继续”已许可；S-V1输入选择待答 | 01a11ba4-e814-7832-bd40-f471edf417b4 / 模块助手直接实现 | baselinef59baf3；codex/hsaas-m03-visitor-registration；C:/Users/alexy/.codex/worktrees/m03-visitor-registration/FYP Dev | 无交接/审核/merge；V5候选预留；gpt-6.1-sol/high |
-| M04 | IN_PROGRESS；独立检查点已审核，完整真实接入待M03/S-V1 | 01a11ba4-ecca-7ca3-a224-c3dde42d1edd / 模块助手直接实现 | baselinef59baf3；codex/hsaas-m04-counter-review；C:/Users/alexy/.codex/worktrees/hsaas-m04-counter-review/FYP Dev | source03eca76/delivery398a244；bounded独立36backend/122frontend/19synthetic browser PASS；module报告full104/JAR单独记录；未merge/接线，真实审核SQL/HTTP/E2E NOT_RUN；见M04 REVIEW；gpt-6.1-sol/high |
+| M03 | IN_PROGRESS；用户本chat“继续”已许可；S-V1已选DEMO-only，实际登记/read/V5推进 | 01a11ba4-e814-7832-bd40-f471edf417b4 / 模块助手直接实现 | baselinef59baf3；codex/hsaas-m03-visitor-registration；C:/Users/alexy/.codex/worktrees/m03-visitor-registration/FYP Dev | 无交接/审核/merge；V5候选预留；gpt-6.1-sol/high |
+| M04 | IN_PROGRESS；独立检查点已审核，完整真实接入待M03 root/read | 01a11ba4-ecca-7ca3-a224-c3dde42d1edd / 模块助手直接实现 | baselinef59baf3；codex/hsaas-m04-counter-review；C:/Users/alexy/.codex/worktrees/hsaas-m04-counter-review/FYP Dev | source03eca76/delivery398a244；bounded独立36backend/122frontend/19synthetic browser PASS；module报告full104/JAR单独记录；未merge/接线，真实审核SQL/HTTP/E2E NOT_RUN；见M04 REVIEW；gpt-6.1-sol/high |
 | M05 | PLANNED | 未创建 / 未派工 | 待登记 | 无 |
 | M06 | PLANNED | 未创建 / 未派工 | 待登记 | 无 |
 | M07 | PLANNED | 未创建 / 未派工 | 待登记 | 无 |
@@ -157,4 +165,4 @@ coordinator 记录答复/decision ID、影响规范与 owner，通过 send_messa
 
 ## 下一项具体计划
 
-M00/M01/M02 当前本地范围已验收；动态 QR/challenge/grant 已合并3c0c229。用户已在各自chat手动启动M03/M04；coordinator冻结共同root/review port、S-V1与V5并处理交回问题，modules在隔离worktree实现/测试/返修。证件/MRN输入业务选择待用户答复，独立工作继续。生产HTTPS/真机扫码/完整实际登记图仍需所属关卡验收。M05及后续模块不自动启动。未来多模块 OpenAPI 汇总由 coordinator 协调，原 M00 spec 不被下游修改。
+M00/M01/M02 当前本地范围已验收；动态 QR/challenge/grant 已合并3c0c229。用户已在各自chat手动启动M03/M04；coordinator冻结共同root/review port、S-V1与V5并处理交回问题，modules在隔离worktree实现/测试/返修。证件/MRN输入已获C14 DEMO-only答复，继续字段/read/V5技术审核与实施。生产HTTPS/真机扫码/完整实际登记图仍需所属关卡验收。M05及后续模块不自动启动。未来多模块 OpenAPI 汇总由 coordinator 协调，原 M00 spec 不被下游修改。

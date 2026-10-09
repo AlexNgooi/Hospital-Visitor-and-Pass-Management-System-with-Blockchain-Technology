@@ -20,6 +20,7 @@ subject: local-planning-workspace
 | Auth / role / privacy | live 规范 / M00/M01 本地已验收；生产待验收 | [架构](02_TECHNICAL_ARCHITECTURE.md) | [需求](03_REQUIREMENTS_AND_TEST_PLAN.md)、所有 protected API、未来 session/device chains |
 | Implementation/ 代码边界与模块契约 | live M00–M02 / 后续业务 ghost | [目录](09_FOLDER_STRUCTURE.md) | [AGENTS](../AGENTS.md)、[P0 evidence](../Implementation/docs/evidence/foundation/P0_REVIEW.md)、模块REVIEW、目录图待同步 |
 | Coordinator / module chat / handoff / review / merge | live 协作与已记录交接 | [模块 Chat](12_THREE_MONTH_CHAT_PLAN.md) | [开发计划](01_DEVELOPMENT_PLAN.md)、[初始化参考](11_ENVIRONMENT_AND_MANUAL_INITIALIZATION.md)、[handoff 模板](_templates/module-handoff.md) |
+| M03/M04后用户接管协调 / 新chat启动 | live 用户2026-10-10决定 / 模块完成关卡仍待 | [模块 Chat](12_THREE_MONTH_CHAT_PLAN.md) | [用户启动指南](13_USER_MODULE_START_GUIDE.md)、根AGENTS、Implementation契约 |
 
 当前协作流程是“模块许可 -> 隔离实现/测试 -> 原module chat返修 -> coordinator独立审核 -> 本地merge与复验”。真实柜台登记/发卡、设备与链上流程仍是后续目标，不以本地QR/port测试代替；现有旧图仍待语义同步。
 
