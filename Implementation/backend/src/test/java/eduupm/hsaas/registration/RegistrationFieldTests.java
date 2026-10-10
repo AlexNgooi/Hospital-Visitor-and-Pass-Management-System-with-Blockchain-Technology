@@ -48,6 +48,8 @@ class RegistrationFieldTests {
     @Test void originalControlsCannotDisappearDuringTrimming() {
         assertThat(RegistrationFields.normalized("  Demo Visitor  ", 100, "formData.fullName")).isEqualTo("Demo Visitor");
         assertThat(RegistrationFields.normalized("Jose\u0301", 100, "formData.fullName")).isEqualTo("José");
+        assertThat(RegistrationFields.normalized("\u00a0\u2007Demo Visitor\u202f",100,"formData.fullName")).isEqualTo("Demo Visitor");
+        assertThatThrownBy(()->RegistrationFields.normalized("\u00a0\u2007\u202f",100,"formData.fullName")).isInstanceOf(ApiFailure.class);
         for (String value : List.of("\nDemo", "Demo\n", "\tDemo", "Demo\t", "De\nmo", "\u202eDemo", "    ", "\uD800")) {
             assertThatThrownBy(() -> RegistrationFields.normalized(value, 100, "formData.fullName")).isInstanceOf(ApiFailure.class);
         }
