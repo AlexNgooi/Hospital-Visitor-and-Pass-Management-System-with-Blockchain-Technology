@@ -131,6 +131,10 @@ async (page) => {
     const target=await visitor(1366,768);
     await target.getByLabel("Kategori pelawat").selectOption(category);
     await audit(target,category.toLowerCase()+"-identity-desktop","Seterusnya");
+    // Each category gets its own mobile first-step evidence, including the selected label.
+    await target.setViewportSize({width:375,height:812});
+    await audit(target,category.toLowerCase()+"-identity-mobile375","Seterusnya");
+    await target.setViewportSize({width:1366,height:768});
     await identity(target,category);await visit(target,category);
     await audit(target,category.toLowerCase()+"-visit-desktop","Seterusnya");
     await target.setViewportSize({width:375,height:812});await audit(target,category.toLowerCase()+"-visit-mobile375","Seterusnya");
