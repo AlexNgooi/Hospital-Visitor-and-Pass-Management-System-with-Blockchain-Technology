@@ -124,3 +124,29 @@ changes five M04 documents, preserves the source and clean state, and adds no ne
 frontend/browser claim. This is the module's full run, separate from the
 coordinator's independently reproduced 65; actual new M04 root SQL/HTTP gates
 remain pending. Maven/Testcontainers exited and no additional dev service ran.
+
+## Actual root integration and R2 recovery review — 2026-10-10
+
+Module imported exactly the twenty approved M03 backend files from `869c6cb`
+into `a99a91d`, preserving its review subdomain and the eight frozen contracts.
+The coordinator's independent M03 clean verify result (109/JAR) is recorded in
+M03 REVIEW; it does not itself accept the complete M04 workflow.
+
+First module-owned real MySQL/servlet run finished **13:24:35 +08**, exit1:
+20 cases, 19 passed and one failed, no errors/skips. The failing logout case
+expected 200 instead of M00's frozen 204. Fix the fixture expectation, preserve
+the auth implementation and rerun. This is module evidence, not an independent
+coordinator reproduction. Concurrent revocation, successful winner recovery and
+manual-mode coverage still need completion or a justified explicit boundary.
+
+Coordinator's source review additionally requests **R2**: after a command became
+UNKNOWN, an explicit recovery attempt returning API 4xx must not erase the saved
+original key/body/version or unlock a new command. A later CSRF failure/conflict
+does not prove the original write did not commit. Preserve the handle and require
+explicit recovery; authority loss still hides cached data and may require a
+session refresh. Do not carry commands across a changed user/counter workspace.
+Initial known 4xx handling remains distinct. Verify meaningful component behavior
+and actual-browser recovery where applicable, with honest fault-source labeling.
+
+M04 remains IN_PROGRESS/CHANGES_REQUESTED for this increment, unmerged. No main
+runtime, native database, external integration or later module is started.
