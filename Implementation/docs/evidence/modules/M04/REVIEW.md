@@ -115,3 +115,12 @@ bindings omit the security chain. No new frontend/browser result is claimed and
 the module's forthcoming full verify must be recorded separately. The new root
 adapter/V5 and complete real review integration remain pending; no M04 runtime
 source is merged to main by this record.
+
+Module later reported full verify/JAR on the same cb8de73 source finished
+**07:57:45 +08**, exit0, **133 tests**, zero failure/error/skip: 68 existing
+foundation/QR disposable-MySQL regression cases plus 14 root contracts and 51
+M04 cases. Evidence-only delivery `beaca640b719bed7f0c30f18a4d62c4c3783b9e0`
+changes five M04 documents, preserves the source and clean state, and adds no new
+frontend/browser claim. This is the module's full run, separate from the
+coordinator's independently reproduced 65; actual new M04 root SQL/HTTP gates
+remain pending. Maven/Testcontainers exited and no additional dev service ran.
