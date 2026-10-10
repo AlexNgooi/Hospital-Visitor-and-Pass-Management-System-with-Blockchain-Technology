@@ -196,7 +196,12 @@ async (page) => {
   await retained.context().setOffline(true);await retained.evaluate(()=>window.dispatchEvent(new Event("offline")));
   if(!await retained.getByRole("button",{name:"Seterusnya",exact:true}).isDisabled()) throw new Error("Offline ordinary inputs remained enabled");
   await retained.context().setOffline(false);await retained.evaluate(()=>window.dispatchEvent(new Event("online")));
-  await retained.waitForFunction(()=>!document.querySelector(".registration-actions button")?.disabled);
+  // Child disabled properties do not include inherited fieldset authority; wait for the real parent gate.
+  await retained.waitForFunction(()=>{
+    const fieldset=document.querySelector(".qr-bound-form");
+    return fieldset instanceof HTMLFieldSetElement&&!fieldset.disabled;
+  });
+  if(!await retained.getByRole("button",{name:"Seterusnya",exact:true}).isEnabled()) throw new Error("Ordinary form resumed before parent validation");
   if(await retained.getByLabel("Nama penuh").inputValue()!=="Demo Offline") throw new Error("Offline recovery discarded draft");
   checks.push({name:"ordinary-offline-resume",freshEntryGetRequired:true,draftPreserved:true});
   await retained.setViewportSize({width:375,height:568});
