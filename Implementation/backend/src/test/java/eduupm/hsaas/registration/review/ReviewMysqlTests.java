@@ -32,12 +32,17 @@ import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
 import org.springframework.transaction.TransactionDefinition;
 import org.springframework.transaction.support.TransactionTemplate;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.mysql.MySQLContainer;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.json.JsonMapper;
 import eduupm.hsaas.auth.LoginLimiter;
+import eduupm.hsaas.auth.AccountChanges;
+import eduupm.hsaas.auth.Accounts;
+import eduupm.hsaas.auth.SessionCapabilities;
 import eduupm.hsaas.common.IdempotencyPort;
 import eduupm.hsaas.common.LocalAuditPort;
 import eduupm.hsaas.registration.RegistrationReviewPort;
@@ -60,6 +65,9 @@ class ReviewMysqlTests {
     @Autowired LoginLimiter loginLimiter;
     @Autowired RegistrationReadPort reads;
     @Autowired TransactionTemplate transaction;
+    @Autowired AccountChanges changes;
+    @MockitoSpyBean Accounts accounts;
+    @MockitoSpyBean SessionCapabilities capabilities;
     @MockitoSpyBean Clock clock;
     @MockitoSpyBean RegistrationReviewPort root;
     @MockitoSpyBean IdempotencyPort idempotency;
@@ -95,6 +103,7 @@ class ReviewMysqlTests {
         // Reset only this test context's stable M00 limiter fixture, preserving real throttling within each scenario.
         ((Map<?, ?>) org.springframework.test.util.ReflectionTestUtils.getField(loginLimiter, "buckets")).clear();
         jdbc.execute("DROP TRIGGER IF EXISTS m04_audit_failure"); jdbc.execute("DROP TRIGGER IF EXISTS m04_unique_failure");
+        jdbc.execute("DROP TRIGGER IF EXISTS m04_winner_failure");
         // V4 consumption pairs must be cleared together while breaking V5's disposable circular parent pointer.
         jdbc.update("UPDATE registration_entry_grants SET consumed_at=NULL,registration_id=NULL,replaces_grant_id=NULL,replaces_binding_version=NULL");
         for (String table : List.of("mrn_validation_records", "registration_consents", "visitor_registrations", "registration_entry_contexts",
@@ -269,7 +278,7 @@ class ReviewMysqlTests {
     @Test void logoutBlocksRetainedSuccess() throws Exception {
         Browser staff = staff("review_a"); var registration = register(staff, "1", "VENDOR", false); String key = key();
         status(staff.post(path(registration, "verify"), verify("VENDOR"), key, true), 200);
-        status(staff.post("/api/auth/logout", Map.of(), null, true), 200);
+        status(staff.post("/api/auth/logout", Map.of(), null, true), 204);
         // A new anonymous CSRF bootstrap proves denial is authentication, not merely a stale CSRF token.
         staff.csrf(); status(staff.post(path(registration, "verify"), verify("VENDOR"), key, true), 401);
         assertThat(reviewResults(registration)).isEqualTo(1);
@@ -317,6 +326,119 @@ class ReviewMysqlTests {
         org.mockito.Mockito.verify(root, times(1)).recordDecision(any(), anyLong(), anyString(), any());
         org.mockito.Mockito.verify(audit, times(1)).append(eq(LocalAuditPort.Action.REGISTRATION_VERIFIED), anyString(), anyString(), anyLong(), any());
         org.mockito.Mockito.verify(idempotency, times(1)).success(any(), any(), anyInt(), any());
+    }
+
+    /** A real contender commits after the unique loser's complete rollback; recovery reads that winner without reapplying. */
+    @Test void actualDuplicateKeyRecoveryReadsCommittedSuccessfulWinner() throws Exception {
+        winnerRecovery(false);
+    }
+    /** Two valid rejection reasons yield different hashes; a committed contender is not success for the loser's different body. */
+    @Test void actualDuplicateKeyRecoveryRejectsDifferentBodyWinner() throws Exception {
+        winnerRecovery(true);
+    }
+
+    /** Revocation wins before the service's fresh actor read; actual M00 policy/epoch mutation denies the waiting review. */
+    @Test void concurrentPermissionRevocationBeforeReviewGuardPreventsDecision() throws Exception {
+        Browser staff = staff("review_a"), admin = staff("review_admin"); var registration = register(staff, "1", "VENDOR", false);
+        String owner = staff.owner(); var proof = admin.proof();
+        var entered = new CountDownLatch(1); var release = new CountDownLatch(1); var readsBeforePrefix = new java.util.concurrent.atomic.AtomicInteger();
+        doAnswer(call -> {
+            // Protected servlet filter is call 1; service pre-TX requireHuman is call 2, with no retained domain locks.
+            if (readsBeforePrefix.incrementAndGet() == 2) { entered.countDown(); if (!release.await(10, TimeUnit.SECONDS)) throw new IllegalStateException("Review guard barrier timed out"); }
+            return call.callRealMethod();
+        }).when(capabilities).requireHuman(anyString(), eq(owner), anyLong(), anyString());
+        try (var pool = Executors.newSingleThreadExecutor()) {
+            var pending = pool.submit(() -> staff.post(path(registration, "verify"), verify("VENDOR"), key(), true));
+            try {
+                assertThat(entered.await(10, TimeUnit.SECONDS)).isTrue();
+                changes.counterPermission(proof, actor("review_a"), 1, 0, false);
+            } finally { release.countDown(); }
+            status(pending.get(20, TimeUnit.SECONDS), 401);
+        }
+        unchanged(registration); assertThat(reviewAudits(registration)).isZero(); assertThat(reviewResults(registration)).isZero();
+    }
+
+    /** A serialized review may commit before revocation; late framework-save denial yields an UNKNOWN acknowledgement, not business rollback. */
+    @Test void concurrentRevocationAfterReviewPrefixPreservesSerializedWinner() throws Exception {
+        Browser staff = staff("review_a"), admin = staff("review_admin"); var registration = register(staff, "1", "VENDOR", false);
+        var proof = admin.proof(); long target = actor("review_a"); String commandKey = key();
+        var inDecision = new CountDownLatch(1); var releaseDecision = new CountDownLatch(1); var adminWaiting = new CountDownLatch(1);
+        var adminThread = new java.util.concurrent.atomic.AtomicReference<Thread>();
+        doAnswer(call -> { inDecision.countDown(); if (!releaseDecision.await(10, TimeUnit.SECONDS)) throw new IllegalStateException("Review decision barrier timed out"); return call.callRealMethod(); })
+                .when(root).recordDecision(any(), anyLong(), anyString(), any());
+        doAnswer(call -> { if (Thread.currentThread() == adminThread.get()) adminWaiting.countDown(); return call.callRealMethod(); })
+                .when(accounts).lock(target);
+        HttpResponse<String> acknowledgement;
+        try (var pool = Executors.newFixedThreadPool(2)) {
+            var review = pool.submit(() -> staff.post(path(registration, "verify"), verify("VENDOR"), commandKey, true));
+            assertThat(inDecision.await(10, TimeUnit.SECONDS)).isTrue();
+            var revoked = pool.submit(() -> { adminThread.set(Thread.currentThread()); changes.counterPermission(proof, target, 1, 0, false); return true; });
+            try { assertThat(adminWaiting.await(10, TimeUnit.SECONDS)).isTrue(); assertThat(revoked.isDone()).isFalse(); }
+            finally { releaseDecision.countDown(); }
+            acknowledgement = review.get(20, TimeUnit.SECONDS); assertThat(revoked.get(20, TimeUnit.SECONDS)).isTrue();
+        }
+        assertThat(jdbc.queryForObject("SELECT status FROM visitor_registrations WHERE id=?", String.class, registration.id())).isEqualTo("VERIFIED");
+        assertThat(jdbc.queryForObject("SELECT version FROM visitor_registrations WHERE id=?", Long.class, registration.id())).isEqualTo(1);
+        assertThat(reviewAudits(registration)).isEqualTo(1); assertThat(reviewResults(registration)).isEqualTo(1);
+        // Only after SQL proves the complete domain commit can a late response failure be classified as acknowledgement uncertainty.
+        assertThat(acknowledgement.statusCode()).isIn(200, 401, 503);
+        if (acknowledgement.statusCode() == 503) {
+            assertThat(tree(acknowledgement).path("code").asString()).isEqualTo("SERVICE_UNAVAILABLE");
+            assertThat(tree(acknowledgement).path("message").asString()).isEqualTo("Request outcome unavailable. Keep the original command key.");
+        }
+        status(staff.post(path(registration, "verify"), verify("VENDOR"), commandKey, true), 401);
+    }
+
+    /** Controlled SQL 1062 occurs only on the loser's held connection; the independently authorized HTTP contender is wholly real. */
+    private void winnerRecovery(boolean differentBody) throws Exception {
+        Browser loser = staff("review_a"), winner = staff("review_a"); var registration = register(loser, "1", "VENDOR", false);
+        String commandKey = key(), operation = differentBody ? "REJECT" : "VERIFY", action = differentBody ? "reject" : "verify";
+        Object original = differentBody ? Map.of("expectedVersion", 0, "reasonCode", "INFORMATION_INCOMPLETE") : verify("VENDOR");
+        Object winning = differentBody ? Map.of("expectedVersion", 0, "reasonCode", "INFORMATION_NOT_CONFIRMED") : verify("VENDOR");
+        var first = new java.util.concurrent.atomic.AtomicBoolean(true); var winnerDone = new java.util.concurrent.atomic.AtomicBoolean();
+        var recovered = new java.util.concurrent.atomic.AtomicBoolean(); var loserThread = new java.util.concurrent.atomic.AtomicReference<Thread>();
+        var marker = new java.util.concurrent.atomic.AtomicReference<TransactionSynchronization>();
+        var callbackError = new java.util.concurrent.atomic.AtomicReference<Throwable>();
+        var decisions = new java.util.concurrent.ConcurrentHashMap<Thread, Integer>();
+        // Configure the actual target spy, not the Spring MANDATORY proxy, so setting hooks itself performs no out-of-TX call.
+        // Application requests still enter that real proxy and its required transaction before reaching the instrumented target.
+        IdempotencyPort observedIdempotency = org.springframework.test.util.AopTestUtils.getUltimateTargetObject(idempotency);
+        clearInvocations(root, audit, idempotency);
+        doAnswer(call -> { decisions.merge(Thread.currentThread(), 1, Integer::sum); return call.callRealMethod(); })
+                .when(root).recordDecision(any(), anyLong(), anyString(), any());
+        doAnswer(call -> {
+            if (Thread.currentThread() == loserThread.get() && winnerDone.get()) {
+                assertThat(TransactionSynchronizationManager.isActualTransactionActive()).isTrue();
+                assertThat(TransactionSynchronizationManager.getCurrentTransactionIsolationLevel()).isEqualTo(TransactionDefinition.ISOLATION_READ_COMMITTED);
+                assertThat(TransactionSynchronizationManager.getSynchronizations().contains(marker.get())).isFalse(); recovered.set(true);
+            }
+            return call.callRealMethod();
+        }).when(observedIdempotency).replay(any(), any());
+        doAnswer(call -> {
+            IdempotencyPort.Namespace namespace = call.getArgument(0);
+            if (namespace.operation().equals(operation) && namespace.key().equals(commandKey) && first.compareAndSet(true, false)) {
+                loserThread.set(Thread.currentThread()); jdbc.execute("SET @m04_force_unique=TRUE");
+                var synchronization = new TransactionSynchronization() {
+                    @Override public void afterCompletion(int status) {
+                        try {
+                            if (status != STATUS_ROLLED_BACK) throw new IllegalStateException("Unique loser did not roll back");
+                            // No original locks survive the completed DB rollback; the contender can now take its real prefix and commit.
+                            status(winner.post(path(registration, action), winning, commandKey, true), 200); winnerDone.set(true);
+                        } catch (Throwable failure) { callbackError.set(failure); }
+                        finally { jdbc.execute("SET @m04_force_unique=FALSE"); }
+                    }
+                };
+                marker.set(synchronization); TransactionSynchronizationManager.registerSynchronization(synchronization);
+            }
+            return call.callRealMethod();
+        }).when(observedIdempotency).success(any(), any(), anyInt(), any());
+        jdbc.execute("CREATE TRIGGER m04_winner_failure BEFORE INSERT ON idempotency_records FOR EACH ROW BEGIN IF @m04_force_unique=TRUE THEN SIGNAL SQLSTATE '23000' SET MYSQL_ERRNO=1062,MESSAGE_TEXT='M04_DISPOSABLE_WINNER_FAULT'; END IF; END");
+        try { status(loser.post(path(registration, action), original, commandKey, true), differentBody ? 409 : 200); }
+        finally { jdbc.execute("DROP TRIGGER m04_winner_failure"); }
+        assertThat(callbackError.get() == null).as("post-rollback real contender failed").isTrue(); assertThat(winnerDone).isTrue(); assertThat(recovered).isTrue();
+        assertThat(decisions.size()).isEqualTo(2); assertThat(decisions.values()).containsOnly(1);
+        assertThat(reviewAudits(registration)).isEqualTo(1); assertThat(reviewResults(registration)).isEqualTo(1);
+        if (differentBody) assertThat(jdbc.queryForObject("SELECT reject_reason FROM visitor_registrations WHERE id=?", String.class, registration.id())).isEqualTo("INFORMATION_NOT_CONFIRMED");
     }
 
     /** Actual adapter transaction fencing must precede even an owner discovery query, not merely reject after reading it. */
@@ -436,6 +558,14 @@ class ReviewMysqlTests {
         private final CookieManager cookies = new CookieManager(null, CookiePolicy.ACCEPT_ALL);
         private final HttpClient client = HttpClient.newBuilder().cookieHandler(cookies).connectTimeout(Duration.ofSeconds(5)).build();
         private String csrf;
+        private String login;
+        /** Real M00 administration proof is derived from this already saved server session, never supplied by a browser request body. */
+        AccountChanges.Proof proof() {
+            String cookie = cookies.getCookieStore().getCookies().stream().filter(value -> value.getName().equals("HSAAS_SESSION")).findFirst().orElseThrow().getValue();
+            String session = new String(Base64.getDecoder().decode(cookie), java.nio.charset.StandardCharsets.UTF_8);
+            var row = jdbc.queryForMap("SELECT b.id,b.current_owner_context_id,b.generation FROM app_session_bindings b JOIN SPRING_SESSION s ON s.PRIMARY_ID=b.spring_primary_id WHERE s.SESSION_ID=?", session);
+            return new AccountChanges.Proof((String) row.get("id"), (String) row.get("current_owner_context_id"), ((Number) row.get("generation")).longValue(), login);
+        }
         /** Reads only this saved test browser's server binding metadata; cookie/owner values never enter diagnostics or HTTP payloads. */
         String owner() {
             String cookie = cookies.getCookieStore().getCookies().stream().filter(value -> value.getName().equals("HSAAS_SESSION")).findFirst().orElseThrow().getValue();
@@ -452,7 +582,7 @@ class ReviewMysqlTests {
             return client.send(request.POST(HttpRequest.BodyPublishers.ofString(body)).build(), HttpResponse.BodyHandlers.ofString());
         }
         void csrf() throws Exception { var response = get("/api/public/csrf"); status(response, 200); csrf = tree(response).path("token").asString(); }
-        void login(String login) throws Exception { csrf(); status(post("/api/auth/login", Map.of("login", login, "password", PASSWORD), null, true), 200); csrf(); }
+        void login(String login) throws Exception { csrf(); status(post("/api/auth/login", Map.of("login", login, "password", PASSWORD), null, true), 200); this.login = login; csrf(); }
     }
     /** Safe operational coordinates only, with no form/credential/token payload in diagnostics. */
     private record Registration(String id, String reference, String category) { }

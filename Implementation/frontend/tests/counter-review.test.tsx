@@ -192,6 +192,7 @@ describe("masked counter review and explicit staff evidence", () => {
       expect(execute).toHaveBeenCalledTimes(3); expect(port.verify).toHaveBeenCalledTimes(1);
     },
   );
+  /** Current access loss removes cached data; remounting another scope cannot execute the previous workspace's unresolved handle. */
   it("UNKNOWN recovery access loss hides cached data and a new counter cannot execute its old handle", async () => {
     const { port } = fixture([record(), record("2", "2")]);
     const execute = vi.fn().mockRejectedValueOnce(new ClientError("timeout")).mockRejectedValue(failure(403, "ACCESS_DENIED"));
