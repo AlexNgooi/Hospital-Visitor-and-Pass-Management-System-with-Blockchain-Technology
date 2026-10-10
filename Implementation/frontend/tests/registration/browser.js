@@ -111,14 +111,14 @@ async (page) => {
   })) throw new Error("Error-state action unreachable by keyboard");
   checks.push({name:"invalid-linked-summary",focused:true,noWrite:true});
   await identity(mobile,"PENJAGA");await visit(mobile,"PENJAGA");
-  await audit(mobile,"penjaga-visit-mobile375","Seterusnya");
+  await audit(mobile,"penjaga-initial-visit-mobile375","Seterusnya");
   await mobile.getByRole("button",{name:"Semak MRN demo",exact:true}).click();
   await mobile.getByText("Padanan demo. Pengesahan manual kakitangan masih diperlukan.",{exact:true}).waitFor();
   await audit(mobile,"mrn-match-mobile375","Seterusnya");
   // Editing MRN after a successful feedback invalidates its token and allows explicit manual deferral.
   await mobile.getByLabel("MRN demo",{exact:true}).fill("DEMO-MRN-9999");
   if(await mobile.getByText("Padanan demo. Pengesahan manual kakitangan masih diperlukan.",{exact:true}).count()) throw new Error("Stale MRN feedback retained");
-  await review(mobile);await audit(mobile,"penjaga-review-mobile375","Hantar pendaftaran");
+  await review(mobile);await audit(mobile,"penjaga-deferred-review-mobile375","Hantar pendaftaran");
   const sent=mobile.waitForResponse(response=>response.url().endsWith("/api/public/registrations"));
   await mobile.getByRole("button",{name:"Hantar pendaftaran",exact:true}).click();
   const accepted=await sent,result=await accepted.json();
@@ -126,7 +126,8 @@ async (page) => {
   await mobile.getByRole("heading",{name:"Pendaftaran diterima"}).waitFor();
   if(await mobile.getByText("Demo Visitor",{exact:true}).count()||await mobile.locator("input").count()) throw new Error("Sensitive form retained on receipt");
   await mobile.screenshot({path:root+"receipt-mobile375.png",fullPage:true});
-  checks.push({name:"real-penjaga-submit",status:201,receiptOnlyReference:true,mrnFeedbackInvalidated:true,noStaffVerificationClaim:true});
+  // Separate scenario IDs keep each screenshot associated with its own immutable measurement.
+  checks.push({name:"real-penjaga-deferred-submit",status:201,receiptOnlyReference:true,mrnFeedbackInvalidated:true,noStaffVerificationClaim:true});
   for(const category of ["PENJAGA","EXECUTIVE","VENDOR","CONTRACTOR"]) {
     const target=await visitor(1366,768);
     await target.getByLabel("Kategori pelawat").selectOption(category);
