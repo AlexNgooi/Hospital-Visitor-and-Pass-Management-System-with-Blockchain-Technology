@@ -1,18 +1,12 @@
 # HSAAS FYP 当前规划入口
 
-更新日期：2026-10-09。当前 chat 为 project coordinator；每个模块使用独立 chat，完成后交回审核、本地 merge 与集成复验。M00/M01/M02 当前本地范围已验收，M02 动态 QR 已审核并本地合并 3c0c229；M03/M04 已在各自chat获用户“继续”启动并隔离实施，见12。其他模块未开启。
+更新2026-10-10：**M00–M04功能已合并本机main**，M03 merge0067637、M04 merge446f887，组合入口dc6982341ed6135b0917a5cfafc4200f06e43e96。职员登录/柜台、实时动态QR、四类DEMO登记、掩码队列/人工批准拒绝已交付；发卡/借用/归还为M05，尚未启动。
 
-2026-10-10用户要求本chat完成M03/M04后交回协调权：M05–M11由用户自行coordinate，本chat不自动派发或启动。后续新chat启动消息、依赖与交接方式见[用户模块启动指南](13_USER_MODULE_START_GUIDE.md)；两模块实际验收完成前仍不放行依赖。
+用户最新要求助手只完成功能、用户手动测试。组合后没有另行构建或测试，M03/M04状态MERGED_PENDING_USER_MANUAL_TEST，不声称全系统或生产验收；已有历史检查保留准确SHA/范围，见[M03 REVIEW](../Implementation/docs/evidence/modules/M03/REVIEW.md)和[M04 REVIEW](../Implementation/docs/evidence/modules/M04/REVIEW.md)。
 
-每个 module 的 chat 和开发必须由用户手动开启和启动；coordinator/助手准备任务和开工条件，不代开、不自动启动下一模块。
+本chat协调至M04结束，M05–M11由用户自己coordinate；每个模块手动开独立新chat、从本机已合并main隔离worktree、一次范围许可后由助手直接写有英文注释的功能。不自动收发后续模块消息，不自动启动/审核/merge或测试。可复制每模块消息见[用户启动指南](13_USER_MODULE_START_GUIDE.md)。
 
-2026-10-08 用户要求 coordinator 代开 M00–M04 五个 chat，模型 gpt-6.1-sol / high；初始 Local 只读准备。最新又明确取消 guide/用户手写方式：获各模块一次开发许可后，由模块助手直接编写、测试、修复和交接，所有新写/修改代码有英文注释。其他模块不自动开启。实际登记见 12。
-
-最新沟通规则：模块主动把问题/交接发给 coordinator，coordinator 可回复；用户只审批每个 module 的开发许可，已批准范围内不逐步重复求授权。M00–M02本地已验收，M03/M04已获许可；技术答复不替代用户许可，M05及后续不自动启动。具体协议与消息授权见12。
-
-需要用户裁决的 conflict、需求不清或无法确定的选择，统一由 coordinator 在本 chat 整理选项后询问用户，再将决定发回模块。
-
-当前优先前端、基础 backend/MySQL、动态 QR 扫码登记。实体卡/reader 与医院病人 API 未准备，先以 synthetic simulation / MRN mock/manual 建立边界；WhatsApp 和 blockchain 默认 disabled。M02 当前签名轮换/entry grant 本地范围已验收：coordinator 独立浏览器28项通过，主分支后端verify68项/JAR及前端95项/typing/build/lint/proxy通过，见 [M02 REVIEW](../Implementation/docs/evidence/modules/M02/REVIEW.md)。实际访客字段/提交与审核由M03/M04隔离实施，尚未交回验收；S-V1已获C14 DEMO-only答复，继续实际接入。物理相机与生产HTTPS NOT_RUN，QR配置默认disabled。历史初始化见 [P0](../Implementation/docs/evidence/foundation/P0_REVIEW.md)，基础/UI证据见 [M00 REVIEW](../Implementation/docs/evidence/modules/M00/REVIEW.md) / [M01 REVIEW](../Implementation/docs/evidence/modules/M01/REVIEW.md)。
+[手动运行/检查指南](../Implementation/docs/runbooks/MANUAL_M00_M04.md)包含独立临时数据库、公开演示账号、QR→登记→审核流程和停止命令。旧native数据库checksum问题未修复，真实硬件/手机跨设备HTTPS/医院API仍deferred；WhatsApp/blockchain disabled。GitHub未push，指南提供git push origin main供用户执行。S-V1为TEST_ID/DEMO-与DEMO-MRN-，不代表正式医院字段批准。
 
 ## 从这里进入
 

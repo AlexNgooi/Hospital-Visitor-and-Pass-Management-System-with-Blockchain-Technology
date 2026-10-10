@@ -1,5 +1,12 @@
 # M03 Visitor Registration — implementation and validation handoff
 
+**Current delivery update — 2026-10-10:** functionally reviewed and merged locally
+as0067637; combined QR/registration/review entry isdc69823. The user's latest
+instruction stops further assistant testing and assigns manual acceptance to the
+user. Older coordinator-run/merged-regression gates below are historical,
+superseded instructions. See REVIEW and [manual runbook](../../../runbooks/MANUAL_M00_M04.md)
+for the current boundary; no complete combined acceptance or push is claimed.
+
 - Module/chat: M03, 01a11ba4-e814-7832-bd40-f471edf417b4; module assistant directly implemented, tested and repaired.
 - Human development approval: user replied “继续” in this M03 chat on 2026-10-09; coordinator independently confirmed its scope. Permission is retained; C15/C16 are technical decisions, not a replacement human approval or a new module start.
 - Application baseline: f59baf350feeec024bf7178bf4d421aec4a6d41e.

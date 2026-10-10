@@ -6,7 +6,7 @@ status: proposed-implementation
 ---
 # HSAAS 数据模型与 API 契约 v3
 
-状态和业务验收以 [03](03_REQUIREMENTS_AND_TEST_PLAN.md) 为准，执行边界以 [02](02_TECHNICAL_ARCHITECTURE.md) 为准。本文件是目标模型，尚未创建正式 Flyway migrations。旧 `passes/pass_assignments/pass_events` 命名统一到 `cards/card_assignments/lifecycle_events`；UI 的 Pass ID 是一次 Assignment 的 `pass_reference`，不是 NFC UID。
+状态和业务验收以 [03](03_REQUIREMENTS_AND_TEST_PLAN.md) 为准，执行边界以 [02](02_TECHNICAL_ARCHITECTURE.md) 为准。本文件包含当前与长期目标模型；正式V1–V5已在main，不能将下方长期目标表当作已实现。旧 `passes/pass_assignments/pass_events` 命名统一到 `cards/card_assignments/lifecycle_events`；UI 的 Pass ID 是一次 Assignment 的 `pass_reference`，不是 NFC UID。
 
 ## 1. 聚合与实体
 
@@ -253,6 +253,10 @@ coordinator已审阅M03 `IMPLEMENTATION_CONTRACT.md`、`V5_CANDIDATE.sql`、`REA
 
 以下是依赖批次，不是已执行的 Flyway V 编号：identity/reference/session/idempotency/local audit → QR display/challenge/grant → registration/consent → synthetic cards/device/scan → assignment/active unique/lifecycle/alerts/lost → reporting/settings。M00 登记实际编号，每个 module 申请后使用；先检查库中已有 migration，不重写共享环境已应用版本。
 
-当前迁移登记（2026-10-09）：V1 `foundation_identity_reference`、V2 `spring_session_jdbc`、V3 `session_capability_guards`、M02 V4 `dynamic_registration_entry` 已审核合并，临时MySQL clean/upgrade验证通过；已应用版本冻结，其他模块不得重用或重写。V5预留获用户许可的M03 registration/consent与确有必要的MRN临时验证，具体DDL先交coordinator审核；M04审核metadata由M03根模型存储，不独立新建登记迁移或重复实体。真实开发/生产库未在本次验证中使用。后续号继续由M00/coordinator台账登记；完整实际登记/review事务图仍需所属模块验证。
+历史迁移登记（2026-10-09，后续规则由下段覆盖）：V1 `foundation_identity_reference`、V2 `spring_session_jdbc`、V3 `session_capability_guards`、M02 V4 `dynamic_registration_entry` 已审核合并，临时MySQL clean/upgrade验证通过；已应用版本冻结，其他模块不得重用或重写。V5预留获用户许可的M03 registration/consent与确有必要的MRN临时验证，具体DDL先交coordinator审核；M04审核metadata由M03根模型存储，不独立新建登记迁移或重复实体。真实开发/生产库未在本次验证中使用。后续号继续由M00/coordinator台账登记；完整实际登记/review事务图仍需所属模块验证。
 
 M08 增加真设备/profile；M09 增加获批 MRN adapter 所需最少字段；M10 增 notification/receipts；M11 增 audit_outbox/verification jobs/链绑定。后两者在启用前完成 clean + upgrade、模式默认 disabled 与故障恢复验收。历史本地事件不自动入队，canonical snapshot 缺失或版本不兼容不能伪造历史承诺。表设计落地后生成 ERD/OpenAPI；当前仍为规划。
+
+## 2026-10-10功能合并台账与后续owner
+
+M03 V5__visitor_registration.sql已审核并随0067637合并main；V1–V4未重写。V5包含登记根、PRIVACY_ACK、临时MRN反馈及grant真实父关联，M04复用根metadata无独立迁移。M04审核服务/HTTP/UI随446f887合并，组合入口dc69823。当前只到VERIFIED/REJECTED，不存在M05活动卡借用或消息/链任务。新增编号从实际目录和用户台账核对，未来迁移/共享选择由用户协调，不发旧coordinator。合并后没有再运行迁移/构建/测试，native库未修改；临时库手动启动和验收见Implementation/docs/runbooks/MANUAL_M00_M04.md。

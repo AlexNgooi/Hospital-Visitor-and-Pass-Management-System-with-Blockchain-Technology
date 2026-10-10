@@ -2,21 +2,21 @@
 type: module-chat-coordination
 updated: 2026-10-10
 window: 2026-10-08..2027-01-03
-status: m03-m04-in-progress
+status: m00-m04-functions-merged-user-manual-test
 ---
 # Coordinator 与每模块独立 Chat 执行指南
 
 本 chat 固定为 coordinator。开发按模块拆分，每个模块有自己的 chat，不共用一个阶段开发 chat；模块返修继续用原模块 chat。coordinator 管规划、契约、分配、问题裁决、审核与本地 merge。阶段时间表见 [01](01_DEVELOPMENT_PLAN.md)，业务事实以 02/03/04 为准。
 
-## 2026-10-10 协调权交接边界（覆盖后续模块旧规则）
+## 2026-10-10 完成M04与协调权交接（覆盖旧测试关卡）
 
-用户明确要求“继续完成m03 和04 完成这俩个后接下来的module就不需要你coordinate了 我自己coordinate 只需要告诉我 要怎么开始每个module 在新的chat”。本coordinator继续负责已许可M03/M04的实现协调、独立审核、返修、本地merge和合并后复验；当前仍IN_PROGRESS，不能提前标完成。M03输入格式已获2026-10-10用户C14答复：仅DEMO演示数据，实际医院字段仍deferred；两模块继续实际接入。
+用户最新要求完成到M04、无已知功能问题直接merge本机main、不push，助手只做功能、用户手动测试。M03已merge0067637（delivery2d2c28b），M04已merge446f887（deliveryb6036a5及后续doc-onlycebef09）；入口dc6982341ed6135b0917a5cfafc4200f06e43e96同时装配动态QR/登记/审核，随后文档提交不改变功能源。
 
-M03/M04完成后，本chat不自动推进M05–M11。用户亲自选择模块、新chat、开发许可、共享契约/迁移编号、依赖放行与最终审核/merge；后续模块的问题直接交用户，不继续把旧coordinator当审批入口，也不自动发送跨chat消息。模块助手仍负责有英文注释的直接实现、适当测试、修复和HANDOFF，不让用户手写源码。用户可在原模块chat明确要求返修或在相应review chat明确授权审核/merge，但这些均不由本chat自动触发。
+M03/M04源码已审核，状态MERGED_PENDING_USER_MANUAL_TEST，组合后未构建/回归；旧独立检查和真实未执行项见各REVIEW。M03历史109backend/110frontend/独立47actualbrowser结果保留；M04历史独立126frontend及当前25MySQL class reports保留，不称最终Maven/fullverify/actualbrowser通过。助手不继续执行旧自动验收待办，不新增测试；不因未执行的旧关卡阻止用户已经授权的本地merge。
 
-后续新chat的具体输入、范围、依赖和可复制启动消息见[用户模块启动指南](13_USER_MODULE_START_GUIDE.md)。这份指南是启动准备，不是M05及以后模块的开发许可或完成证据。本文其他coordinator表述对M00–M04保留历史/当前含义；M05及以后由用户承担该角色。
+本chat协调至M04结束。M05–M11由用户手动开启新chat、开发许可、依赖放行、共享契约/迁移编号、返修、审核及merge；后续助手只完成有英文注释的功能并给用户手动步骤，不自动测试、不向旧coordinator或其他chat发消息。未启动其他模块、不push/部署、不修改旧native库。具体消息见[新chat指南](13_USER_MODULE_START_GUIDE.md)，当前运行见[手动指南](../Implementation/docs/runbooks/MANUAL_M00_M04.md)。
 
-默认由用户手动开启 module chat 并启动开发，coordinator 不自动派发或用子代理/自动化替代用户启动。本次用户明确授权的 M00–M04 例外及实际登记见下。最新用户已分别授权 M00–M04 开发；M00–M02 当前本地范围已验收，M03/M04 在自身chat收到用户启动后进入独立worktree开发。chat 存在、READY、依赖完成或日期到达均不代表已启动源码实施。
+本文后文原coordinator审核/运行测试要求是历史协议；当前和未来任务以本节最新用户决定为准。模块一次范围许可仍持续有效，不反复索求普通实现步骤许可。
 
 ## 本次明确授权例外：代开 M00–M04
 
@@ -125,8 +125,8 @@ M00–M04 已创建并完成准备核对；M00/M01/M02 当前本地范围已验�
 | M00 | INTEGRATION_VERIFIED（当前本地基础/C01范围）；HTTPS/业务后续验收 | 01a11bcf-a53d-7323-a74e-edffa8092c50 / 模块助手直接实现 | c2b0c316；codex/hsaas-m00-foundation；ced2/FYP Dev | 基础merge a137acd；40tests PASS；真实28wire联调 PASS；gpt-6.1-sol/high |
 | M01 | INTEGRATION_VERIFIED（当前本地UI/C01范围）；HTTPS/后续业务未验收 | 01a11bcf-e448-7be0-88c1-f7910300e82e / 模块助手直接实现 | 基础c2b0c316；联调03fda7f；codex/hsaas-m01-frontend-shell；4156/FYP Dev | 基础merge014d030；联调delivery58b738a/merge e8ca80a；68tests+16隔离+真实28wire PASS；gpt-6.1-sol/high |
 | M02 | INTEGRATION_VERIFIED（当前本地动态QR/entry grant范围）；真机/生产/M03待验收 | 01a11db3-31c9-7da0-bfb2-217e71081355 / 模块助手直接实现 | baseline98a7f7d；codex/hsaas-m02-dynamic-registration；C:/Users/alexy/.codex/worktrees/bd17/FYP Dev | sourcef81512d/deliveryd2d745f/merge3c0c229；R1–R4返修已验收；独立28browser PASS；main68backend verify/JAR、95frontend/typing/build/lint/proxy PASS；见M02 REVIEW；V4已合并，未改nativeDB；gpt-6.1-sol/high |
-| M03 | IN_PROGRESS；用户本chat“继续”已许可；S-V1已选DEMO-only，实际登记/read/V5推进 | 01a11ba4-e814-7832-bd40-f471edf417b4 / 模块助手直接实现 | baselinef59baf3；codex/hsaas-m03-visitor-registration；C:/Users/alexy/.codex/worktrees/m03-visitor-registration/FYP Dev | 无交接/审核/merge；V5候选预留；gpt-6.1-sol/high |
-| M04 | IN_PROGRESS；独立检查点已审核，完整真实接入待M03 root/read | 01a11ba4-ecca-7ca3-a224-c3dde42d1edd / 模块助手直接实现 | baselinef59baf3；codex/hsaas-m04-counter-review；C:/Users/alexy/.codex/worktrees/hsaas-m04-counter-review/FYP Dev | source03eca76/delivery398a244；bounded独立36backend/122frontend/19synthetic browser PASS；module报告full104/JAR单独记录；未merge/接线，真实审核SQL/HTTP/E2E NOT_RUN；见M04 REVIEW；gpt-6.1-sol/high |
+| M03 | MERGED_PENDING_USER_MANUAL_TEST；功能/source审核完成 | 01a11ba4-e814-7832-bd40-f471edf417b4 / 模块助手直接实现 | baselinef59baf3；codex/hsaas-m03-visitor-registration；独立worktree保留 | delivery2d2c28b；本地merge0067637；V5已入main；历史109backend/110frontend/独立47actualbrowser；组合未复验，见M03 REVIEW |
+| M04 | MERGED_PENDING_USER_MANUAL_TEST；功能/source审核与接线完成 | 01a11ba4-ecca-7ca3-a224-c3dde42d1edd / 模块助手直接实现 | baselinef59baf3；codex/hsaas-m04-counter-review；独立worktree保留 | deliveryb6036a5/doc-onlycebef09；本地merge446f887/组合dc69823；历史独立126frontend、当前25class reports；fullverify/actualbrowser NOT_RUN，见M04 REVIEW |
 | M05 | PLANNED | 未创建 / 未派工 | 待登记 | 无 |
 | M06 | PLANNED | 未创建 / 未派工 | 待登记 | 无 |
 | M07 | PLANNED | 未创建 / 未派工 | 待登记 | 无 |
@@ -135,7 +135,7 @@ M00–M04 已创建并完成准备核对；M00/M01/M02 当前本地范围已验�
 | M10 | DEFERRED：用户要求暂不启用 | 未创建 / 未派工 | disabled | live NOT_RUN |
 | M11 | DEFERRED：用户要求暂不启用 | 未创建 / 未派工 | disabled | live NOT_RUN |
 
-状态路径：PLANNED → READY → IN_PROGRESS → REVIEW_READY → CHANGES_REQUESTED / APPROVED → MERGED → INTEGRATION_VERIFIED。DEFERRED 满足条件后回 READY；BLOCKED 必须记录问题、owner 与下次动作。测试状态与模块状态独立，APPROVED 仍未 merge。
+用户可明确选择功能交付/本地merge后手动验收，此时MERGED_PENDING_USER_MANUAL_TEST不是INTEGRATION_VERIFIED。旧自动验收路径仅作历史参考：PLANNED → READY → IN_PROGRESS → REVIEW_READY → CHANGES_REQUESTED / APPROVED → MERGED → INTEGRATION_VERIFIED。DEFERRED 满足条件后回 READY；BLOCKED 必须记录问题、owner 与下次动作。测试状态与模块状态独立，APPROVED 仍未 merge。
 
 2026-10-09 M01 维护任务 INTEGRATION_VERIFIED（已实现当前 UI 范围）：用户要求修复登录错误/会话提示叠加后的视口布局，并检查现有各页。原 M01 chat 沿用其开发许可与 4156 隔离 worktree，最终准备 baseline `6bb3893`；源 `ed5875a`，稳定快照先集成 `858b74d`，正式本地 merge `1da1925`，最终receipt/无行为lint说明delivery `fafd74c` / merge `9f5b7a1`。main 69tests/typing/build通过、最终lint0warning；实际5173错误页375×812及790×885完整呈现、手机axe0，coordinator独立事实见 M01 REVIEW。模块synthetic37状态及定点总览/长ID/放大模拟分开记录，20截图hash已核对，真实toolbarzoom NOT_RUN。范围限现有 app/ui/index.css 与相关测试、证据，不改变 auth/API、后端、入口或依赖；标准 shadcn 迁移未包含。视口与可达性验收见 07，不把必要滚动误判为隐藏内容的理由。M02当前仍独立实施，未因这次维护启动其他模块。
 

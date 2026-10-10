@@ -183,6 +183,8 @@ instruction requests function delivery through M04, local main merge without
 GitHub push, and no further assistant testing. It supersedes the older automated
 acceptance gates. Final delivery `b6036a596ab772771c1d139e76568c514e583770`
 was merged locally as `446f887`; runtimeR2 remains4b7fca6, actual fixtures6477dcd.
+The final documentation-only deliverycebef09 was also merged; it removes
+superseded automated merge prerequisites without changing runtime source.
 
 Reviewed source uses the same M03 root/read/write facets and V5 without duplicate
 SQL or migrations. Protected reads derive current selected-counter authority;

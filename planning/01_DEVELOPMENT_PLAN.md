@@ -7,6 +7,12 @@ status: coordinator-planning
 ---
 # 三个月开发计划：coordinator 与独立模块 chat
 
+## 2026-10-10最新状态（优先于下方历史阶段）
+
+2026-10-10最新交付与测试规则（覆盖旧验收/自动测试指令）：M00–M04功能已合并本机main，M03 merge0067637、M04 merge446f887，组合入口dc6982341ed6135b0917a5cfafc4200f06e43e96；最新组合状态MERGED_PENDING_USER_MANUAL_TEST，未另行构建/测试，不冒充完整验收。用户要求“只需要把功能做出来，我自己手动测试”：助手不自行新增或执行测试、不进行浏览器/业务验收，不因旧测试关卡未执行阻止已授权的功能交付；源码/diff审阅可继续，额外构建/运行按用户后续明确要求。旧PASS保留原范围，未执行写NOT_RUN。当前已无已知阻塞交付的生产功能缺陷。本chat至M04结束协调，M05–M11由用户在新chat手动启动并自己协调，问题/共享契约/迁移/依赖直接问用户，不自动向旧coordinator或其他chat发消息；不自动创建/启动/审核/merge后续模块。用户明确启动指定模块即为一次开发许可，助手直接写有准确英文注释的功能并交回用户审核。不push、不部署、不修改旧native数据库。启动见planning/13_USER_MODULE_START_GUIDE.md；当前手动运行见Implementation/docs/runbooks/MANUAL_M00_M04.md。
+
+下方日期/待办保留当时阶段事实，不作为当前继续测试或启动模块的命令。
+
 本 chat 是 HSAAS project coordinator，负责范围、模块分配、契约、答疑、审核与本地合并。每个模块使用自己的独立 chat；阶段只是时间和集成关卡，不再对应一个开发 chat。模块与协作协议的事实归属在 [12](12_THREE_MONTH_CHAT_PLAN.md)。本轮仅修改规划，不创建模块 chat，不实施业务代码。
 
 2026-10-10用户决定覆盖后续协调安排：本chat继续完成已许可M03/M04、审核/本地merge/复验，之后M05–M11由用户自己coordinate。下列未来阶段中的coordinator职责由用户承担，不是本chat的自动任务。每模块新chat的启动消息、依赖与人工审核交接见[用户启动指南](13_USER_MODULE_START_GUIDE.md)；当前模块实际状态见12/REVIEW，日期不证明完成。
