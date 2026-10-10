@@ -52,6 +52,8 @@ Java 21 沿用指南。Spring Boot、React、SDK、MySQL 和 Node 的具体兼�
 
 M03 拥有 registration 根聚合/实体/持久化和字段 schema；M04 拥有 review 子域与审核命令，通过冻结的 registration 领域接口更新，不各自复制 registration 实体。verify 一次命令原子保存核实依据并批准，不添加审核草稿 endpoint；actor/time 从服务端取得。M02 提供参与现有事务的 grant 检查/消费 port，M03 提交外层事务，禁止提前独立提交 grant 消费。
 
+2026-10-10 C14/C15：当前表单限TEST_ID/DEMO-、DEMO-MRN-演示输入，真实医院字段/政策仍deferred。M03 root write/read facets和V5方向已技术放行，实际验收以REVIEW为准。create必须在SQL前核验原GrantAccess exact transaction marker，registration/ack/grant/audit/idem同commit；审核只锁根行，不通过join扩大reference锁。新submit/MRN reference共享锁category→destination在grant后root前，配置路径不能反向回调QR/root。UNKNOWN原命令由M03 wrapper在禁用表单之外保留显式Retry，不把新grant静默绑旧输入；共享C13/read接口、权限/锁序与具体wire归属[04](04_DATA_MODEL_AND_API_PLAN.md)。
+
 HTTP 公共形状与权限决定见 04。用户已在 coordinator chat 确认 U01–U03：登录用用户名/职员账号（不强制邮箱）；同一匿名会话只保留一份有效登记表单，再扫不同入口先确认重新开始，确认后撤销旧 grant；synthetic Penjaga 仍需职员模拟人工核实，mock 结果本身不满足批准。技术选择已解决，但不等于模块开发许可。
 
 M00 工程方案经 coordinator 评审采用：cookie 名 `HSAAS_SESSION`，HttpOnly/SameSite=Lax/Path=/、不设 Domain 或持久 Max-Age；生产 Secure=true，仅明确 localhost HTTP dev/test 可 false，不从不可信转发头降级。请求 idle timeout 初值 30 分钟，职员登录后绝对 8 小时，匿名 scope 创建后绝对 24 小时；重启/sessionId 轮换不得延长绝对期限。grant 仍绝对 20 分钟。轮询可能刷新请求 idle，不能宣传为“用户 30 分钟没操作就锁屏”。这些是可配置工程默认，医院 O07 仍未获批准，实际配置/API 与锁定依赖须测试。
