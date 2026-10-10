@@ -177,7 +177,10 @@ async (page) => {
   if(!await retry.getByRole("button",{name:"Cuba semula borang",exact:true}).isDisabled()) throw new Error("Offline schema retry bypassed parent gate");
   await retry.context().setOffline(false);await retry.evaluate(()=>window.dispatchEvent(new Event("online")));
   await retry.waitForFunction(()=>!document.querySelector(".qr-bound-form")?.disabled);
+  // Observe the explicit retry itself; a scalar status identifies failures without exposing context or schema bodies.
+  const schemaRetry=retry.waitForResponse(response=>response.url().endsWith("/api/public/registration-schema")&&response.request().method()==="POST");
   await retry.getByRole("button",{name:"Cuba semula borang",exact:true}).click();
+  if((await schemaRetry).status()!==200) throw new Error("Explicit schema retry returned status "+(await schemaRetry).status());
   await retry.getByLabel("Nama penuh").waitFor();
   checks.push({name:"schema-initial503-explicit-retry",originalContextPreserved:true,parentRevalidated:true});
   const retained=await visitor();await retained.getByLabel("Nama penuh").fill("Demo Offline");
