@@ -163,3 +163,29 @@ corrected full run passed 109 tests but packaging failed because its owned
 browser server held the Windows target JAR; that run is not full verify PASS.
 Stop the owned server before final packaging. This focused independent result
 does not claim JAR packaging, complete UI or main integration acceptance.
+
+## Stable visitor UI source independently checked — 2026-10-10
+
+**APPROVED_UI_SOURCE_SNAPSHOT**, exact
+`9d9baf658fd6c7151b4d7a83a3d85d380dc982c6`, parent 8623e7c.
+Reviewed the seventeen-file increment, optional compact default=false preserving
+M02 authority/timer/fieldset logic, scoped density and in-flow actions, native
+help and short error disclosure with visible inline errors, meaningful focus
+without stealing it during corrections, original-context metadata retry and
+memory-only immutable UNKNOWN command outside the disabled fieldset. Main
+composition retains the QR staff slot and entry pre-bootstrap capture.
+Handwritten source includes English responsibility/security/recovery comments.
+
+Independent coordinator frontend `pnpm run test`, `typecheck:test`, `build`,
+`lint` and `test:proxy` all exited0 on a clean exact review snapshot: **110 tests**,
+five files, lint zero warnings/errors. Tests started **13:43:22 +08**; final proxy
+log closed **13:43:46 +08**. Ignored logs `tmp/coordinator-logs/m03-9d9baf6-*.log`.
+Default and compact entry both retain offline fieldset protection and the draft.
+Proxy checks are synthetic forwarding, distinct from actual backend/browser.
+
+The module's earlier 42-browser result predates the final folded-error source;
+its final actual replay, screenshots/hashes, packaging, cleanup and HANDOFF are
+pending. A later full backend run hit temporary MySQL/Flyway connection closure
+and must be recorded/reproduced separately; neither that failure nor previous
+held-JAR packaging failure is relabeled PASS. Complete M03 remains unmerged and
+IN_PROGRESS until actual final browser/combined integration acceptance.
