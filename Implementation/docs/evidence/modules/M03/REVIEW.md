@@ -85,3 +85,47 @@ authority/SQL, V5, HTTP and complete visitor/review flow remain pending. Module'
 additional six local decision/masking tests are not in this source and are not
 included in the coordinator's count. All modified handwritten dependency code has
 English responsibilities/security comments. No runtime source was merged to main.
+
+## C15 actual backend dependency snapshot — 2026-10-10
+
+**APPROVED_BACKEND_DEPENDENCY_SNAPSHOT**, exact source
+`869c6cb725dd1ea7a104bf6d646c50f8102e93db`, parent `f5a9c7f`.
+Coordinator independently ran `mvnw.cmd -B clean verify` in the clean isolated
+review worktree. Finished **08:31:49 +08**, exit0: **109 tests**, zero
+failures/errors/skips, JAR built. The runner uses the reviewed clean child
+environment, excludes inherited application secrets/JVM overrides and reads no
+native .env. Raw ignored evidence: `tmp/coordinator-logs/m03-backend-869c6cb.log`.
+
+This snapshot contains twenty changed backend files plus BACKEND_CHECKPOINT.md:
+three hospital files, nine registration implementation files, V5, five new root
+test classes and the two authorized legacy fixture/count adaptations. All eight
+C13/C15 contract files and V1–V4/M02 production source remain unchanged.
+Reviewed receipt validation before SQL, root-only review row locking, category
+then destination shared reference locks, original-input hashing and control
+rejection, atomic parent/consent/grant/audit/idempotency persistence, current
+authority masked reads and bounded temporary MRN cleanup. The actual MySQL
+suite exercises the synthetic runtime; it does not represent a live hospital
+integration or production acceptance.
+
+M04 may import exactly those twenty backend files while preserving its review
+subdomain; it may cite the backend checkpoint. This approval excludes unfinished
+M03 frontend and does not permit replacing the whole registration directory or
+coordinator planning/review records. Subsequent whitespace normalization fixes
+need their own exact revision and focused reproduction. M03/M04 remain
+IN_PROGRESS, unmerged; final UI/browser/review integration gates are pending.
+
+## C16 limited presentation exception — 2026-10-10
+
+Coordinator permits M03 to add an optional `compact` presentation prop (default
+false) to M02 RegistrationEntry, scoped registration-qr CSS, folder context and
+necessary default/compact tests. M03 alone passes true. The heading, current
+authority and counter remain visible; explanatory duration/privacy/no-account
+copy may move into keyboard-accessible native details with a 44px summary.
+No grant, scope, polling, restart, timer, security, fieldset or callback behavior
+may change. App/auth/client/global CSS/dependencies remain outside this exception.
+
+Remove fixed form actions that cover fields. Verify default 1366×768 and 375×812
+steps/errors and measure action bounds/document height. Expanded help, unusually
+long content, small viewports or zoom may require accessible scrolling and must
+be recorded honestly. This is limited implementation direction within the
+existing viewport request, not complete UI acceptance or M02 reimplementation.

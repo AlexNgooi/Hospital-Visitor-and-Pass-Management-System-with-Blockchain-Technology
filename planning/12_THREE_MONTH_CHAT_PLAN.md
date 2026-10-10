@@ -48,6 +48,10 @@ M03/M04完成后，本chat不自动推进M05–M11。用户亲自选择模块、
 
 V5仅预留M03，具体DDL/最少数据/约束/清理交回审核后实施；真实M04读写待M03 port/迁移合并或明确候选联调基线，独立pure rules/mock UI可先推进。S-V1已获2026-10-10用户C14答复：仅DEMO演示输入。其余字段/read/V5候选经技术审核后实施。所有synthetic结果不冒充医院字段批准、真实MRN核验或完整业务验收。
 
+2026-10-10 C15 actual backend dependency snapshot `869c6cb725dd1ea7a104bf6d646c50f8102e93db`：coordinator隔离clean verify独立109tests/JAR PASS（08:31:49+08，exit0、零失败/错误/跳过）。批准M04逐文件导入该commit的20个backend变更，保留自身review子域与8个冻结契约；不能整目录覆盖或拿未完成UI当依赖验收。完整M03/M04仍IN_PROGRESS/未merge，后续修正按准确SHA复验，见M03 REVIEW。
+
+2026-10-10 C16限定共享UI例外指定M03执行：RegistrationEntry新增optional compact（default false）、registration-qr scoped CSS/CONTEXT及必要测试，M03传true；标题、当前authority/counter保持可见，20分钟/privacy/no-account说明可放到可键盘展开且summary至少44px的native details。只改presentation，不改grant/scope/restart/poll/timer/fieldset/security/callback；其他共享文件仍禁止。撤除覆盖字段的fixed动作栏，正常1366×768/375×812步骤/错误须量测动作bounds与documentHeight，展开帮助/长内容/小视口/放大保留必要可达滚动；不宣称所有情况零滚动。此例外覆盖前文“不改M02生产源码”的对应presentation范围，英文注释与默认M02回归必需，不等于完整UI验收。
+
 ### M02 开发许可（2026-10-09）
 
 人类用户在 coordinator chat 明确要求“开启m02”。M00/M01 当前本地基础与真实 C01 已验收，该请求授予 M02 Dynamic Registration QR 一次开发许可；coordinator 固定最新规划基线并隔离原模块 chat，再派发直接实施任务，M02 不重复求许可。范围为真正轮换的 QR/display/challenge/exchange/grant、单份表单上下文/CAS、对应前后端和隔离测试；所有新写/修改代码有英文注释。M03/M04 的表单/审核业务不随之启动，WhatsApp/blockchain 保持 disabled。
