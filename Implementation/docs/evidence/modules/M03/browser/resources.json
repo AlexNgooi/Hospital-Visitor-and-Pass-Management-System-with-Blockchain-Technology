@@ -1,0 +1,13 @@
+{
+  "containerName": "hsaas-m03-real-visitor-registration",
+  "owner": "m03-visitor-registration-integration",
+  "mysqlImage": "mysql:8.0.45",
+  "dbPort": 50079,
+  "backendPort": 18303,
+  "webPort": 15303,
+  "controlPort": 15304,
+  "profile": "integration-m03 (no .env import)",
+  "modes": "test / disabled / mock / disabled / disabled",
+  "childEnvironment": "OS/runtime allowlist; inherited Spring/JVM/runtime injection rejected before startup",
+  "configurationLocation": "classpath:/application.yaml only; no file location, additional location, import, included profile or profile group"
+}
