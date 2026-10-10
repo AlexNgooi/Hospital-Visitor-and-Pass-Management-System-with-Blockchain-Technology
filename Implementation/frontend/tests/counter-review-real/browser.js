@@ -98,7 +98,7 @@ async (page) => {
     await page.getByLabel('I confirmed the synthetic ward matches.', { exact: true }).check();
 
     // Discard only a response after route.fetch confirms the actual server committed; do not fabricate a success or automatically retry.
-    let dropFirst = true;
+    let dropFirst = true, rejectNextCsrf = true;
     const pattern = '**/api/staff/registrations/' + records.PENJAGA.id + '/verify';
     await page.route(pattern, async route => {
       commandKeys.push(route.request().headers()['idempotency-key']);
@@ -106,6 +106,10 @@ async (page) => {
         dropFirst = false; const response = await route.fetch();
         if (response.status() !== 200) throw new Error('Actual unknown-command precommit failed');
         await route.abort('failed');
+      } else if (rejectNextCsrf) {
+        // Send a wrong header to the actual CSRF filter; do not fulfil a synthetic 403 or change the retained key/body.
+        rejectNextCsrf = false;
+        await route.continue({ headers: { ...route.request().headers(), 'x-csrf-token': 'm04-disposable-wrong-csrf' } });
       } else await route.continue();
     });
     await page.getByRole('button', { name: 'Approve registration', exact: true }).click();
@@ -114,10 +118,17 @@ async (page) => {
     await page.getByRole('button', { name: 'Refresh detail', exact: true }).click();
     await page.getByRole('button', { name: 'Retry original command', exact: true }).waitFor();
     if (commandKeys.length !== 1) throw new Error('GET refresh replayed a command automatically');
+    const csrfDenied = page.waitForResponse(response => response.url().endsWith('/' + records.PENJAGA.id + '/verify') && response.status() === 403);
+    await page.getByRole('button', { name: 'Retry original command', exact: true }).click();
+    if ((await (await csrfDenied).json()).code !== 'CSRF_INVALID') throw new Error('Actual recovery CSRF boundary failed');
+    await page.getByText('The original review is still unconfirmed. Check its current status or retry the original command.', { exact: true }).waitFor();
+    await page.getByRole('button', { name: 'Refresh detail', exact: true }).click();
+    await page.getByRole('button', { name: 'Retry original command', exact: true }).waitFor();
+    if (commandKeys.length !== 2) throw new Error('4xx recovery or GET created an automatic write');
     await page.getByRole('button', { name: 'Retry original command', exact: true }).click();
     await page.getByRole('status').filter({ hasText: 'Approved registration ' + records.PENJAGA.publicReference }).waitFor();
-    if (commandKeys.length !== 2 || !commandKeys[0] || commandKeys[0] !== commandKeys[1]) throw new Error('Original command handle changed');
-    await page.unroute(pattern); checks.push({ name: 'actual-unknown-original-handle-recovery', sameKey: true, writes: 2 });
+    if (commandKeys.length !== 3 || !commandKeys[0] || commandKeys.some(key => key !== commandKeys[0])) throw new Error('Original command handle changed');
+    await page.unroute(pattern); checks.push({ name: 'actual-unknown-403-original-handle-recovery', sameKey: true, writes: 3 });
     await audit('real-approved-replay');
 
     await select(records.VENDOR); await page.setViewportSize({ width: 375, height: 812 });

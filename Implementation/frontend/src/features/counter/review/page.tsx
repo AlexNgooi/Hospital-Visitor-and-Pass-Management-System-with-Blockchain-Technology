@@ -160,6 +160,12 @@ function ReviewWorkspace({ counterId, port, recheckSession }: { counterId: strin
       if (!(error instanceof ClientError) || error.kind !== "api" || (error.status ?? 0) >= 500) {
         // Transport/proxy/5xx failures may follow a committed write. Keep the exact key/body/version in memory.
         setMutation({ ...pending, kind: "unknown" }); setCommandError("The review result is unconfirmed. Check its current status or retry the original command.");
+      } else if (pending.kind === "unknown") {
+        // A retry's 4xx proves only that attempt failed, not that the original UNKNOWN write never committed.
+        // Keep the same actor/counter-scoped handle and block new commands; scope changes still unmount this workspace.
+        setMutation({ ...pending, kind: "unknown" });
+        setCommandError("The original review is still unconfirmed. Check its current status or retry the original command.");
+        if (lostAccess(error)) deny();
       } else {
         setMutation({ kind: "idle" });
         if (error.status === 409) {

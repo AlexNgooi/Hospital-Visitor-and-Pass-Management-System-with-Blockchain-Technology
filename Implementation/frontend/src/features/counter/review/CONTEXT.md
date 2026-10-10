@@ -5,3 +5,4 @@
 - Outputs: a FeatureSlot for `/staff/registrations`, runtime schemas, an injected ReviewPort, and local feature CSS. Shared app/lib/main/generated/dependency files remain owned by M01/coordinator.
 - Verification: module component/client tests plus frontend test typing, build and lint. Test fixtures are explicit and synthetic; no fixture port is bundled as a production fallback.
 - Boundary: M03 owns the real root/read adapter. Candidate read DTOs require coordinated integration. Approval means VERIFIED, without assignment, Pass ID, due time, notification, or external patient verification.
+- UNKNOWN recovery: an explicit retry's 4xx is not proof that the original write never committed. Preserve the original handle/key/body/version, block new commands and retain recovery after GET. Current access loss clears cached details and denies interaction; actor/counter changes unmount the workspace rather than carrying old handles into another scope.

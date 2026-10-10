@@ -168,6 +168,41 @@ describe("masked counter review and explicit staff evidence", () => {
     fireEvent.click(screen.getByRole("button", { name: "Retry original command" })); await screen.findByText(/Approved registration/);
     expect(port.verify).toHaveBeenCalledTimes(1); expect(execute).toHaveBeenCalledTimes(2);
   });
+  /** A failed recovery attempt cannot manufacture proof that the earlier committed-but-unacknowledged command failed. */
+  it.each([[403, "CSRF_INVALID"], [409, "IDEMPOTENCY_CONFLICT"], [400, "VALIDATION_FAILED"]] as const)(
+    "committed UNKNOWN retains its original handle after recovery %i %s and generic GET refresh", async (status, code) => {
+      const { port, items } = fixture(); const original = result(record());
+      const execute = vi.fn().mockImplementationOnce(async () => {
+        items[0]!.status = "VERIFIED"; items[0]!.version = 1;
+        items[0]!.review = { actorId: "7", reviewedAt: TIME, source: "SYNTHETIC_MANUAL", methodCode: "SYNTHETIC_RECORD_COMPARISON",
+          basisCodes: ["IDENTITY_MATCH_CONFIRMED", "MRN_MATCH_CONFIRMED", "WARD_MATCH_CONFIRMED"], reasonCode: null };
+        throw new ClientError("timeout");
+      }).mockRejectedValueOnce(failure(status, code)).mockResolvedValue(original);
+      vi.mocked(port.verify).mockReturnValue(Object.freeze({ key: KEY, execute }));
+      render(element(port)); await select(); confirmPenjaga(); fireEvent.click(screen.getByRole("button", { name: "Approve registration" }));
+      await screen.findByRole("button", { name: "Retry original command" });
+      fireEvent.click(screen.getByRole("button", { name: "Retry original command" }));
+      await screen.findByText("The original review is still unconfirmed. Check its current status or retry the original command.");
+      expect(execute).toHaveBeenCalledTimes(2); expect(port.verify).toHaveBeenCalledTimes(1);
+      fireEvent.click(screen.getByRole("button", { name: "Refresh detail" })); await screen.findByText("Synthetic staff verification");
+      expect(screen.getByRole("button", { name: "Retry original command" })).toBeTruthy();
+      expect(screen.queryByRole("button", { name: "Approve registration" })).toBeNull();
+      expect(execute).toHaveBeenCalledTimes(2); expect(port.verify).toHaveBeenCalledWith("1", expect.objectContaining({ expectedVersion: 0 }));
+      fireEvent.click(screen.getByRole("button", { name: "Retry original command" })); await screen.findByText(/Approved registration/);
+      expect(execute).toHaveBeenCalledTimes(3); expect(port.verify).toHaveBeenCalledTimes(1);
+    },
+  );
+  it("UNKNOWN recovery access loss hides cached data and a new counter cannot execute its old handle", async () => {
+    const { port } = fixture([record(), record("2", "2")]);
+    const execute = vi.fn().mockRejectedValueOnce(new ClientError("timeout")).mockRejectedValue(failure(403, "ACCESS_DENIED"));
+    vi.mocked(port.verify).mockReturnValue({ key: KEY, execute }); const mounted = render(element(port)); await select(); confirmPenjaga();
+    fireEvent.click(screen.getByRole("button", { name: "Approve registration" })); await screen.findByRole("button", { name: "Retry original command" });
+    fireEvent.click(screen.getByRole("button", { name: "Retry original command" })); await screen.findByText("Review access is no longer available");
+    expect(screen.queryByText("DEMO-****0021")).toBeNull(); expect(screen.queryByRole("button", { name: "Retry original command" })).toBeNull();
+    mounted.rerender(element(port, "2")); await screen.findByRole("button", { name: /R-TEST-002/ });
+    expect(screen.queryByRole("button", { name: "Retry original command" })).toBeNull(); expect(execute).toHaveBeenCalledTimes(2);
+    expect(port.verify).toHaveBeenCalledTimes(1);
+  });
   it("duplicate click cannot dispatch two pending commands", async () => {
     const { port } = fixture(); const request = deferred<ReviewResult>(); const execute = vi.fn(() => request.promise);
     vi.mocked(port.verify).mockReturnValue({ key: KEY, execute }); render(element(port)); await select(); confirmPenjaga();
