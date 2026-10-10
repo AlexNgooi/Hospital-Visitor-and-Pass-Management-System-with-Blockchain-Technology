@@ -189,3 +189,28 @@ pending. A later full backend run hit temporary MySQL/Flyway connection closure
 and must be recorded/reproduced separately; neither that failure nor previous
 held-JAR packaging failure is relabeled PASS. Complete M03 remains unmerged and
 IN_PROGRESS until actual final browser/combined integration acceptance.
+
+## Final source review and local merge — 2026-10-10
+
+**FUNCTIONALLY_APPROVED / MERGED_PENDING_USER_MANUAL_TEST**. Delivery
+`2d2c28b73ed98ba7141e71fc014fd1424b38366b` was merged locally as `0067637`.
+Application source9d9baf6 and frozen harnessbdb0562 are unchanged. Canonical Git
+blob hashes and recorded byte lengths of all79 archived application/harness/
+receipt/PNG files were inspected and matched the module manifest. Coordinator
+also inspected its own final identity, invalid and vendor-review mobile images.
+
+Before the human stopped further testing, the independent coordinator fresh
+actual servlet/MySQL/Vite browser run completed47 unique checks, with zero
+browser exceptions or axe violations and31 ordinary viewport geometry audits.
+Sanitized receipt and observed-exit cleanup are preserved in
+`coordinator-browser/`. Ordinary desktop/mobile document heights were768/812;
+expanded help/errors, long content, tiny viewports and zoom retain safe scrolling.
+Exact backend/Vite exits were observed, the owned container was removed and
+ports18303/15303/15304 were unbound. Module final109/JAR and final47-browser
+evidence are separately preserved in HANDOFF/browser; earlier failures remain.
+
+Latest human instruction supersedes the earlier requirement for additional
+merged regression: finish through M04, merge locally, stop assistant testing,
+and let the user test manually. The combined main source has not been rebuilt
+or retested after composition. No hospital, hardware, production or complete
+combined acceptance is claimed. Native database and GitHub were not modified.

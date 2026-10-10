@@ -175,3 +175,36 @@ now sends a wrong header to the actual CSRF filter after real commit/response
 loss, but its execution is still pending. New real SQL/winner/revocation/manual
 tests remain uncommitted module work and are excluded from this snapshot's
 approval. Complete M04/main integration remains IN_PROGRESS and unmerged.
+
+## Functional delivery, source approval and local merge — 2026-10-10
+
+**FUNCTIONALLY_APPROVED / MERGED_PENDING_USER_MANUAL_TEST**. The latest human
+instruction requests function delivery through M04, local main merge without
+GitHub push, and no further assistant testing. It supersedes the older automated
+acceptance gates. Final delivery `b6036a596ab772771c1d139e76568c514e583770`
+was merged locally as `446f887`; runtimeR2 remains4b7fca6, actual fixtures6477dcd.
+
+Reviewed source uses the same M03 root/read/write facets and V5 without duplicate
+SQL or migrations. Protected reads derive current selected-counter authority;
+review writes serialize authority/root, versioned manual decision, audit and
+idempotent result. Uniqueness recovery fully rolls back before authorized,
+query-only replay. UNKNOWN retains its original immutable command through
+later4xx and GET; identity/counter change cannot carry it into another scope.
+Penjaga still needs three human attestations. Comments explain these boundaries.
+Coordinator main composition adds the exported protected review slot alongside
+M03 registration/M02 QR, retaining entry fragment capture before rendering.
+
+Current actual MySQL class reports show24 mixed-mode and1 manual-mode cases,
+zero failures/errors/skips, last updated14:18:42 and14:17:57 +08. Module reported
+its test process already exited before the stop instruction; final Maven exit
+output was unavailable. These are **25 class-report results**, not fullverify or
+combined-main build acceptance. Prior independent frontend126/build/typing/
+lint/proxy evidence remains scoped to4b7fca6; no new run was dispatched.
+
+Actual final full backend suite and real M04 browser are
+**NOT_RUN / USER_REQUESTED_STOP**. Earlier19-browser evidence is synthetic.
+Intermediate fixture failures and repairs remain in ACTUAL_INTEGRATION_PROGRESS;
+FUNCTION_HANDOFF records no known production defect and exact cleanup limits.
+No owned M04 process/container/listener remained. Combined main compilation,
+browser flow and manual acceptance belong to the user; no push, native database
+mutation or subsequent module start was performed.
