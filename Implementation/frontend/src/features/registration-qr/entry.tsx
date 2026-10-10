@@ -20,8 +20,8 @@ function sameAuthority(left: EntryGrant, right: EntryGrant) {
 function entryAvailable() { return navigator.onLine && document.visibilityState !== "hidden"; }
 
 /** Optional form renderer captures this exact context; M03 must never silently adopt another tab's new grant. */
-export function RegistrationEntry({ port = qrPort, vault = entryVault, children }: {
-  port?: QrPort; vault?: EntryVault; children?: (entry: EntryGrant) => ReactNode;
+export function RegistrationEntry({ port = qrPort, vault = entryVault, children, compact = false }: {
+  port?: QrPort; vault?: EntryVault; children?: (entry: EntryGrant) => ReactNode; compact?: boolean;
 }) {
   const token = useSyncExternalStore(vault.subscribe, vault.read);
   const [entry, setEntry] = useState<EntryGrant | null>(null);
@@ -184,12 +184,18 @@ export function RegistrationEntry({ port = qrPort, vault = entryVault, children 
   };
   const label = (scope: EntryGrant["scope"]) => `Kaunter ${scope.counterId} · ${scope.categoryScope === null ? "semua kategori" : `kategori ${scope.categoryScope}`}`;
 
-  return <div className="qr-feature qr-entry">
-    <span className="eyebrow">HSAAS · PENDAFTARAN</span><h1>Pendaftaran pelawat</h1><p className="muted">Tiada akaun diperlukan.</p>
+  // C16 is presentation-only: default M02 markup stays intact; no authority, polling or fieldset logic changes.
+  return <div className={"qr-feature qr-entry" + (compact ? " qr-entry-compact" : "")}>
+    {compact ? <div className="qr-entry-top"><h1>Pendaftaran pelawat</h1>
+      <details className="qr-entry-help"><summary>Panduan</summary>
+        <p>Tiada akaun diperlukan.</p>
+        <p>Hantar borang sebelum tempoh 20 minit tamat. QR di kaunter boleh berubah tanpa menutup borang ini.</p>
+        <p>Maklumat peribadi tidak disimpan dalam QR. Pengesahan di kaunter masih diperlukan.</p>
+      </details></div> : <><span className="eyebrow">HSAAS · PENDAFTARAN</span><h1>Pendaftaran pelawat</h1><p className="muted">Tiada akaun diperlukan.</p></>}
     {disabled ? <StatusPanel kind="empty" title="Pendaftaran belum diaktifkan">Sila ke kaunter untuk bantuan.</StatusPanel> : <>
       {busy && <StatusPanel kind="loading" title="Menyemak akses pendaftaran">Sila tunggu.</StatusPanel>}
       {entry && <section className="qr-entry-card"><span className="qr-live">{validated && !expired ? "Akses borang aktif" : "Akses perlu disahkan"}</span><h2>{label(entry.scope)}</h2>
-        <p>Hantar borang sebelum tempoh 20 minit tamat. QR di kaunter boleh berubah tanpa menutup borang ini.</p>
+        {!compact && <p>Hantar borang sebelum tempoh 20 minit tamat. QR di kaunter boleh berubah tanpa menutup borang ini.</p>}
         {children ? <fieldset className="qr-bound-form" disabled={busy || !validated || expired} key={`${entry.formContext.grantReference}:${entry.formContext.bindingVersion}`}>{children(entry)}</fieldset> : <p className="qr-notice">Borang maklumat pelawat belum tersedia. Sila dapatkan bantuan di kaunter. Tiada permohonan dihantar.</p>}
       </section>}
       {expired && <StatusPanel kind="error" title="Tempoh borang telah tamat">Sila imbas QR semasa di kaunter.</StatusPanel>}
@@ -198,7 +204,7 @@ export function RegistrationEntry({ port = qrPort, vault = entryVault, children 
       {!entry && !busy && !message && !restart && <StatusPanel kind="empty" title="Imbas QR di kaunter">Gunakan QR semasa untuk membuka borang.</StatusPanel>}
       <RestartConfirmation open={Boolean(restart)} currentLabel={restart ? label(restart.currentScope) : ""} requestedLabel={restart ? label(restart.requestedScope) : ""}
         busy={busy} error={message || undefined} onCancel={cancel} onConfirm={() => void confirm()} />
-      <p className="qr-privacy">Maklumat peribadi tidak disimpan dalam QR. Pengesahan di kaunter masih diperlukan.</p>
+      {!compact && <p className="qr-privacy">Maklumat peribadi tidak disimpan dalam QR. Pengesahan di kaunter masih diperlukan.</p>}
     </>}
   </div>;
 }

@@ -5,3 +5,4 @@
 - Outputs: feature-local React/TypeScript/CSS; main only injects exported FeatureSlots. QR rendering uses a locally bundled encoder; decoder is test-only.
 - Verification: frontend test/typecheck/build/lint, actual QR decoding and visibility/offline/deadline/restart tests. Mobile camera and production HTTPS need separate evidence.
 - Boundaries: memory-only entry and form context; no token/reference logging, static QR fallback, localStorage or direct cookie access. Shared API/auth/errors/router stay with M01.
+- C16 coordinator exception (2026-10-10): M03 may opt into compact presentation. Its optional prop defaults false, preserves the heading/current authority/counter and relocates existing account/20-minute/privacy copy into native keyboard-accessible details. Presentation only; vault, grant, scope, restart, polling, timers and the exact disabled fieldset gate remain unchanged. M03 owns this small reviewed UI addition and its evidence.

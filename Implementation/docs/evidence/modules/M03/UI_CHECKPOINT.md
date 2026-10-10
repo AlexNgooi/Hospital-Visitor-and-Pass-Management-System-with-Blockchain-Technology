@@ -1,0 +1,13 @@
+# M03 UI candidate for independent review
+
+2026-10-10, Asia/Singapore; parent backend/Unicode dependency 8623e7c. The candidate source SHA is the commit containing this file.
+
+Included: synthetic schema/receipt/feedback validation; three-step category-specific form; memory-only original-context draft; privacy acknowledgement; optional mock/manual feedback invalidation; explicit original-context schema retry; UNKNOWN exact-command recovery outside the M02 disabled fieldset; minimal main.tsx feature composition retaining the M02 staff slot and entry pre-bootstrap capture.
+
+C16 exception changes only M02 entry.tsx/scoped CSS/CONTEXT and default/compact assertions. Optional compact=false preserves default behavior. Heading/current authority/counter stay visible; account/20-minute/privacy copy is native keyboard-accessible help. No vault/grant/scope/restart/poll/timer/fieldset/transport/auth logic changed. The rejected fixed overlay is removed. Own scoped CSS uses an inline brand and combined step heading; all controls retain at least 44px. Review values, including a 500-codepoint purpose, are untruncated in a labelled keyboard-scrollable region.
+
+Validation focus goes to a short native error summary after an explicit gesture. Its closed row retains DEMO and error count, all inline errors remain visible, and keyboard expansion exposes every field link. Correcting one field never steals focus while others remain invalid. Failed metadata can be explicitly retried only under the original context after parent revalidation. UNKNOWN never adopts a new body/context/key after a later 403/410/network failure.
+
+Executed frontend unit/transport/default M02 regression: 110 PASS (five files), test typecheck/build/lint exit 0, latest test start 13:38:58 +08. Synthetic proxy PASS is separate from real backend evidence. Final complete real-browser replay on the rebuilt backend is pending; the earlier 42-check real run already proved normal full-document fit/each desktop step plus scope/recovery, before the final native error-folding improvement. That older run is not offered as proof for final UI source.
+
+The complete final receipt, PNG/hash manifest, server cleanup and HANDOFF will follow separately. Default normal audits require documentHeight <= viewportHeight+1 at 375×812 and 1366×768, primary in bounds and 44px controls. Expanded disclosures and short-screen CSS 200% zoom are separately measured safe-scroll cases. Native camera/toolbar zoom/production HTTPS, live hospital, cards/reader, notifications and blockchain remain NOT_RUN/disabled; no main merge, push, deployment or user database change.

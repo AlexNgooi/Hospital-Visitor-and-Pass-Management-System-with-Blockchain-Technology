@@ -1,0 +1,64 @@
+/* Module density preserves M02 authority markup, touch targets and reachable scrolling at zoom. */
+.registration-page { width:100%; }
+/* These ancestor selectors apply only while M03 occupies the visitor route; shared shell CSS stays unchanged. */
+.visitor-frame:has(> .registration-page) { padding:16px; }
+.visitor-frame:has(> .registration-page) > .visitor-brand { display:flex;align-items:center;justify-content:space-between;gap:12px;padding-bottom:8px;margin-bottom:10px;font-size:20px;line-height:1.2; }
+.visitor-frame:has(> .registration-page) > .visitor-brand span { line-height:1.4; }
+.registration-page .qr-feature { max-width:680px; }
+.registration-page .qr-entry > h1 { margin:6px 0; }
+.registration-page .qr-entry > .muted { margin:0 0 12px; }
+.registration-page .qr-entry-card { padding:18px; }
+.registration-page .qr-entry-card > h2 { margin:8px 0; font-size:17px; }
+.registration-page .qr-entry-compact .qr-entry-card > h2 { font-size:14px;line-height:1.4;margin:6px 0 10px; }
+.registration-page .qr-entry-card > p { margin:0 0 12px; font-size:14px; line-height:1.5; }
+.registration-page .qr-bound-form { margin:0; padding:0; min-width:0; }
+.registration-demo { display:flex;align-items:center;gap:8px;padding:8px 10px;background:#fff0f3;border-radius:8px;font-size:14px;line-height:1.5;margin:0 0 10px; }
+.registration-demo svg { flex-shrink:0; }
+.registration-step { display:flex;align-items:center;justify-content:space-between;gap:12px;font-size:13px;color:var(--muted);margin-bottom:12px; }
+.registration-form .registration-step h3 { margin:0;font-size:18px;color:var(--ink); }
+.registration-form h3 { font-size:20px;margin:0 0 14px;scroll-margin-top:24px; }
+.registration-fields { display:grid;gap:12px; }
+.registration-fixed-field { font-size:14px;margin:0;align-self:center;line-height:1.5; }
+.registration-form .field { margin-bottom:0;min-width:0;gap:4px; }
+.registration-form > .field { margin-bottom:10px; }
+.registration-form select { width:100%;min-height:44px;padding:10px 12px;border:1px solid var(--border);border-radius:8px;background:white;color:var(--text);font:inherit;font-size:16px; }
+.registration-form input { font-size:16px;height:44px;min-height:44px;padding:10px 12px; }
+.registration-form input:focus-visible,.registration-form select:focus-visible { outline:3px solid #ca0026;outline-offset:2px; }
+/* Actions stay in document flow; no field or acknowledgement is obscured at normal size or zoom. */
+.registration-actions { display:flex;justify-content:flex-end;gap:10px;margin-top:10px;padding-top:10px;border-top:1px solid var(--border); }
+.registration-actions .button { min-width:0;flex:1;white-space:normal; }
+.registration-actions .button:first-child:not(:last-child) { flex:0 0 auto;min-width:88px; }
+.registration-notice { padding:12px;border:1px solid #ca0026;border-radius:8px;margin-bottom:14px;line-height:1.5; }
+/* Collapsed validation shares the demo notice row; all inline errors remain visible and every field link can be expanded. */
+.registration-errors { border:1px solid #ca0026;border-radius:8px;margin-bottom:10px;line-height:1.5;background:#fff0f3; }
+.registration-errors summary { min-height:44px;padding:8px 10px;font-size:14px;cursor:pointer; }
+.registration-errors summary:focus-visible { outline:3px solid #ca0026;outline-offset:3px; }
+.registration-errors p { font-size:14px;margin:8px 10px; }
+.registration-errors > div { padding:0 10px 8px; }
+.registration-errors a { display:inline-flex;align-items:center;color:#ca0026;margin-right:12px;min-height:44px; }
+.registration-mrn { margin-top:14px; }
+.registration-mrn p { font-size:14px;line-height:1.5;margin:8px 0 0; }
+/* Full review values remain readable in a labelled keyboard-scrollable region, including a permitted 500-codepoint purpose. */
+.registration-review-region { max-height:210px;overflow:auto;margin:0 0 14px;scrollbar-gutter:stable; }
+.registration-review-region:focus-visible { outline:3px solid #ca0026;outline-offset:3px; }
+.registration-review { display:grid;gap:7px;margin:0; }
+.registration-review > div { display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.35fr);gap:12px;font-size:14px; }
+.registration-review dt { color:var(--muted); }
+.registration-review dd { margin:0;overflow-wrap:anywhere; }
+.registration-policy { font-size:14px;line-height:1.5;margin:0 0 10px; }
+.registration-ack { display:flex;align-items:flex-start;gap:10px; }
+.registration-ack input { width:20px;height:20px;margin-top:12px;flex-shrink:0;accent-color:#ca0026; }
+.registration-ack label { padding:10px 0;min-height:44px;font-size:14px;line-height:1.5;cursor:pointer; }
+.registration-result { padding:24px;border:1px solid var(--border);border-radius:14px;background:white;max-width:680px; }
+.registration-result > svg { color:#ca0026;display:block;margin-bottom:16px; }
+.registration-result h1 { font-size:28px;margin:10px 0; }
+.registration-result p { line-height:1.6; }
+.registration-reference { padding:16px;border:1px dashed var(--border);border-radius:8px;font-weight:600;font-size:20px;overflow-wrap:anywhere; }
+@media (min-width:601px) { .registration-fields { grid-template-columns:repeat(2,minmax(0,1fr)); } }
+@media (max-width:600px) {
+  .registration-page .qr-entry-card { padding:14px; }
+  .registration-page .qr-entry > h1 { font-size:26px; }
+  .registration-form h3 { font-size:18px;margin-bottom:10px; }
+  .registration-fields { gap:8px; }
+  .registration-result { padding:18px; }
+}

@@ -20,6 +20,18 @@
 .qr-entry-card h2 { margin-top: 20px; }
 .qr-bound-form { min-width: 0; margin: 16px 0 0; padding: 0; border: 0; }
 .qr-privacy { margin-top: 24px; font-size: .875rem; color: #525967; }
+/* C16 is opt-in presentation for M03; original QR authority and its disabled-input gate stay unchanged. */
+.qr-entry-compact > h1 { margin:8px 0 14px; }
+.qr-entry-compact .qr-entry-card { margin:12px 0; }
+.qr-entry-compact .qr-entry-card > .qr-live { padding:3px 8px;font-size:14px;line-height:20px; }
+.qr-entry-compact .qr-entry-card > h2 { margin:8px 0 12px;font-size:14px;line-height:1.4; }
+.qr-entry-top { display:flex;flex-wrap:wrap;align-items:center;gap:8px; }
+.qr-entry-top h1 { flex:1 1 220px;min-width:0;font-size:24px;line-height:1.2;margin:0; }
+.qr-entry-top .qr-entry-help { flex:0 0 96px;min-width:0; }
+.qr-entry-top .qr-entry-help[open] { flex-basis:100%; }
+.qr-entry-help summary { min-height:44px;padding:10px 8px;border:1px solid var(--border);border-radius:8px;cursor:pointer;font-size:14px; }
+.qr-entry-help summary:focus-visible { outline:3px solid var(--focus);outline-offset:3px; }
+.qr-entry-help p { font-size:14px;line-height:1.5;margin:10px 0; }
 .qr-feature .status-panel { margin: 24px 0; }
 /* Preserve the QR quiet zone and touch-sized controls on a narrow phone viewport. */
 @media (max-width: 720px) { .qr-display-layout { grid-template-columns: 1fr; } .qr-display-card { padding: 20px; } .qr-guidance { padding: 12px 0; } .qr-toolbar .button { width: 100%; } }
