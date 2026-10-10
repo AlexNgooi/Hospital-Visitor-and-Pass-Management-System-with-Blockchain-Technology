@@ -1,5 +1,7 @@
 # M04 verification results
 
+Latest human-directed function delivery and current25 class-report results are in [FUNCTION_HANDOFF.md](FUNCTION_HANDOFF.md) and [ACTUAL_INTEGRATION_PROGRESS.md](ACTUAL_INTEGRATION_PROGRESS.md). Further full/backend/browser tests are NOT_RUN / USER_REQUESTED_STOP; the historical results below are preserved and do not imply final actual-dependency acceptance.
+
 ## C15 GET increment — 2026-10-10
 
 Fixed backend source: `cb8de73d7da5a297a74e8e138fd13e4ba909fc44`; approved read dependency `f5a9c7f` pinned in `9bddf1a`. Runtime files were unchanged after the source commit. Evidence-only edits were made while verify ran. Times use Asia/Singapore.

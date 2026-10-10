@@ -1,5 +1,7 @@
 # M04 checkpoint cleanup
 
+Latest human-directed stop, 2026-10-10: current25 launcher had already exited when checked; tool session17073 no longer existed, exact M04 Node launcher and worktree Java process counts were0. Docker Testcontainers listing was empty and exact `hsaas-m04-review-real-ecca` absent. Ports18404/15414/15415 had0 listeners. The real browser harness was never launched, so no actual-browser child/container/session required stopping. No unowned process/container was killed. Further full/backend/browser runs remain NOT_RUN / USER_REQUESTED_STOP; see [FUNCTION_HANDOFF.md](FUNCTION_HANDOFF.md).
+
 Verified on 2026-10-09 at 20:37 MYT after the final fixed-source validation.
 
 - Closed only the owned Playwright CLI browser session `m04-review`; CLI reported `Browser 'm04-review' closed` and exit 0.

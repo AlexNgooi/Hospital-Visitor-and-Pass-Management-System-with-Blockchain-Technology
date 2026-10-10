@@ -1,13 +1,15 @@
 # M04 actual integration progress — 2026-10-10
 
-Full module remains **IN_PROGRESS**. This preserves intermediate real results without replacing a missing final run with compilation or another module's evidence. Coordinator holds the shared Docker initialization/browser scheduling slot; M04 currently has no owned running SQL/browser/dev-server resource and waits for explicit slot release after M03/independent browser cleanup.
+Current status: **FUNCTION_DELIVERY_READY / MANUAL_ACCEPTANCE_PENDING**, under the human's latest instruction to stop further automated tests and deliver the functions through M04. See [FUNCTION_HANDOFF.md](FUNCTION_HANDOFF.md). This preserves intermediate real results without replacing a missing final run with compilation or another module's evidence. Earlier coordinated slot waiting and approval history below are historical; M04 has no owned running SQL/browser/dev-server resource.
 
 ## Versions
 
 - Approved actual M03 backend: `869c6cb725dd1ea7a104bf6d646c50f8102e93db`, exactly20 backend files imported unchanged as `a99a91de12662237a2a6ca97e949eedaa30620cf`. No entire-directory or ancestor-doc import.
 - Approved Unicode correction: `8623e7c9f49dd964684b30ee0ae5d0722c3121b3`, exactly3 backend files imported as `b3b5a0bde98d6682275d0a6e832e75066abd3655`; eight contracts and V1–V5 unchanged.
 - R2 UNKNOWN UI correction: `4b7fca6cf3889f4c7220cc826b4e1fc1909b3797`.
-- Current actual-gap tests/comment source: `6477dcd5fdf9f45a5b650b0913b11e533315c040`. The post-prefix acknowledgement assertion at this source is approved in principle, awaiting a rerun.
+- Current actual-gap tests/comment source: `6477dcd5fdf9f45a5b650b0913b11e533315c040`. The approved precise post-prefix acknowledgement assertion ran in the current mixed24 class report; the final observation below states its evidence limits.
+
+The assertion subsequently ran in the current24-case class report with zero failures/errors/skips; see the final observation below. No production change followed6477dcd.
 
 ## Actual results, in order
 
@@ -23,7 +25,7 @@ Full module remains **IN_PROGRESS**. This preserves intermediate real results wi
 
 The failed post-prefix case's actual stack identifies `ApiFailure.unauthenticated -> SessionCapabilities.checkMapping -> beforeFrameworkSave -> GuardedSessionRepository.save -> SessionRepositoryFilter.commitSession`. M00 SessionResponseFilter converts a late save rejection after buffered status200 into503 `SERVICE_UNAVAILABLE`, message `Request outcome unavailable. Keep the original command key.` This confirms the framework-save cause, not a socket failure.
 
-The coordinator approved the corrected test boundary: await review/admin futures, **first** prove persisted VERIFIED/version1 plus exactly1 review audit/idempotency result, **then** classify200/401 or only that specific503 envelope as post-commit acknowledgement uncertainty, and finally deny original-session/key replay401. Domain rollback cannot pass those SQL assertions. No M00 production change or arbitrary503 allowance exists. This corrected source has not yet been rerun; do not call it PASS.
+The coordinator approved the corrected test boundary: await review/admin futures, **first** prove persisted VERIFIED/version1 plus exactly1 review audit/idempotency result, **then** classify200/401 or only that specific503 envelope as post-commit acknowledgement uncertainty, and finally deny original-session/key replay401. Domain rollback cannot pass those SQL assertions. No M00 production change or arbitrary503 allowance exists. At the earlier preparation checkpoint this correction was NOT_RERUN; the current class report below now records its result.
 
 ## New genuine cases
 
@@ -33,6 +35,8 @@ The manual case starts a separately configured real application/container with m
 
 R2 keeps the original UNKNOWN handle after any failed recovery4xx, without clearing on GET or creating a new key. Current access loss hides cached details and actor/counter changes unmount the workspace. The real browser candidate now sends one intentionally wrong CSRF header to the **actual** backend after committed-response loss, then GET and the third original-handle retry; it never fulfils a fake403. This actual browser scenario remains NOT_RUN.
 
-## Remaining
+## Final observation and human-directed stop
 
-After coordinator releases the SQL slot: run current25 together; fix real defects, freeze exact final source, fullverify/JAR and final frontend checks, then owned actual browser and sanitized screenshot/hash/cleanup evidence. Independently reviewed main FeatureSlot wiring, integration merge and main revalidation remain coordinator duties. No M05 startup, push, deployment, native DB or `.env` work is performed.
+The coordinator released the slot and the current25 selection started before the human changed the request. At stop handling, the exact launcher and worktree Java processes were already0 and tool session17073 no longer existed. Current sure-fire text reports contain manual1/0/0/0 (22.55s, updated14:17:57) and mixed24/0/0/0 (44.97s, updated14:18:42), Asia/Singapore. Final Maven exit/BUILD SUCCESS output was unavailable; only the two class results are reported as25 passing cases. This is not fullverify/JAR acceptance.
+
+Further full actual backend and real-browser work are **NOT_RUN / USER_REQUESTED_STOP**. No new test, runtime or browser was started after the instruction. Exact M04 harness container and Testcontainers listing were empty; ports18404/15414/15415 have0 listeners. Existing intermediate failures above are retained. Coordinator proceeds with functional review/shared FeatureSlot assembly and local main merge; user handles manual acceptance. No M05 startup, push, deployment, native DB or `.env` work is performed.

@@ -1,5 +1,7 @@
 # M04 actual integration handoff draft
 
+**Superseded scope:** the human stopped further automated tests and requested function delivery/manual testing. See [FUNCTION_HANDOFF.md](FUNCTION_HANDOFF.md) for the current delivery and class-report results. The former automated acceptance gates below are historical preparation, not outstanding instructions to start tests.
+
 Status: **IN_PROGRESS / NOT FINAL ACCEPTANCE**, 2026-10-10. Coordinator has inspected current gap-test source; corrected actual25, full backend and actual browser acceptance remain pending. This draft is review preparation and does not request merge or transfer unfinished work as complete.
 
 ## Exact candidate
