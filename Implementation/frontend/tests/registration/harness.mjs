@@ -39,8 +39,10 @@ let containerId;
 let control;
 let databasePaused = false;
 const children = [];
+const spawnFailures = new WeakSet();
+const processNames = new WeakMap();
 const logs = [];
-let cleanupStarted = false;
+let cleanupPromise;
 let databaseEnvironment;
 let classpath;
 await mkdir(output, { recursive: true });
@@ -64,6 +66,12 @@ function launch(command, args, options, filename) {
     windowsHide: true,
     stdio: ["ignore", "pipe", "pipe"],
   });
+  processNames.set(child, filename.replace(".log", ""));
+  // Spawn errors may carry private environment/connection context; retain only their occurrence.
+  child.on("error", () => {
+    spawnFailures.add(child);
+    if (!log.writableEnded) log.write("Owned subprocess error; details suppressed\n");
+  });
   child.stdout.pipe(log);
   child.stderr.pipe(log);
   children.push(child);
@@ -74,7 +82,7 @@ function launch(command, args, options, filename) {
 async function waitFor(check, child) {
   const deadline = Date.now() + 120000;
   while (Date.now() < deadline) {
-    if (child && child.exitCode !== null)
+    if (child && (spawnFailures.has(child) || child.exitCode !== null || child.signalCode !== null))
       throw new Error("Owned process exited before readiness");
     try {
       if (await check()) return;
@@ -105,33 +113,78 @@ async function fixture(action) {
   );
 }
 
-/** Delete only the exact container created by this run after checking its ownership label. */
-async function cleanup() {
-  if (cleanupStarted) return;
-  cleanupStarted = true;
-  control?.close();
-  for (const child of children) child.kill();
+/** A kill request is not exit evidence; only actual completion or an unspawned failed child satisfies cleanup. */
+function exited(child) {
+  return child.exitCode !== null || child.signalCode !== null || spawnFailures.has(child) && !child.pid;
+}
+/** Stop only this exact process handle and require a bounded, observed completion. */
+async function stopChild(child) {
+  if (exited(child)) return;
+  await new Promise((accept, reject) => {
+    const finish = () => { if (exited(child)) { clearTimeout(timer);child.off("exit", finish);child.off("error", finish);accept(); } };
+    const timer = setTimeout(() => {
+      child.off("exit", finish);child.off("error", finish);
+      reject(new Error("Owned process exit timed out"));
+    }, 10000);
+    child.on("exit", finish);child.on("error", finish);
+    try { child.kill();finish(); }
+    catch { if (exited(child)) finish(); else { clearTimeout(timer);child.off("exit", finish);child.off("error", finish);reject(new Error("Owned process could not be stopped")); } }
+  });
+}
+
+/** Stop exact live handles, await bounded exits, check the exact container label, then measure all owned ports. */
+function cleanup() {
+  // Concurrent stop/signal paths share the same completion and cannot exit before cleanup finishes.
+  cleanupPromise ??= cleanupOwnedResources();
+  return cleanupPromise;
+}
+
+/** Record actual exit/port facts, including incomplete cleanup, before returning success or failure. */
+async function cleanupOwnedResources() {
+  let controlStopped = true;
+  if (control?.listening) {
+    try {
+      await new Promise((accept, reject) => {
+        const timeout = setTimeout(() => reject(new Error("Owned control shutdown timed out")), 10000);
+        control.close(() => { clearTimeout(timeout);accept(); });
+        control.closeIdleConnections();
+      });
+    } catch { controlStopped = false; }
+  }
+  const stops = await Promise.allSettled(children.map(stopChild));
+  const ownedProcessesStopped = stops.every(result => result.status === "fulfilled") && children.every(exited);
+  let ownedContainerRemoved = !containerId;
   if (containerId) {
-    const inspected = await exec("docker", [
+    try {
+      const inspected = await exec("docker", [
       "inspect",
       "--format",
       '{{index .Config.Labels "hsaas.test.owner"}}',
       containerId,
-    ]);
-    if (inspected.stdout.trim() !== owner)
-      throw new Error("Container ownership mismatch");
-    if (databasePaused) await exec("docker", ["unpause", containerId]);
-    await exec("docker", ["rm", "-f", containerId]);
+      ], { timeout: 15000 });
+      if (inspected.stdout.trim() !== owner) throw new Error("Container ownership mismatch");
+      if (databasePaused) await exec("docker", ["unpause", containerId], { timeout: 15000 });
+      await exec("docker", ["rm", "-f", containerId], { timeout: 15000 });
+      ownedContainerRemoved = true;
+    } catch { ownedContainerRemoved = false; }
   }
+  const ports = await Promise.allSettled([backendPort, webPort, controlPort].map(checkPort));
+  const ownedPortsUnbound = controlStopped && ports.every(result => result.status === "fulfilled");
+  // A timed-out child must not continue piping into an ended diagnostic stream.
+  for (const child of children) { child.stdout.unpipe();child.stderr.unpipe(); }
   for (const log of logs) log.end();
   await writeFile(
     resolve(output, "cleanup.json"),
     JSON.stringify({
-      ownedProcessesStopped: true,
-      ownedContainerRemoved: true,
+      ownedProcessesStopped, ownedContainerRemoved, ownedPortsUnbound,
+      ownedContainerCreated: Boolean(containerId),
+      processFacts: children.map(child => ({ kind: processNames.get(child), started: Boolean(child.pid),
+        exitCode: child.exitCode, signalCode: child.signalCode, spawnFailed: spawnFailures.has(child), exited: exited(child) })),
+      portFacts: [backendPort, webPort, controlPort].map((port, index) => ({ port, unbound: ports[index].status === "fulfilled" })),
     }),
   );
-  console.log("PASS cleanup of owned M03 integration resources");
+  if (!ownedProcessesStopped || !ownedContainerRemoved || !ownedPortsUnbound) throw new Error("Owned resource cleanup incomplete");
+  console.log("PASS observed exits, owned container removal and three unbound ports");
 }
 
 try {
@@ -317,8 +370,8 @@ try {
         databasePaused = false;
       } else if (action === "stop") {
         response.writeHead(204).end();
-        await cleanup();
-        process.exit(0);
+        try { await cleanup();process.exit(0); }
+        catch { console.error("FAIL owned resource cleanup; safe receipt records incomplete state");process.exit(1); }
         return;
       } else {
         response.writeHead(404).end();
@@ -358,15 +411,15 @@ try {
     `READY real M00 + temporary MySQL: http://127.0.0.1:${webPort}; controls on loopback ${controlPort}`,
   );
   process.on("SIGINT", () => {
-    void cleanup().then(() => process.exit(0));
+    void cleanup().then(() => process.exit(0)).catch(() => process.exit(1));
   });
   process.on("SIGTERM", () => {
-    void cleanup().then(() => process.exit(0));
+    void cleanup().then(() => process.exit(0)).catch(() => process.exit(1));
   });
 } catch {
   console.error(
     "FAIL real integration harness startup; ignored local logs contain diagnostics",
   );
-  await cleanup();
+  try { await cleanup(); } catch { console.error("FAIL owned resource cleanup; safe receipt records incomplete state"); }
   process.exitCode = 1;
 }
