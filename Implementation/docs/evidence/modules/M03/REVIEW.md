@@ -129,3 +129,13 @@ steps/errors and measure action bounds/document height. Expanded help, unusually
 long content, small viewports or zoom may require accessible scrolling and must
 be recorded honestly. This is limited implementation direction within the
 existing viewport request, not complete UI acceptance or M02 reimplementation.
+
+Coordinator visual review of the module's first compact screenshots still found
+normal mobile documents around 897px (identity) and 882px (contractor review) at
+375×812, with collapsed help below the viewport. Multiple errors were around
+1093px. Primary action fit is therefore insufficient evidence for full-page fit.
+**R3** requests further normal-layout reduction and actual document-height checks,
+including the collapsed help, while preserving labels, 44px controls, error focus
+and all expandable explanatory copy. The first module browser report of 29
+checks is not final R3 acceptance. Unusually long values/help/zoom may scroll
+accessibly; no clipping or unreadable shrinking is permitted.
