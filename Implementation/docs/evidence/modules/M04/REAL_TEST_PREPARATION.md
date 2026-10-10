@@ -1,5 +1,7 @@
 # M04 actual integration candidates — NOT_RUN
 
+Historical pre-execution snapshot. Current **USER_MANUAL_ACCEPTANCE_PENDING** delivery is [FUNCTION_HANDOFF.md](FUNCTION_HANDOFF.md): actual dependencies were imported, current25 class reports passed, and further automatic fullverify/browser stopped at the human's request. The candidate descriptions below preserve their original preparation state, not instructions to execute before merge.
+
 Prepared 2026-10-10 under continuing M04 permission and coordinator's explicit request to progress while M03's actual baseline is reviewed. The previously accepted GET source remains `cb8de73` / evidence delivery `beaca640`. This increment changes only M04-owned tests/harness/evidence, not runtime code or root contracts.
 
 ## Prepared scope
@@ -26,6 +28,6 @@ Ownership: backend 18404 / web 15414 / control 15415; Docker `hsaas-m04-review-r
 
 First candidate Java compilation failed because the fixture `verify(category)` helper shadowed Mockito.verify. Calls for actual-port count assertions are now explicitly qualified; subsequent compile checks passed. The first proposed feedback marker was corrected to the coordinator-confirmed `DEMO-MRN-MATCH` before any actual run. Static V4 inspection found the coupled consumption CHECK and corrected cleanup before execution. These repairs are preparation, not a failed/passed business test history.
 
-## Remaining work
+## Current disposition
 
-Import only coordinator-approved actual M03 dependency files/SHA, preserving the eight reviewed root contract files. Run real SQL/HTTP candidates, fix actual failures and add missing matrix cases as evidence warrants, then run the owned browser and record sanitized results/screenshots/hash/cleanup. Concurrent authority-revocation and successful-winner recovery must not be inferred from sequential checks or the injected-MISS case. Manual-mode MRN, actual masked-wire/privacy/log output, required full regressions and shared main revalidation still require the complete baseline. Do not merge candidates alone into a missing-root main or count compilation as PASS. Full M04 remains IN_PROGRESS, without new permission or M05 startup.
+Approved dependencies are imported and current mixed24 plus independent manual1 class reports passed. Earlier failures and repairs are preserved in ACTUAL_INTEGRATION_PROGRESS.md; compilation is not counted as execution. Further automated full/backend/browser work is NOT_RUN / USER_REQUESTED_STOP. Coordinator integrates the implemented functions and merges locally; user handles manual acceptance. No automated test prerequisite, new permission or M05 startup remains in this preparation document.

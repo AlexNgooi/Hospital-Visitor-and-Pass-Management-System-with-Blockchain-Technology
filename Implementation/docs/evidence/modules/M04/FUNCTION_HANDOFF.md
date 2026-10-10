@@ -1,6 +1,6 @@
 # M04 function delivery — 2026-10-10
 
-Status: **FUNCTION_DELIVERY_READY / MANUAL_ACCEPTANCE_PENDING**. The human changed the completion scope in the coordinator chat: finish through M04, stop further automated tests, deliver the implemented functions for manual testing, merge locally when no known functional defect blocks it, and do not push GitHub. Coordinator owns shared wiring, local main merge and the final user response. This is not a claim of full automated or hospital acceptance.
+Status: **FUNCTION_DELIVERY_READY / USER_MANUAL_ACCEPTANCE_PENDING**. The human changed the completion scope in the coordinator chat: finish through M04, stop further automated tests, deliver the implemented functions for manual testing, merge locally when no known functional defect blocks it, and do not push GitHub. Coordinator owns shared wiring, local main merge and the final user response. Further automated fullverify/browser are not prerequisites to the human-authorized local merge. This is not a claim of full automated or hospital acceptance.
 
 ## Exact source and ownership
 

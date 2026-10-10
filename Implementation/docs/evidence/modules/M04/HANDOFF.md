@@ -46,11 +46,8 @@ The 104 total includes existing foundation/QR temporary-MySQL regression; M04 se
 
 Normal 1366×768 and 375×812 primary review actions were visually inspected. Zoom/short landscape support necessary scrolling; screenshots do not claim universally scroll-free layouts. Failures and fixes are preserved separately from final PASS in TEST_RESULTS.
 
-## Coordinator's next bounded review
+## Current coordinator handoff
 
-1. Compare the six dependency files with `4d70df4...` and review the M04 source commit independently of imported docs.
-2. Inspect authority/lock/replay ordering and default-off assembly; run the targeted 11 DTO + 16 service + 9 imported contract tests and frontend tests. Inspect synthetic screenshot hashes/provenance.
-3. Record a bounded result in coordinator-owned REVIEW.md; do not mark full M04 complete or merge an unreviewed M03 adapter.
-4. After the human S-V1 decision and reviewed M03 root/read checkpoint, coordinate exact projections/GET authorization, real MySQL/HTTP/concurrency/rollback/expiry tests and shared FeatureSlot wiring under the existing M04 permission.
+The earlier bounded review and dependency preparation have since progressed. Current function delivery is **USER_MANUAL_ACCEPTANCE_PENDING** in [FUNCTION_HANDOFF.md](FUNCTION_HANDOFF.md). The coordinator integrates the reviewed actual dependency and shared FeatureSlot, then performs the human-authorized local merge. Further automatic fullverify/browser are stopped and are not merge prerequisites. Existing historical results remain evidence of their original scopes; no push or later module startup is authorized here.
 
 Remaining dependencies and known limits are in [QUESTIONS.md](QUESTIONS.md). Cleanup of the owned test Vite/browser is recorded in CLEANUP.md; main/dev services and native databases are not touched.

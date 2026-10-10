@@ -2,7 +2,7 @@
 
 **Superseded scope:** the human stopped further automated tests and requested function delivery/manual testing. See [FUNCTION_HANDOFF.md](FUNCTION_HANDOFF.md) for the current delivery and class-report results. The former automated acceptance gates below are historical preparation, not outstanding instructions to start tests.
 
-Status: **IN_PROGRESS / NOT FINAL ACCEPTANCE**, 2026-10-10. Coordinator has inspected current gap-test source; corrected actual25, full backend and actual browser acceptance remain pending. This draft is review preparation and does not request merge or transfer unfinished work as complete.
+Current status: **USER_MANUAL_ACCEPTANCE_PENDING**, 2026-10-10. Coordinator inspected the gap source and function delivery. The human-authorized local merge proceeds without further automated fullverify/browser prerequisites; no new run is requested by this historical draft.
 
 ## Exact candidate
 
@@ -21,15 +21,15 @@ Synthetic Penjaga requires three explicit human checks even after mock MATCH. MR
 
 After acknowledgement uncertainty, the UI retains the original command key/body/version through failed recovery4xx and GET refresh. Actual access loss hides cached details; changing actor/counter remounts the workspace. A fixed late framework-session-save503 can be classified only after durable SQL winner assertions, with its exact safe envelope and denial of the revoked session's original replay.
 
-## Acceptance gates still open
+## Evidence limits after the scope change
 
-| Gate | Current evidence | Required completion |
+| Item | Current evidence | Disposition |
 |---|---|---|
-| Current real mixed24 plus manual1 | Prior targeted25 had4 setup errors; subsequent focused5 passed4 and failed the original late-ACK expectation | Rerun corrected25 together; preserve genuine failures and inspect any new defect |
-| Full backend verify/JAR | Previous partial dependency checkpoint133 passed; latest actual dependency package/classpath used skipTests | Run final fullverify against frozen actual source; record actual total and timestamp |
-| Frontend126 and compatibility | Module and independent R2 runs passed; subsequent change is an English test comment | Record exact final-source applicability; rerun only when required by final changes/review |
-| Real browser and layout/privacy evidence | Candidate NOT_RUN; previous19-browser receipt is synthetic | Run owned actual harness, original-key recovery with real403, four categories, conflict and current revocation; inspect masked screenshots and sanitized receipt |
-| Resource cleanup | No owned runtime active while waiting for slot | After runtime, await exact child exit, confirm owned container removal and ports18404/15414/15415 absent, close only dedicated browser |
-| Independent review/main integration | Bounded earlier checkpoints and R2 were independently accepted | Coordinator verifies final actual evidence, wires FeatureSlot, performs local merge and main revalidation |
+| Current real mixed24 plus manual1 | Current class reports passed25,0fail/error/skip; final Maven exit unavailable | Earlier failed attempts preserved; no repeat run requested |
+| Full backend verify/JAR | Previous partial dependency checkpoint133 passed; actual-dependency package/classpath used skipTests | NOT_RUN / USER_REQUESTED_STOP for the final actual full suite |
+| Frontend126 and compatibility | Module and independent R2 runs passed; subsequent change is an English test comment | Existing evidence preserved; no repeat run requested |
+| Real browser and layout/privacy evidence | Actual candidate NOT_RUN; previous19-browser receipt is synthetic | NOT_RUN / USER_REQUESTED_STOP; user handles manual acceptance |
+| Resource cleanup | Exact test processes0, no TC/owned harness container, three owned ports unbound | Complete; no actual browser resource was launched |
+| Local main integration | No known explicit production bug blocks function delivery | Coordinator wires FeatureSlot and merges locally under the human request; no automatic tests or push |
 
-The coordinator will explicitly release the SQL/browser slot after M03 and independent browser cleanup. Until then, no M04 Testcontainers/runtime/browser starts. No M05 launch, push, deployment, native database or environment-file access is included.
+The former scheduling slot is closed for this task. No M04 Testcontainers/runtime/browser starts. No M05 launch, push, deployment, native database or environment-file access is included.

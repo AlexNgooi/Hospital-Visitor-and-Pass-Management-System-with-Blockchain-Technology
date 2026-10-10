@@ -1,5 +1,7 @@
 # M04 C15 masked GET checkpoint
 
+Historical bounded checkpoint. Current status is **USER_MANUAL_ACCEPTANCE_PENDING**; actual dependencies are imported and current25 class reports passed. [FUNCTION_HANDOFF.md](FUNCTION_HANDOFF.md) supersedes earlier automatic acceptance prerequisites. No further tests are requested before the human-authorized local merge.
+
 Status: **IN_PROGRESS; bounded GET orchestration review passed, actual root integration pending**. Prepared 2026-10-10 under the continuing M04 permission. The previous independent checkpoint remains `03eca76` / delivery `398a244`; this increment does not replace its synthetic browser evidence with a real integration claim.
 
 ## Exact versions and ownership
@@ -33,6 +35,6 @@ Full fixed-source backend verify/JAR passed **133**, zero failures/errors/skips,
 
 Frontend source is unchanged since the prior 122-test/19-synthetic-browser checkpoint; no new browser/real backend UI test was run for this increment. Existing screenshots remain synthetic. Complete real integration requirements are in [INTEGRATION_TEST_PLAN.md](INTEGRATION_TEST_PLAN.md).
 
-## Next coordinator action
+## Current coordinator action
 
-The bounded GET/source review has passed. Provide the explicitly approved M03 V5/root SQL/API candidate baseline for actual real-MySQL/HTTP/concurrency/rollback/E2E tests. Coordinate shared FeatureSlot assembly only after the complete dependencies are reviewed, then merge and revalidate main. M04 permission continues without another human request. No M05 or subsequent module is started.
+The bounded GET/source review passed and the approved actual M03 dependency has since been imported unchanged. Coordinator now assembles the shared FeatureSlot and merges locally under the human's function-delivery request. User handles manual acceptance; further automated fullverify/browser are stopped. M04 permission continues without another human request. No push, M05 or subsequent module is started.
