@@ -1,0 +1,127 @@
+{
+  "scope": "synthetic UI/client only; no M03/MySQL review E2E",
+  "checks": [
+    {
+      "step": "desktop-queue",
+      "violations": [],
+      "horizontalOverflow": false,
+      "storageEmpty": true,
+      "undersizedControls": 0
+    },
+    {
+      "step": "mock-match-does-not-approve",
+      "pass": true
+    },
+    {
+      "step": "desktop-detail",
+      "violations": [],
+      "horizontalOverflow": false,
+      "storageEmpty": true,
+      "undersizedControls": 0
+    },
+    {
+      "step": "unknown-fieldset-native-disabled",
+      "pass": true
+    },
+    {
+      "step": "desktop-unknown",
+      "violations": [],
+      "horizontalOverflow": false,
+      "storageEmpty": true,
+      "undersizedControls": 0
+    },
+    {
+      "step": "unknown-original-handle-after-generic-detail-refresh",
+      "pass": true
+    },
+    {
+      "step": "desktop-approved",
+      "violations": [],
+      "horizontalOverflow": false,
+      "storageEmpty": true,
+      "undersizedControls": 0
+    },
+    {
+      "step": "desktop-conflict",
+      "violations": [],
+      "horizontalOverflow": false,
+      "storageEmpty": true,
+      "undersizedControls": 0
+    },
+    {
+      "step": "version-conflict-clears-evidence",
+      "pass": true
+    },
+    {
+      "step": "desktop-rejection-required",
+      "violations": [],
+      "horizontalOverflow": false,
+      "storageEmpty": true,
+      "undersizedControls": 0
+    },
+    {
+      "step": "desktop-rejected",
+      "violations": [],
+      "horizontalOverflow": false,
+      "storageEmpty": true,
+      "undersizedControls": 0
+    },
+    {
+      "step": "mobile-queue",
+      "violations": [],
+      "horizontalOverflow": false,
+      "storageEmpty": true,
+      "undersizedControls": 0
+    },
+    {
+      "step": "mobile-detail",
+      "violations": [],
+      "horizontalOverflow": false,
+      "storageEmpty": true,
+      "undersizedControls": 0
+    },
+    {
+      "step": "mobile-rejection",
+      "violations": [],
+      "horizontalOverflow": false,
+      "storageEmpty": true,
+      "undersizedControls": 0
+    },
+    {
+      "step": "mobile-dialog-focus-return",
+      "pass": true
+    },
+    {
+      "step": "css-zoom-200-reflow",
+      "violations": [],
+      "horizontalOverflow": false,
+      "storageEmpty": true,
+      "undersizedControls": 0
+    },
+    {
+      "step": "landscape-reduced-motion",
+      "violations": [],
+      "horizontalOverflow": false,
+      "storageEmpty": true,
+      "undersizedControls": 0
+    },
+    {
+      "step": "mobile-stale-queue",
+      "violations": [],
+      "horizontalOverflow": false,
+      "storageEmpty": true,
+      "undersizedControls": 0
+    },
+    {
+      "step": "mobile-access-revoked",
+      "violations": [],
+      "horizontalOverflow": false,
+      "storageEmpty": true,
+      "undersizedControls": 0
+    }
+  ],
+  "pageErrors": [],
+  "nativeToolbarZoom": "NOT_RUN",
+  "source": "03eca76ba860f0e0c5590006a8137a493c1d4d6f",
+  "observedAt": "2026-10-09T20:30:52+08:00"
+}

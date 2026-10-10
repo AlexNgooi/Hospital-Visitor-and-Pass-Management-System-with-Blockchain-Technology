@@ -1,0 +1,69 @@
+/* M04 styles are feature-scoped and reuse the reviewed M01 light-theme tokens. */
+.review-page { --review-warning-bg: #fff8e8; --review-warning-ink: #744900; --review-success-bg: #edf8f0; --review-success-ink: #175b31; display: grid; gap: 16px; min-width: 0; container-type: inline-size; }
+.review-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+.review-header h1 { margin: 4px 0 8px; }
+.review-capability { display: inline-flex; align-items: center; gap: 8px; color: var(--muted); font-size: 14px; }
+.review-boundary { color: var(--muted); font-size: 14px; }
+.review-grid { display: grid; grid-template-columns: minmax(280px, 360px) minmax(0, 1fr); gap: 20px; align-items: start; }
+.review-queue, .review-detail { min-width: 0; border: 1px solid var(--border); border-radius: 12px; background: var(--surface); padding: 20px; }
+.review-section-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 12px; }
+.review-section-heading h2 { overflow-wrap: anywhere; scroll-margin-top: 16px; }
+.review-filters { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 12px; margin-bottom: 12px; }
+.review-filters label, .review-reason { display: grid; gap: 6px; font-size: 14px; font-weight: 500; }
+.review-page select, .review-reject-dialog select { width: 100%; min-width: 0; min-height: 44px; border: 1px solid var(--border); background: var(--surface); color: var(--ink); border-radius: 8px; padding: 8px; }
+.review-list { list-style: none; margin: 0; padding: 5px; display: grid; gap: 8px; max-height: 27rem; overflow-y: auto; scroll-padding: 8px; }
+/* The scroll region remains keyboard reachable when pending/unknown commands disable all of its rows. */
+.review-list:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
+.review-row { display: grid; gap: 6px; text-align: left; width: 100%; min-height: 44px; padding: 12px; color: var(--ink); background: var(--surface); border: 1px solid var(--border); border-radius: 8px; overflow-wrap: anywhere; font-size: 14px; }
+.review-row:hover:not(:disabled), .review-row.is-selected { background: var(--soft); border-color: var(--primary); }
+.review-row:active:not(:disabled) { filter: brightness(.97); }
+.review-row:disabled { opacity: .65; }
+.review-row-heading { display: flex; justify-content: space-between; gap: 8px; align-items: start; flex-wrap: wrap; }
+.review-status { font-size: 12px; border-radius: 6px; padding: 2px 6px; border: 1px solid var(--border); background: var(--surface); color: var(--muted); }
+.review-status-verified { background: var(--review-success-bg); color: var(--review-success-ink); }
+.review-status-rejected { background: var(--soft); color: var(--primary-hover); }
+.review-pagination { display: grid; gap: 10px; margin-top: 12px; }
+.review-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.review-actions .button { min-width: 44px; min-height: 44px; }
+.review-notice { background: #f7f8fa; border-radius: 8px; padding: 12px; display: grid; gap: 8px; font-size: 14px; overflow-wrap: anywhere; }
+.review-warning { background: var(--review-warning-bg); color: var(--review-warning-ink); }
+.review-success { background: var(--review-success-bg); color: var(--review-success-ink); display: flex; align-items: center; gap: 10px; }
+.review-success svg { flex-shrink: 0; }
+.review-source { color: var(--muted); font-size: 14px; margin-bottom: 12px; }
+.review-facts { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 12px; margin: 0 0 12px; }
+.review-facts dt { color: var(--muted); font-size: 13px; }
+.review-facts dd { margin: 2px 0 0; font-size: 14px; overflow-wrap: anywhere; }
+.review-checks { padding: 0; margin: 16px 0; border: 0; display: grid; gap: 4px; }
+.review-checks legend { font-weight: 600; margin-bottom: 6px; }
+.review-checks label { display: flex; align-items: center; gap: 10px; min-height: 44px; cursor: pointer; font-size: 14px; }
+.review-checks input { appearance: auto; flex: 0 0 20px; width: 20px; height: 20px; accent-color: var(--primary); }
+.review-checks:disabled label { cursor: not-allowed; color: var(--muted); }
+.review-history { display: grid; gap: 6px; border-top: 1px solid var(--border); margin-top: 16px; padding-top: 16px; font-size: 14px; }
+.review-reject-dialog { display: grid; gap: 16px; max-height: calc(100dvh - 32px); overflow-y: auto; }
+.review-reject-dialog .review-notice a { display: inline-flex; min-height: 44px; align-items: center; }
+/* Reflow supports normal phones and browser zoom; no fixed action bar obscures focused controls. */
+@media (max-width: 1100px) { .review-grid { grid-template-columns: minmax(0, 1fr); } .review-list { max-height: 18rem; } }
+@media (min-width: 1101px) and (max-height: 850px) {
+  .review-queue, .review-detail { padding: 16px; }
+  .review-list { max-height: max(132px, calc(100dvh - 635px)); }
+  .review-facts { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .review-checks { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+  .review-checks legend { grid-column: 1 / -1; }
+  .review-checks label { align-items: flex-start; }
+  .review-checks input { margin-top: 2px; }
+}
+@media (max-width: 480px) { .review-queue, .review-detail { padding: 14px; } .review-facts { gap: 10px; } .review-actions > .button { flex-grow: 1; } }
+/* Container width, unlike viewport media queries alone, also detects the actual content width during CSS zoom. */
+@container (max-width: 740px) {
+  .review-grid { grid-template-columns: minmax(0, 1fr); }
+  .review-list { max-height: 18rem; }
+  .review-facts { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .review-checks { grid-template-columns: minmax(0, 1fr); gap: 4px; }
+  .review-checks label { align-items: center; }
+}
+/* Keep the paired primary review actions together on a normal phone without shrinking their touch targets. */
+@container (max-width: 480px) {
+  .review-detail > .review-actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .review-detail > .review-actions > .button { white-space: normal; padding: 8px; }
+}
+@media (prefers-reduced-motion: reduce) { .review-page *, .review-reject-dialog * { scroll-behavior: auto; transition: none; animation: none; } }
