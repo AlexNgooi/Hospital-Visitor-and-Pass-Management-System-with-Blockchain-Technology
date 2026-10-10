@@ -137,12 +137,13 @@ class RegistrationMysqlTests {
 
     /** A consumed/expired/revoked grant may recover its original command only while its anonymous framework authority remains valid. */
     @Test void originalReplayChangedBodyAndOtherKey() throws Exception {
-        Visitor visitor=visitor("1",null);String body=body(visitor,"VENDOR"),key=UUID.randomUUID().toString();
+        Visitor visitor=visitor("1",null);String body=body(visitor,"VENDOR").replace("Demo Visitor","a\u0306\u0301".repeat(100)),key=UUID.randomUUID().toString();
         var first=visitor.browser().submit(body,key,true);assertThat(first.statusCode()).isEqualTo(201);
         entries.revoke(visitor.staff().owner(),visitor.display());advance(1201);
         var replay=visitor.browser().submit(body,key,true);
         assertThat(replay.statusCode()).isEqualTo(201);assertThat(replay.body()).isEqualTo(first.body());
-        assertThat(visitor.browser().submit(body.replace("Demo Visitor","Demo Changed"),key,true).statusCode()).isEqualTo(409);
+        // Equal persisted NFC names remain different original commands, even after success and grant expiration.
+        assertThat(visitor.browser().submit(body.replace("a\u0306\u0301".repeat(100),"ắ".repeat(100)),key,true).statusCode()).isEqualTo(409);
         assertThat(visitor.browser().submit(body,UUID.randomUUID().toString(),true).statusCode()).isEqualTo(409);
         assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM visitor_registrations",Integer.class)).isEqualTo(1);
         assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM registration_consents",Integer.class)).isEqualTo(1);

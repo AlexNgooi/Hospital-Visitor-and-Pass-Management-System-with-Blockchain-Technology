@@ -86,12 +86,18 @@ public final class RegistrationFields {
         // Reject controls in original input before strip can erase a leading/trailing tab or newline.
         if (value.codePoints().anyMatch(character -> Character.isISOControl(character)
                 || Character.getType(character) == Character.FORMAT)) { throw invalid(field); }
-        String normalized = Normalizer.normalize(value, Normalizer.Form.NFC).strip();
+        String normalized = Normalizer.normalize(value, Normalizer.Form.NFC);
+        // Printable Unicode spaces, including NBSP/figure/narrow spaces, share one explicit trim/blank policy with the UI.
+        int start=0,end=normalized.length();
+        while(start<end && blankSpace(normalized.codePointAt(start))) { start+=Character.charCount(normalized.codePointAt(start)); }
+        while(end>start && blankSpace(normalized.codePointBefore(end))) { end-=Character.charCount(normalized.codePointBefore(end)); }
+        normalized=normalized.substring(start,end);
         int length = normalized.codePointCount(0, normalized.length());
         if (length < 1 || length > max || normalized.codePoints().anyMatch(character ->
                 Character.isISOControl(character) || Character.getType(character) == Character.FORMAT)) { throw invalid(field); }
         return normalized;
     }
+    private static boolean blankSpace(int codepoint) { return Character.isWhitespace(codepoint) || Character.isSpaceChar(codepoint); }
 
     /** The schema only presents catalogue codes which it can later accept, even though V1 allows longer codes. */
     public static boolean selectableCode(String value) { return value != null && value.matches("[A-Za-z0-9_-]{1,32}"); }
