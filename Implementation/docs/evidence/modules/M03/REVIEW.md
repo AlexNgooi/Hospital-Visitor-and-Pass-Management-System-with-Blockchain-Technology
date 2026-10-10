@@ -139,3 +139,27 @@ including the collapsed help, while preserving labels, 44px controls, error focu
 and all expandable explanatory copy. The first module browser report of 29
 checks is not final R3 acceptance. Unusually long values/help/zoom may scroll
 accessibly; no clipping or unreadable shrinking is permitted.
+
+## Unicode dependency correction — 2026-10-10
+
+**APPROVED_DEPENDENCY_CORRECTION**, exact source
+`8623e7c9f49dd964684b30ee0ae5d0722c3121b3`, parent 869c6cb. Only three backend
+files change: RegistrationFields.java, RegistrationFieldTests.java and
+RegistrationMysqlTests.java, plus the module UNICODE_CHECKPOINT.md evidence.
+Eight frozen contracts and V1–V5 remain unchanged. Printable Unicode outer
+spaces use Character.isWhitespace/isSpaceChar after original controls/FORMAT and
+surrogate validation. All-space input fails; original parsed HMAC values remain.
+
+Independent coordinator command `mvnw.cmd -B -Dtest=RegistrationFieldTests,RegistrationMysqlTests test`
+finished **13:32:54 +08**, exit0: **17 tests** (six fields, eleven actual MySQL),
+zero failure/error/skip. Clean source in the same isolated review worktree;
+ignored log `tmp/coordinator-logs/m03-unicode-8623e7c.log`. Actual HTTP accepts
+100 NFC codepoints supplied as 300 decomposed UTF16 units and retains original
+successful replay after consumed/expired/revoked grant; composed replacement
+with the same key yields 409 despite equal normalized persistence.
+
+M04 may import these exact three files and cite the evidence. The module's
+corrected full run passed 109 tests but packaging failed because its owned
+browser server held the Windows target JAR; that run is not full verify PASS.
+Stop the owned server before final packaging. This focused independent result
+does not claim JAR packaging, complete UI or main integration acceptance.
