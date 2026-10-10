@@ -1,5 +1,7 @@
 # M04 real integration follow-up — C14
 
+Current **USER_MANUAL_ACCEPTANCE_PENDING**: the human requested function delivery and stopped further automated tests. The matrix below is a retained technical reference, not an automatic-test prerequisite to local merge. Current results and manual steps are in [FUNCTION_HANDOFF.md](FUNCTION_HANDOFF.md).
+
 Prepared 2026-10-10 under the continuing M04 permission. This is a test design, not PASS evidence. The reviewed independent source `03eca76` and delivery `398a244` remain historical checkpoints. C14 selects TEST_ID `DEMO-` and MRN `DEMO-MRN-`; these are demonstration inputs, not hospital identity rules.
 
 ## Dependencies and implementation boundary
@@ -37,6 +39,6 @@ Create registrations through real QR/grant/schema/submission HTTP for the E2E sc
 
 ## Current results and next action
 
-GET query preparation has 6 pure wire-boundary tests. On 2026-10-10 the initial targeted suite (11 command + 16 service + 6 query) passed 33. C15 then approved the M03 read interface checkpoint; M04 implemented GET service/controller/shared session-helper assembly as `cb8de73`. Module selected 65 (14 root contracts + 51 M04), full 133/JAR and separate coordinator independent 65 passed, with zero failures/errors/skips; see [GET_HANDOFF.md](GET_HANDOFF.md). These tests do not prove actual database authorization or protected HTTP success. The real adapter/V5 candidate baseline and all actual SQL/HTTP/E2E cases remain NOT_RUN.
+GET query preparation has6 pure wire-boundary tests; historical33, selected65, partial-contract full133/JAR and independent65 results are preserved in GET_HANDOFF.md. The actual backend/V5 and Unicode correction were subsequently approved/imported, and current mixed24 plus independent manual1 class reports passed with0fail/error/skip; final Maven exit was unavailable. R2frontend126 also passed module and independent checks. Final actual-dependency fullverify and real browser remain NOT_RUN / USER_REQUESTED_STOP.
 
-After the dependency arrives, record exact source and dependency SHAs, execute the relevant tests, retain intermediate failures and repairs, then run complete backend verify/JAR and frontend test/type/build/lint/proxy. Coordinator owns final shared FeatureSlot wiring, REVIEW, merge and main revalidation. Live hospital MRN, physical reader/cards, HTTPS device scanning, native toolbar zoom, provider/chain and performance Q02 remain separate deferred acceptance.
+No further automated run is requested. Coordinator owns shared FeatureSlot wiring, REVIEW and the human-authorized local merge; user handles manual acceptance. Live hospital MRN, physical reader/cards, HTTPS device scanning, native toolbar zoom, provider/chain and performanceQ02 remain deferred. No push or new module startup is included.

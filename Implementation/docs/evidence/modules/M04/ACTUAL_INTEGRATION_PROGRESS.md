@@ -1,6 +1,6 @@
 # M04 actual integration progress — 2026-10-10
 
-Current status: **FUNCTION_DELIVERY_READY / MANUAL_ACCEPTANCE_PENDING**, under the human's latest instruction to stop further automated tests and deliver the functions through M04. See [FUNCTION_HANDOFF.md](FUNCTION_HANDOFF.md). This preserves intermediate real results without replacing a missing final run with compilation or another module's evidence. Earlier coordinated slot waiting and approval history below are historical; M04 has no owned running SQL/browser/dev-server resource.
+Current status: **FUNCTION_DELIVERY_READY / USER_MANUAL_ACCEPTANCE_PENDING**, under the human's latest instruction to stop further automated tests and deliver the functions through M04. See [FUNCTION_HANDOFF.md](FUNCTION_HANDOFF.md). This preserves intermediate real results without replacing a missing final run with compilation or another module's evidence. Earlier coordinated slot waiting and approval history below are historical; M04 has no owned running SQL/browser/dev-server resource. No fullverify/browser prerequisite remains for the authorized local merge.
 
 ## Versions
 
