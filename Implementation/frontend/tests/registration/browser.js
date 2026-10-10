@@ -180,7 +180,12 @@ async (page) => {
   await retry.context().setOffline(true);await retry.evaluate(()=>window.dispatchEvent(new Event("offline")));
   if(!await retry.getByRole("button",{name:"Cuba semula borang",exact:true}).isDisabled()) throw new Error("Offline schema retry bypassed parent gate");
   await retry.context().setOffline(false);await retry.evaluate(()=>window.dispatchEvent(new Event("online")));
-  await retry.waitForFunction(()=>!document.querySelector(".qr-bound-form")?.disabled);
+  // A missing fieldset is not proof that the original context passed fresh parent revalidation.
+  await retry.waitForFunction(()=>{
+    const fieldset=document.querySelector(".qr-bound-form");
+    return fieldset instanceof HTMLFieldSetElement&&!fieldset.disabled;
+  });
+  if(!await retry.getByRole("button",{name:"Cuba semula borang",exact:true}).isEnabled()) throw new Error("Metadata retry preceded parent validation");
   // Observe the explicit retry itself; a scalar status identifies failures without exposing context or schema bodies.
   const schemaRetry=retry.waitForResponse(response=>response.url().endsWith("/api/public/registration-schema")&&response.request().method()==="POST");
   await retry.getByRole("button",{name:"Cuba semula borang",exact:true}).click();
