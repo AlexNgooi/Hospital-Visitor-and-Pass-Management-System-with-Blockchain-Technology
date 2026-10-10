@@ -13,6 +13,6 @@ public final class PublicReferences {
     public static String next() {
         byte[] entropy = new byte[16];
         RANDOM.nextBytes(entropy);
-        return "R_" + Base64.getUrlEncoder().withoutPadding().encodeToString(entropy);
+        return "R-" + Base64.getUrlEncoder().withoutPadding().encodeToString(entropy);
     }
 }
