@@ -150,3 +150,28 @@ and actual-browser recovery where applicable, with honest fault-source labeling.
 
 M04 remains IN_PROGRESS/CHANGES_REQUESTED for this increment, unmerged. No main
 runtime, native database, external integration or later module is started.
+
+## R2 frontend correction independently reproduced — 2026-10-10
+
+**APPROVED_FRONTEND_CORRECTION_SNAPSHOT**, source
+`4b7fca6cf3889f4c7220cc826b4e1fc1909b3797`, with exact three-file Unicode
+dependency import `b3b5a0b`. The UNKNOWN recovery branch retains the original
+handle after later API 4xx, blocks new commands and preserves current-scope
+recovery through GET refresh. Authority loss still hides cached operational data;
+counter/user changes unmount the old workspace. Initial known errors retain
+their distinct handling. Reviewed responsibility/security English comments.
+
+Coordinator independently ran frontend `pnpm run test`, `typecheck:test`, `build`,
+`lint` and `test:proxy` on the clean exact snapshot in the isolated review
+worktree. All exited0, **126 component/client tests**, lint zero warnings/errors.
+Commands ran 13:37–13:38 +08; final proxy evidence log closed **13:38:36 +08**.
+Ignored logs: `tmp/coordinator-logs/m04-4b7fca6-*.log`. Three meaningful cases
+cover committed UNKNOWN → retry 403/409/400 → GET → original handle success;
+another covers authority loss and preventing cross-counter execution.
+
+Proxy validation is synthetic forwarding. Build confirms source compatibility;
+M04 production routing is still unregistered in this checkpoint. Browser script
+now sends a wrong header to the actual CSRF filter after real commit/response
+loss, but its execution is still pending. New real SQL/winner/revocation/manual
+tests remain uncommitted module work and are excluded from this snapshot's
+approval. Complete M04/main integration remains IN_PROGRESS and unmerged.
