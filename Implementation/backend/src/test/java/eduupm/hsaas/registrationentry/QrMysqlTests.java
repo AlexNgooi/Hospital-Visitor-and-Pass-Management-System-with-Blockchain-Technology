@@ -64,10 +64,13 @@ class QrMysqlTests {
         ((Map<?,?>)org.springframework.test.util.ReflectionTestUtils.getField(loginLimiter,"buckets")).clear();
         jdbc.execute("DROP TRIGGER IF EXISTS qr_audit_failure");
         jdbc.update("DELETE FROM registration_entry_contexts");
+        // V5 uses a real circular parent FK; clear its paired consumption pointer before owned fixture deletion.
+        jdbc.update("UPDATE registration_entry_grants SET registration_id=NULL,consumed_at=NULL");
+        for(String table:List.of("mrn_validation_records","registration_consents","visitor_registrations")) { jdbc.update("DELETE FROM "+table); }
         jdbc.update("UPDATE registration_entry_grants SET replaces_grant_id=NULL,replaces_binding_version=NULL");
         for(String table:List.of("registration_entry_grants","registration_qr_challenges","registration_qr_sessions")) { jdbc.update("DELETE FROM "+table); }
         jdbc.update("UPDATE app_session_bindings SET current_owner_context_id=NULL");
-        for(String table:List.of("auth_session_contexts","app_session_bindings","SPRING_SESSION_ATTRIBUTES","SPRING_SESSION","idempotency_records","audit_events","user_counter_permissions","users","counters","visitor_categories")) { jdbc.update("DELETE FROM "+table); }
+        for(String table:List.of("auth_session_contexts","app_session_bindings","SPRING_SESSION_ATTRIBUTES","SPRING_SESSION","idempotency_records","audit_events","user_counter_permissions","users","counters","destinations","visitor_categories")) { jdbc.update("DELETE FROM "+table); }
         String password=passwords.encode(PASSWORD);
         for(String role:List.of("COUNTER_STAFF","ADMIN")) {
             jdbc.update("INSERT INTO users(login,password_hash,role,active,created_at,updated_at) VALUES(?,?,?,TRUE,?,?)",role.equals("ADMIN")?"admin_qr":"staff_qr",password,role,DatabaseTime.sql(now),DatabaseTime.sql(now));
@@ -76,6 +79,7 @@ class QrMysqlTests {
         jdbc.update("INSERT INTO counters(id,code,name) VALUES(1,'QR_SYNTHETIC_1','Synthetic counter one'),(2,'QR_SYNTHETIC_2','Synthetic counter two')");
         jdbc.update("INSERT INTO user_counter_permissions(user_id,counter_id) VALUES(?,1),(?,2)",staffId,staffId);
         jdbc.update("INSERT INTO visitor_categories(id,code,name) VALUES(1,'PENJAGA','Synthetic Penjaga'),(2,'VENDOR','Synthetic Vendor')");
+        jdbc.update("INSERT INTO destinations(id,code,name) VALUES(1,'DEMO_WARD','Synthetic ward')");
     }
     /** Real role/CSRF/session checks, headers and opaque category IDs cannot be bypassed by public requests. */
     @Test void servletRolesCsrfAndPrivacy() throws Exception {
@@ -147,9 +151,9 @@ class QrMysqlTests {
         assertThatThrownBy(()->entries.lockGrant(visitor.binding(),value.formContext())).isInstanceOf(IllegalStateException.class);
         var stale=tx.execute(status->entries.lockGrant(visitor.binding(),value.formContext()));
         assertThatThrownBy(()->tx.executeWithoutResult(status->entries.consume(stale,101))).isInstanceOf(IllegalStateException.class);
-        assertThatThrownBy(()->tx.executeWithoutResult(status->{ var access=entries.lockGrant(visitor.binding(),value.formContext());entries.consume(access,101);throw new IllegalStateException("Synthetic rollback"); })).isInstanceOf(IllegalStateException.class);
+        assertThatThrownBy(()->tx.executeWithoutResult(status->{ var access=entries.lockGrant(visitor.binding(),value.formContext());consumeWithParent(access,101);throw new IllegalStateException("Synthetic rollback"); })).isInstanceOf(IllegalStateException.class);
         assertThat(entries.entry(visitor.binding()).formContext()).isEqualTo(value.formContext());
-        tx.executeWithoutResult(status->{ var access=entries.lockGrant(visitor.binding(),value.formContext());entries.consume(access,101); });
+        tx.executeWithoutResult(status->{ var access=entries.lockGrant(visitor.binding(),value.formContext());consumeWithParent(access,101); });
         assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM registration_entry_grants WHERE consumed_at IS NOT NULL",Integer.class)).isEqualTo(1);
         assertThatThrownBy(()->tx.executeWithoutResult(status->entries.lockGrant(visitor.binding(),value.formContext()))).isInstanceOf(ApiFailure.class);
     }
@@ -175,7 +179,7 @@ class QrMysqlTests {
                     } finally { jdbc.execute("SET SESSION innodb_lock_wait_timeout=50"); }
                 });
                 // The same receipt is still owned by the resumed outer transaction, not spent by inner rejection.
-                entries.consume(access,211);if(rollback) { outer.setRollbackOnly(); }
+                consumeWithParent(access,211);if(rollback) { outer.setRollbackOnly(); }
             });
             if(rollback) {
                 assertThat(entries.entry(binding).formContext()).isEqualTo(value.formContext());
@@ -205,7 +209,7 @@ class QrMysqlTests {
         Browser staff=staff();String id=staff.create("1",null);Browser visitor=new Browser();visitor.csrf();
         String token=token(staff.get("/api/staff/registration-qr-sessions/"+id+"/current"));
         var entry=json.readValue(visitor.exchange(token).body(),QrEntryService.Entry.class);String binding=visitor.binding(),owner=staff.owner();
-        var results=race(()->{entries.revoke(owner,id);return true;},()->tx.execute(status->{var access=entries.lockGrant(binding,entry.formContext());entries.consume(access,111);return true;}));
+        var results=race(()->{entries.revoke(owner,id);return true;},()->tx.execute(status->{var access=entries.lockGrant(binding,entry.formContext());consumeWithParent(access,111);return true;}));
         assertThat(results.stream().noneMatch(result->result instanceof org.springframework.dao.CannotAcquireLockException)).isTrue();
         assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM registration_entry_grants WHERE consumed_at IS NOT NULL",Integer.class)).isLessThanOrEqualTo(1);
         String another=staff.create("1",null);String challenge=token(staff.get("/api/staff/registration-qr-sessions/"+another+"/current"));
@@ -255,7 +259,7 @@ class QrMysqlTests {
         var old=json.readValue(visitor.exchange(token(staff.get("/api/staff/registration-qr-sessions/"+oldId+"/current"))).body(),QrEntryService.Entry.class);
         String next=token(staff.get("/api/staff/registration-qr-sessions/"+newId+"/current"));
         var results=race(()->entries.exchange(binding,new QrEntryService.ExchangeRequest(next,true,old.formContext())),
-                ()->tx.execute(status->{var access=entries.lockGrant(binding,old.formContext());entries.consume(access,121);return true;}));
+                ()->tx.execute(status->{var access=entries.lockGrant(binding,old.formContext());consumeWithParent(access,121);return true;}));
         assertThat(results.stream().filter(ApiFailure.class::isInstance).count()).isEqualTo(1);
         String thirdId=staff.create("1",null);String thirdToken=token(staff.get("/api/staff/registration-qr-sessions/"+thirdId+"/current"));
         Browser another=new Browser();another.csrf();String anotherBinding=another.binding();
@@ -284,13 +288,13 @@ class QrMysqlTests {
         byte[] encoding=RequestEncoding.encode(json,scope,"REGISTER","REGISTER",1,List.of(RequestEncoding.Field.text("grantReference",value.formContext().grantReference()),RequestEncoding.Field.integer("bindingVersion",value.formContext().bindingVersion())));
         jdbc.execute("CREATE TRIGGER qr_audit_failure BEFORE INSERT ON audit_events FOR EACH ROW SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='Synthetic audit failure'");
         assertThatThrownBy(()->tx.executeWithoutResult(status->{
-            var access=entries.lockGrant(binding,value.formContext());entries.consume(access,131);
+            var access=entries.lockGrant(binding,value.formContext());consumeWithParent(access,131);
             commands.success(namespace,encoding,201,new IdempotencyPort.SafeResult("131","R_QR_SYNTHETIC","SUBMITTED",0));
             audit.append(LocalAuditPort.Action.REGISTRATION_SUBMITTED,"REGISTRATION","131",null,new LocalAuditPort.Snapshot(null,"SUBMITTED",null,0L,"LOCAL"));
         })).isInstanceOf(org.springframework.dao.DataAccessException.class);
         assertThat(entries.entry(binding).formContext()).isEqualTo(value.formContext());
         assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM idempotency_records",Integer.class)).isZero();jdbc.execute("DROP TRIGGER qr_audit_failure");
-        tx.executeWithoutResult(status->{var access=entries.lockGrant(binding,value.formContext());entries.consume(access,131);commands.success(namespace,encoding,201,new IdempotencyPort.SafeResult("131","R_QR_SYNTHETIC","SUBMITTED",0));});
+        tx.executeWithoutResult(status->{var access=entries.lockGrant(binding,value.formContext());consumeWithParent(access,131);commands.success(namespace,encoding,201,new IdempotencyPort.SafeResult("131","R_QR_SYNTHETIC","SUBMITTED",0));});
         advance(1200);entries.anonymous(binding);
         String replayReference=tx.execute(status->commands.replay(namespace,encoding).orElseThrow().result().reference());
         assertThat(replayReference).isEqualTo("R_QR_SYNTHETIC");
@@ -312,6 +316,14 @@ class QrMysqlTests {
         assertThat(staff.get("/api/public/registration-entry").statusCode()).isEqualTo(200);
         LocalDateTime after=jdbc.queryForObject("SELECT confirmed_idle_expires_at FROM auth_session_contexts WHERE id=?",LocalDateTime.class,owner);
         assertThat(after).isEqualTo(before);
+    }
+    /** Valid consumption probes insert the V5 synthetic parent in the same transaction; invalid receipt probes stay SQL-free. */
+    private void consumeWithParent(QrEntryService.GrantAccess access,long registration) {
+        jdbc.update("INSERT INTO visitor_registrations(id,public_reference,entry_grant_id,anonymous_scope_id,counter_id,category_id,category_code,destination_id,field_schema_version,form_data,environment,data_origin,submitted_at) "
+                +"VALUES(?,?,?,(SELECT anonymous_scope_id FROM app_session_bindings WHERE id=?),?,1,'PENJAGA',1,'synthetic-registration-v1',?,'test','SYNTHETIC',?)",
+                registration,"R-QR-SYNTHETIC-"+registration,access.grantId(),access.bindingId(),access.scope().counterId(),
+                "{\"fullName\":\"Demo QR\",\"identificationType\":\"TEST_ID\",\"identificationNumber\":\"DEMO-QR01\",\"phone\":\"+60123456789\",\"mrn\":\"DEMO-MRN-4821\",\"wardCode\":\"DEMO_WARD\",\"relationship\":\"OTHER\"}",DatabaseTime.sql(now));
+        entries.consume(access,registration);
     }
     private void advance(long seconds) { now=now.plusSeconds(seconds);doReturn(now).when(clock).instant(); }
     private Browser staff() throws Exception { Browser browser=new Browser();browser.login("staff_qr");return browser; }

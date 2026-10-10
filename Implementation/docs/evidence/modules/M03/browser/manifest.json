@@ -1,0 +1,423 @@
+{
+  "schemaVersion": 1,
+  "module": "M03",
+  "baseline": "f59baf350feeec024bf7178bf4d421aec4a6d41e",
+  "branch": "codex/hsaas-m03-visitor-registration",
+  "applicationSource": "9d9baf658fd6c7151b4d7a83a3d85d380dc982c6",
+  "backendUnicodeSource": "8623e7c9f49dd964684b30ee0ae5d0722c3121b3",
+  "harnessSource": "bdb05624db58aa5fac2b4954cfaf31cdfe8a873c",
+  "observedExitHarnessSource": "e90df7c1b654d373bb88c9fef3e69866185fcb81",
+  "browserReceiptWrittenAt": "2026-10-10T14:06:19+08:00",
+  "cleanupWrittenAt": "2026-10-10T14:06:36+08:00",
+  "backendVerify": {
+    "command": ".\\mvnw.cmd -B verify",
+    "exitCode": 0,
+    "tests": 109,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "completedAt": "2026-10-10T13:47:24+08:00"
+  },
+  "frontend": {
+    "tests": 110,
+    "typecheckTest": "PASS",
+    "build": "PASS",
+    "lint": "PASS (0 warnings)",
+    "proxy": "PASS; synthetic proxy only"
+  },
+  "browser": {
+    "command": "npx --yes --package @playwright/cli playwright-cli -s=m03 run-code --filename tests/registration/browser.js",
+    "checks": 47,
+    "browserErrors": 0,
+    "axeViolations": 0,
+    "normalViewportAudits": 31,
+    "normalDocumentHeights": [
+      768,
+      812
+    ],
+    "actualMysql": true,
+    "actualServlet": true,
+    "allFourCategoriesAllThreeStepsBothViewports": true,
+    "freshCliAndDatabase": true,
+    "visualQa": [
+      "identity-mobile375",
+      "invalid-mobile375",
+      "invalid-expanded-mobile375",
+      "penjaga-deferred-review-mobile375",
+      "vendor-review-mobile375",
+      "long-purpose-review-mobile375",
+      "unknown-consumed-mobile375",
+      "identity-short-zoom200"
+    ],
+    "expandedAndZoomAllowScrolling": true,
+    "nativeCameraAndToolbarZoom": "NOT_RUN"
+  },
+  "packagedJar": {
+    "sha256": "f0873d35af4ed03e10058ddb8ce8fd67d7d4dd09ed652d9d1cdf52693b18ff20",
+    "bytes": 62226150,
+    "writtenAt": "2026-10-10T13:47:24+08:00"
+  },
+  "scope": "DEMO synthetic only; no real hospital, native database, developer .env, hardware, notifications or blockchain",
+  "privacy": "No raw logs, request bodies, keys, QR URLs, cookies, credentials or feedback capabilities archived.",
+  "applicationFiles": [
+    {
+      "path": "Implementation/backend/src/main/java/eduupm/hsaas/hospital/HospitalVerificationPort.java",
+      "sha256": "2beafe5e10178a8b5b9111edca16a5f98a7a54b4797bf40af1139e05337eefc6"
+    },
+    {
+      "path": "Implementation/backend/src/main/java/eduupm/hsaas/hospital/SyntheticHospitalAdapter.java",
+      "sha256": "1ad1f86c7b8ae24411b20b17717e324d19252c8b1945df523ce1cbf69649316b"
+    },
+    {
+      "path": "Implementation/backend/src/main/java/eduupm/hsaas/registration/ManualEvidence.java",
+      "sha256": "88db8e3d2c745d295cc51386a9d29ddfeaf7bd7ea839c7c3e34de067715ee126"
+    },
+    {
+      "path": "Implementation/backend/src/main/java/eduupm/hsaas/registration/PublicReferences.java",
+      "sha256": "84fbf351f5f23430bda1a06e7bea434d95ec380527e9570229ea975d4c8b5d30"
+    },
+    {
+      "path": "Implementation/backend/src/main/java/eduupm/hsaas/registration/RegistrationConfiguration.java",
+      "sha256": "6e3bbaba0df22806271ebf480fb5328ae2985bb7f6e73c74f6c8c4b03222a4f9"
+    },
+    {
+      "path": "Implementation/backend/src/main/java/eduupm/hsaas/registration/RegistrationController.java",
+      "sha256": "d34be1d4eac18ab8e300ae4dd8e02484d2259383a9bf503f32d310f53b97dac3"
+    },
+    {
+      "path": "Implementation/backend/src/main/java/eduupm/hsaas/registration/RegistrationDecisions.java",
+      "sha256": "121d0e47a7c5f876b72dc4df7cb82f6fd6acfb3ae89fe24f2157282ad2c8ddfa"
+    },
+    {
+      "path": "Implementation/backend/src/main/java/eduupm/hsaas/registration/RegistrationFields.java",
+      "sha256": "29495f6682c826135db83fbc3c45a3bb7a775bd97e76fd0217defc5119cae230"
+    },
+    {
+      "path": "Implementation/backend/src/main/java/eduupm/hsaas/registration/RegistrationMasking.java",
+      "sha256": "2935a8d911fbbe7ee16e6329db630c5d86e5545753ad3bfdc062564c03e78ef8"
+    },
+    {
+      "path": "Implementation/backend/src/main/java/eduupm/hsaas/registration/RegistrationPayload.java",
+      "sha256": "d6bd93b4f7a46bdb637f9b849fd07242568b5e61389927aa339e6c0aa5e3ec82"
+    },
+    {
+      "path": "Implementation/backend/src/main/java/eduupm/hsaas/registration/RegistrationReadPort.java",
+      "sha256": "d7438ba5e94a65a7983baa0f4a6035c8b09d9bcf4bdc3cd09b0019c39e18fc17"
+    },
+    {
+      "path": "Implementation/backend/src/main/java/eduupm/hsaas/registration/RegistrationReviewPort.java",
+      "sha256": "e71f8e35b285ad2d087ebf936b59404330171af4397795510472368299fe4af1"
+    },
+    {
+      "path": "Implementation/backend/src/main/java/eduupm/hsaas/registration/RegistrationService.java",
+      "sha256": "819f0e2a685359560be55ee3a4173a672e1d90027363f928e33a969964ac1392"
+    },
+    {
+      "path": "Implementation/backend/src/main/java/eduupm/hsaas/registration/RegistrationStore.java",
+      "sha256": "f529e04a105ea7dbd0e0009bf097b3e425e9df479e2616411f77831a22e30777"
+    },
+    {
+      "path": "Implementation/backend/src/main/java/eduupm/hsaas/registration/RegistrationVersions.java",
+      "sha256": "5ffd8130df039d64342ce90ccf3e6641b63e90b3e915a74eea2dcbf346580d38"
+    },
+    {
+      "path": "Implementation/backend/src/main/java/eduupm/hsaas/registration/SyntheticReviewRules.java",
+      "sha256": "a92b4a4be43d350998fc891cc24ba2557a3e6013f954a2399c155377c78daf2a"
+    },
+    {
+      "path": "Implementation/backend/src/main/resources/db/migration/V5__visitor_registration.sql",
+      "sha256": "bc6596479e37489cf20c7746e38c8f27d702bcf3e16a79c902cda8d61f8b455d"
+    },
+    {
+      "path": "Implementation/backend/src/test/java/eduupm/hsaas/HsaasBackendApplicationTests.java",
+      "sha256": "12a6fa2c058ca6f99bdf63b7ff1b580525a8a7c9286792871307bb2dc9c0bf3f"
+    },
+    {
+      "path": "Implementation/backend/src/test/java/eduupm/hsaas/registration/RegistrationConfigurationTests.java",
+      "sha256": "43f38c4e2d4ecd57130fa9a8e011dcb166c903272baef699db3a7b4ec8edc285"
+    },
+    {
+      "path": "Implementation/backend/src/test/java/eduupm/hsaas/registration/RegistrationDecisionTests.java",
+      "sha256": "f8aa367737ce76bd8812bd2d30558ed0d97b7f5a2f7f2493d4c4748db872876b"
+    },
+    {
+      "path": "Implementation/backend/src/test/java/eduupm/hsaas/registration/RegistrationFieldTests.java",
+      "sha256": "bc98722293c1c22573dfbd267dfad90bb3f05d51bba9cfc8ef4a33624c476a2d"
+    },
+    {
+      "path": "Implementation/backend/src/test/java/eduupm/hsaas/registration/RegistrationMaskingTests.java",
+      "sha256": "7f4d1c6c516a6b52288708710167e3fe40a629a76ef57a91f16750b181dc8b2e"
+    },
+    {
+      "path": "Implementation/backend/src/test/java/eduupm/hsaas/registration/RegistrationMysqlTests.java",
+      "sha256": "499218559d482544fff281d7593a7918e7354bf5d2d4a18ba0a5021bddc65ec0"
+    },
+    {
+      "path": "Implementation/backend/src/test/java/eduupm/hsaas/registration/RegistrationReadPortTests.java",
+      "sha256": "5b6941a30b10224715518b69c8aa071e95849153e2e48c95215a6baa91a84de8"
+    },
+    {
+      "path": "Implementation/backend/src/test/java/eduupm/hsaas/registration/RegistrationReviewPortTests.java",
+      "sha256": "1892c5256b93e8e0997c5ecef23147cdd72e18553f75f9e636950879821599cb"
+    },
+    {
+      "path": "Implementation/backend/src/test/java/eduupm/hsaas/registration/SyntheticReviewRulesTests.java",
+      "sha256": "18b1daf597678fcff8f0b041af8547b6b416c24dfba1cd77503136c63599048a"
+    },
+    {
+      "path": "Implementation/backend/src/test/java/eduupm/hsaas/registrationentry/QrMysqlTests.java",
+      "sha256": "85b4035c82803ed65705424fbac57b235b193fe76cfb1044046380417bf872be"
+    },
+    {
+      "path": "Implementation/frontend/src/features/registration-qr/entry.tsx",
+      "sha256": "75de57ddc0e7ba062eef9d5f9362206d5e34259b4959cea94f2092d31da65271"
+    },
+    {
+      "path": "Implementation/frontend/src/features/registration-qr/registration-qr.css",
+      "sha256": "e7768c67d60af1c60fd45eb0e2825c00e964dafe5b8b10c6fa1827ca51ed2b0a"
+    },
+    {
+      "path": "Implementation/frontend/src/features/registration/contracts.ts",
+      "sha256": "657a8cd407bdabd64cac64494b2086e3c09408ba59117652baa39bc75cb2ccdd"
+    },
+    {
+      "path": "Implementation/frontend/src/features/registration/index.tsx",
+      "sha256": "af0ec63c5c44c8473e9efbe93a8c7629e3ba5074ded8d6bd1582717cd0c6e3cb"
+    },
+    {
+      "path": "Implementation/frontend/src/features/registration/registration.css",
+      "sha256": "b0d8727a96534e4636a366bea44c27ce51d8ad97bd39e3a4eb0d921c8497a98a"
+    },
+    {
+      "path": "Implementation/frontend/src/features/registration/registration.tsx",
+      "sha256": "dee839e53229fe187f2b10e8392ba1ef6ad44a98f8a2f247ad49720bb2536633"
+    },
+    {
+      "path": "Implementation/frontend/src/main.tsx",
+      "sha256": "baa0abd11826af566a5b26991599bdb3a23b8f704f3fcf002576a0f9e654c245"
+    },
+    {
+      "path": "Implementation/frontend/tests/registration-layout.test.tsx",
+      "sha256": "f6b633ccf55530840e995f3ccc62baa8c5029876a2ea09dc83b58234b8a70b8d"
+    },
+    {
+      "path": "Implementation/frontend/tests/registration.test.tsx",
+      "sha256": "6a2a451b6278411ce30ac2fd33c0693be9bed78508d61082d179691925523ca2"
+    },
+    {
+      "path": "Implementation/frontend/tests/registration/M03FixtureSeed.java",
+      "sha256": "f9be61c7504188131a958e91066b6f8c4074e88012320217f89272855c1f88e2"
+    }
+  ],
+  "harnessFiles": [
+    {
+      "path": "Implementation/frontend/tests/registration/harness.mjs",
+      "sha256": "a77820c0211f48dcddcdc13419700cf65cec28600f2c81bad76b62385b0a6e2d"
+    },
+    {
+      "path": "Implementation/frontend/tests/registration/browser.js",
+      "sha256": "c0c599d8b9102d8664e4bb4013c1d57a1274e445b9fbdea1564f248c825cb006"
+    },
+    {
+      "path": "Implementation/frontend/tests/registration/M03FixtureSeed.java",
+      "sha256": "f9be61c7504188131a958e91066b6f8c4074e88012320217f89272855c1f88e2"
+    },
+    {
+      "path": "Implementation/frontend/tests/real-integration/environment.mjs",
+      "sha256": "3a15073af6a9e76636eff2128008b8147c6ff41d00495c8beb4a9c746b75e272"
+    }
+  ],
+  "artifacts": [
+    {
+      "path": "browser-verification.json",
+      "sha256": "0311ef4e1bd35281f768311806d39ebb0077321ba7d839c07aeff5e8ddfa60e8",
+      "bytes": 16605
+    },
+    {
+      "path": "cleanup.json",
+      "sha256": "5181cdfc000a28af3068fdc0aa8c8b32b3acd131a4f91579bd1132098f55233d",
+      "bytes": 445
+    },
+    {
+      "path": "resources.json",
+      "sha256": "48481309cc2754143412713167f943db30a21ad972b574c90b484e718cb35539",
+      "bytes": 593
+    },
+    {
+      "path": "receipt-mobile375.png",
+      "sha256": "76733fe66f152fc77c61a68331a5312577c5175fbc7e10aaafb83a30959f5250",
+      "bytes": 33968
+    },
+    {
+      "path": "identity-mobile375.png",
+      "sha256": "c36212a3639baee0fda3e6d687bb49e5d3b3b0f5ca597c19cef8cbb6927f7fe1",
+      "bytes": 50451
+    },
+    {
+      "path": "guidance-expanded-mobile375.png",
+      "sha256": "9ab0d0147509e5f313dac74420ad1899471999fcc66e7f480102155f1f157312",
+      "bytes": 64758
+    },
+    {
+      "path": "invalid-mobile375.png",
+      "sha256": "425947e9d4d432bbaeaa3d8641621d082bbf20babef14299fcce7677b62627d2",
+      "bytes": 48452
+    },
+    {
+      "path": "invalid-expanded-mobile375.png",
+      "sha256": "cd927d8192622d64896283c5a65c2bb25f3a2fbb06765090e7502ca80ae8aa2d",
+      "bytes": 58917
+    },
+    {
+      "path": "penjaga-initial-visit-mobile375.png",
+      "sha256": "af6eb21175fa4210142d966d441bc93f22fd012b5aaeb038665a23e81150fa42",
+      "bytes": 52119
+    },
+    {
+      "path": "mrn-match-mobile375.png",
+      "sha256": "00c06dec4759bcc3762ca955c44667f7ae9297ed25b06cd6a92623d32a150fdb",
+      "bytes": 54710
+    },
+    {
+      "path": "penjaga-deferred-review-mobile375.png",
+      "sha256": "f9b6aa18147a530c393439a41cdc3c7cff01c483ad14bf98a49545a9911bca15",
+      "bytes": 61467
+    },
+    {
+      "path": "penjaga-identity-desktop.png",
+      "sha256": "3c3dbf5564c4cd9fc30e71a9f35d37d3d6c56f28240519b16ac2dbba6ed68690",
+      "bytes": 54246
+    },
+    {
+      "path": "penjaga-identity-mobile375.png",
+      "sha256": "c36212a3639baee0fda3e6d687bb49e5d3b3b0f5ca597c19cef8cbb6927f7fe1",
+      "bytes": 50451
+    },
+    {
+      "path": "penjaga-visit-desktop.png",
+      "sha256": "1bb38a5f75af5342c04eed5b4ad9469c3e3750558a90ff5c7e40e468707cb2c7",
+      "bytes": 56617
+    },
+    {
+      "path": "penjaga-visit-mobile375.png",
+      "sha256": "28a59db2d8da20cb0898596ac1d0a2c7e34cb9aee2fff3fab6b4490caeaa7e5c",
+      "bytes": 52132
+    },
+    {
+      "path": "penjaga-review-mobile375.png",
+      "sha256": "f3b636591e25e09912b2ac6b6e306167daee94fd7f6d5316652cc3ea2e7f2532",
+      "bytes": 61579
+    },
+    {
+      "path": "penjaga-review-desktop.png",
+      "sha256": "46f41addbb684bebadb2208185f464b893e3ece701aaaf9ce3fe82279d0c4114",
+      "bytes": 69967
+    },
+    {
+      "path": "executive-identity-desktop.png",
+      "sha256": "58c29967ef31eb769f10c6b4b4bb1de218eede1693f96ed673952104004b89dd",
+      "bytes": 54272
+    },
+    {
+      "path": "executive-identity-mobile375.png",
+      "sha256": "3e6a65ecf32dd8526affde6b32222783a533e21bce88ba72a7304d8d46fc3aee",
+      "bytes": 50476
+    },
+    {
+      "path": "executive-visit-desktop.png",
+      "sha256": "d563c4349c04cc03ffa566fea47028975b8fd334548060fe5102611fcb825d53",
+      "bytes": 54581
+    },
+    {
+      "path": "executive-visit-mobile375.png",
+      "sha256": "b7bf3b9a1f208bc92be49bf312a8a87f7252329a64c2d09939fa2c212c8f1755",
+      "bytes": 51389
+    },
+    {
+      "path": "executive-review-mobile375.png",
+      "sha256": "5914c39b9bb91fc82a4870fe97333424d8b7f4f95afe9670e01ebcad6de8243c",
+      "bytes": 65411
+    },
+    {
+      "path": "executive-review-desktop.png",
+      "sha256": "f86da0df6c036a2563466b30f30cc2887c063d40e59b73744eebbf26336d5ac5",
+      "bytes": 74363
+    },
+    {
+      "path": "vendor-identity-desktop.png",
+      "sha256": "e81ea262714350692420fa6675ab305f7ef5a00c12ec443955e40eeca56335b3",
+      "bytes": 53840
+    },
+    {
+      "path": "vendor-identity-mobile375.png",
+      "sha256": "7bbb4d42d4754c2adf7a8f58be41678a5d148567e8b8d2d38ab993c3eef96d87",
+      "bytes": 50083
+    },
+    {
+      "path": "vendor-visit-desktop.png",
+      "sha256": "79c69f1f14b9efbce2a97b417fec82b6139f80952ad64ffecfa914c1a577b5ff",
+      "bytes": 54491
+    },
+    {
+      "path": "vendor-visit-mobile375.png",
+      "sha256": "4fb3f180518ebd8b7bff7a608ae9fc0208530d0d63893b037c157028cb470e1b",
+      "bytes": 51646
+    },
+    {
+      "path": "vendor-review-mobile375.png",
+      "sha256": "5b20c60c9d5aeab83b25ce299607101d894bbce8101f03b80dc26f0a52b398f7",
+      "bytes": 65168
+    },
+    {
+      "path": "vendor-review-desktop.png",
+      "sha256": "f28a016dd04e8a7d687cfc8dca37abd35d1b78ab346f9fcedaa985a27be02bbf",
+      "bytes": 74073
+    },
+    {
+      "path": "contractor-identity-desktop.png",
+      "sha256": "a0d6060ae729b4ba482546e821527a16da69a2c6679997d1358d854e3f6d4aa4",
+      "bytes": 54244
+    },
+    {
+      "path": "contractor-identity-mobile375.png",
+      "sha256": "c5125740fa939cdd8a1440b595a815609b22c92b842dbe8f4df1d4f5314ed2df",
+      "bytes": 50459
+    },
+    {
+      "path": "contractor-visit-desktop.png",
+      "sha256": "76a6e49c2f3842c8a1b79864159bb43aece24c679c6cb65d9f3830174cdd9f10",
+      "bytes": 53039
+    },
+    {
+      "path": "contractor-visit-mobile375.png",
+      "sha256": "952ed5c75a60098d7c124db4b90bf73b3d6823693fb5494ac4b9c87a36c3b322",
+      "bytes": 50438
+    },
+    {
+      "path": "contractor-review-mobile375.png",
+      "sha256": "67a25d3cbfcf50cd0484d513f26a2ac6d9431f16ea80bd83fb6ed43faac60399",
+      "bytes": 64887
+    },
+    {
+      "path": "contractor-review-desktop.png",
+      "sha256": "7d201dd4f5851ab051d38ac4e669a9f9b1f55f1d7f139a4550265397f4b2ba89",
+      "bytes": 73727
+    },
+    {
+      "path": "unknown-consumed-mobile375.png",
+      "sha256": "47f166faaefc29806c54569b7be154c3c2784292784433838ec24193ac472535",
+      "bytes": 29179
+    },
+    {
+      "path": "identity-short-zoom200.png",
+      "sha256": "a23b4606f304053b58530abb6e28538cba440c12caa9d0c44a89f782b743d7d5",
+      "bytes": 117956
+    },
+    {
+      "path": "long-purpose-review-mobile375.png",
+      "sha256": "d02bc4471c8c1ff985ffaf09a91a352884585b81b0b9f13d60daf907de553adc",
+      "bytes": 64949
+    }
+  ],
+  "hashConvention": "Application/harness hashes use canonical Git blob bytes at their named source commit; artifact hashes use canonical Git blob bytes in the delivery commit. Read text blobs with git show because Windows checkout line endings may differ. PNG and JAR hashes use unchanged binary bytes."
+}
