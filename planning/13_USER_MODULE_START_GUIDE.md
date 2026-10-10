@@ -24,7 +24,7 @@ status: prepared-m03-m04-completion-pending
 ```text
 这是HSAAS Mxx的独立模块chat，我本人负责后续coordination，现在明确授权你直接开发本模块。
 先读AGENTS.md、planning/README.md、planning/12_THREE_MONTH_CHAT_PLAN.md、planning/13_USER_MODULE_START_GUIDE.md，再按任务路由只读相关需求/架构/数据API/所属目录CONTEXT.md及依赖模块REVIEW/HANDOFF。
-核实本机main的实际提交、依赖验收和工作树状态。从已合并基线创建/附加本模块独立worktree和codex/前缀分支；未隔离前只读，不编辑共享Local，不覆盖其他chat的改动。起点必须是核实后的本地main SHA，不能默认使用未同步远端。
+核实本机main的实际提交、依赖验收和工作树状态。优先复用当前chat已经附加且基线正确的独立worktree；否则从已合并基线创建/附加本模块worktree和codex/前缀分支。创建工具不一定自动改变chat的cwd，全部文件读写与命令须使用返回的绝对workspace路径，并核对HEAD/branch。未隔离前只读，不编辑共享Local，不覆盖其他chat的改动。起点必须是核实后的本地main SHA，不能默认使用未同步远端。
 在已批准模块范围内直接写代码、适当测试、修复并完成交接，不让我手写或逐步骤确认。所有新写/修改的手写代码必须有准确英文注释，说明职责及关键业务、权限、事务、并发和恢复约束。
 技术问题、共享文件/API/schema/migration编号、需求conflict和不能确定的选择直接在本chat问我；我自己coordinate，不自动向旧coordinator或其他chat发送消息，也不自动启动任何其他模块。独立工作可以继续，依赖人类决定的动作等待答复。
 优先前端和基础后端；动态QR不能改成static。真实医院MRN、实体卡/reader仍需外部条件；WhatsApp/blockchain保持disabled，不生成积压或历史补发/上链任务。mock/synthetic不能冒充live成功。
