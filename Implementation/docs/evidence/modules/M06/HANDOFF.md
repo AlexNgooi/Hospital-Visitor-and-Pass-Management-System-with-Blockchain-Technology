@@ -1,8 +1,8 @@
 # M06 Administration & Reporting handoff
 
-Status at this review snapshot: **REVIEW_READY_PENDING_M05_MAIN_INTEGRATION**. This is implemented source, not business acceptance. M00-M04 manual acceptance remains pending; no historical PASS is extended to M06.
+Final module status: **SOURCE_REVIEWED_DEPENDENCY_INTEGRATED_PENDING_COORDINATOR_LOCAL_MERGE**. M05 is locally merged and absorbed; M06's own local-main merge and combined checks remain coordinator-owned. This is implemented source, not business acceptance. M00-M05 manual acceptance remains pending; no historical PASS is extended to M06.
 
-2026-10-18 C22 follow-up: coordinator cross-checked M05's final read contract and requested explicit environment/provenance predicates. ReportingService now injects FoundationProperties and binds the current configured environment for every registration period/group/preview/export, requiring SYNTHETIC registration origin; assignment metrics additionally bind the configured environment and SIMULATED operation origin; current card metrics bind the environment and SIMULATED data origin. Report origin includes the environment. MYT/filter/masking/one-statement metric semantics are unchanged. Source/parameter ordering reviewed; no additional tests rerun because the four date/CSV rules are unchanged. Coordinator owns the final combined build after M05 absorption. This correction supersedes the earlier unscoped query implementation at a4ca126; its exact correction SHA is sent with the handoff message.
+2026-10-18 C22 follow-up: coordinator cross-checked M05's final read contract and requested explicit environment/provenance predicates. ReportingService now injects FoundationProperties and binds the current configured environment for every registration period/group/preview/export, requiring SYNTHETIC registration origin; assignment metrics additionally bind the configured environment and SIMULATED operation origin; current card metrics bind the environment and SIMULATED data origin. Report origin includes the environment. MYT/filter/masking/one-statement metric semantics are unchanged. Source/parameter ordering reviewed; no additional tests rerun because the four date/CSV rules are unchanged. Coordinator owns the final combined build after M05 absorption. Correction `0a14f3acf90af5b44193c3aca0d034106104cbe5` supersedes the earlier unscoped query implementation at a4ca126.
 
 - Human authorization: 2026-10-18 M05-M07 delegation and necessary testing, recorded in AGENTS.md and planning/14. Current coordinator is `01a14da5-91fe-7bf1-a120-183975085f8b`, host local; bidirectional questions/handoff are authorized. No old coordinator contacted.
 - Actual isolated worktree: `C:/Users/alexy/.codex/worktrees/ca56/FYP Dev`.
@@ -10,8 +10,10 @@ Status at this review snapshot: **REVIEW_READY_PENDING_M05_MAIN_INTEGRATION**. T
 - Initial clean baseline: `d103b888527c4ba8e90f37d93059daf2d78ed02f`.
 - Shared C18 integration: fast-forwarded coordinator commit `fd18ef67cba40aadc37b4b1ea4b021b32571b8ea` (audit/idempotency whitelist + coordination record).
 - Review implementation commit: `a4ca1266b70983cdaa553a89b3cf9289457354c2`. A later evidence commit contains this file and is supplied separately to avoid a self-referential SHA.
+- Initial review evidence: `1dec1a5a57bb00bc12d97d8c3e1df98e6a176ea9`; final C22 source: `0a14f3acf90af5b44193c3aca0d034106104cbe5`.
+- Reviewed M05 local-main dependency: `6e458b71fd21337f84a07a6786224dee9c974848` (M05 source `cbf738eed60886b18141b08d05b84e688ffa0db2`, delivery `40340e5`). Absorbed on this M06 branch with conflict-free merge `7ffea44c4e2a30fe883fce815bde8d42b06f3e9e`; C22 production source/V7/frontend are unchanged by the dependency merge. Final evidence commit is supplied in the coordinator dispatch.
 - Shared writes by M06: **none**. auth/AccountChanges, common, config, registration, main.tsx/shell/generated/API baseline/dependencies and V1-V6 are unchanged by M06. Coordinator owns final FeatureSlot composition and manual demo launcher.
-- Runtime dependency: approved exact M05 V6 schema inspected in `cb05` worktree; final M05 local-main merge still awaits coordinator notification. M06 does not copy another module's unmerged migration. V7 is not a replacement for V6.
+- Runtime dependency: M05 V6 is now inherited from its reviewed local-main merge. Actual V6/read-contract columns were rechecked in this own worktree against all M06 queries and settings commands. V7 is not a replacement for V6. V6 blob is `00f20240b6fe2b99e6902d16d07a7fddab0322f2`; unchanged M06 V7 blob is `a2c857e27b439a9b1a1faa1969d4e40fb07d732d`.
 
 ## Delivered functionality
 
@@ -49,6 +51,8 @@ All paths reuse `/api/admin/**` role/session enforcement and CSRF on writes; act
 
 V7 `V7__administration_reporting.sql` (coordinator C19-approved candidate) adds only administration_history and report_exports with NOT NULL/FK/check/version/range/count constraints and target/time indexes. V1-V5 are immutable; V6/system_settings belong to M05. No schema was migrated against a database during M06 work. No new runtime dependency or environment flag is required; administration/reporting beans use the existing secured API, with V6+V7 applied by the user's selected demo database startup.
 
+Final dependency source check (read-only, NOT a database test): V5 `submitted_at/category_id/category_code/destination_id/environment/data_origin` matches every registration report query; V6 `cards.status/category_id/environment/data_origin` matches inventory; V6 assignment `registration_id/issued_at/returned_at/due_at/closed_at/closure_reason/environment/operation_origin` matches period/current activity. V6 closure checks distinguish RETURNED from LOST, and overdue remains based on active due time. V6 settings keys/columns/range/version match M06 writes and M05's ordinary single-row issue read; M05 stores hours-derived due_at plus return_rule_key/version and does not reread/rewrite it on later settings changes. C22 binds the current deployment environment and each approved provenance on every report data branch, including groups/preview/export. No schema adjustment or source repair was needed after dependency absorption.
+
 ## Transaction and lock contract
 
 - All M06 domain transactions explicitly use READ_COMMITTED and the existing TransactionTemplate manager/DataSource. The outer transaction starts without locks; nonlocking safe snapshot discovery may precede the M00 mutation port, and its expected version must succeed before history commits.
@@ -71,12 +75,14 @@ V7 `V7__administration_reporting.sql` (coordinator C19-approved candidate) adds 
 | `docker info --format '{{.ServerVersion}}'` | Unavailable: Docker engine named pipe absent; no daemon started and no native DB fallback |
 | V6/V7 execution, actual SQL result dataset, live session/transaction/last-admin race/rollback | NOT_RUN; disposable MySQL unavailable |
 | broad regression, browser/responsive screenshots, UAT/performance, restart/backup acceptance | NOT_RUN by scope |
+| final M05 dependency merge/schema/source check | PASS as source inspection only; conflict-free `7ffea44`, V6 exact match and M06 source unchanged |
+| C22/final integrated build/lint/test reruns in this module | NOT_RUN per coordinator instruction; coordinator runs necessary combined frontend/backend checks once after composition |
 
 The first unquoted PowerShell Maven property invocation was rejected by Maven as an unknown lifecycle phase; the quoted command above corrected it. No source defect or business test result is inferred from that invocation. Historical M00-M04 tests retain their original SHA/scope and are not a substitute for the NOT_RUN rows here.
 
 ## User startup, manual checks and recovery
 
-After coordinator merges M05 then M06 and composes `administrationFeatures` from `frontend/src/features/administration/index.tsx`, use the coordinator/M07 M00-M07 manual-demo launcher on a **new disposable demo database**. This module does not start services. Existing M00-M04 reference runbook is `Implementation/docs/runbooks/MANUAL_M00_M04.md`; final M00-M07 launcher/runbook is coordinator/M07-owned. Do not point V6/V7 at the old native database, run Flyway repair/baseline/clean or rewrite an applied migration. No new M06 enable flag is needed. Sign in with a demo ADMIN; new accounts require a staff login and 12+ character, <=72 UTF-8 byte initial password.
+M05 is already locally merged. After coordinator merges M06 and composes `administrationFeatures` from `frontend/src/features/administration/index.tsx`, use coordinator's `Implementation/scripts/manual-demo.mjs` launcher on a **new disposable demo database**, following the final M07 `Implementation/docs/runbooks/MANUAL_M00_M07.md` instructions. This module does not start services. Existing M00-M04 reference runbook is `Implementation/docs/runbooks/MANUAL_M00_M04.md`; final M00-M07 launcher/runbook is coordinator/M07-owned. Do not point V6/V7 at the old native database, run Flyway repair/baseline/clean or rewrite an applied migration. No new M06 enable flag is needed. Sign in with a demo ADMIN; new accounts require a staff login and 12+ character, <=72 UTF-8 byte initial password.
 
 Manual checks remain **NOT_RUN**:
 
