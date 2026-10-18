@@ -2,7 +2,7 @@
 
 Coordinator: `01a14da5-91fe-7bf1-a120-183975085f8b`, local, 2026-10-18.
 
-Status: **APPROVED_FOR_LOCAL_MERGE_PENDING_USER_MANUAL_TEST**. Approval covers source functionality and the human-directed necessary-check boundary, not executed business acceptance.
+Status: **MERGED_PENDING_USER_MANUAL_TEST**. Approval covers source functionality and the human-directed necessary-check boundary, not executed business acceptance. Exact delivery merged locally as `6e458b71fd21337f84a07a6786224dee9c974848`; composed source `761491e` passed the necessary static/build checks recorded in [coordinator checks](../M07/COORDINATOR_CHECKS.md).
 
 Reviewed source `cbf738eed60886b18141b08d05b84e688ffa0db2`, evidence head `40340e537d4337af308ea1ee9d2e560be260bbd9`, branch `codex/m05-card-assignment`, isolated `cb05/FYP Dev` worktree. Tree was clean and `git diff fd18ef6..HEAD --check` passed. Shared base is coordinator `fd18ef6`; module source is 29 files, about 2,009 lines plus the final evidence document.
 
@@ -12,4 +12,4 @@ Required migration hardening was incorporated before source review: explicit non
 
 Module evidence: backend package with tests skipped (68 main/25 test sources compiled), frontend build, lint with zero warnings and test-source typecheck passed on the reviewed source. `LifecycleMysqlTests` was attempted once and failed during Testcontainers Docker discovery; both test bodies were NOT_RUN. This is **BLOCKED_ENV**, not a SQL assertion failure or migration/transaction PASS. No old-native fallback, application server, Vite, browser/UAT/performance or physical/external integration was executed. Docker engine remains unavailable, so repeating the same database command is not a merge prerequisite under the user's instruction.
 
-Next: local merge this exact evidence head, wire exported slots in coordinator-owned main.tsx with M06, run necessary combined compile/type/lint checks and hand the user manual startup/checklists. Final runtime/manual/DB acceptance remains NOT_RUN. No push/deployment/native-database modification.
+The reviewed head is locally merged and its slots are composed with M06. Combined compile/type/lint checks passed with test bodies skipped; see the exact-source receipt above. Runtime/manual/DB acceptance remains NOT_RUN. M07 finalizes user startup/checklists. No push/deployment/native-database modification.

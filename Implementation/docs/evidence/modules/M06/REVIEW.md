@@ -2,7 +2,7 @@
 
 Coordinator: `01a14da5-91fe-7bf1-a120-183975085f8b`, local, 2026-10-18.
 
-Status: **SOURCE_REVIEWED_PENDING_M05_DEPENDENCY_AND_LOCAL_MERGE**. No business acceptance is claimed.
+Status: **MERGED_PENDING_USER_MANUAL_TEST**. No business acceptance is claimed. Final dependency/evidence head `ba940e749454910fe9f5d03f19c28aba911ceaac` merged locally as `0917266984a9afa35efc5a970599585a6f9a12dd`; composed source `761491e` passed necessary static/build checks recorded in [coordinator checks](../M07/COORDINATOR_CHECKS.md).
 
 Reviewed source `a4ca1266b70983cdaa553a89b3cf9289457354c2`, evidence head `1dec1a5a57bb00bc12d97d8c3e1df98e6a176ea9`, branch `codex/m06-administration-reporting`, isolated `ca56/FYP Dev` worktree. Initial source baseline `d103b88`, shared contract `fd18ef6`. Source/evidence tree was clean at review.
 
@@ -12,4 +12,4 @@ The initial CSV-size heuristic could underestimate JSON escaping. Coordinator re
 
 Module evidence reports backend production package with tests skipped, frontend build/lint with zero warnings, and `M06ReportRulesTests` 4/4 PASS for MYT/filters/CSV vectors. These results are limited to the recorded module source. Docker engine was unavailable; actual V6/V7 migration/query execution, revocation/last-admin concurrency, rollback, browser/UAT and restore are **NOT_RUN**. Existing M00–M04 historical PASS does not establish these new behaviors.
 
-Next: absorb reviewed M05/main dependency, verify that only necessary final source changes occurred, compose exported `administrationFeatures` in coordinator-owned main.tsx, perform necessary combined compilation/type/lint checks, and record the local merge. No push/deployment or native-database action is authorized.
+C22 follow-up cross-module review found that all reports/exports also needed the server-selected environment and approved SYNTHETIC/SIMULATED provenance predicates. Module correction `0a14f3acf90af5b44193c3aca0d034106104cbe5` was reviewed for every metric/preview/export query and SQL argument order. It adds no caller-selected environment. The conflict-free dependency merge preserves exact M05 V6 and M06 V7, source unchanged except that reviewed correction and evidence. Coordinator composed administrationFeatures and completed combined compilation/type/lint checks; no test bodies or database/runtime acceptance were executed. No unresolved blocking source finding remains. No push/deployment/native-database action.
