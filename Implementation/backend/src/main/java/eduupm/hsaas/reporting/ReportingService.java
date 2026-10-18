@@ -13,6 +13,7 @@ import org.springframework.transaction.support.TransactionTemplate;
 import eduupm.hsaas.administration.AdminAccess;
 import eduupm.hsaas.auth.AccountChanges.Proof;
 import eduupm.hsaas.common.*;
+import eduupm.hsaas.config.FoundationProperties;
 
 /** Real MySQL read model: period activity and current inventory are explicitly different metrics. */
 @Service
@@ -23,32 +24,39 @@ public class ReportingService {
     private final LocalAuditPort audit;
     private final Clock clock;
     private final JsonMapper json;
-    public ReportingService(JdbcTemplate jdbc,TransactionTemplate tx,AdminAccess access,LocalAuditPort audit,Clock clock,JsonMapper json){
+    private final String environment;
+    public ReportingService(JdbcTemplate jdbc,TransactionTemplate tx,AdminAccess access,LocalAuditPort audit,Clock clock,JsonMapper json,FoundationProperties properties){
         this.jdbc=jdbc;this.tx=new TransactionTemplate(tx.getTransactionManager());this.tx.setIsolationLevel(TransactionDefinition.ISOLATION_READ_COMMITTED);
-        this.access=access;this.audit=audit;this.clock=clock;this.json=json;
+        this.access=access;this.audit=audit;this.clock=clock;this.json=json;this.environment=properties.environment();
     }
 
     /** One UNION statement reads all metric groups from one statement snapshot, with one captured due-time boundary. */
     public Report report(Proof proof,ReportFilter filter){
         return tx.execute(status->{access.require(proof);Instant now=clock.instant();validateReferences(filter);
             var sql=new ArrayList<String>();var args=new ArrayList<Object>();
-            add(sql,args,"visits","SELECT COUNT(*) FROM visitor_registrations r WHERE r.submitted_at>=? AND r.submitted_at<?"+filter.scope("r"),filter.periodArgs());
-            add(sql,args,"issued","SELECT COUNT(*) FROM card_assignments a JOIN visitor_registrations r ON r.id=a.registration_id WHERE a.issued_at>=? AND a.issued_at<?"+filter.scope("r"),filter.periodArgs());
-            add(sql,args,"returned","SELECT COUNT(*) FROM card_assignments a JOIN visitor_registrations r ON r.id=a.registration_id WHERE a.returned_at>=? AND a.returned_at<?"+filter.scope("r"),filter.periodArgs());
-            add(sql,args,"lost","SELECT COUNT(*) FROM card_assignments a JOIN visitor_registrations r ON r.id=a.registration_id WHERE a.closure_reason='LOST' AND a.closed_at>=? AND a.closed_at<?"+filter.scope("r"),filter.periodArgs());
-            add(sql,args,"inUse","SELECT COUNT(*) FROM card_assignments a JOIN visitor_registrations r ON r.id=a.registration_id WHERE a.closed_at IS NULL"+filter.scope("r"),filter.scopeArgs());
-            var dueArgs=new ArrayList<Object>();dueArgs.add(DatabaseTime.sql(now));dueArgs.addAll(filter.scopeArgs());
-            add(sql,args,"overdue","SELECT COUNT(*) FROM card_assignments a JOIN visitor_registrations r ON r.id=a.registration_id WHERE a.closed_at IS NULL AND a.due_at<=?"+filter.scope("r"),dueArgs);
+            String registrationScope=registrationScope(filter);
+            // Both sides of an assignment join must belong to this deployment and retain their approved demo provenance.
+            String assignmentScope=registrationScope+" AND a.environment=? AND a.operation_origin='SIMULATED'";
+            add(sql,args,"visits","SELECT COUNT(*) FROM visitor_registrations r WHERE r.submitted_at>=? AND r.submitted_at<?"+registrationScope,registrationArgs(filter,true));
+            var assignmentPeriodArgs=registrationArgs(filter,true);assignmentPeriodArgs.add(environment);
+            var assignmentCurrentArgs=registrationArgs(filter,false);assignmentCurrentArgs.add(environment);
+            add(sql,args,"issued","SELECT COUNT(*) FROM card_assignments a JOIN visitor_registrations r ON r.id=a.registration_id WHERE a.issued_at>=? AND a.issued_at<?"+assignmentScope,assignmentPeriodArgs);
+            add(sql,args,"returned","SELECT COUNT(*) FROM card_assignments a JOIN visitor_registrations r ON r.id=a.registration_id WHERE a.returned_at>=? AND a.returned_at<?"+assignmentScope,assignmentPeriodArgs);
+            add(sql,args,"lost","SELECT COUNT(*) FROM card_assignments a JOIN visitor_registrations r ON r.id=a.registration_id WHERE a.closure_reason='LOST' AND a.closed_at>=? AND a.closed_at<?"+assignmentScope,assignmentPeriodArgs);
+            add(sql,args,"inUse","SELECT COUNT(*) FROM card_assignments a JOIN visitor_registrations r ON r.id=a.registration_id WHERE a.closed_at IS NULL"+assignmentScope,assignmentCurrentArgs);
+            var dueArgs=new ArrayList<Object>();dueArgs.add(DatabaseTime.sql(now));dueArgs.addAll(assignmentCurrentArgs);
+            add(sql,args,"overdue","SELECT COUNT(*) FROM card_assignments a JOIN visitor_registrations r ON r.id=a.registration_id WHERE a.closed_at IS NULL AND a.due_at<=?"+assignmentScope,dueArgs);
             // Unassigned inventory has no ward. Only the category filter applies to these denominators.
-            String cardScope=filter.categoryId()==null?"":" AND category_id=?";List<Object> cardArgs=filter.categoryId()==null?List.of():List.of(filter.categoryId());
+            String cardScope=" AND environment=? AND data_origin='SIMULATED'"+(filter.categoryId()==null?"":" AND category_id=?");
+            var cardArgs=new ArrayList<Object>();cardArgs.add(environment);if(filter.categoryId()!=null)cardArgs.add(filter.categoryId());
             add(sql,args,"available","SELECT COUNT(*) FROM cards WHERE status='AVAILABLE'"+cardScope,cardArgs);
             add(sql,args,"inventory","SELECT COUNT(*) FROM cards WHERE 1=1"+cardScope,cardArgs);
             add(sql,args,"issuedCards","SELECT COUNT(*) FROM cards WHERE status IN ('ISSUED','OVERDUE')"+cardScope,cardArgs);
-            sql.add("SELECT 'category' metric,r.category_code label,COUNT(*) amount FROM visitor_registrations r WHERE r.submitted_at>=? AND r.submitted_at<?"+filter.scope("r")+" GROUP BY r.category_code");args.addAll(filter.periodArgs());
+            sql.add("SELECT 'category' metric,r.category_code label,COUNT(*) amount FROM visitor_registrations r WHERE r.submitted_at>=? AND r.submitted_at<?"+registrationScope+" GROUP BY r.category_code");args.addAll(registrationArgs(filter,true));
             // UTC DATETIME plus eight hours yields MYT without depending on MySQL timezone tables.
-            sql.add("SELECT 'day' metric,DATE_FORMAT(DATE_ADD(r.submitted_at,INTERVAL 8 HOUR),'%Y-%m-%d') label,COUNT(*) amount FROM visitor_registrations r WHERE r.submitted_at>=? AND r.submitted_at<?"+filter.scope("r")+" GROUP BY label");args.addAll(filter.periodArgs());
+            sql.add("SELECT 'day' metric,DATE_FORMAT(DATE_ADD(r.submitted_at,INTERVAL 8 HOUR),'%Y-%m-%d') label,COUNT(*) amount FROM visitor_registrations r WHERE r.submitted_at>=? AND r.submitted_at<?"+registrationScope+" GROUP BY label");args.addAll(registrationArgs(filter,true));
             var values=jdbc.query(String.join(" UNION ALL ",sql),(rs,n)->new Metric(rs.getString(1),rs.getString(2),rs.getLong(3)),args.toArray());
-            return new Report(filter.from().toString(),filter.to().toString(),now,"Asia/Kuala_Lumpur","SYNTHETIC / SIMULATED",values,rows(filter,51));
+            return new Report(filter.from().toString(),filter.to().toString(),now,"Asia/Kuala_Lumpur","SYNTHETIC / SIMULATED · "+environment,values,rows(filter,51));
         });
     }
 
@@ -71,9 +79,15 @@ public class ReportingService {
 
     /** This query deliberately never selects form_data, phone, document identifiers or MRN. */
     private List<ReportRow> rows(ReportFilter filter,int limit){
-        var args=filter.periodArgs();args.add(limit);
-        return jdbc.query("SELECT r.public_reference,r.category_code,d.name,r.status,r.submitted_at FROM visitor_registrations r JOIN destinations d ON d.id=r.destination_id WHERE r.submitted_at>=? AND r.submitted_at<?"+filter.scope("r")+" ORDER BY r.submitted_at,r.id LIMIT ?",
+        var args=registrationArgs(filter,true);args.add(limit);
+        return jdbc.query("SELECT r.public_reference,r.category_code,d.name,r.status,r.submitted_at FROM visitor_registrations r JOIN destinations d ON d.id=r.destination_id WHERE r.submitted_at>=? AND r.submitted_at<?"+registrationScope(filter)+" ORDER BY r.submitted_at,r.id LIMIT ?",
             (rs,n)->new ReportRow(rs.getString(1),"***",rs.getString(2),rs.getString(3),rs.getString(4),DatabaseTime.instant(rs.getObject(5,LocalDateTime.class))),args.toArray());
+    }
+    /** Reporting cannot cross the server-selected environment or relabel future physical/live rows as demonstration data. */
+    private String registrationScope(ReportFilter filter){return " AND r.environment=? AND r.data_origin='SYNTHETIC'"+filter.scope("r");}
+    /** Parameters follow date, deployment, category and ward placeholders; the deployment is never accepted from the browser. */
+    private List<Object> registrationArgs(ReportFilter filter,boolean period){
+        var args=new ArrayList<Object>();if(period){args.add(filter.start());args.add(filter.end());}args.add(environment);args.addAll(filter.scopeArgs());return args;
     }
     /** Unknown filters are client errors, while inactive historical reference IDs remain valid filters. */
     private void validateReferences(ReportFilter filter){

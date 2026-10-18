@@ -2,6 +2,8 @@
 
 Status at this review snapshot: **REVIEW_READY_PENDING_M05_MAIN_INTEGRATION**. This is implemented source, not business acceptance. M00-M04 manual acceptance remains pending; no historical PASS is extended to M06.
 
+2026-10-18 C22 follow-up: coordinator cross-checked M05's final read contract and requested explicit environment/provenance predicates. ReportingService now injects FoundationProperties and binds the current configured environment for every registration period/group/preview/export, requiring SYNTHETIC registration origin; assignment metrics additionally bind the configured environment and SIMULATED operation origin; current card metrics bind the environment and SIMULATED data origin. Report origin includes the environment. MYT/filter/masking/one-statement metric semantics are unchanged. Source/parameter ordering reviewed; no additional tests rerun because the four date/CSV rules are unchanged. Coordinator owns the final combined build after M05 absorption. This correction supersedes the earlier unscoped query implementation at a4ca126; its exact correction SHA is sent with the handoff message.
+
 - Human authorization: 2026-10-18 M05-M07 delegation and necessary testing, recorded in AGENTS.md and planning/14. Current coordinator is `01a14da5-91fe-7bf1-a120-183975085f8b`, host local; bidirectional questions/handoff are authorized. No old coordinator contacted.
 - Actual isolated worktree: `C:/Users/alexy/.codex/worktrees/ca56/FYP Dev`.
 - Branch: `codex/m06-administration-reporting`.
