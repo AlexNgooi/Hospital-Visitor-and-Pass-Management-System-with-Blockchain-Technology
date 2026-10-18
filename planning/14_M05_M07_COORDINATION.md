@@ -44,9 +44,9 @@ All three chats were created and confirmed active on the committed authorization
 
 | Module | Chat ID (host local) | Isolated worktree | State |
 |---|---|---|---|
-| M05 | `01a14da7-8089-7203-a52e-2a7b03f918bf` | `C:/Users/alexy/.codex/worktrees/cb05/FYP Dev` | IN_PROGRESS; initial baseline/contract preparation |
-| M06 | `01a14da7-807a-7cb0-b105-e89171c72150` | `C:/Users/alexy/.codex/worktrees/ca56/FYP Dev` | IN_PROGRESS; account/configuration first |
-| M07 | `01a14da7-806e-7ca2-98cb-6c342806f2e3` | `C:/Users/alexy/.codex/worktrees/7a60/FYP Dev` | IN_PROGRESS; documentation preparation, final dependency pending |
+| M05 | `01a14da7-8089-7203-a52e-2a7b03f918bf` | `C:/Users/alexy/.codex/worktrees/cb05/FYP Dev` | MERGED_PENDING_USER_MANUAL_TEST; codex/m05-card-assignment |
+| M06 | `01a14da7-807a-7cb0-b105-e89171c72150` | `C:/Users/alexy/.codex/worktrees/ca56/FYP Dev` | MERGED_PENDING_USER_MANUAL_TEST; codex/m06-administration-reporting |
+| M07 | `01a14da7-806e-7ca2-98cb-6c342806f2e3` | `C:/Users/alexy/.codex/worktrees/7a60/FYP Dev` | DOCUMENTATION_MERGED; codex/m07-manual-release; user manual acceptance NOT_RUN |
 
 The app created isolated detached worktrees; each module was instructed to create its own `codex/` feature branch before implementation. Model/thinking overrides were omitted because today's user request did not select a model. Actual paths and baseline were verified from the app and `git worktree list`; no implementation completion is claimed here.
 
@@ -68,3 +68,17 @@ C21: coordinator added `Implementation/scripts/manual-demo.mjs`, `ManualDemoSeed
 M07's source review identified restore reviving old capabilities and startup signals bypassing cleanup. Both were corrected: restored database rows keep business/audit/idempotency/keys but revoke framework sessions, owner bindings/contexts, QR displays/challenges/unconsumed grants and incomplete scan authority before Java starts; signal handlers register before resources and unwind in-flight startup after capturing Docker's returned ID. `start`, `backup`, `stop`, and `start --restore <owned backup directory>` remain user-invoked and operationally NOT_RUN. Stop removes only exact owned disposable resources and retains backup bundles, which contain private demonstration data/keys and are ignored by Git.
 
 Necessary verification agreed with M05: one narrow real-MySQL test class for new migration syntax, active-card/registration uniqueness and a rollback case; no complete historical foundation/QR/browser suite. After M06 merge the same narrow class may validate combined V5→V6→V7 migration compatibility. Existing historical migration-count expectations are not an executed PASS for this release.
+
+## Final local delivery — 2026-10-18
+
+| Module | Reviewed source / delivery | Local merge |
+|---|---|---|
+| M05 | source `cbf738eed60886b18141b08d05b84e688ffa0db2`; delivery `40340e537d4337af308ea1ee9d2e560be260bbd9` | `6e458b71fd21337f84a07a6786224dee9c974848` |
+| M06 | initial source `a4ca1266b70983cdaa553a89b3cf9289457354c2`; C22 environment/origin correction `0a14f3acf90af5b44193c3aca0d034106104cbe5`; delivery `ba940e749454910fe9f5d03f19c28aba911ceaac` | `0917266984a9afa35efc5a970599585a6f9a12dd` |
+| M07 | documentation `efc13a60a0efe081900c6ca30c50fbda3c8c4967`; final reviewed delivery `f25633a7611091f3159b422d80bc8c39f7dd3ba6` | `8100520e2f795b9ecd4d012735b7e41f8a878a9e` |
+
+Combined runtime/composition source is `761491e89910566c83fa184cb0aaa79ee625f128`. Later commits are evidence/navigation only. Coordinator REVIEW files record each review and repair; M07 final review fixed three inaccurate manual instructions without changing runtime. V1–V5, package/lockfile and runtime dependencies remain unchanged from the prior baseline. V6/V7 have not been applied to any database in this work.
+
+Necessary combined checks passed: backend package/runtime classpath with all test bodies skipped (78 main/26 test sources compiled), seed javac only, composed frontend build/lint/test-source typing and launcher node syntax. M06 earlier 4 reporting-rule tests passed at their original source. M05's one narrow MySQL attempt failed in Testcontainers initialization because Docker Engine was unavailable; both method bodies are BLOCKED_ENV/NOT_RUN. That unchanged environment was not retried; no native fallback or application/browser startup occurred. Exact results/warnings/source are in [coordinator checks](../Implementation/docs/evidence/modules/M07/COORDINATOR_CHECKS.md).
+
+User entry: [M00–M07 startup/backup/restore/stop](../Implementation/docs/runbooks/MANUAL_M00_M07.md), [40 manual scenarios](../Implementation/docs/runbooks/MANUAL_ACCEPTANCE_M00_M07.md), [release manifest](../Implementation/docs/runbooks/RELEASE_MANIFEST_M00_M07.md). The user starts Docker Engine and the isolated demo stack, then performs manual testing. Current status remains **MERGED_PENDING_USER_MANUAL_TEST**; SQL/migration/business/concurrency/browser/restore/UAT/performance and real integrations are NOT_RUN. No push, deployment, native database modification, M08–M11 startup or worktree removal was performed.

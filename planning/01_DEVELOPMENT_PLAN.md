@@ -1,12 +1,15 @@
-> **2026-10-18 最新授权（M05–M07）**：用户已指定新 coordinator chat `01a14da5-91fe-7bf1-a120-183975085f8b`（local），授权代开三个独立模块 chat/worktree、直接开发、双向答疑、审核和仅本地 merge；只做必要 testing，合并后由用户手动启动及业务测试。本条覆盖下文旧的 M05–M07 自行协调/未许可/禁止一切测试安排；M08–M11 未启动、不 push、不部署、不修改旧 native 库。当前执行与共享契约见 `planning/14_M05_M07_COORDINATION.md`（从仓库根目录解析）。
-
 ---
 type: development-plan
 revision: current
-updated: 2026-10-08
+updated: 2026-10-18
 window: 2026-10-05..2027-01-03
-status: coordinator-planning
+status: m00-m07-local-merged-user-manual-test-pending
 ---
+
+> **2026-10-18 最新授权（M05–M07）**：用户已指定新 coordinator chat `01a14da5-91fe-7bf1-a120-183975085f8b`（local），授权代开三个独立模块 chat/worktree、直接开发、双向答疑、审核和仅本地 merge；只做必要 testing，合并后由用户手动启动及业务测试。本条覆盖下文旧的 M05–M07 自行协调/未许可/禁止一切测试安排；M08–M11 未启动、不 push、不部署、不修改旧 native 库。当前执行与共享契约见 `planning/14_M05_M07_COORDINATION.md`（从仓库根目录解析）。
+
+> 2026-10-18当前交付：M05/M06与M07文档均已本地合并，运行源码761491e，状态MERGED_PENDING_USER_MANUAL_TEST。必要组合静态/构建检查通过；Docker不可用，SQL/业务/恢复NOT_RUN。执行事实见14_M05_M07_COORDINATION.md；用户启动见../Implementation/docs/runbooks/MANUAL_M00_M07.md。下方2026-10-10与更早安排保留历史范围，不覆盖本次明确授权。
+
 # 三个月开发计划：coordinator 与独立模块 chat
 
 ## 2026-10-10最新状态（优先于下方历史阶段）

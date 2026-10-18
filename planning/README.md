@@ -2,13 +2,13 @@
 
 # HSAAS FYP 当前规划入口
 
-更新2026-10-10：**M00–M04功能已合并本机main**，M03 merge0067637、M04 merge446f887，组合入口dc6982341ed6135b0917a5cfafc4200f06e43e96。职员登录/柜台、实时动态QR、四类DEMO登记、掩码队列/人工批准拒绝已交付；发卡/借用/归还为M05，尚未启动。
+更新2026-10-18：**M00–M06功能及M07交付文档已合并本机main**，M05 merge `6e458b7`、M06 `0917266`、M07 `8100520`，组合运行源码 `761491e89910566c83fa184cb0aaa79ee625f128`。当前包括动态QR/四类DEMO登记/审核、模拟库存与发还卡/逾期/遗失恢复、管理/报表/本地审计。新coordinator及准确交付记录见[14](14_M05_M07_COORDINATION.md)。
 
-用户最新要求助手只完成功能、用户手动测试。组合后没有另行构建或测试，M03/M04状态MERGED_PENDING_USER_MANUAL_TEST，不声称全系统或生产验收；已有历史检查保留准确SHA/范围，见[M03 REVIEW](../Implementation/docs/evidence/modules/M03/REVIEW.md)和[M04 REVIEW](../Implementation/docs/evidence/modules/M04/REVIEW.md)。
+用户授权只做必要testing。当前组合后端打包（跳过测试正文）、前端构建/lint/类型及启动器/seed静态检查通过；Docker引擎不可用，数据库/业务/浏览器/恢复仍NOT_RUN。状态 **MERGED_PENDING_USER_MANUAL_TEST**；准确检查范围见[组合收据](../Implementation/docs/evidence/modules/M07/COORDINATOR_CHECKS.md)，不继承历史PASS作完整验收。
 
-本chat协调至M04结束，M05–M11由用户自己coordinate；每个模块手动开独立新chat、从本机已合并main隔离worktree、一次范围许可后由助手直接写有英文注释的功能。不自动收发后续模块消息，不自动启动/审核/merge或测试。可复制每模块消息见[用户启动指南](13_USER_MODULE_START_GUIDE.md)。
+用户2026-10-18已授权本coordinator代开M05–M07三个独立chat/worktree、答疑、审核及仅本地merge，现已完成。M08–M11仍未启动；不自动扩大授权。[用户启动指南](13_USER_MODULE_START_GUIDE.md)的旧M05–M07模板仅保留历史参考。
 
-[手动运行/检查指南](../Implementation/docs/runbooks/MANUAL_M00_M04.md)包含独立临时数据库、公开演示账号、QR→登记→审核流程和停止命令。旧native数据库checksum问题未修复，真实硬件/手机跨设备HTTPS/医院API仍deferred；WhatsApp/blockchain disabled。GitHub未push，指南提供git push origin main供用户执行。S-V1为TEST_ID/DEMO-与DEMO-MRN-，不代表正式医院字段批准。
+[当前启动/停止/备份恢复指南](../Implementation/docs/runbooks/MANUAL_M00_M07.md)、[40项手动检查](../Implementation/docs/runbooks/MANUAL_ACCEPTANCE_M00_M07.md)和[release manifest](../Implementation/docs/runbooks/RELEASE_MANIFEST_M00_M07.md)供用户自己执行。先启动Docker Engine，使用专用临时库与公开合成账号；不修改旧native库。真实硬件/跨设备HTTPS/医院API仍deferred，WhatsApp/blockchain disabled，GitHub未push。TEST_ID/DEMO-/DEMO-MRN-仅演示契约。
 
 ## 从这里进入
 

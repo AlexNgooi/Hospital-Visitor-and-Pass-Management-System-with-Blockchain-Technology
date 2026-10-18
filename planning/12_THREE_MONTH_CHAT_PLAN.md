@@ -1,16 +1,21 @@
-> **2026-10-18 最新授权（M05–M07）**：用户已指定新 coordinator chat `01a14da5-91fe-7bf1-a120-183975085f8b`（local），授权代开三个独立模块 chat/worktree、直接开发、双向答疑、审核和仅本地 merge；只做必要 testing，合并后由用户手动启动及业务测试。本条覆盖下文旧的 M05–M07 自行协调/未许可/禁止一切测试安排；M08–M11 未启动、不 push、不部署、不修改旧 native 库。当前执行与共享契约见 `planning/14_M05_M07_COORDINATION.md`（从仓库根目录解析）。
-
 ---
 type: module-chat-coordination
-updated: 2026-10-10
+updated: 2026-10-18
 window: 2026-10-08..2027-01-03
-status: m00-m04-functions-merged-user-manual-test
+status: m00-m07-local-merged-user-manual-test-pending
 ---
+
+> **2026-10-18 最新授权（M05–M07）**：用户已指定新 coordinator chat `01a14da5-91fe-7bf1-a120-183975085f8b`（local），授权代开三个独立模块 chat/worktree、直接开发、双向答疑、审核和仅本地 merge；只做必要 testing，合并后由用户手动启动及业务测试。本条覆盖下文旧的 M05–M07 自行协调/未许可/禁止一切测试安排；M08–M11 未启动、不 push、不部署、不修改旧 native 库。当前执行与共享契约见 `planning/14_M05_M07_COORDINATION.md`（从仓库根目录解析）。
+
 # Coordinator 与每模块独立 Chat 执行指南
 
 本 chat 固定为 coordinator。开发按模块拆分，每个模块有自己的 chat，不共用一个阶段开发 chat；模块返修继续用原模块 chat。coordinator 管规划、契约、分配、问题裁决、审核与本地 merge。阶段时间表见 [01](01_DEVELOPMENT_PLAN.md)，业务事实以 02/03/04 为准。
 
-## 2026-10-10 完成M04与协调权交接（覆盖旧测试关卡）
+## 2026-10-18 当前交付
+
+M05/M06功能与M07文档已审核并本地merge，组合运行源码761491e，状态MERGED_PENDING_USER_MANUAL_TEST；仅必要组合静态/构建检查通过，SQL/业务/恢复NOT_RUN。新coordinator及三个实际chat/worktree、准确merge/检查/用户启动入口以[14](14_M05_M07_COORDINATION.md)为准。下方2026-10-10及更早协调安排保留历史，不覆盖本次许可。
+
+## 2026-10-10 历史：完成M04与协调权交接
 
 用户最新要求完成到M04、无已知功能问题直接merge本机main、不push，助手只做功能、用户手动测试。M03已merge0067637（delivery2d2c28b），M04已merge446f887（deliveryb6036a5及后续doc-onlycebef09）；入口dc6982341ed6135b0917a5cfafc4200f06e43e96同时装配动态QR/登记/审核，随后文档提交不改变功能源。
 
@@ -129,9 +134,9 @@ M00–M04 已创建并完成准备核对；M00/M01/M02 当前本地范围已验�
 | M02 | INTEGRATION_VERIFIED（当前本地动态QR/entry grant范围）；真机/生产/M03待验收 | 01a11db3-31c9-7da0-bfb2-217e71081355 / 模块助手直接实现 | baseline98a7f7d；codex/hsaas-m02-dynamic-registration；C:/Users/alexy/.codex/worktrees/bd17/FYP Dev | sourcef81512d/deliveryd2d745f/merge3c0c229；R1–R4返修已验收；独立28browser PASS；main68backend verify/JAR、95frontend/typing/build/lint/proxy PASS；见M02 REVIEW；V4已合并，未改nativeDB；gpt-6.1-sol/high |
 | M03 | MERGED_PENDING_USER_MANUAL_TEST；功能/source审核完成 | 01a11ba4-e814-7832-bd40-f471edf417b4 / 模块助手直接实现 | baselinef59baf3；codex/hsaas-m03-visitor-registration；独立worktree保留 | delivery2d2c28b；本地merge0067637；V5已入main；历史109backend/110frontend/独立47actualbrowser；组合未复验，见M03 REVIEW |
 | M04 | MERGED_PENDING_USER_MANUAL_TEST；功能/source审核与接线完成 | 01a11ba4-ecca-7ca3-a224-c3dde42d1edd / 模块助手直接实现 | baselinef59baf3；codex/hsaas-m04-counter-review；独立worktree保留 | deliveryb6036a5/doc-onlycebef09；本地merge446f887/组合dc69823；历史独立126frontend、当前25class reports；fullverify/actualbrowser NOT_RUN，见M04 REVIEW |
-| M05 | PLANNED | 未创建 / 未派工 | 待登记 | 无 |
-| M06 | PLANNED | 未创建 / 未派工 | 待登记 | 无 |
-| M07 | PLANNED | 未创建 / 未派工 | 待登记 | 无 |
+| M05 | MERGED_PENDING_USER_MANUAL_TEST | 01a14da7-8089-7203-a52e-2a7b03f918bf / 2026-10-18用户许可 | codex/m05-card-assignment；cb05/FYP Dev | source cbf738e / delivery40340e5 / merge6e458b7；必要静态检查通过，MySQL正文NOT_RUN；见REVIEW/14 |
+| M06 | MERGED_PENDING_USER_MANUAL_TEST | 01a14da7-807a-7cb0-b105-e89171c72150 / 2026-10-18用户许可 | codex/m06-administration-reporting；ca56/FYP Dev | C22 source0a14f3a / deliveryba940e7 / merge0917266；初始4规则测试/组合静态检查通过，SQL/业务NOT_RUN；见REVIEW/14 |
+| M07 | DOCUMENTATION_MERGED；用户手动验收NOT_RUN | 01a14da7-806e-7ca2-98cb-6c342806f2e3 / 2026-10-18用户许可 | codex/m07-manual-release；7a60/FYP Dev | deliveryf25633a / merge8100520；40手动案例/manifest/runbook交付，非业务PASS；见REVIEW/14 |
 | M08 | DEFERRED：卡/reader 未准备 | 未创建 / 未派工 | 待外部条件 | live NOT_RUN |
 | M09 | DEFERRED：医院 API 未准备 | 未创建 / 未派工 | 待外部条件 | live NOT_RUN |
 | M10 | DEFERRED：用户要求暂不启用 | 未创建 / 未派工 | disabled | live NOT_RUN |

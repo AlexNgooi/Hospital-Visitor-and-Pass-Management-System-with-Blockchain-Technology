@@ -1,11 +1,16 @@
-> **2026-10-18 最新授权（M05–M07）**：用户已指定新 coordinator chat `01a14da5-91fe-7bf1-a120-183975085f8b`（local），授权代开三个独立模块 chat/worktree、直接开发、双向答疑、审核和仅本地 merge；只做必要 testing，合并后由用户手动启动及业务测试。本条覆盖下文旧的 M05–M07 自行协调/未许可/禁止一切测试安排；M08–M11 未启动、不 push、不部署、不修改旧 native 库。当前执行与共享契约见 `planning/14_M05_M07_COORDINATION.md`（从仓库根目录解析）。
-
 ---
 type: user-coordination-handover
-updated: 2026-10-10
-status: m00-m04-functions-merged-user-manual-acceptance-pending
+updated: 2026-10-18
+status: m00-m07-local-merged-user-manual-test-pending
 ---
-# 后续模块：用户自己协调与新 chat 启动
+
+> **2026-10-18 最新授权（M05–M07）**：用户已指定新 coordinator chat `01a14da5-91fe-7bf1-a120-183975085f8b`（local），授权代开三个独立模块 chat/worktree、直接开发、双向答疑、审核和仅本地 merge；只做必要 testing，合并后由用户手动启动及业务测试。本条覆盖下文旧的 M05–M07 自行协调/未许可/禁止一切测试安排；M08–M11 未启动、不 push、不部署、不修改旧 native 库。当前执行与共享契约见 `planning/14_M05_M07_COORDINATION.md`（从仓库根目录解析）。
+
+> 2026-10-18当前状态：用户已在新coordinator授权开启并完成M05–M07独立chat开发/审核/本地merge，不需重新复制下方M05–M07启动模板或重复求许可。当前手动运行使用../Implementation/docs/runbooks/MANUAL_M00_M07.md，交付事实见14_M05_M07_COORDINATION.md。M08–M11仍未启动；下方旧用户自行协调模板只作未来明确启动与历史参考。
+
+# 模块启动与M05–M07当前交付
+
+当前M05–M07已完成本地协调与合并，手动运行入口见上方通知。以下2026-10-10交接及M05–M07模板保留原范围历史；M08–M11仍须用户另行明确启动。
 
 M00–M04 功能已合并本机 main；组合入口提交 dc6982341ed6135b0917a5cfafc4200f06e43e96，M03 merge0067637、M04 merge446f887。后续文档提交不改变功能源，启动时以本机实际 main HEAD 为准。历史检查保留各 REVIEW；最新组合没有另行构建或测试，状态 MERGED_PENDING_USER_MANUAL_TEST 不是验收 PASS。
 
