@@ -6,4 +6,4 @@ Responsibility: prepare truthful user-run startup, acceptance, recovery and rele
 
 Outputs: this module's evidence and new documents in `../../../runbooks/`: `MANUAL_M00_M07.md`, `MANUAL_ACCEPTANCE_M00_M07.md`, `RELEASE_MANIFEST_M00_M07.md`. Coordinator owns final integration and REVIEW.
 
-Validation: review source references, links, requirement coverage, command comments, Git diff whitespace and exact release SHAs. New business/recovery checks start NOT_RUN. Do not recast a source/build review as manual acceptance. Finalize only after coordinator confirms M05/M06 merges.
+Validation: review source references, links, requirement coverage, command comments, Git diff whitespace and exact release SHAs. New business/recovery checks stay NOT_RUN until actually executed. M05/M06 merges and checked runtime761491e are recorded in the coordinator-owned COORDINATOR_CHECKS.md; M07 reads that receipt without editing or independently reproducing it. HANDOFF records final delivery; PREPARATION is historical. Do not recast source/build review as manual acceptance or self-approve the coordinator merge.

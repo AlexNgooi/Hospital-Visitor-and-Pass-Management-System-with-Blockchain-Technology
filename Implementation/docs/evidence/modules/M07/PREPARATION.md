@@ -1,4 +1,6 @@
-# M07 preparation checkpoint
+# M07 historical preparation checkpoint
+
+This records the earlier dependency wait, not the current delivery status. M05/M06 were later merged and the coordinator resumed M07; final source/check boundaries and documentation delivery are in [HANDOFF.md](HANDOFF.md).
 
 Date: 2026-10-18, Asia/Singapore. Status: WAITING_FINAL_M05_M06. This is not final HANDOFF or approval. The coordinator explicitly instructed M07 to finish this preparation turn and wait for an active message after M05/M06 merge and necessary checks; no polling or fabricated final completion is required.
 

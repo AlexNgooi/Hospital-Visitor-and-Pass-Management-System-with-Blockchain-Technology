@@ -1,6 +1,6 @@
 # M00–M07 用户手动验收清单
 
-准备日期：2026-10-18。状态：DRAFT_WAITING_M05_M06_MERGE。本文是用户执行脚本，**所有新场景均 NOT_RUN**；预期行为不是测试结果。M05/M06 的实际控件、演示规则及 API 需合并后核对，再去掉草稿标记。
+更新日期：2026-10-18。M00–M06运行源码`761491e89910566c83fa184cb0aaa79ee625f128`已合并，状态MERGED_PENDING_USER_MANUAL_TEST。本清单已按实际控件、V6/V7和演示规则核对，**所有40个新手动场景均NOT_RUN**；预期行为不是测试结果。必要编译与规则测试的准确范围见manifest及coordinator receipt。
 
 启动与停止见 [运行指南](MANUAL_M00_M07.md)，版本/历史证据见 [manifest](RELEASE_MANIFEST_M00_M07.md)。需求唯一来源：[planning/03](../../../planning/03_REQUIREMENTS_AND_TEST_PLAN.md)。
 
@@ -49,7 +49,7 @@
 
 ## 三、SIMULATED 库存、扫描、发卡与归还
 
-下表描述需求，需最终源码核对实际按钮/API、固定 profile、任务 TTL 和截止规则。它不代表 M05 已交付或任何真实卡已扫描。
+下表按实际M05源码整理：48个固定sample、120秒任务、按柜台自动生成SIMULATED reader；默认24小时，设置可调1..720且旧dueAt冻结。monitor每30秒最多50笔，读侧按active+dueAt判断逾期。它不代表任何真实卡已扫描或手动业务检查已通过。
 
 | ID / 需求 | 用户动作 | 预期与检查点 | 结果 |
 |---|---|---|---|
@@ -64,7 +64,7 @@
 | U25 / P04,N03 | 等真实演示dueAt与scheduler，刷新；重复轮询；另做return/overdue竞争 | `now >= dueAt`且仍活动才OVERDUE；一次事件/内部告警，已归还不再告警；不手改电脑时钟/历史记录 | NOT_RUN |
 | U26 / N03,D01 | 授权职员 reveal contact并记录followup；未授权账号尝试 | 授权和每次 reveal/followup有审计；默认仍掩码，不触发WhatsApp；关闭/换身份后不保留可见原文 | NOT_RUN |
 | U27 / P05,B01 | ADMIN对AVAILABLE与活动借用标LOST，不填理由再填；尝试借/直接归还 | 理由必填；LOST不可借/直接还，活动借用关闭为遗失，unresolved case保留 | NOT_RUN |
-| U28 / P05,B01 | 对AVAILABLE disable；对LOST/DISABLED按演示找回核实规则restore；缺理由/证据试一次 | 恢复仅在演示核实条件满足，AVAILABLE无活动借用；历史保留RESTORED/原因，不能复活旧借用；医院政策仍未批准 | NOT_RUN |
+| U28 / P05,B01 | 对AVAILABLE以DAMAGED/REMOVED_FROM_SERVICE disable；对LOST/DISABLED扫描同一sample、勾找回和可复用检查后restore；缺确认/证据试一次 | 固定DEMO_RECOVERED_AND_CHECKED；AVAILABLE无活动借用，遗失case解决且历史保留RESTORED/原因，旧借用仍关闭；医院政策未批准 | NOT_RUN |
 | U29 / B01,N01,N02,B02,B03 | 贯穿发/还/逾期/遗失/恢复检查集成状态与本地事件 | LOCAL_ONLY/SIMULATED，链/消息NOT_ENABLED；无外部发送/链调用/队列/历史补发；无Verify/Retry/resend假成功 | NOT_RUN |
 
 ## 四、管理、报表、隐私与运行恢复
@@ -74,16 +74,16 @@
 | U30 / A01,Q05 | ADMIN创建职员并分配柜台；使用新会话登录；修改角色/停用账号后旧会话写入 | 角色/柜台按当前服务端权限；旧会话撤销，缓存隐藏；职员不能调管理API；ADMIN不自动有柜台权限 | NOT_RUN |
 | U31 / A01 | 在至少两名active ADMIN的临时库两会话同时降级/停用对方；再试最后一名 | 不能降至零active ADMIN；失败无半完成权限；不要先锁死唯一账号再凭SQL恢复 | NOT_RUN |
 | U32 / A02,P04 | 修改category/ward/settings附原因；用旧版本提交；停用历史引用项 | 版本冲突安全失败；审计有原因；历史/既有dueAt不重算，新登记只选有效项 | NOT_RUN |
-| U33 / A03,A04,Q01 | 创建已知数量四类登记/借用/归还/遗失，记账后刷新dashboard/report | 按manifest定义核对分母/状态；显示更新时间，约5秒poll，10秒目标由用户计时；失败显示stale/error不假0 | NOT_RUN |
-| U34 / A03,A04 | 筛category/ward/MYT日期；用MYT午夜两侧数据与空区间比较CSV/页面 | UTC存储，Asia/Kuala_Lumpur展示，`[from,to)`；计数定义一致；造不出边界数据则NOT_RUN，不改历史伪造覆盖 | NOT_RUN |
-| U35 / A04,D01 | ADMIN导出掩码CSV；未授权导出；合成文本以=,+,-,@、制表符/回车开头且合法时导出 | CSV转义与公式注入防护；最小掩码，无raw PII；导出行为审计；在纯文本先检查，避免执行公式 | NOT_RUN |
+| U33 / A03,A04,Q01 | 创建已知数量四类登记/借用/归还/遗失，记账后刷新Reports & overview | 对当前server环境及SYNTHETIC/SIMULATED数据按manifest定义核对；5秒poll、10秒目标由用户计时；失败stale/error不假0 | NOT_RUN |
+| U34 / A03,A04 | 筛category/ward/MYT inclusive日期（最多366天）；用午夜两侧数据与空区间比较CSV/页面 | 转UTC`[from午夜,to次日午夜)`；current assignments不随日期回溯，inventory只按category；边界无实际数据则NOT_RUN，不改历史造覆盖 | NOT_RUN |
+| U35 / A04,D01 | ADMIN导出掩码CSV；未授权导出；用合法reference名称测试=,+,-,@/前导控制空白；超过10000行/JSON体上限时导出 | visitor固定***且不选原PII；每字段quote/防公式；大范围422不截断、失败不记成功export；丢响应仍可能有audit，不自动retry | NOT_RUN |
 | U36 / D01,Q05 | 本机检查QR解码、UI、返回JSON、错误与日志、CSV、bundle、截图 | 无secret/原PII泄露；public reference不授查询权，contact reveal除外仍当前授权+审计；勿上传原日志 | NOT_RUN |
 | U37 / Q04 | 仅停本次拥有的backend，保持DB，尝试读取/命令，恢复相同配置 | 不宣称操作成功；UNKNOWN按U15/U16恢复，持久化事实不丢失；不自动发送新写命令 | NOT_RUN |
 | U38 / Q04,Q07 | 完成下面备份/独立恢复步骤，比较业务记录/活动唯一性/事件；在旧浏览器试旧cookie/QR/scan，再用新会话登录 | 还原到新隔离库；不触碰native库；keys/业务历史保留，旧framework/auth/QR/未完成scan被启动前撤销；重选柜台/新scan，计时与数据缺口如实记录 | NOT_RUN |
 | U39 / Q06 | 四类表单/登录/柜台/管理用键盘、375px、短屏、200%缩放 | 标签/焦点/错误可达，状态非只靠颜色，按钮可达；长内容安全滚动，不用裁剪制造一屏通过 | NOT_RUN |
 | U40 / D01,Q07 | 确认无真实资料；检查retention/冻结/删除与备份规则是否已有实现和制度 | 未实现retention执行器/医院未批政策明确NOT_RUN或DEFERRED；不把文档当自动删除已运行 | NOT_RUN |
 
-备份恢复的具体命令、容器标识和配置见 [运行指南](MANUAL_M00_M07.md)，须等待最终合并版核对后由用户运行。保留同版本源码、V1–V7、演示库备份、受控恢复密钥版本映射（不入Git）与时间戳；停止写入并记最后事件/assignment状态；只备份临时库；恢复到另一个全新临时库；先核对Flyway/业务/审计/幂等，再以新会话运行；旧UNKNOWN仅凭原键/业务事实核对，不自动换键。实测耗时和恢复点计算RTO/RPO，24h/4h只是建议目标。
+备份恢复的具体命令、容器标识和配置见 [运行指南](MANUAL_M00_M07.md)，仅由用户运行。保留同版本源码、V1–V7、演示库备份、受控恢复密钥版本映射（不入Git）与时间戳；停止写入并记最后事件/assignment状态；只备份临时库；恢复到另一个全新临时库；先核对Flyway/业务/审计/幂等，再以新会话运行；旧UNKNOWN只读核对业务事实，不跨旧新身份执行或盲换键。实测耗时和恢复点计算RTO/RPO，24h/4h只是建议目标。
 
 ## U33 可复算业务账本（可选独立演示轮次）
 
