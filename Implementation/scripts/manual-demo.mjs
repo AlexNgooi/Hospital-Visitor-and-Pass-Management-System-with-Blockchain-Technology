@@ -20,6 +20,12 @@ const backendPort = 18407, webPort = 15417, controlPort = 15418;
 const execute = promisify(execFile), children = [], logs = [];
 let environment, containerId, dbEnvironment, dbPassword, signingKey, hashingKey, control, stopping = false, controlBusy = false;
 let interrupted = false, acceptingUsers = false;
+let stage = "configuration guard";
+
+/** Only launcher-owned fixed messages are printable; subprocess errors may contain private arguments or environment data. */
+class DemoFailure extends Error {
+  constructor(code, message) { super(message); this.code = code; }
+}
 
 /** Exact allowlisted runtime environment prevents inherited Spring/JVM options from selecting a real database. */
 function exec(command, args, options = {}) {
@@ -36,10 +42,48 @@ function launch(command, args, env, filename, cwd) {
 }
 /** Refuse occupied ports instead of stopping an existing user service. */
 async function freePort(port) {
-  await new Promise((accept, reject) => {
-    const server = tcpServer(); server.once("error", reject);
-    server.listen(port, "127.0.0.1", () => server.close(accept));
-  });
+  try {
+    await new Promise((accept, reject) => {
+      const server = tcpServer(); server.once("error", reject);
+      server.listen(port, "127.0.0.1", () => server.close(accept));
+    });
+  } catch {
+    throw new DemoFailure("PORT_UNAVAILABLE", `Loopback port ${port} is occupied or unavailable. Check its owner; do not stop unrelated services.`);
+  }
+}
+/** Prepared artifacts are checked without reading their contents into diagnostic output. */
+async function requireFile(path, message) {
+  try { await access(path); }
+  catch { throw new DemoFailure("PREPARATION_MISSING", message); }
+}
+/** Read-only startup prerequisites: no containers, application processes, seeds or runtime files are created. */
+async function preflight() {
+  stage = "Java availability";
+  let java;
+  try { java = await exec("java", ["-version"], { timeout: 10000 }); }
+  catch { throw new DemoFailure("JAVA_UNAVAILABLE", "Java is unavailable. Install/configure JDK 21 and reopen the terminal."); }
+  const major = Number((java.stderr + java.stdout).match(/version\s+"(\d+)/)?.[1]);
+  if (!Number.isInteger(major) || major < 21) throw new DemoFailure("JAVA_VERSION", "JDK 21 or newer is required for this demonstration.");
+  stage = "prepared application files";
+  await requireFile(resolve(backend, "target/hsaas-backend-0.0.1-SNAPSHOT.jar"), "Backend JAR is missing. Run the skip-tests Maven package/classpath command in MANUAL_M00_M07.md.");
+  await requireFile(resolve(frontend, "node_modules/vite/bin/vite.js"), "Frontend dependencies are missing. Run pnpm.cmd install --frozen-lockfile in Implementation/frontend.");
+  const classpathPath = resolve(backend, "target/manual-demo-classpath.txt");
+  await requireFile(classpathPath, "Runtime classpath is missing. Run the Maven package/dependency:build-classpath command in MANUAL_M00_M07.md.");
+  const classpath = (await readFile(classpathPath, "utf8")).trim();
+  if (!classpath) throw new DemoFailure("PREPARATION_MISSING", "Runtime classpath is empty. Regenerate it with the runbook's Maven command.");
+  stage = "Docker Engine availability";
+  let docker;
+  try { docker = await exec("docker", ["info", "--format", "{{.OSType}}"], { timeout: 10000 }); }
+  catch (failure) {
+    if (failure.code === "ENOENT") throw new DemoFailure("DOCKER_CLI_MISSING", "Docker CLI is missing. Install/configure Docker Desktop before starting the demonstration.");
+    throw new DemoFailure("DOCKER_ENGINE_UNAVAILABLE", "Docker Engine is not reachable. Open Docker Desktop, wait until the Linux engine is running, then run this command again. No native database was used.");
+  }
+  if (docker.stdout.trim() !== "linux") throw new DemoFailure("DOCKER_LINUX_REQUIRED", "This MySQL demonstration requires Docker Desktop's Linux containers engine.");
+  stage = "loopback ports and container ownership";
+  for (const port of [backendPort, webPort, controlPort]) await freePort(port);
+  const existing = await exec("docker", ["ps", "-a", "--filter", "name=^/" + name + "$", "--format", "{{.ID}}"], { timeout: 10000 });
+  if (existing.stdout.trim()) throw new DemoFailure("CONTAINER_EXISTS", "The demonstration container name already exists. Use the runbook's exact-name/ownership checks before stopping or restarting it.");
+  return classpath;
 }
 /** Only read-only infrastructure/health readiness is polled; user business workflows are never executed here. */
 async function ready(check, child) {
@@ -116,28 +160,26 @@ async function command(action) {
 }
 /** Starts a fresh isolated environment, or restores a user-selected local demonstration backup before Java runs. */
 async function start(restorePath) {
+  const classpath = await preflight();
+  stage = "local restore bundle validation";
   const bundle = restorePath ? await restoreBundle(restorePath) : null;
-  for (const port of [backendPort, webPort, controlPort]) await freePort(port);
-  const existing = await exec("docker", ["ps", "-a", "--filter", "name=^/" + name + "$", "--format", "{{.ID}}"]);
-  if (existing.stdout.trim()) throw new Error("Demonstration container already exists");
-  await access(resolve(backend, "target/hsaas-backend-0.0.1-SNAPSHOT.jar"));
-  await access(resolve(frontend, "node_modules/vite/bin/vite.js"));
-  const classpath = (await readFile(resolve(backend, "target/manual-demo-classpath.txt"), "utf8")).trim();
-  if (!classpath) throw new Error("Prepare the runtime classpath first");
   await mkdir(output, { recursive: true });
   signingKey = bundle?.signingKey ?? randomBytes(32).toString("base64");
   hashingKey = bundle?.hashingKey ?? randomBytes(32).toString("base64");
   dbPassword = randomBytes(24).toString("hex"); const rootPassword = randomBytes(24).toString("hex");
+  stage = "disposable MySQL container creation (Docker/image availability)";
   const created = await exec("docker", ["run", "--detach", "--name", name, "--label", "hsaas.demo.owner=" + owner,
     "--publish", "127.0.0.1::3306", "--env", "MYSQL_ROOT_PASSWORD", "--env", "MYSQL_DATABASE", "--env", "MYSQL_USER", "--env", "MYSQL_PASSWORD", "mysql:8.0.45"],
     { env: { ...environment, MYSQL_ROOT_PASSWORD: rootPassword, MYSQL_DATABASE: database, MYSQL_USER: "manual_demo", MYSQL_PASSWORD: dbPassword } });
   containerId = created.stdout.trim();
   // A signal during docker run is handled only after capturing its returned ID, so cleanup cannot orphan that container.
   if (interrupted) throw new Error("Demonstration startup interrupted");
+  stage = "disposable MySQL readiness";
   await ready(async () => { await exec("docker", ["exec", "--env", "MYSQL_PWD", containerId, "mysql", "-uroot", "-N", "-e", "SELECT 1"], { env: { ...environment, MYSQL_PWD: rootPassword } }); return true; });
   const mapping = await exec("docker", ["port", containerId, "3306/tcp"]), dbPort = Number(mapping.stdout.trim().split(":").at(-1));
   if (!Number.isSafeInteger(dbPort) || dbPort === 3306) throw new Error("Invalid disposable database port");
   if (bundle) {
+    stage = "restoring the owned demonstration database";
     await sqlTransfer(["exec", "-i", "--env", "MYSQL_PWD", containerId, "mysql", "-umanual_demo", database], resolve(bundle.directory, "database.sql"), true);
     // Restore preserves business/history/keys, but must never resurrect browser cookies, QR grants or in-flight scan authority.
     const revoke = [
@@ -160,16 +202,22 @@ async function start(restorePath) {
   dbEnvironment.IDEMPOTENCY_HMAC_KEY = hashingKey;
   // The generated child-only JSON supplies an exact map key; no inherited Spring JSON is accepted.
   dbEnvironment.SPRING_APPLICATION_JSON = JSON.stringify({ hsaas: { qr: { keys: { demo: signingKey } } } });
+  stage = "backend readiness (see Implementation/tmp/manual-demo/backend.log)";
   const server = launch("java", ["-jar", "target/hsaas-backend-0.0.1-SNAPSHOT.jar", "--spring.profiles.active=manual-demo",
     "--spring.config.location=classpath:/application.yaml", "--spring.config.additional-location=", "--spring.config.import=", "--spring.profiles.include=", "--spring.profiles.group.manual-demo=",
     "--server.address=127.0.0.1", "--hsaas.environment=test", "--hsaas.secure-cookie=false", "--hsaas.reader-mode=mock", "--hsaas.mrn-mode=mock", "--hsaas.notification-mode=disabled", "--hsaas.blockchain-mode=disabled",
     "--hsaas.bootstrap.enabled=false", "--hsaas.qr.enabled=true", "--hsaas.registration.enabled=true", "--hsaas.review.enabled=true", "--hsaas.lifecycle.enabled=true",
     "--hsaas.qr.origin=http://127.0.0.1:" + webPort, "--hsaas.qr.active-key=demo", "--hsaas.hash-key-version=demo", "--logging.level.root=WARN"], dbEnvironment, "backend.log", backend);
   await ready(async () => (await fetch(`http://127.0.0.1:${backendPort}/api/health`)).status === 200, server);
-  if (!bundle) await exec("java", ["--class-path", classpath, resolve(implementation, "scripts/ManualDemoSeed.java")], { cwd: implementation, env: dbEnvironment });
+  if (!bundle) {
+    stage = "synthetic reference/account seed";
+    await exec("java", ["--class-path", classpath, resolve(implementation, "scripts/ManualDemoSeed.java")], { cwd: implementation, env: dbEnvironment });
+  }
+  stage = "frontend readiness (see Implementation/tmp/manual-demo/frontend.log)";
   const vite = launch(process.execPath, ["node_modules/vite/bin/vite.js", "--host", "127.0.0.1", "--port", String(webPort), "--strictPort"], { ...environment, HSAAS_BACKEND_ORIGIN: `http://127.0.0.1:${backendPort}` }, "frontend.log", frontend);
   await ready(async () => (await fetch(`http://127.0.0.1:${webPort}/login`)).status === 200, vite);
   const token = randomBytes(32).toString("hex");
+  stage = "private loopback control setup";
   control = createServer(async (request, response) => {
     if (request.method !== "POST" || request.headers.origin || request.headers.authorization !== "Bearer " + token) { response.writeHead(403).end(); return; }
     // Do not delete a container while its backup is streaming, or run overlapping database controls.
@@ -191,9 +239,14 @@ async function start(restorePath) {
 }
 
 try {
-  environment = createChildEnvironment(process.env);
+  try { environment = createChildEnvironment(process.env); }
+  catch { throw new DemoFailure("CONFIGURATION_REFUSED", "Inherited Spring/JVM/Node overrides were refused. Use a clean terminal without those configuration overrides; no resources were started."); }
   const args = process.argv.slice(2);
-  if (args[0] === "start" && (args.length === 1 || args.length === 3 && args[1] === "--restore")) {
+  if (args.length === 1 && args[0] === "check") {
+    await preflight();
+    console.log("Prerequisites ready: Java, prepared files, Linux Docker Engine, ports and container name checked. No services or containers were started.");
+  }
+  else if (args[0] === "start" && (args.length === 1 || args.length === 3 && args[1] === "--restore")) {
     // Register before the first resource is created; startup unwinds its current operation before exact owned cleanup.
     for (const signal of ["SIGINT", "SIGTERM"]) process.on(signal, () => {
       interrupted = true;
@@ -201,10 +254,11 @@ try {
     });
     await start(args[2]);
   }
-  else if (args.length === 1 && ["stop", "backup"].includes(args[0])) await command(args[0]);
-  else throw new Error("Use start [--restore directory], backup, or stop");
-} catch {
-  console.error("Manual demonstration command failed. Check dependencies, occupied ports and ignored local logs; no native database fallback is attempted.");
+  else if (args.length === 1 && ["stop", "backup"].includes(args[0])) { stage = "private local " + args[0] + " control"; await command(args[0]); }
+  else throw new DemoFailure("USAGE", "Use check, start [--restore directory], backup, or stop.");
+} catch (failure) {
+  if (failure instanceof DemoFailure) console.error(`Manual demonstration refused [${failure.code}]: ${failure.message}`);
+  else console.error(`Manual demonstration failed during ${stage}. Check ignored local logs for that stage; no native database fallback is attempted.`);
   if (containerId) { try { await cleanup(); } catch { console.error("Exact owned resources require manual cleanup follow-up."); } }
   process.exitCode = 1;
 }

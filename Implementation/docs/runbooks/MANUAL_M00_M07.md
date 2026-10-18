@@ -65,12 +65,17 @@ pnpm.cmd install --frozen-lockfile
 Set-Location -LiteralPath 'C:/Users/alexy/Documents/FYP Dev/Implementation/backend'
 .\mvnw.cmd -B -DskipTests package dependency:build-classpath "-Dmdep.outputFile=target/manual-demo-classpath.txt"
 
-# Start only the owned disposable database, real backend and frontend.
+# Check prerequisites without starting containers or application services.
 Set-Location -LiteralPath 'C:/Users/alexy/Documents/FYP Dev'
+node Implementation/scripts/manual-demo.mjs check
+
+# Continue only if the check succeeds; start the owned disposable demonstration.
 node Implementation/scripts/manual-demo.mjs start
 ```
 
 等输出`READY manual demonstration: http://127.0.0.1:15417/login`，再开[演示登录](http://127.0.0.1:15417/login)。启动器不是业务测试，不会代填表单、登记库存、审核或发还卡。它使用独立MySQL8.0.45随机loopback端口，DB `hsaas_manual_m00_m07`、用户`manual_demo`，不连接native3306。日志/control metadata只在gitignored `Implementation/tmp/manual-demo/`；control bearer不应复制分享。
+
+若显示 `DOCKER_ENGINE_UNAVAILABLE`，请打开 Docker Desktop，等待 Linux Engine 运行，再执行 `check`，通过后才执行 `start`。仅安装了 `docker.exe` 不代表引擎正在运行；这个阶段失败不会创建演示容器或连接数据库。`PREPARATION_MISSING` 指向尚未准备的 JAR/classpath/前端依赖；`PORT_UNAVAILABLE` 或 `CONTAINER_EXISTS` 按本文的精确占用/owner说明处理，不批量停止其他服务。后续失败会显示具体阶段和对应日志路径，仍不会打印秘密或自动切换 native 数据库。
 
 | 合成账号 | 权限 / 柜台 | 公开演示密码 |
 |---|---|---|

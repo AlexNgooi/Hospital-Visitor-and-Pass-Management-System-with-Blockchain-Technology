@@ -6,4 +6,4 @@ Responsibility: user-invoked isolated demonstration startup, exact owned-resourc
 
 Output: ignored `Implementation/tmp/manual-demo/` runtime logs, control metadata and backup bundles. Bundles contain synthetic database data and matching demonstration keys; keep them private and outside Git. Stop deletes only the verified owned disposable container; backups survive.
 
-Verification: `node --check manual-demo.mjs` is a syntax check only. Java/backend compilation does not establish startup, migrations or business acceptance. The user starts and tests the application.
+Verification: `node --check manual-demo.mjs` is a syntax check only. User-invoked `node manual-demo.mjs check` performs read-only Java/artifact/Docker/port/container-name preflight and never creates containers, starts applications or writes runtime files. Fixed error codes/stages explain preparation failures without printing raw subprocess errors or private arguments. Java/backend compilation and successful preflight do not establish startup, migrations or business acceptance. The user starts and tests the application.
