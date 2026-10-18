@@ -19,13 +19,16 @@ const name = "hsaas-manual-m00-m07", owner = "hsaas-manual-m00-m07-v1", database
 const backendPort = 18407, webPort = 15417, controlPort = 15418;
 const execute = promisify(execFile), children = [], logs = [];
 let environment, containerId, dbEnvironment, dbPassword, signingKey, hashingKey, control, stopping = false, controlBusy = false;
+let interrupted = false, acceptingUsers = false;
 
 /** Exact allowlisted runtime environment prevents inherited Spring/JVM options from selecting a real database. */
 function exec(command, args, options = {}) {
+  if (interrupted && !stopping) throw new Error("Demonstration startup interrupted");
   return execute(command, args, { windowsHide: true, env: environment, maxBuffer: 1024 * 1024, ...options });
 }
 /** Logs remain local and ignored; process failures are reported without command lines, credentials or SQL output. */
 function launch(command, args, env, filename, cwd) {
+  if (interrupted) throw new Error("Demonstration startup interrupted");
   const log = createWriteStream(resolve(output, filename), { flags: "w" }); logs.push(log);
   const child = spawn(command, args, { cwd, env, windowsHide: true, stdio: ["ignore", "pipe", "pipe"] });
   child.once("error", () => { child.spawnFailed = true; });
@@ -42,6 +45,7 @@ async function freePort(port) {
 async function ready(check, child) {
   const deadline = Date.now() + 120000;
   while (Date.now() < deadline) {
+    if (interrupted) throw new Error("Demonstration startup interrupted");
     if (child && (child.spawnFailed || child.exitCode !== null || child.signalCode !== null)) throw new Error("Owned process exited");
     try { if (await check()) return; } catch { /* Readiness failures stay bounded and sanitized. */ }
     await new Promise(accept => setTimeout(accept, 1000));
@@ -128,6 +132,8 @@ async function start(restorePath) {
     "--publish", "127.0.0.1::3306", "--env", "MYSQL_ROOT_PASSWORD", "--env", "MYSQL_DATABASE", "--env", "MYSQL_USER", "--env", "MYSQL_PASSWORD", "mysql:8.0.45"],
     { env: { ...environment, MYSQL_ROOT_PASSWORD: rootPassword, MYSQL_DATABASE: database, MYSQL_USER: "manual_demo", MYSQL_PASSWORD: dbPassword } });
   containerId = created.stdout.trim();
+  // A signal during docker run is handled only after capturing its returned ID, so cleanup cannot orphan that container.
+  if (interrupted) throw new Error("Demonstration startup interrupted");
   await ready(async () => { await exec("docker", ["exec", "--env", "MYSQL_PWD", containerId, "mysql", "-uroot", "-N", "-e", "SELECT 1"], { env: { ...environment, MYSQL_PWD: rootPassword } }); return true; });
   const mapping = await exec("docker", ["port", containerId, "3306/tcp"]), dbPort = Number(mapping.stdout.trim().split(":").at(-1));
   if (!Number.isSafeInteger(dbPort) || dbPort === 3306) throw new Error("Invalid disposable database port");
@@ -178,15 +184,23 @@ async function start(restorePath) {
   });
   await new Promise((accept, reject) => { control.once("error", reject); control.listen(controlPort, "127.0.0.1", accept); });
   await writeFile(statePath, JSON.stringify({ owner, token, containerId, backendPort, webPort, controlPort, dbPort }), { mode: 0o600 });
+  if (interrupted) throw new Error("Demonstration startup interrupted");
+  acceptingUsers = true;
   console.log(`READY manual demonstration: http://127.0.0.1:${webPort}/login`);
   console.log("Synthetic accounts only; no business checks executed. Use backup before stop to preserve data.");
-  for (const signal of ["SIGINT", "SIGTERM"]) process.on(signal, () => { void cleanup().then(() => process.exit(0), () => { console.error("Owned cleanup requires follow-up"); process.exit(1); }); });
 }
 
 try {
   environment = createChildEnvironment(process.env);
   const args = process.argv.slice(2);
-  if (args[0] === "start" && (args.length === 1 || args.length === 3 && args[1] === "--restore")) await start(args[2]);
+  if (args[0] === "start" && (args.length === 1 || args.length === 3 && args[1] === "--restore")) {
+    // Register before the first resource is created; startup unwinds its current operation before exact owned cleanup.
+    for (const signal of ["SIGINT", "SIGTERM"]) process.on(signal, () => {
+      interrupted = true;
+      if (acceptingUsers) void cleanup().then(() => process.exit(0), () => { console.error("Owned cleanup requires follow-up"); process.exit(1); });
+    });
+    await start(args[2]);
+  }
   else if (args.length === 1 && ["stop", "backup"].includes(args[0])) await command(args[0]);
   else throw new Error("Use start [--restore directory], backup, or stop");
 } catch {
