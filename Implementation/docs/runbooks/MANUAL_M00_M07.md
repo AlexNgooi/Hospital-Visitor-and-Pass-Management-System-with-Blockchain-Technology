@@ -44,7 +44,7 @@ M05演示边界：`hsaas.lifecycle.enabled=true`、reader mock、environment tes
 
 1. 在已合并的本机main核对HEAD、clean状态和manifest；保留准确运行SHA。不要默认从尚未push的远端重新clone。
 2. 安装锁定前端依赖，按最终入口需要打包backend（skip tests）并准备classpath。每一步成功才继续；构建成功不是业务通过。
-3. 先由用户启动Docker Engine，再在普通干净终端手动启动专用临时环境；不携带SPRING_/JVM/Node配置覆盖或native数据库URL。当前助手检查时Docker daemon不可用，启动失败不能改用native库；不要为通过启动而repair旧库。
+3. 先由用户启动Docker Engine，再在普通干净终端手动启动专用临时环境；不携带SPRING_/JVM/Node配置覆盖或native数据库URL。启动器只打印READY URL及synthetic说明；owner通过下方安全inspect核对，modes按manifest的源码契约确认。当前助手检查时Docker daemon不可用，启动失败不能改用native库；不要为通过启动而repair旧库。
 4. 等真实backend和Vite就绪才打开正常`/login`；从navigation进入QR、review、lifecycle、ADMIN库存/账号/设置/报表。无槽位或能力disabled先记录缺项，不将空页当功能成功。
 5. 按清单依次执行四类登记、人工审核、SIMULATED扫描/交付/借用/归还，另建记录做逾期、lost/restore和并发负面检查。
 6. 需要留数据时先完成备份流程，再使用本次环境的stop入口。只停止本次拥有的进程/容器，不批量kill java/node/docker，不清理其他模块worktree。

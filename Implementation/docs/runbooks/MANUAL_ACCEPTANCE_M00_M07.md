@@ -76,9 +76,9 @@
 | U32 / A02,P04 | 修改category/ward/settings附原因；用旧版本提交；停用历史引用项 | 版本冲突安全失败；审计有原因；历史/既有dueAt不重算，新登记只选有效项 | NOT_RUN |
 | U33 / A03,A04,Q01 | 创建已知数量四类登记/借用/归还/遗失，记账后刷新Reports & overview | 对当前server环境及SYNTHETIC/SIMULATED数据按manifest定义核对；5秒poll、10秒目标由用户计时；失败stale/error不假0 | NOT_RUN |
 | U34 / A03,A04 | 筛category/ward/MYT inclusive日期（最多366天）；用午夜两侧数据与空区间比较CSV/页面 | 转UTC`[from午夜,to次日午夜)`；current assignments不随日期回溯，inventory只按category；边界无实际数据则NOT_RUN，不改历史造覆盖 | NOT_RUN |
-| U35 / A04,D01 | ADMIN导出掩码CSV；未授权导出；用合法reference名称测试=,+,-,@/前导控制空白；超过10000行/JSON体上限时导出 | visitor固定***且不选原PII；每字段quote/防公式；大范围422不截断、失败不记成功export；丢响应仍可能有audit，不自动retry | NOT_RUN |
+| U35 / A04,D01 | ADMIN导出掩码CSV；未授权导出；用允许的公式前缀=,+,-,@及含合法空白的reference名称检查CSV；另尝试ISOcontrol/FORMAT输入；超过10000行/JSON体上限时导出 | 合法名称每字段quote/防公式，visitor固定***且不选原PII；控制/format字符应在输入阶段被拒，不能绕过校验写入来测导出；大范围422不截断、失败不记成功export；丢响应仍可能有audit，不自动retry | NOT_RUN |
 | U36 / D01,Q05 | 本机检查QR解码、UI、返回JSON、错误与日志、CSV、bundle、截图 | 无secret/原PII泄露；public reference不授查询权，contact reveal除外仍当前授权+审计；勿上传原日志 | NOT_RUN |
-| U37 / Q04 | 仅停本次拥有的backend，保持DB，尝试读取/命令，恢复相同配置 | 不宣称操作成功；UNKNOWN按U15/U16恢复，持久化事实不丢失；不自动发送新写命令 | NOT_RUN |
+| U37 / Q04 | 用浏览器开发者工具切offline，尝试读取/命令，再恢复online，按U15/U16核对原结果 | 安全失败/UNKNOWN不宣称成功且不自动重发；此操作不证明backend重启或响应丢失后的commit。单独backend重启当前无专用受控入口，该分支NOT_RUN；完整持久恢复用U38 backup→stop→restore | NOT_RUN |
 | U38 / Q04,Q07 | 完成下面备份/独立恢复步骤，比较业务记录/活动唯一性/事件；在旧浏览器试旧cookie/QR/scan，再用新会话登录 | 还原到新隔离库；不触碰native库；keys/业务历史保留，旧framework/auth/QR/未完成scan被启动前撤销；重选柜台/新scan，计时与数据缺口如实记录 | NOT_RUN |
 | U39 / Q06 | 四类表单/登录/柜台/管理用键盘、375px、短屏、200%缩放 | 标签/焦点/错误可达，状态非只靠颜色，按钮可达；长内容安全滚动，不用裁剪制造一屏通过 | NOT_RUN |
 | U40 / D01,Q07 | 确认无真实资料；检查retention/冻结/删除与备份规则是否已有实现和制度 | 未实现retention执行器/医院未批政策明确NOT_RUN或DEFERRED；不把文档当自动删除已运行 | NOT_RUN |
