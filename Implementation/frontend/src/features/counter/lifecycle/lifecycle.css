@@ -1,0 +1,34 @@
+/* M05 styles stay scoped to the existing UPM-red light-theme shell and its shared spacing/type tokens. */
+.lc-workspace { display: grid; gap: 20px; min-width: 0; }
+.lc-header { display: flex; align-items: center; justify-content: space-between; gap: 20px; flex-wrap: wrap; }
+.lc-eyebrow { font-size: 12px; letter-spacing: .12em; color: var(--primary); font-weight: 700; margin-bottom: 8px; }
+.lc-panel { padding: 24px; display: grid; gap: 16px; min-width: 0; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; }
+.lc-mode { padding: 16px 20px; display: grid; gap: 4px; background: var(--soft); border: 1px solid #edc5cc; border-radius: 10px; font-size: 14px; }
+.lc-mode strong { color: #8c1328; }
+.lc-command { display: flex; gap: 16px; align-items: center; flex-wrap: wrap; }
+.lc-command:empty { display: none; }
+.lc-row { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+.lc-field { display: grid; gap: 6px; font-weight: 550; max-width: 100%; }
+.lc-field select { background: var(--surface); color: var(--ink); border: 1px solid #a8aeb7; border-radius: 7px; min-height: 44px; padding: 8px 12px; max-width: 100%; }
+.lc-check { display: flex; align-items: flex-start; gap: 12px; padding: 10px 0; }
+.lc-check input { width: 20px; height: 20px; flex: 0 0 auto; margin-top: 3px; accent-color: var(--primary); }
+.lc-scan { display: grid; gap: 12px; padding: 20px; border: 1px dashed #a8aeb7; border-radius: 10px; background: #fafbfc; }
+.lc-caption { display: block; font-size: 13px; color: var(--muted); line-height: 1.5; }
+.lc-table { overflow-x: auto; max-width: 100%; }
+.lc-table table { border-collapse: collapse; width: 100%; text-align: left; font-size: 14px; }
+.lc-table th { font-size: 12px; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); background: #f7f8fa; }
+.lc-table th, .lc-table td { padding: 13px 12px; border-bottom: 1px solid var(--border); vertical-align: top; }
+.lc-reference { overflow-wrap: anywhere; font-weight: 550; }
+.lc-badge { display: inline-block; border-radius: 30px; padding: 4px 10px; background: #eef0f3; color: #374151; font-size: 12px; font-weight: 700; }
+.lc-available, .lc-returned { background: #e5f4ed; color: #185337; }
+.lc-issued { background: #e8effb; color: #244684; }
+.lc-overdue { background: #fff0ce; color: #775300; }
+.lc-lost { background: #ffe5ea; color: #9b1931; }
+.lc-disabled { background: #eceef0; color: #4b5563; }
+.lc-error { color: #9b1931; border-left: 3px solid var(--primary); padding: 8px 12px; }
+.lc-history { list-style: none; padding: 0; display: grid; gap: 14px; margin: 0; }
+.lc-history li { display: grid; gap: 4px; padding-left: 16px; border-left: 2px solid var(--border); }
+.lc-history span { color: var(--muted); font-size: 13px; }
+.lc-followup { display: grid; gap: 12px; border-top: 1px solid var(--border); padding-top: 20px; }
+.lc-contact { padding: 12px; background: #fff6dd; border: 1px solid #e8d294; border-radius: 8px; }
+@media (max-width: 640px) { .lc-panel { padding: 16px; } .lc-scan { padding: 14px; } .lc-row > .lc-field { width: 100%; } .lc-table th, .lc-table td { padding: 10px 8px; } }
