@@ -60,7 +60,7 @@
 | U21 / P01,P02 | SUBMITTED/REJECTED登记、非AVAILABLE卡、不兼容类别、无效扫描试发卡 | 拒绝且无部分库存/借用/消费事件；不能从 UI 自选 status 绕过 | NOT_RUN |
 | U22 / P02 | A/B 争同卡不同登记；同登记不同卡；双击或同 key/body 重试；同 key 改body | 每卡/登记最多一活动借用；恰好一个赢家；重放同 Pass ID，改body冲突，无重复事件 | NOT_RUN |
 | U23 / P03 | RETURN扫描后不确认收到，再确认；对 ISSUED/OVERDUE 各一次；原命令重放 | 未确认不归还；确认后关闭借用、卡AVAILABLE、唯一RETURNED事件；重放不二次关闭 | NOT_RUN |
-| U24 / P03,C02 | 用另一借用的RETURN扫描、消费过的结果、错误卡、LOST卡归还 | 拒绝；历史与库存不被改坏，不用手工改库绕过 | NOT_RUN |
+| U24 / P03,C02 | 用另一借用的RETURN扫描、消费过的结果、错误卡、LOST卡、非原发卡柜台归还 | 拒绝；当前demo仅原发卡柜台归还，历史与库存不被改坏，不用手工改库绕过 | NOT_RUN |
 | U25 / P04,N03 | 等真实演示dueAt与scheduler，刷新；重复轮询；另做return/overdue竞争 | `now >= dueAt`且仍活动才OVERDUE；一次事件/内部告警，已归还不再告警；不手改电脑时钟/历史记录 | NOT_RUN |
 | U26 / N03,D01 | 授权职员 reveal contact并记录followup；未授权账号尝试 | 授权和每次 reveal/followup有审计；默认仍掩码，不触发WhatsApp；关闭/换身份后不保留可见原文 | NOT_RUN |
 | U27 / P05,B01 | ADMIN对AVAILABLE与活动借用标LOST，不填理由再填；尝试借/直接归还 | 理由必填；LOST不可借/直接还，活动借用关闭为遗失，unresolved case保留 | NOT_RUN |

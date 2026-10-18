@@ -15,13 +15,15 @@
 | 输入 | 当前事实 / 所需确认 |
 |---|---|
 | M05/M06源码与合并SHA | 等coordinator提供并在本worktree核对 |
-| startup入口、端口、控制口、容器owner/name与存储生命周期 | 待合并源码；启动前应拒绝占用，不停止已有服务 |
+| startup入口、端口、控制口、容器owner/name与存储生命周期 | coordinator将实现`Implementation/scripts/manual-demo.mjs` + `ManualDemoSeed.java`；web15417/backend18407/control15418，container `hsaas-manual-m00-m07`；待最终源码确认，不现在运行 |
 | V6/V7实际文件与开启开关 | 待最终核对；V1–V5不可修改 |
-| DEMO用户/柜台/profile/device/card seed | M05/M06待确认；需至少两名同柜台职员、跨柜台角色、ADMIN以执行权限场景 |
+| DEMO用户/柜台/profile/device/card seed | 已定`demo_staff_a/b`柜台1、`demo_staff_other`柜台2、`demo_admin_a/b`仅ADMIN，公开合成密码`Public-synthetic-demo_1`；只种reference，不种登记/借用。M05设备按柜台创建，ADMIN正常ENROLL入库 |
 | 完整功能路由/FeatureSlots | coordinator接线后核对，ADMIN不能自动发卡 |
 | 最短可演示dueAt与scheduler周期 | M05待确认；不通过改系统时钟或历史SQL制造逾期 |
 | lost/restore演示证据与政策 | M05待确认；需清楚标医院未批准 |
-| backup/restart/restore入口 | 需明确先停写、保留DB、独立恢复目标、密钥与会话处理；旧M04 stop删除DB不能作保留数据重启 |
+| backup/restart/restore入口 | coordinator计划`start`、`stop`、`backup`、`start --restore <backupDirectory>`；dump+匹配keys存gitignored `Implementation/tmp/manual-demo/backups/`。restore创建新owner容器/随机MySQL端口，stop删原DB，备份另留；仍待源码确认 |
+
+coordinator已确认的M05演示边界：`hsaas.lifecycle.enabled=true`、reader mock、environment test；固定48个sample：`DEMO-{EXECUTIVE|PENJAGA|VENDOR|CONTRACTOR}-{001..012}`，UID/profile由服务器固定映射，不手填。归还仅允许**原发卡柜台**。四类return_hours初值24、可调1..720，是演示规则，既有借用dueAt冻结；具体scheduler与UI仍待最终源码核对。
 
 旧[M00–M04手动指南](MANUAL_M00_M04.md)只覆盖到审核。其`tests/counter-review-real/harness.mjs`显式`reader-mode=disabled`且停止时删除其临时库；不能把该命令直接称为M00–M07完整启动器，也不能以停止后重开它代表数据恢复。
 
