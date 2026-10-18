@@ -1,0 +1,9 @@
+# M06 reporting boundary
+
+- Inputs: planning/03 A03-A04/D, planning/14 C18-C20, actual V5 submitted_at and approved M05 V6 cards/card_assignments.
+- Responsibility: real MySQL ADMIN aggregate read model and audited masked registration CSV. No fixture fallback or NOT_IMPLEMENTED response.
+- Date semantics: inclusive MYT calendar inputs become UTC [from midnight,to+1 midnight), up to 366 days. Visits use submitted_at, issues use issued_at, returns use returned_at, lost closures use closed_at+LOST. Category/destination filters join registrations. Open/overdue are current at serverUpdatedAt and ignore selected historical dates; overdue is closed_at IS NULL AND due_at<=asOf, independent of scheduler.
+- Inventory: category filter only, explicitly ignores ward because available/unassigned cards have no ward. Utilisation is ISSUED/OVERDUE inventory count divided by all enrolled cards (including lost/disabled), not a historic occupancy percentage.
+- Snapshot: all metric groups share one UNION statement at READ_COMMITTED. Preview is a subsequent statement, so activity concurrent with refresh can reach the preview slightly before the metric snapshot; the next five-second poll converges. No historic-as-of reconstruction is claimed.
+- Export: select at most 10001; reject more than 10000, never truncate silently. No form_data is selected; visitor label is ***. Quote every CSV field and prefix potentially executable formula cells after leading control/space/format characters. Measure actual JSON-escaped Export UTF-8 bytes against 1047552 before audit inserts, leaving margin below the shared client 1MiB limit. Export record/local audit/history commit before body returns; a lost response may leave an audit without a downloaded file and is never automatically retried.
+- Verification: only scoped CSV/MYT tests plus compile/package; live SQL and migration execution pending user/disposable DB. No business service started here.
