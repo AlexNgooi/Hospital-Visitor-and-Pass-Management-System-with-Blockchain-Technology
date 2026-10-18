@@ -40,4 +40,12 @@ Modules commit their own work and send exact head SHA, changed/shared files, mig
 
 ## Live registration
 
-Creation IDs, actual paths, contract decisions, review results and merge commits will be recorded here as they become facts. Authorization is granted; module completion is not yet claimed.
+All three chats were created and confirmed active on the committed authorization baseline `d103b888527c4ba8e90f37d93059daf2d78ed02f`:
+
+| Module | Chat ID (host local) | Isolated worktree | State |
+|---|---|---|---|
+| M05 | `01a14da7-8089-7203-a52e-2a7b03f918bf` | `C:/Users/alexy/.codex/worktrees/cb05/FYP Dev` | IN_PROGRESS; initial baseline/contract preparation |
+| M06 | `01a14da7-807a-7cb0-b105-e89171c72150` | `C:/Users/alexy/.codex/worktrees/ca56/FYP Dev` | IN_PROGRESS; account/configuration first |
+| M07 | `01a14da7-806e-7ca2-98cb-6c342806f2e3` | `C:/Users/alexy/.codex/worktrees/7a60/FYP Dev` | IN_PROGRESS; documentation preparation, final dependency pending |
+
+The app created isolated detached worktrees; each module was instructed to create its own `codex/` feature branch before implementation. Model/thinking overrides were omitted because today's user request did not select a model. Actual paths and baseline were verified from the app and `git worktree list`; no implementation completion is claimed here.
