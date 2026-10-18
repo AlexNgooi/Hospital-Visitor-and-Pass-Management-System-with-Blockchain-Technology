@@ -1,6 +1,6 @@
 # M00–M07：本机演示启动、停止与恢复
 
-2026-10-18，DRAFT_WAITING_M05_M06_MERGE。文档准备基线 `d103b888527c4ba8e90f37d93059daf2d78ed02f`，尚未收到 M05/M06 合并通知。专用启动器及恢复撤销已按 `182cd80825a3dac17f772d51227bc14d9c7945cb` 源码核对；下面命令仍等待完整功能合并，**暂不要把此草稿作为已完成交付运行**。M05/M06完成与新手动检查均未获验收。
+2026-10-18，DRAFT_WAITING_M05_M06_MERGE。文档准备基线 `d103b888527c4ba8e90f37d93059daf2d78ed02f`，尚未收到 M05/M06 合并通知。专用启动器、恢复撤销与启动中断清理已按 `0c99d38ad40a630f77288cf99a2dd5d8f71b4b0e` 源码核对；下面命令仍等待完整功能合并，**暂不要把此草稿作为已完成交付运行**。M05/M06完成与新手动检查均未获验收。
 
 业务验收见 [逐项清单](MANUAL_ACCEPTANCE_M00_M07.md)，版本与历史证据见 [release manifest](RELEASE_MANIFEST_M00_M07.md)。新启动、业务、备份/恢复均 NOT_RUN；助手没有启动服务、浏览器或数据库。
 
@@ -21,7 +21,7 @@
 | 完整功能路由/FeatureSlots | coordinator接线后核对，ADMIN不能自动发卡 |
 | 最短可演示dueAt与scheduler周期 | M05待确认；不通过改系统时钟或历史SQL制造逾期 |
 | lost/restore演示证据与政策 | M05待确认；需清楚标医院未批准 |
-| backup/restart/restore入口 | 已有`start`、`stop`、`backup`、`start --restore <backupDirectory>`；dump+匹配keys存gitignored `Implementation/tmp/manual-demo/backups/`。restore创建新owner容器/随机MySQL端口，stop删原DB，备份另留；恢复启动前撤销旧capability。startup中断cleanup另报coordinator核对 |
+| backup/restart/restore入口 | 已有`start`、`stop`、`backup`、`start --restore <backupDirectory>`；dump+匹配keys存gitignored `Implementation/tmp/manual-demo/backups/`。restore创建新owner容器/随机MySQL端口，stop删原DB，备份另留；恢复启动前撤销旧capability；startup中断在当前操作返回后清本次owned资源 |
 
 coordinator已确认的M05演示边界：`hsaas.lifecycle.enabled=true`、reader mock、environment test；固定48个sample：`DEMO-{EXECUTIVE|PENJAGA|VENDOR|CONTRACTOR}-{001..012}`，UID/profile由服务器固定映射，不手填。归还仅允许**原发卡柜台**。四类return_hours初值24、可调1..720，是演示规则，既有借用dueAt冻结；具体scheduler与UI仍待最终源码核对。
 
@@ -101,6 +101,19 @@ node Implementation/scripts/manual-demo.mjs start --restore 'C:/Users/alexy/Docu
 restore不连接旧native数据库，不复用原容器，不重新seed，不自动合并备份后发生的写入。匹配keys与业务/历史/幂等结果一并保存；这不授权跨新旧会话执行旧命令。源码在导入后、Java启动前同事务撤销auth contexts、使bindings失效、撤销QR sessions/challenges/未消费grants、清device活动指针、取消CLAIMED/SUCCEEDED scan并删除framework sessions；业务根/借用/事件/已消费关联保留。用户须新会话登录、重新选柜台/创建QR和scan；旧cookie、QR或未完成扫描不能作恢复入口。该策略只做源码核对，**restore实际执行仍NOT_RUN**。普通`start`产生全新空演示；它不是恢复命令。
 
 需要重启并保留数据时使用backup→stop→start --restore；当前没有保留DB的restart-backend子命令。没有backup就stop会丢失数据。旧M04停机地址15415不适用于本启动器；不要直接用浏览器访问15418控制口，它只接受私有本地CLI凭据且拒绝浏览器Origin。当前所有执行状态NOT_RUN，RPO24h/RTO4h只是建议目标。
+
+正常stop或Ctrl+C会尝试精确子进程与owner container清理；启动中断会等正在进行的资源操作返回，捕获container ID后清理。强制结束进程、关闭窗口或关机不能保证清理完成。下次遇端口/同名容器占用时不要重复启动或批量kill；先只读核对占用和精确容器标签，再把安全诊断交coordinator处理，不贴含密码的完整docker inspect或control.json：
+
+```powershell
+# Inspect only the expected name and ownership label, without revealing container environment secrets.
+docker inspect --format '{{.Name}}|{{index .Config.Labels "hsaas.demo.owner"}}' hsaas-manual-m00-m07
+
+# Identify occupied demonstration listeners without stopping unrelated processes.
+Get-NetTCPConnection -State Listen -LocalPort 18407,15417,15418 -ErrorAction SilentlyContinue |
+    Select-Object LocalAddress,LocalPort,OwningProcess
+```
+
+本启动器拥有的容器应为`/hsaas-manual-m00-m07|hsaas-manual-m00-m07-v1`。标签不匹配不应认领/删除；无容器时inspect失败仅表示需另查端口，不是业务状态证明。
 
 ## FYP限制
 
