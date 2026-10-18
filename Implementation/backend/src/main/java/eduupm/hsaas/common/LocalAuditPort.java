@@ -20,7 +20,9 @@ public class LocalAuditPort {
     /** No form data, credentials, MRN, or free notes are accepted by this structural whitelist. */
     @Transactional(propagation=Propagation.MANDATORY)
     public String append(Action action,String targetKind,String targetId,Long actorId,Snapshot snapshot) {
-        if(!Set.of("USER","COUNTER","REGISTRATION","CATEGORY","DESTINATION","BOOTSTRAP").contains(targetKind)
+        // M05/M06 targets remain generated identifiers; a label, contact value or setting body cannot become an audit target.
+        if(!Set.of("USER","COUNTER","REGISTRATION","CATEGORY","DESTINATION","BOOTSTRAP",
+                "CARD","ASSIGNMENT","SCAN","SETTING","REPORT_EXPORT").contains(targetKind)
                 || targetId==null || !targetId.matches("[0-9]+|[0-9a-f-]{36}")) { throw new IllegalArgumentException("Invalid audit target"); }
         validateState(snapshot.previousState()); validateState(snapshot.state());
         if(snapshot.origin()!=null && !Set.of("LOCAL","SYNTHETIC_MANUAL","SIMULATED").contains(snapshot.origin())) {
@@ -33,12 +35,19 @@ public class LocalAuditPort {
     }
     /** Restricts values as well as field names, preventing a nominal status field from carrying PII. */
     private static void validateState(String state) {
-        if(state!=null && !Set.of("SUBMITTED","VERIFIED","REJECTED","CANCELLED","ACTIVE","INACTIVE","BOOTSTRAPPED","ENABLED","DISABLED").contains(state)) {
+        // Extend the finite vocabulary for local simulation and administration without accepting arbitrary payload fields.
+        if(state!=null && !Set.of("SUBMITTED","VERIFIED","REJECTED","CANCELLED","ACTIVE","INACTIVE","BOOTSTRAPPED","ENABLED","DISABLED",
+                "AVAILABLE","ISSUED","RETURNED","OVERDUE","LOST","RESTORED","CLAIMED","SUCCEEDED","CONSUMED","EXPIRED",
+                "CONTACT_REVEALED","FOLLOWUP_RECORDED","EXPORTED").contains(state)) {
             throw new IllegalArgumentException("Invalid audit state");
         }
     }
-    /** Local registration actions do not automatically become blockchain catalogue events. */
-    public enum Action { REGISTRATION_SUBMITTED,REGISTRATION_VERIFIED,REGISTRATION_REJECTED,ADMIN_CHANGED,ADMIN_BOOTSTRAPPED }
+    /** These local actions never enqueue notification or blockchain work while those integrations are disabled. */
+    public enum Action {
+        REGISTRATION_SUBMITTED,REGISTRATION_VERIFIED,REGISTRATION_REJECTED,ADMIN_CHANGED,ADMIN_BOOTSTRAPPED,
+        CARD_REGISTERED,ISSUED,RETURNED,OVERDUE,MARKED_LOST,DISABLED,RESTORED,
+        CONTACT_REVEALED,FOLLOWUP_RECORDED,REPORT_EXPORTED
+    }
     /** The immutable safe snapshot deliberately has no generic payload or note extension. */
     public record Snapshot(String previousState,String state,Long previousVersion,Long version,String origin) { }
 }

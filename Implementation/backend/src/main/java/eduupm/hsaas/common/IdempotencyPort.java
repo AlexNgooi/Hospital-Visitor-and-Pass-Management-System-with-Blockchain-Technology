@@ -86,7 +86,9 @@ public class IdempotencyPort {
     public record SafeResult(String id,String reference,String status,long version) {
         public SafeResult {
             if(id==null || !id.matches("[0-9]+|[0-9a-f-]{36}") || (reference!=null && !reference.matches("[A-Za-z0-9_-]{1,128}"))
-                    || !java.util.Set.of("SUBMITTED","VERIFIED","REJECTED","CANCELLED","ISSUED","RETURNED","OVERDUE","LOST","DISABLED","RESTORED").contains(status) || version<0) {
+                    // Simulation scan/enrollment results use the same bounded safe-result envelope as existing commands.
+                    || !java.util.Set.of("SUBMITTED","VERIFIED","REJECTED","CANCELLED","ISSUED","RETURNED","OVERDUE","LOST","DISABLED","RESTORED",
+                            "AVAILABLE","CLAIMED","SUCCEEDED","CONSUMED","EXPIRED","FOLLOWUP_RECORDED").contains(status) || version<0) {
                 throw new IllegalArgumentException("Invalid safe command result");
             }
         }
