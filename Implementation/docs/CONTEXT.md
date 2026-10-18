@@ -1,3 +1,5 @@
+> **2026-10-18 最新授权（M05–M07）**：用户已指定新 coordinator chat `01a14da5-91fe-7bf1-a120-183975085f8b`（local），授权代开三个独立模块 chat/worktree、直接开发、双向答疑、审核和仅本地 merge；只做必要 testing，合并后由用户手动启动及业务测试。本条覆盖下文旧的 M05–M07 自行协调/未许可/禁止一切测试安排；M08–M11 未启动、不 push、不部署、不修改旧 native 库。当前执行与共享契约见 `planning/14_M05_M07_COORDINATION.md`（从仓库根目录解析）。
+
 # docs 契约
 
 - **输入规范**：[需求与测试计划](../../planning/03_REQUIREMENTS_AND_TEST_PLAN.md)、[初始化指南](../../planning/11_ENVIRONMENT_AND_MANUAL_INITIALIZATION.md)、[阶段指南](../../planning/12_THREE_MONTH_CHAT_PLAN.md)，以及实际代码 commit 与运行结果。
