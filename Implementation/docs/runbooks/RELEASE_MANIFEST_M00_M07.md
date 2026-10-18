@@ -2,6 +2,8 @@
 
 Frozen from source: 2026-10-18 (+08:00). M00–M06 function status: **MERGED_PENDING_USER_MANUAL_TEST**. M07 documentation is submitted for coordinator review/local merge; no business acceptance or publication is claimed. The coordinator owns REVIEW and final merge identity.
 
+Startup-only follow-up: `6eafa345bfa2a87c36e6c2526f8a0154acca614e` adds read-only `check` and safe concrete failure codes/stages after the user's startup report. It supersedes the launcher blob/instructions below; business/backend/frontend/schema/seed source remains the checked `761491e`. Current launcher blob is `5f38f30f4b6aa1182302be3ed7924289b05b6a5a`. Syntax, configuration-refusal redaction and real read-only preflight passed; Docker was initially unavailable and became available during diagnosis. No application or database was started by the assistant. See [follow-up evidence](../evidence/modules/M07/STARTUP_DIAGNOSTICS.md).
+
 ## Identity and source boundary
 
 | Field | Value |
@@ -44,7 +46,8 @@ Java21; Spring Boot parent4.1.1; backend artifact `hsaas-backend-0.0.1-SNAPSHOT.
 | frontend/package.json | `8fa6f2beb417013fe6b3e0c5af4747e158bcc798` |
 | frontend/pnpm-lock.yaml | `ac0ae2508873b23df33aee21c10368dfa918b432` |
 | frontend/src/main.tsx | `c885307217f92bcf4156156869ace91bd3373ece` |
-| scripts/manual-demo.mjs | `2c1899d6ea04909156fb1876e03aa48169c302be` |
+| scripts/manual-demo.mjs at original checked source761491e | `2c1899d6ea04909156fb1876e03aa48169c302be` |
+| scripts/manual-demo.mjs diagnostic follow-up6eafa34 | `5f38f30f4b6aa1182302be3ed7924289b05b6a5a` |
 | scripts/ManualDemoSeed.java | `9c83a37c49f6d5fe0d480e4344c1002607e268ce` |
 
 The [runbook](MANUAL_M00_M07.md) lists actual role-gated routes, accounts, startup and recovery commands. Runtime modes are environment=test, reader=mock, MRN=mock, notification/blockchain=disabled, audit=LOCAL_ONLY. Explicit flags: `hsaas.qr.enabled=true`, `hsaas.registration.enabled=true`, `hsaas.review.enabled=true`, `hsaas.lifecycle.enabled=true`; M06 has no additional flag. Production cannot enable synthetic registration/lifecycle. Local cookie Secure=false is limited to the explicit loopback demo configuration.
