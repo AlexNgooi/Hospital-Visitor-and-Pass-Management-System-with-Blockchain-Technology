@@ -1,0 +1,7 @@
+# M06 frontend administration
+
+- Inputs: UI v4 A05-A12/X04-X06, planning/03 A/D and planning/14 C18-C20; feature-local runtime DTO schemas.
+- Output: administrationFeatures contains /admin/users, /admin/settings, /admin/reports, /admin/audit; coordinator owns main.tsx composition. No shell/router/client/generated/dependency edits.
+- Behavior: ADMIN roles and explicit counter grants; reason-required versioned reference/return-rule forms; local-only audit; real report dates/category/ward filters with five-second polling, serverUpdatedAt and visible stale/error. Dates are MYT regardless of browser timezone. Poll requests do not overlap and abort on unmount/query changes. Failed reads never synthesize zeros; 401/403 clear old protected data.
+- Security: shared same-origin CSRF/authenticated API client. No persistent browser storage, credentials in messages or visitor form fields. CSV POST returns a bounded, audited masked envelope and downloads through a temporary Blob URL. No automatic write/export retry on unknown outcomes; inspect refreshed version/list first. Self access changes can commit and revoke the current browser before its response is delivered.
+- Verification: pnpm run build and pnpm run lint; browser/UAT/responsive screenshot acceptance NOT_RUN by user request. Shared-token layout, semantic labels, 44px controls and Radix focus-managed account dialogs are source-reviewed.

@@ -9,10 +9,18 @@ import App from "./App.tsx";
 import "./app/entry";
 import { registrationFeatures } from "./features/registration";
 import { counterReviewFeatures } from "./features/counter/review";
+import { counterLifecycleFeatures, adminInventoryFeatures } from "./features/counter/lifecycle";
+import { administrationFeatures } from "./features/administration";
 
-// Keep the dynamic QR/public registration slots and add only the protected staff review slot.
+// Compose reviewed modules under their existing role gates; ADMIN inventory never inherits staff issue/return authority.
 // Entry fragment capture above still runs before rendering or authenticated API activity.
-const applicationFeatures = [...registrationFeatures, ...counterReviewFeatures];
+const applicationFeatures = [
+  ...registrationFeatures,
+  ...counterReviewFeatures,
+  ...counterLifecycleFeatures,
+  ...adminInventoryFeatures,
+  ...administrationFeatures,
+];
 
 // Capture/clear the entry fragment before React bootstrap or any API request runs.
 createRoot(document.getElementById("root")!).render(

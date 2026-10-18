@@ -114,9 +114,9 @@ class HsaasBackendApplicationTests {
         var response=HttpClient.newHttpClient().send(HttpRequest.newBuilder(URI.create("http://localhost:"+port+"/api/health")).GET().build(),HttpResponse.BodyHandlers.ofString());
         assertThat(response.statusCode()).isEqualTo(200);
         assertThat(response.body()).contains("UP");
-        // V4 adds the QR domain without changing the immutable foundation migrations.
-        // V5 adds the approved synthetic registration parent without changing the original foundation migrations.
-        assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM flyway_schema_history WHERE success=TRUE",Integer.class)).isEqualTo(5);
+        // V4-V7 add QR, synthetic registration, simulated assignments and administration without rewriting V1-V3.
+        // This expected count is maintained for future Docker-backed runs; it is not a current executed migration result.
+        assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM flyway_schema_history WHERE success=TRUE",Integer.class)).isEqualTo(7);
         assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM users",Integer.class)).isEqualTo(2);
     }
 
@@ -351,7 +351,7 @@ class HsaasBackendApplicationTests {
         assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM audit_events",Integer.class)).isEqualTo(1);
     }
 
-    /** V1 data survives an actual V1 -> V3 upgrade; a repeated migrate is a no-op. */
+    /** V1 data must survive upgrade through the current V7 schema; a repeated migrate remains a no-op. */
     @Test void cleanAndUpgradeMigration() throws Exception {
         try(var root=java.sql.DriverManager.getConnection(MYSQL.getJdbcUrl(),"root",MYSQL.getPassword()); var statement=root.createStatement()) {
             statement.execute("CREATE DATABASE migration_probe CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci");
@@ -363,9 +363,8 @@ class HsaasBackendApplicationTests {
             statement.execute("INSERT INTO counters(code,name) VALUES('UPGRADE_FIXTURE','Synthetic upgrade fixture')");
         }
         var latest=Flyway.configure().dataSource(url,"root",MYSQL.getPassword()).load();
-        // Upgrade the owned disposable V1 database through V2, V3 and the new QR V4.
-        // An existing V1 database upgrades through immutable V2-V4 and the new registration V5.
-        assertThat(latest.migrate().migrationsExecuted).isEqualTo(4); latest.validate();
+        // Six new versions follow the preserved V1 fixture; do not weaken upgrade/validation/no-op/data-survival assertions.
+        assertThat(latest.migrate().migrationsExecuted).isEqualTo(6); latest.validate();
         assertThat(latest.migrate().migrationsExecuted).isZero();
         try(var connection=java.sql.DriverManager.getConnection(url,"root",MYSQL.getPassword()); var statement=connection.createStatement(); var result=statement.executeQuery("SELECT COUNT(*) FROM counters WHERE code='UPGRADE_FIXTURE'")) {
             assertThat(result.next()).isTrue(); assertThat(result.getInt(1)).isEqualTo(1);
