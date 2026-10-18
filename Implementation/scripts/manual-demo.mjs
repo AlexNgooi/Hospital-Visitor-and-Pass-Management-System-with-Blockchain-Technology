@@ -131,7 +131,23 @@ async function start(restorePath) {
   await ready(async () => { await exec("docker", ["exec", "--env", "MYSQL_PWD", containerId, "mysql", "-uroot", "-N", "-e", "SELECT 1"], { env: { ...environment, MYSQL_PWD: rootPassword } }); return true; });
   const mapping = await exec("docker", ["port", containerId, "3306/tcp"]), dbPort = Number(mapping.stdout.trim().split(":").at(-1));
   if (!Number.isSafeInteger(dbPort) || dbPort === 3306) throw new Error("Invalid disposable database port");
-  if (bundle) await sqlTransfer(["exec", "-i", "--env", "MYSQL_PWD", containerId, "mysql", "-umanual_demo", database], resolve(bundle.directory, "database.sql"), true);
+  if (bundle) {
+    await sqlTransfer(["exec", "-i", "--env", "MYSQL_PWD", containerId, "mysql", "-umanual_demo", database], resolve(bundle.directory, "database.sql"), true);
+    // Restore preserves business/history/keys, but must never resurrect browser cookies, QR grants or in-flight scan authority.
+    const revoke = [
+      "START TRANSACTION",
+      "UPDATE auth_session_contexts SET state='REVOKED',revoked_at=UTC_TIMESTAMP(6) WHERE state<>'REVOKED'",
+      "UPDATE app_session_bindings SET invalidated_at=COALESCE(invalidated_at,UTC_TIMESTAMP(6))",
+      "UPDATE registration_qr_sessions SET revoked_at=COALESCE(revoked_at,UTC_TIMESTAMP(6))",
+      "UPDATE registration_qr_challenges SET revoked_at=COALESCE(revoked_at,UTC_TIMESTAMP(6))",
+      "UPDATE registration_entry_grants SET revoked_at=COALESCE(revoked_at,UTC_TIMESTAMP(6)) WHERE consumed_at IS NULL",
+      "UPDATE reader_devices SET active_scan_job_id=NULL",
+      "UPDATE scan_jobs SET status='CANCELLED' WHERE status IN ('CLAIMED','SUCCEEDED')",
+      "DELETE FROM SPRING_SESSION",
+      "COMMIT"
+    ].join("; ");
+    await exec("docker", ["exec", "--env", "MYSQL_PWD", containerId, "mysql", "-umanual_demo", database, "-e", revoke], { env: { ...environment, MYSQL_PWD: dbPassword } });
+  }
   dbEnvironment = { ...environment, HSAAS_DB_URL: `jdbc:mysql://127.0.0.1:${dbPort}/${database}?connectionTimeZone=UTC`, HSAAS_DB_USER: "manual_demo", HSAAS_DB_PASSWORD: dbPassword,
     HSAAS_PORT: String(backendPort), HSAAS_ENVIRONMENT: "test", READER_MODE: "mock", MRN_MODE: "mock", NOTIFICATION_MODE: "disabled", BLOCKCHAIN_MODE: "disabled" };
   // Command-line flags close external configuration imports; secrets remain in the child environment rather than argv.
