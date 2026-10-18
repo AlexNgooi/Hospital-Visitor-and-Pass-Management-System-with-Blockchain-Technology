@@ -15,7 +15,7 @@ import eduupm.hsaas.common.IdempotencyPort.SafeResult;
 import eduupm.hsaas.registrationentry.QrEntryService.GrantAccess;
 
 /** The only persisted registration root: M04 commands use its write/read facets, never a second entity or SQL adapter. */
-public final class RegistrationStore implements RegistrationReviewPort, RegistrationReadPort {
+public final class RegistrationStore implements RegistrationReviewPort, RegistrationReadPort, RegistrationLifecyclePort {
     private static final java.time.format.DateTimeFormatter TIME = new DateTimeFormatterBuilder().appendInstant(6).toFormatter();
     private static final String ROW = "SELECT r.*,d.name AS destination_label FROM visitor_registrations r JOIN destinations d ON d.id=r.destination_id ";
     private static final String SCOPED = ROW + "JOIN user_counter_permissions p ON p.counter_id=r.counter_id AND p.user_id=? AND p.active=TRUE "
@@ -29,6 +29,40 @@ public final class RegistrationStore implements RegistrationReviewPort, Registra
 
     public RegistrationStore(JdbcTemplate jdbc, JsonMapper json, Clock clock, Accounts accounts, SessionCapabilities capabilities) {
         this.jdbc = jdbc; this.json = json; this.clock = clock; this.accounts = accounts; this.capabilities = capabilities;
+    }
+
+    /** M05 reuses this root and its authority prefix; no second registration entity or status writer is introduced. */
+    @Override public RegistrationLifecyclePort.Access lockLifecycle(ReviewCoordinates coordinates, String owner) {
+        RegistrationLifecyclePort.Access.requireTransaction();
+        var contexts=jdbc.query("SELECT a.binding_id,a.generation,u.login,u.role FROM auth_session_contexts a JOIN users u ON u.id=a.actor_id WHERE a.id=?",
+                (rs,n)->new Object[]{rs.getString(1),rs.getLong(2),rs.getString(3),rs.getString(4)},owner);
+        if(contexts.isEmpty()) throw ApiFailure.unauthenticated();
+        var context=contexts.getFirst();
+        // This re-enters only the exact prefix already held by orchestration, before taking the registration lock.
+        var actor=capabilities.requireHuman((String)context[0],owner,(Long)context[1],(String)context[2]);
+        boolean staff=actor.role().equals("COUNTER_STAFF");
+        if(!staff && !actor.role().equals("ADMIN")) throw new ApiFailure(403,"ACCESS_DENIED","Staff access is required.");
+        if(staff) {
+            try { capabilities.lockOwners(List.of(new SessionCapabilities.OwnerUse(owner,id(coordinates.counterId()))),null); }
+            catch(ApiFailure denied) { if(denied.status()==410) throw notFound(); throw denied; }
+        }
+        var locked=lock(coordinates);
+        var rows=jdbc.query("SELECT public_reference,category_id,data_origin,form_data FROM visitor_registrations WHERE id=?",
+                (rs,n)->new String[]{rs.getString(1),Long.toString(rs.getLong(2)),rs.getString(3),rs.getString(4)},id(coordinates.id()));
+        if(rows.isEmpty()) throw notFound();
+        var row=rows.getFirst(); var form=json.readTree(row[3]);
+        return new RegistrationLifecyclePort.Access(coordinates,row[0],row[1],locked.categoryCode(),locked.status(),locked.environment(),row[2],
+                locked.version(),RegistrationMasking.name(form.path("fullName").asText()),RegistrationMasking.phone(form.path("phone").asText()),staff);
+    }
+
+    /** Receipt validation is SQL-zero on a foreign/suspended transaction and ADMIN never receives raw contact. */
+    @Override public RegistrationLifecyclePort.Contact lifecycleContact(RegistrationLifecyclePort.Access access) {
+        if(access==null) throw new IllegalStateException("Lock the registration before revealing contact");
+        access.consumeContact();
+        String form=jdbc.queryForObject("SELECT form_data FROM visitor_registrations WHERE id=?",String.class,id(access.coordinates().id()));
+        String phone=json.readTree(form).path("phone").asText();
+        if(!phone.matches("\\+[0-9]{8,15}")) throw new IllegalStateException("Stored contact violates the synthetic schema");
+        return new RegistrationLifecyclePort.Contact(phone);
     }
 
     /** The already-locked grant supplies all counter/environment authority; form data is an approved normalized whitelist. */
