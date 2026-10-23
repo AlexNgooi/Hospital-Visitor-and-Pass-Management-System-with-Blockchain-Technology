@@ -42,6 +42,16 @@ M05演示边界：`hsaas.lifecycle.enabled=true`、reader mock、environment tes
 
 ## 用户操作顺序
 
+**2026-10-23：继续使用保留的演示数据。** 如果上次关机/中断后同名演示容器还在且应用端口未运行，使用下面命令；它核对原control记录、完整容器ID和owner，不重新seed、不删除数据库。`resume`模式中的`stop`只停止服务并保留库，以后仍用`resume`；新建`start`模式的`stop`仍会删除临时库。无匹配control身份时拒绝自动认领容器。
+
+```powershell
+# Resume the previously owned demonstration without deleting its database.
+Set-Location -LiteralPath 'C:/Users/alexy/Documents/FYP Dev'
+node Implementation/scripts/manual-demo.mjs resume
+```
+
+新版本把匹配容器的版本化密钥保存到被忽略的`Implementation/tmp/manual-demo/runtime-keys.json`，不分享或提交。旧启动器仅内存保存密钥；第一次恢复旧容器时使用全新版本，撤销旧登录/QR/未完成scan，业务/审计/历史保持。旧密钥不可得的请求不能冒充可恢复重放，应重新登录、检查当前业务事实后创建新操作。备份bundle现在包含keyVersion；旧bundle缺该字段时仍按原demo版本恢复。`resume`不是备份替代，仍建议单独backup。
+
 1. 在已合并的本机main核对HEAD、clean状态和manifest；保留准确运行SHA。不要默认从尚未push的远端重新clone。
 2. 安装锁定前端依赖，按最终入口需要打包backend（skip tests）并准备classpath。每一步成功才继续；构建成功不是业务通过。
 3. 先由用户启动Docker Engine，再在普通干净终端手动启动专用临时环境；不携带SPRING_/JVM/Node配置覆盖或native数据库URL。启动器只打印READY URL及synthetic说明；owner通过下方安全inspect核对，modes按manifest的源码契约确认。当前助手检查时Docker daemon不可用，启动失败不能改用native库；不要为通过启动而repair旧库。

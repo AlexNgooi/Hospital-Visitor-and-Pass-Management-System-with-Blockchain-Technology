@@ -15,12 +15,14 @@ const implementation = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const frontend = resolve(implementation, "frontend"), backend = resolve(implementation, "backend");
 const output = resolve(implementation, "tmp/manual-demo"), backups = resolve(output, "backups");
 const statePath = resolve(output, "control.json");
+const runtimeKeysPath = resolve(output, "runtime-keys.json");
 const name = "hsaas-manual-m00-m07", owner = "hsaas-manual-m00-m07-v1", database = "hsaas_manual_m00_m07";
 const backendPort = 18407, webPort = 15417, controlPort = 15418;
 const execute = promisify(execFile), children = [], logs = [];
 let environment, containerId, dbEnvironment, dbPassword, signingKey, hashingKey, control, stopping = false, controlBusy = false;
 let interrupted = false, acceptingUsers = false;
 let stage = "configuration guard";
+let keyVersion = "demo", resumeId, preserveDatabase = false, databaseStartedHere = false, resetOldCapabilities = false;
 
 /** Only launcher-owned fixed messages are printable; subprocess errors may contain private arguments or environment data. */
 class DemoFailure extends Error {
@@ -56,8 +58,8 @@ async function requireFile(path, message) {
   try { await access(path); }
   catch { throw new DemoFailure("PREPARATION_MISSING", message); }
 }
-/** Read-only startup prerequisites: no containers, application processes, seeds or runtime files are created. */
-async function preflight() {
+/** Read-only prerequisites also verify saved ownership for resume; no containers, processes, seeds or runtime files are created here. */
+async function preflight(resume = false) {
   stage = "Java availability";
   let java;
   try { java = await exec("java", ["-version"], { timeout: 10000 }); }
@@ -82,7 +84,15 @@ async function preflight() {
   stage = "loopback ports and container ownership";
   for (const port of [backendPort, webPort, controlPort]) await freePort(port);
   const existing = await exec("docker", ["ps", "-a", "--filter", "name=^/" + name + "$", "--format", "{{.ID}}"], { timeout: 10000 });
-  if (existing.stdout.trim()) throw new DemoFailure("CONTAINER_EXISTS", "The demonstration container name already exists. Use the runbook's exact-name/ownership checks before stopping or restarting it.");
+  if (resume) {
+    // Adoption requires the exact prior control record AND the original container label/name, never just a reused name.
+    const state = JSON.parse(await readFile(statePath, "utf8"));
+    const id = existing.stdout.trim();
+    if (!id || state.owner !== owner || !String(state.containerId).startsWith(id)) throw new DemoFailure("RESUME_IDENTITY", "Resume requires this launcher's saved container identity and matching ownership.");
+    const identity = await exec("docker", ["inspect", "--format", '{{.Id}}|{{.Name}}|{{index .Config.Labels "hsaas.demo.owner"}}|{{.State.Status}}', state.containerId]);
+    if (!["exited", "running", "created"].some(status => identity.stdout.trim() === `${state.containerId}|/${name}|${owner}|${status}`)) throw new DemoFailure("RESUME_IDENTITY", "Container ownership or state does not permit resume.");
+    resumeId = state.containerId;
+  } else if (existing.stdout.trim()) throw new DemoFailure("CONTAINER_EXISTS", "The demonstration container name already exists. Use resume to preserve this launcher's matching database; never delete unrelated containers.");
   return classpath;
 }
 /** Only read-only infrastructure/health readiness is polled; user business workflows are never executed here. */
@@ -117,7 +127,7 @@ async function backup() {
   const directory = resolve(backups, new Date().toISOString().replaceAll(/[:.]/g, "-") + "-" + randomBytes(3).toString("hex"));
   await mkdir(directory, { recursive: true });
   await sqlTransfer(["exec", "--env", "MYSQL_PWD", containerId, "mysqldump", "-umanual_demo", "--single-transaction", "--set-gtid-purged=OFF", "--no-tablespaces", database], resolve(directory, "database.sql"));
-  await writeFile(resolve(directory, "keys.json"), JSON.stringify({ format: owner, database, signingKey, hashingKey }), { mode: 0o600 });
+  await writeFile(resolve(directory, "keys.json"), JSON.stringify({ format: owner, database, signingKey, hashingKey, keyVersion }), { mode: 0o600 });
   await writeFile(resolve(directory, "complete.json"), JSON.stringify({ format: owner, createdAt: new Date().toISOString(), dataOrigin: "SYNTHETIC/SIMULATED" }), { mode: 0o600 });
   return directory;
 }
@@ -129,11 +139,12 @@ async function restoreBundle(requested) {
   const complete = JSON.parse(await readFile(resolve(directory, "complete.json"), "utf8"));
   const keys = JSON.parse(await readFile(resolve(directory, "keys.json"), "utf8"));
   if (complete.format !== owner || keys.format !== owner || keys.database !== database
+      || (keys.keyVersion !== undefined && (typeof keys.keyVersion !== "string" || !/^[A-Za-z0-9_-]{1,64}$/.test(keys.keyVersion)))
       || ![keys.signingKey, keys.hashingKey].every(key => typeof key === "string" && /^[A-Za-z0-9+/]{43}=$/.test(key))) throw new Error("Invalid demonstration backup");
   await access(resolve(directory, "database.sql"));
   return { directory, ...keys };
 }
-/** Cleanup uses only exact child handles and an ownership-checked container; backups are deliberately retained. */
+/** Cleanup uses exact child handles; fresh databases are disposable, while resumed databases and their private identity/keys are retained. */
 async function cleanup() {
   if (stopping) return; stopping = true; control?.close();
   let failure = false;
@@ -144,11 +155,15 @@ async function cleanup() {
       if (child.exitCode === null && child.signalCode === null) failure = true;
     }
   }
-  if (containerId) { await ownedContainer(); await exec("docker", ["rm", "-f", containerId]); }
+  if (containerId) {
+    await ownedContainer();
+    if (!preserveDatabase) await exec("docker", ["rm", "-f", containerId]);
+    else if (databaseStartedHere || acceptingUsers) await exec("docker", ["stop", containerId]);
+  }
   for (const log of logs) log.end();
-  await rm(statePath, { force: true });
+  if (!preserveDatabase) { await rm(statePath, { force: true }); await rm(runtimeKeysPath, { force: true }); }
   if (failure) throw new Error("An owned child has not exited");
-  console.log("Owned demonstration stopped; database deleted; saved backup bundles retained.");
+  console.log(preserveDatabase ? "Owned demonstration stopped; resumed database and private runtime keys retained." : "Owned demonstration stopped; database deleted; saved backup bundles retained.");
 }
 /** CLI controls need a private local bearer token and never accept browser-origin requests. */
 async function command(action) {
@@ -158,29 +173,53 @@ async function command(action) {
   if (!response.ok) throw new Error("Demonstration control failed");
   console.log(await response.text());
 }
-/** Starts a fresh isolated environment, or restores a user-selected local demonstration backup before Java runs. */
-async function start(restorePath) {
-  const classpath = await preflight();
+/** Starts a fresh environment, restores a private backup, or resumes the exact owned database without re-seeding business data. */
+async function start(restorePath, resume = false) {
+  const classpath = await preflight(resume);
   stage = "local restore bundle validation";
   const bundle = restorePath ? await restoreBundle(restorePath) : null;
   await mkdir(output, { recursive: true });
   signingKey = bundle?.signingKey ?? randomBytes(32).toString("base64");
   hashingKey = bundle?.hashingKey ?? randomBytes(32).toString("base64");
+  keyVersion = bundle?.keyVersion ?? "demo";
   dbPassword = randomBytes(24).toString("hex"); const rootPassword = randomBytes(24).toString("hex");
+  if (resume) {
+    preserveDatabase = true; containerId = resumeId;
+    await ownedContainer();
+    // Read only the owned container's required connection secret internally; never emit inspect/environment output.
+    const inspected = await exec("docker", ["inspect", "--format", "{{json .Config.Env}}", containerId]);
+    const variables = new Map(JSON.parse(inspected.stdout).map(value => { const separator = value.indexOf("="); return [value.slice(0, separator), value.slice(separator + 1)]; }));
+    if (variables.get("MYSQL_DATABASE") !== database || variables.get("MYSQL_USER") !== "manual_demo" || !variables.get("MYSQL_PASSWORD")) throw new DemoFailure("RESUME_DATABASE", "The owned container does not match the demonstration database configuration.");
+    dbPassword = variables.get("MYSQL_PASSWORD");
+    // New launchers persist keys privately for future resumes. Older launchers kept them only in memory, so fail closed on old authority.
+    try {
+      const keys = JSON.parse(await readFile(runtimeKeysPath, "utf8"));
+      if (keys.containerId !== containerId || typeof keys.keyVersion !== "string" || !/^[A-Za-z0-9_-]{1,64}$/.test(keys.keyVersion)
+          || ![keys.signingKey, keys.hashingKey].every(key => typeof key === "string" && /^[A-Za-z0-9+/]{43}=$/.test(key))) throw new Error("Invalid runtime keys");
+      signingKey = keys.signingKey; hashingKey = keys.hashingKey; keyVersion = keys.keyVersion;
+    } catch (failure) {
+      if (failure.code !== "ENOENT") throw new DemoFailure("RESUME_KEYS", "Private runtime keys are unreadable or mismatched; preserve them and inspect this demonstration before retrying.");
+      keyVersion = "resume-" + randomBytes(8).toString("hex"); resetOldCapabilities = true;
+    }
+    stage = "resuming the owned demonstration database";
+    const current = await exec("docker", ["inspect", "--format", "{{.State.Running}}", containerId]);
+    if (current.stdout.trim() !== "true") { await exec("docker", ["start", containerId]); databaseStartedHere = true; }
+  } else {
   stage = "disposable MySQL container creation (Docker/image availability)";
   const created = await exec("docker", ["run", "--detach", "--name", name, "--label", "hsaas.demo.owner=" + owner,
     "--publish", "127.0.0.1::3306", "--env", "MYSQL_ROOT_PASSWORD", "--env", "MYSQL_DATABASE", "--env", "MYSQL_USER", "--env", "MYSQL_PASSWORD", "mysql:8.0.45"],
     { env: { ...environment, MYSQL_ROOT_PASSWORD: rootPassword, MYSQL_DATABASE: database, MYSQL_USER: "manual_demo", MYSQL_PASSWORD: dbPassword } });
   containerId = created.stdout.trim();
+  }
   // A signal during docker run is handled only after capturing its returned ID, so cleanup cannot orphan that container.
   if (interrupted) throw new Error("Demonstration startup interrupted");
   stage = "disposable MySQL readiness";
-  await ready(async () => { await exec("docker", ["exec", "--env", "MYSQL_PWD", containerId, "mysql", "-uroot", "-N", "-e", "SELECT 1"], { env: { ...environment, MYSQL_PWD: rootPassword } }); return true; });
+  await ready(async () => { await exec("docker", ["exec", "--env", "MYSQL_PWD", containerId, "mysql", "-umanual_demo", database, "-N", "-e", "SELECT 1"], { env: { ...environment, MYSQL_PWD: dbPassword } }); return true; });
   const mapping = await exec("docker", ["port", containerId, "3306/tcp"]), dbPort = Number(mapping.stdout.trim().split(":").at(-1));
   if (!Number.isSafeInteger(dbPort) || dbPort === 3306) throw new Error("Invalid disposable database port");
-  if (bundle) {
+  if (bundle || resetOldCapabilities) {
     stage = "restoring the owned demonstration database";
-    await sqlTransfer(["exec", "-i", "--env", "MYSQL_PWD", containerId, "mysql", "-umanual_demo", database], resolve(bundle.directory, "database.sql"), true);
+    if (bundle) await sqlTransfer(["exec", "-i", "--env", "MYSQL_PWD", containerId, "mysql", "-umanual_demo", database], resolve(bundle.directory, "database.sql"), true);
     // Restore preserves business/history/keys, but must never resurrect browser cookies, QR grants or in-flight scan authority.
     const revoke = [
       "START TRANSACTION",
@@ -201,15 +240,16 @@ async function start(restorePath) {
   // Command-line flags close external configuration imports; secrets remain in the child environment rather than argv.
   dbEnvironment.IDEMPOTENCY_HMAC_KEY = hashingKey;
   // The generated child-only JSON supplies an exact map key; no inherited Spring JSON is accepted.
-  dbEnvironment.SPRING_APPLICATION_JSON = JSON.stringify({ hsaas: { qr: { keys: { demo: signingKey } } } });
+  dbEnvironment.SPRING_APPLICATION_JSON = JSON.stringify({ hsaas: { qr: { keys: { [keyVersion]: signingKey } } } });
+  await writeFile(runtimeKeysPath, JSON.stringify({ containerId, signingKey, hashingKey, keyVersion }), { mode: 0o600 });
   stage = "backend readiness (see Implementation/tmp/manual-demo/backend.log)";
   const server = launch("java", ["-jar", "target/hsaas-backend-0.0.1-SNAPSHOT.jar", "--spring.profiles.active=manual-demo",
     "--spring.config.location=classpath:/application.yaml", "--spring.config.additional-location=", "--spring.config.import=", "--spring.profiles.include=", "--spring.profiles.group.manual-demo=",
     "--server.address=127.0.0.1", "--hsaas.environment=test", "--hsaas.secure-cookie=false", "--hsaas.reader-mode=mock", "--hsaas.mrn-mode=mock", "--hsaas.notification-mode=disabled", "--hsaas.blockchain-mode=disabled",
     "--hsaas.bootstrap.enabled=false", "--hsaas.qr.enabled=true", "--hsaas.registration.enabled=true", "--hsaas.review.enabled=true", "--hsaas.lifecycle.enabled=true",
-    "--hsaas.qr.origin=http://127.0.0.1:" + webPort, "--hsaas.qr.active-key=demo", "--hsaas.hash-key-version=demo", "--logging.level.root=WARN"], dbEnvironment, "backend.log", backend);
+    "--hsaas.qr.origin=http://127.0.0.1:" + webPort, "--hsaas.qr.active-key=" + keyVersion, "--hsaas.hash-key-version=" + keyVersion, "--logging.level.root=WARN"], dbEnvironment, "backend.log", backend);
   await ready(async () => (await fetch(`http://127.0.0.1:${backendPort}/api/health`)).status === 200, server);
-  if (!bundle) {
+  if (!bundle && !resume) {
     stage = "synthetic reference/account seed";
     await exec("java", ["--class-path", classpath, resolve(implementation, "scripts/ManualDemoSeed.java")], { cwd: implementation, env: dbEnvironment });
   }
@@ -225,17 +265,18 @@ async function start(restorePath) {
     controlBusy = true;
     try {
       if (request.url === "/backup") { const directory = await backup(); response.writeHead(200, { "Content-Type": "text/plain", "Cache-Control": "no-store" }).end("Backup saved: " + directory); }
-      else if (request.url === "/stop") { response.writeHead(200).end("Stopping owned demonstration; saved backups retained."); await cleanup(); process.exit(0); }
+      else if (request.url === "/stop") { response.writeHead(200).end(preserveDatabase ? "Stopping owned demonstration; resumed database retained." : "Stopping owned demonstration; database deleted, saved backups retained."); await cleanup(); process.exit(0); }
       else response.writeHead(404).end();
     } catch { response.writeHead(500).end("Owned demonstration control failed; see local diagnostics."); }
     finally { controlBusy = false; }
   });
   await new Promise((accept, reject) => { control.once("error", reject); control.listen(controlPort, "127.0.0.1", accept); });
-  await writeFile(statePath, JSON.stringify({ owner, token, containerId, backendPort, webPort, controlPort, dbPort }), { mode: 0o600 });
+  await writeFile(statePath, JSON.stringify({ owner, token, containerId, backendPort, webPort, controlPort, dbPort, preserveDatabase }), { mode: 0o600 });
   if (interrupted) throw new Error("Demonstration startup interrupted");
   acceptingUsers = true;
   console.log(`READY manual demonstration: http://127.0.0.1:${webPort}/login`);
-  console.log("Synthetic accounts only; no business checks executed. Use backup before stop to preserve data.");
+  console.log(preserveDatabase ? "Existing demonstration data preserved; stop retains this database. Use backup for a separate recovery copy." : "Synthetic accounts only; no business checks executed. Use backup before stop to preserve data.");
+  if (resetOldCapabilities) console.log("Older in-memory keys were unavailable. Previous login/QR/scan authority revoked; use new sessions and commands. Historical data retained.");
 }
 
 try {
@@ -246,16 +287,16 @@ try {
     await preflight();
     console.log("Prerequisites ready: Java, prepared files, Linux Docker Engine, ports and container name checked. No services or containers were started.");
   }
-  else if (args[0] === "start" && (args.length === 1 || args.length === 3 && args[1] === "--restore")) {
+  else if ((args[0] === "start" && (args.length === 1 || args.length === 3 && args[1] === "--restore")) || (args.length === 1 && args[0] === "resume")) {
     // Register before the first resource is created; startup unwinds its current operation before exact owned cleanup.
     for (const signal of ["SIGINT", "SIGTERM"]) process.on(signal, () => {
       interrupted = true;
       if (acceptingUsers) void cleanup().then(() => process.exit(0), () => { console.error("Owned cleanup requires follow-up"); process.exit(1); });
     });
-    await start(args[2]);
+    await start(args[2], args[0] === "resume");
   }
   else if (args.length === 1 && ["stop", "backup"].includes(args[0])) { stage = "private local " + args[0] + " control"; await command(args[0]); }
-  else throw new DemoFailure("USAGE", "Use check, start [--restore directory], backup, or stop.");
+  else throw new DemoFailure("USAGE", "Use check, start [--restore directory], resume, backup, or stop.");
 } catch (failure) {
   if (failure instanceof DemoFailure) console.error(`Manual demonstration refused [${failure.code}]: ${failure.message}`);
   else console.error(`Manual demonstration failed during ${stage}. Check ignored local logs for that stage; no native database fallback is attempted.`);
