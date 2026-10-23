@@ -2,6 +2,8 @@
 
 Frozen from source: 2026-10-18 (+08:00). M00–M06 function status: **MERGED_PENDING_USER_MANUAL_TEST**. M07 documentation is submitted for coordinator review/local merge; no business acceptance or publication is claimed. The coordinator owns REVIEW and final merge identity.
 
+2026-10-23 startup follow-up: launcher source `394285b02ba30576394259e5a4cdf6d236a91794` adds identity-verified `resume` for a retained demonstration container; it preserves the database and versioned private runtime keys on stop. This supersedes the older launcher identities below, with business/backend/frontend/schema/seed source unchanged. At the user's explicit startup request, the original database was resumed without removal/re-seed and backend health plus frontend login returned200; business/manual acceptance remains pending. See [startup receipt](../evidence/modules/M07/RESUME_STARTUP_2026_10_23.md) and the current runbook for legacy key/session reset and stop behavior.
+
 Startup-only follow-up: `6eafa345bfa2a87c36e6c2526f8a0154acca614e` adds read-only `check` and safe concrete failure codes/stages after the user's startup report. It supersedes the launcher blob/instructions below; business/backend/frontend/schema/seed source remains the checked `761491e`. Current launcher blob is `5f38f30f4b6aa1182302be3ed7924289b05b6a5a`. Syntax, configuration-refusal redaction and real read-only preflight passed; Docker was initially unavailable and became available during diagnosis. No application or database was started by the assistant. See [follow-up evidence](../evidence/modules/M07/STARTUP_DIAGNOSTICS.md).
 
 ## Identity and source boundary
