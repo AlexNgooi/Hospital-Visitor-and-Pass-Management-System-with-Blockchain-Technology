@@ -63,7 +63,7 @@ Actual app IDs/workspace paths and initial status are filled after creation. STA
 |---|---|---|---|
 | R01 | 01a17ab3-135b-7fd2-b581-28455a3e3591 / local | C:/Users/alexy/.codex/worktrees/a527/FYP Dev / codex/r01-registration-mrn | STARTED; active turn and clean baseline confirmed |
 | R02 | 01a17ab3-1361-7e42-a8c4-44a3e5d6d79a / local | C:/Users/alexy/.codex/worktrees/b799/FYP Dev / codex/r02-manual-pass | STARTED; active turn and branch confirmed |
-| R03 | 01a17ab3-1270-7892-827f-c87162b13d80 / local | C:/Users/alexy/.codex/worktrees/8add/FYP Dev / codex/r03-admin-reporting | STARTED; active turn and branch confirmed |
+| R03 | 01a17ab3-1270-7892-827f-c87162b13d80 / local | C:/Users/alexy/.codex/worktrees/8add/FYP Dev / codex/r03-admin-reporting | SOURCE_REVIEWED_READY_FOR_INTEGRATION_PENDING_USER_MANUAL_TEST; final head 2f58825, not merged |
 
 Shared committed startup baseline: `cbd4025d92a5d8dc3faeb3d874de16ba4589c89c`. All three app worktrees were verified at this SHA; each module sent its actual isolation confirmation to the current coordinator. A single wait_threads snapshot confirmed all three initial turns inProgress with initial assistant/tool activity. No model/thinking override was supplied.
 
@@ -109,3 +109,11 @@ R01 backend/V8/port checkpoint `bb963e6e4887141e1d69390ac82b3a072b12add3` arrive
 R01's actual repair `58bb6dbda4f52871720e52463e76b110b35cdeb3` was inspected and accepted: only known legacy roots can use primary-location fallback; v2 missing relation and unknown schemas fail safely, and the rechecked reference snapshot includes schema/primary destination. Coordinator approved R02/R03 importing `bb963e6` then `58bb6db` in that order into their own worktrees. This is coherent dependency/source approval only; R01 frontend and proof/idempotency follow-up still require final review, and no database or feature acceptance is inferred.
 
 R03 copy/comment repair `ccef771e3d11136a3d66f8ae62855c133c44ec48` and capability wording `0cea15b35f3bbacb210dd634a0def52a4149d550` were inspected and accepted. Inventory totals explicitly ignore the selected issued-destination filter without falsely claiming all stock lacks location; pass handling is explicitly MANUAL and the configured mock reader is labelled legacy simulation. No build/test repetition is required for those text-only changes. Final handoff/dependency checks remain pending.
+
+### R03 final source review — accepted for later integration
+
+Coordinator inspected final evidence commit/head `2f58825231da2242f6f6cd85da0531cfbd3d71da`, complete CONTRACT/HANDOFF and the clean `8add` worktree. No additional functional change followed reviewed `b55bec8` beyond accepted copy/comment repairs. Status is **SOURCE_REVIEWED_READY_FOR_INTEGRATION_PENDING_USER_MANUAL_TEST**, not merged or business acceptance PASS.
+
+Owned integration sequence is `b55bec85e967218f76241de94972c377ac8123f6`, `ccef771e3d11136a3d66f8ae62855c133c44ec48`, `0cea15b35f3bbacb210dd634a0def52a4149d550`, then evidence `2f58825231da2242f6f6cd85da0531cfbd3d71da`. R03 imported R02 `5b80b0a` as `900acccc8c3378a46e328cf6afea1e5622445355`, R01 `bb963e6` as `ef67819d4ecb847298c4267e23a5d6c7989c6bd5`, and R01 repair `58bb6db` as `2d43605f2a30e147ddcd696a661c7e50bdff559d`. Later integration must not duplicate imported checkpoint patches.
+
+Module-reported checks recorded in HANDOFF: frozen frontend install without lock changes, frontend build/lint, and backend `-DskipTests package` after approved dependency import at `2d43605` (80 main/26 existing test sources compiled, test bodies skipped); Vite >500kB warning and existing deprecated API note remain documented. Coordinator performed source/evidence/diff review, not independent command reruns. SQL/migrations/upgrade/concurrency/business/browser/UAT/restore/live integration remain NOT_RUN. No database/app operation or main implementation merge occurred. R03 remains available for concrete later integration repairs; no new work is required on the approved contract.
