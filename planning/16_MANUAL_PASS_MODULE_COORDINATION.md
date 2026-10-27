@@ -1,7 +1,7 @@
 ---
 type: module-coordination
 updated: 2026-10-27
-status: three-module-chats-started
+status: integrated-source-build-checked-not-merged-pending-user-manual-test
 ---
 # Manual pass change — R01–R03 coordination
 
@@ -133,3 +133,13 @@ R01 repair `61a132ecbcc59bc5feef83ed02266c9314d05d5b` and final evidence/head `3
 R02 runtime `f2a2cd9e4e0c48cb879a75de48a09fb10ee8f846` and final evidence/head `e31dc5cf6d5ba666407fa9fc42ce3aafe2c207a6` were reviewed against approved V9 `5b80b0a` and R01 port checkpoints. Coordinator inspected strict nested command encoding, current authority, root/sorted-card/assignment locks, atomic issue, category policy/unique fences, null deadlines/overdue, individual partial return, lost/restore actors and actual-return separation, explicit source pairs, field schemas and owned UI. The optional registrationId list filter narrows existing counter/environment/source scope. No blocking source issue was found. R02 imported R01 checkpoints as `30ca75fe59a52ff3ed1727dec49a8a1e8e725ac0` and `37a108acf5a4fdd5eb6af4390a8cd49d95f7e111`; later integration imports only its owned schema/runtime/evidence commits, not duplicate dependency patches.
 
 All three modules are SOURCE_REVIEWED_READY_FOR_INTEGRATION_PENDING_USER_MANUAL_TEST. Module-reported static/build checks are not independent coordinator reruns or SQL/functional acceptance. Coordinator is preparing one separate integration worktree/branch with the final original owned commits for necessary combined compile/build/lint only. This does not merge main, start/stop applications, modify databases or execute test suites. Any combined-source conflict/failure is returned to its owner before claiming integration readiness.
+
+### Combined integration source/build — ready, not merged
+
+App-managed coordinator worktree: `C:/Users/alexy/.codex/worktrees/manual-pass-integration/FYP Dev`, branch `codex/manual-pass-integration`, created from main `b997e7a097d0bb2423b34201e2154ac16f47b3f2`. It contains the complete reviewed R01 chain through `3fddf56`, R02 owned schema/runtime/handoff through `e31dc5c`, and R03 owned functionality/repairs/handoff through `2f58825`, imported once each without their duplicate dependency cherry-picks. No conflicts occurred. Combined checked source head is `f68095e6c089be2388a873483cd90d88076114fe`; later review/guide commits are documentation only.
+
+Coordinator actually executed these necessary combined checks in that isolated worktree: backend `mvnw.cmd -B -DskipTests package` BUILD SUCCESS (82 production sources plus 26 existing test sources compiled; Surefire explicitly skipped execution), frontend frozen install with scripts ignored, `pnpm run build` SUCCESS and `pnpm run lint` SUCCESS. Existing V1–V7 migrations plus package.json/pnpm-lock.yaml were compared with application baseline `50c8013` and are unchanged. Diff whitespace check passed. Backend notes RegistrationStore's deprecated API; frontend has the >500kB bundle advisory (568.47kB JS / 171.62kB gzip), without a new dependency or optimization scope.
+
+Status is **INTEGRATED_SOURCE_BUILD_CHECKED_NOT_MERGED_PENDING_USER_MANUAL_TEST**. SQL/migration/upgrade/concurrency/business/browser/UAT/restore/live integration and all test bodies remain NOT_RUN. No application or database was started/stopped/changed; main has documentation/coordination commits only, not the new application implementation. Existing running demo and untracked industry output were preserved. Modules remain available for concrete integration repairs, with no additional autonomous module work required.
+
+Combined review receipt and new user checklist live on the integration branch under `Implementation/docs/evidence/changes/COORDINATOR/INTEGRATION_REVIEW.md` and `Implementation/docs/runbooks/MANUAL_R01_R03.md`. The new guide replaces old scan/TEST_ID/forced-deadline business instructions only for this prepared source; it does not authorize startup or automatic ownership of the existing demo resources. User instruction is still required before main merge or running-demo change.
