@@ -1,7 +1,7 @@
 ---
 type: module-coordination
 updated: 2026-10-27
-status: authorized-starting
+status: three-module-chats-started
 ---
 # Manual pass change — R01–R03 coordination
 
@@ -61,6 +61,10 @@ Actual app IDs/workspace paths and initial status are filled after creation. STA
 
 | Module | Chat ID / host | Worktree / branch | State |
 |---|---|---|---|
-| R01 | pending creation / local | pending app path / codex/r01-registration-mrn | AUTHORIZED |
-| R02 | pending creation / local | pending app path / codex/r02-manual-pass | AUTHORIZED |
-| R03 | pending creation / local | pending app path / codex/r03-admin-reporting | AUTHORIZED |
+| R01 | 01a17ab3-135b-7fd2-b581-28455a3e3591 / local | C:/Users/alexy/.codex/worktrees/a527/FYP Dev / codex/r01-registration-mrn | STARTED; active turn and clean baseline confirmed |
+| R02 | 01a17ab3-1361-7e42-a8c4-44a3e5d6d79a / local | C:/Users/alexy/.codex/worktrees/b799/FYP Dev / codex/r02-manual-pass | STARTED; active turn and branch confirmed |
+| R03 | 01a17ab3-1270-7892-827f-c87162b13d80 / local | C:/Users/alexy/.codex/worktrees/8add/FYP Dev / codex/r03-admin-reporting | STARTED; active turn and branch confirmed |
+
+Shared committed startup baseline: `cbd4025d92a5d8dc3faeb3d874de16ba4589c89c`. All three app worktrees were verified at this SHA; each module sent its actual isolation confirmation to the current coordinator. A single wait_threads snapshot confirmed all three initial turns inProgress with initial assistant/tool activity. No model/thinking override was supplied.
+
+Coordinator relayed R03's exact system_settings/destination/actor/source column request to R02 and its normalized destination request to R01, acknowledged the dependency to R03 and instructed both owners to send compatible small checkpoints. Precise wire/DDL/port proposals are still awaiting review, not approved merely by chat startup. No implementation completion, tests, database execution, main implementation merge or live integration is claimed.
