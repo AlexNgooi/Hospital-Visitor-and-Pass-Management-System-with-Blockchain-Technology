@@ -1,0 +1,149 @@
+/* Shared presentation only: keep UPM red, bundled Geist and the existing feature/state contracts. */
+:root {
+  --canvas: #f5f6f8;
+  --control-border: #a0a7b2;
+  --surface-radius: 12px;
+  --surface-shadow: 0 2px 6px #20232a04;
+  --space-section: 24px;
+}
+
+body { background: var(--canvas); }
+textarea { font: inherit; color: var(--ink); }
+textarea:focus-visible, summary:focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: 4px;
+}
+
+/* Make the active location distinguishable by shape as well as colour. */
+.nav-link { position: relative; font-size: 14px; transition: background 180ms, color 180ms; }
+.nav-link.active { font-weight: 600; }
+.nav-link.active::before {
+  content: ""; position: absolute; inset: 12px auto 12px 0;
+  width: 3px; border-radius: 3px; background: var(--primary);
+}
+.shell-brand { margin-bottom: 36px; }
+.nav-caption { font-size: 11px; letter-spacing: 1px; }
+.topbar { min-height: 72px; }
+.breadcrumb { flex-wrap: wrap; gap: 8px; }
+.breadcrumb strong { overflow-wrap: anywhere; }
+.account-tools { flex-shrink: 0; }
+.workspace-main { padding: 28px 32px; }
+.counter-bar {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--surface-radius); padding: 12px 16px;
+  margin-bottom: var(--space-section); font-size: 14px;
+}
+.counter-bar > .muted { font-size: 12px; }
+
+/* Task-led overview: every action is an existing role-filtered route; there are no invented totals. */
+.workspace-overview { display: grid; gap: 28px; }
+.overview-heading { display: flex; align-items: center; justify-content: space-between; gap: 24px; }
+.overview-heading > div { min-width: 0; }
+.overview-heading h1 { font-size: clamp(26px, 2.6vw, 34px); letter-spacing: -1px; }
+.overview-heading p { max-width: 60ch; }
+.overview-primary { flex-shrink: 0; }
+.section-heading h2 { font-size: 18px; }
+.section-heading .muted { font-size: 13px; }
+.eyebrow { font-size: 11px; letter-spacing: 1.3px; }
+.workflow-section {
+  padding: 22px; background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--surface-radius); box-shadow: var(--surface-shadow);
+}
+.workflow-steps {
+  list-style: none; padding: 0; margin: 18px 0 0;
+  display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px;
+}
+.workflow-steps li { min-width: 0; }
+.workflow-steps a {
+  display: flex; gap: 12px; align-items: center; height: 100%; min-height: 80px;
+  padding: 14px; border: 1px solid var(--border); border-radius: 8px;
+  text-decoration: none; transition: border-color 180ms, background 180ms;
+}
+.workflow-steps a:hover { border-color: var(--primary); background: var(--soft); }
+.workflow-number { font-size: 12px; color: var(--primary); font-weight: 600; font-variant-numeric: tabular-nums; }
+.workflow-steps strong { display: block; font-size: 14px; }
+.workflow-steps small { display: block; color: var(--muted); font-size: 12px; margin-top: 3px; }
+.workflow-steps svg { margin-left: auto; flex-shrink: 0; color: var(--muted); }
+.area-grid { gap: 16px; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.area-card { min-height: 118px; padding: 22px; align-items: flex-start; box-shadow: var(--surface-shadow); }
+.area-icon { width: 44px; height: 44px; background: var(--soft); color: var(--primary); }
+.area-copy { min-width: 0; }
+.area-copy h3 { font-size: 15px; margin-bottom: 6px; }
+.area-copy p { font-size: 13px; line-height: 1.6; }
+.area-card > svg { margin-top: 3px; }
+.capabilities { margin-top: 0; padding: 20px 22px; }
+.capabilities > p { font-size: 13px; }
+.capability-grid { gap: 16px; }
+.capability-grid > div { padding-left: 12px; border-left: 2px solid var(--border); font-size: 13px; }
+.badge { font-size: 12px; white-space: normal; overflow-wrap: anywhere; max-width: 100%; }
+
+/* Unify component density while feature-local responsive layouts and safety messages remain authoritative. */
+.admin-card, .lc-panel, .review-queue, .review-detail {
+  border-radius: var(--surface-radius); box-shadow: var(--surface-shadow);
+}
+.admin-heading h1, .lc-header h1, .review-header h1 { font-size: clamp(26px, 2.6vw, 34px); }
+.admin-heading p, .lc-header p, .lc-panel > p, .review-boundary { font-size: 14px; }
+.admin-field, .lc-field, .review-filters label { font-size: 14px; }
+.workspace-main :is(input, select, textarea):not([type="checkbox"]):not([type="radio"]),
+.registration-form :is(input, select, textarea):not([type="checkbox"]):not([type="radio"]) {
+  border-color: var(--control-border); border-radius: 8px; max-width: 100%; min-width: 0;
+}
+.workspace-main :is(input, select, textarea)[aria-invalid="true"],
+.registration-form :is(input, select, textarea)[aria-invalid="true"] { border-color: var(--primary); }
+.workspace-main :is(input, select, textarea):disabled { background: #f1f3f5; color: var(--muted); }
+.admin-check input { accent-color: var(--primary); }
+.admin-page table, .lc-table table { font-variant-numeric: tabular-nums; line-height: 1.6; }
+.admin-page th, .lc-table th {
+  color: #515967; background: #f6f7f9; font-size: 12px;
+  font-weight: 600; text-transform: none; letter-spacing: 0;
+}
+.admin-page tbody tr:hover, .lc-table tbody tr:hover { background: #fafbfc; }
+.admin-table-scroll, .lc-table { border-radius: 8px; scrollbar-gutter: stable; }
+.admin-metrics .admin-card { border-top: 3px solid #ebccd2; }
+.admin-metrics span { font-size: 13px; }
+.admin-metrics strong { letter-spacing: -1px; line-height: 1.2; }
+.lc-mode { background: #f8f5f6; border-color: #e6dce0; }
+.lc-history li { padding-bottom: 6px; }
+.review-reveal { background: #fafbfc; }
+
+/* Registration stays compact on phones; larger controls and prose never change QR/grant authority. */
+.visitor-frame:has(> .registration-page) { max-width: 680px; }
+.registration-fields { gap: 14px; }
+.registration-form .field label { font-size: 14px; }
+.registration-step { padding-bottom: 10px; border-bottom: 1px solid var(--border); }
+.registration-form .registration-step h3 { font-size: 18px; }
+.registration-demo { border: 1px solid #efd2d9; background: #fff5f7; font-size: 13px; }
+.registration-locations label { padding: 6px 4px; border-bottom: 1px solid var(--border); }
+.registration-locations label:last-child { border-bottom: 0; }
+.registration-reference { background: #fafbfc; font-variant-numeric: tabular-nums; }
+
+/* Reflow to one reading column before labels and actions become cramped. No fixed bar covers form fields. */
+@media (max-width: 1200px) {
+  .overview-heading { align-items: flex-start; flex-direction: column; gap: 16px; }
+  .workflow-steps { grid-template-columns: 1fr; gap: 8px; }
+  .workflow-steps a { min-height: 64px; }
+}
+@media (max-width: 800px) {
+  .workspace-main { padding: 20px; }
+  .topbar { min-height: 64px; }
+  .workspace-overview { gap: 24px; }
+  .counter-bar { padding: 10px 12px; gap: 8px; }
+  .workflow-section { padding: 18px; }
+  .area-card { min-height: 112px; padding: 18px; }
+  .section-heading { gap: 6px; }
+  .overview-primary { min-height: 44px; }
+}
+@media (max-width: 600px) {
+  .area-grid { grid-template-columns: 1fr; gap: 12px; }
+  .area-card { min-height: 100px; padding: 18px; }
+  .overview-primary { width: 100%; justify-content: space-between; }
+  .capability-grid { grid-template-columns: 1fr; gap: 12px; }
+  .capability-grid > div { flex-direction: row; justify-content: space-between; align-items: flex-start; gap: 12px; }
+  .capability-grid .badge { flex-shrink: 0; }
+  .registration-fields { gap: 12px; }
+  .admin-filters { grid-template-columns: minmax(0, 1fr); }
+  .admin-heading > .button, .lc-header > .button { width: 100%; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .nav-link, .workflow-steps a { transition: none; }
+}

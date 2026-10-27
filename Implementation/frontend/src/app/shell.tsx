@@ -1,6 +1,7 @@
 import { useState, type ReactNode } from "react";
 import {
   ArrowUpRight,
+  ArrowRight,
   ChevronRight,
   LogOut,
   Menu,
@@ -170,7 +171,19 @@ export function WorkspaceShell({ slots }: { slots: readonly FeatureSlot[] }) {
   );
 }
 
-/** Compact role overview keeps real navigation and explicit availability in a readable hierarchy. */
+/** Route descriptions explain existing tasks without promising metrics or integration health. */
+const areaDescriptions: Readonly<Record<string, string>> = {
+  "/staff/registrations": "Check visitor details and review registrations before handover.",
+  "/staff/registration-qr": "Display the current QR for visitors to start their registration.",
+  "/staff/passes": "Choose available passes, confirm handover and record returns.",
+  "/admin/cards": "Manage manual pass inventory, locations and card availability.",
+  "/admin/users": "Manage staff accounts, roles and authorised counter access.",
+  "/admin/settings": "Maintain locations, visitor categories and return defaults.",
+  "/admin/reports": "Review registration activity, pass movements and masked exports.",
+  "/admin/audit": "Trace recorded staff actions and protected changes.",
+};
+
+/** Prioritise real role-specific work; links always come from the registered feature slots. */
 export function WorkspaceOverview({
   slots,
 }: {
@@ -180,22 +193,58 @@ export function WorkspaceOverview({
   if (state.kind !== "authenticated") return null;
   const staff = state.user.role === "COUNTER_STAFF";
   const choices = slots.filter((slot) => slot.role === state.user.role);
+  const primary = choices.find((slot) => slot.path === (staff ? "/staff/registrations" : "/admin/reports"));
+  const workflow = staff
+    ? [
+        { path: "/staff/registration-qr", title: "Register", detail: "Display the visitor QR" },
+        { path: "/staff/registrations", title: "Review", detail: "Verify visitor details" },
+        { path: "/staff/passes", title: "Manage passes", detail: "Issue and receive returns" },
+      ].filter((step) => choices.some((slot) => slot.path === step.path))
+    : [];
   return (
-    <>
-      <div className="page-heading">
+    <div className="workspace-overview">
+      <div className="page-heading overview-heading">
+        <div>
         <span className="eyebrow">
           {staff ? "COUNTER WORKSPACE" : "ADMINISTRATION"}
         </span>
-        <h1>Your workspace, ready.</h1>
+        <h1>{staff ? "Counter overview" : "Administration overview"}</h1>
         <p>
           {staff
-            ? "Choose an area to continue your counter workflow."
-            : "Manage your administration workspace."}
+            ? "Welcome back. Keep each visitor moving from registration to return."
+            : "Keep your people, passes and daily operations organised."}
         </p>
+        </div>
+        {primary && (
+          <Link to={primary.path} className="button button-primary overview-primary">
+            {staff ? "Review registrations" : "View reports"}
+            <ArrowRight size={18} aria-hidden="true" />
+          </Link>
+        )}
       </div>
+      {workflow.length > 0 && (
+        <section className="workflow-section" aria-labelledby="workflow-title">
+          <div className="section-heading">
+            <h2 id="workflow-title">Your counter workflow</h2>
+            <span className="muted">Registration · review · handover</span>
+          </div>
+          <ol className="workflow-steps">
+            {workflow.map((step, index) => (
+              <li key={step.path}>
+                <Link to={step.path}>
+                  <span className="workflow-number" aria-hidden="true">{String(index + 1).padStart(2, "0")}</span>
+                  <span><strong>{step.title}</strong><small>{step.detail}</small></span>
+                  <ChevronRight size={18} aria-hidden="true" />
+                </Link>
+              </li>
+            ))}
+          </ol>
+        </section>
+      )}
+      <section aria-labelledby="workspace-areas-title">
       <div className="section-heading">
-        <h2>Workspace areas</h2>
-        <span className="muted">Connect modules as they become available</span>
+        <h2 id="workspace-areas-title">{staff ? "Workspace tools" : "Manage your workspace"}</h2>
+        <span className="muted">{staff ? "Everything you need at the counter" : "Accounts, inventory and operational records"}</span>
       </div>
       <div className="area-grid">
         {choices.map(({ path, label, icon: Icon }) => (
@@ -203,21 +252,26 @@ export function WorkspaceOverview({
             <span className="area-icon">
               {Icon && <Icon size={22} aria-hidden="true" />}
             </span>
-            <h3>{label}</h3>
+            <div className="area-copy">
+              <h3>{label}</h3>
+              {areaDescriptions[path] && <p>{areaDescriptions[path]}</p>}
+            </div>
             <ArrowUpRight size={18} aria-hidden="true" />
           </Link>
         ))}
       </div>
+      </section>
       <section className="capabilities">
         <h2>Integration availability</h2>
+        <p className="muted">External services are separate from the manual pass workflow.</p>
         <div className="capability-grid">
           <Capability title="WhatsApp" state="Not enabled" />
           <Capability title="Blockchain" state="Not enabled" />
-          <Capability title="Physical reader" state="Not connected" />
+          <Capability title="Pass handling" state="Manual" />
           <Capability title="Live patient API" state="Not enabled" />
         </div>
       </section>
-    </>
+    </div>
   );
 }
 
