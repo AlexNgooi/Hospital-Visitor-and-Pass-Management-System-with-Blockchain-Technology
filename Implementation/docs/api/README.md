@@ -10,3 +10,18 @@ This mirror lets `frontend/pnpm run api:generate` consume a stable reviewed inpu
 M01 does not edit the original spec. Future combined module specifications require
 coordinator review. Generated frontend declarations are never hand-edited and do
 not replace runtime response validation or prove unimplemented business APIs.
+
+## 2026-10-27 manual-pass change scope
+
+The R01–R03 changes use feature-local runtime response schemas and module-owned
+contracts in `Implementation/docs/evidence/changes/Rxx/CONTRACT.md`. This shared
+input mirror still covers only the reviewed foundation routes; it is not a
+combined OpenAPI description of registration, manual inventory/lifecycle or
+administration/reporting. New paths remain on the existing ADMIN or COUNTER_STAFF
+security prefixes, with service-level current authority/counter checks and CSRF
+for writes. No role broadening or hand-edit of generated declarations is needed.
+
+Exact checkpoint/source review and dependency approval are tracked in
+`planning/16_MANUAL_PASS_MODULE_COORDINATION.md`. Consolidating a new generated
+input requires a later reviewed combined specification; the old foundation input
+must not be silently relabelled as complete coverage of the new application.
