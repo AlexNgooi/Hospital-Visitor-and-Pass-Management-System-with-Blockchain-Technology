@@ -6,7 +6,7 @@
 
 - M00–M06：当前范围代码已合并本机 main。M07：手动验收案例、runbook 和交付证据已合并；文档交付不等于所有业务验收通过。
 - R01 登记/MRN/审核、R02 手动库存/发还卡、R03 管理/设置/报表：源码审核完成，整合分支 `codex/manual-pass-integration` 交付 `7af5659`。组合后端打包、前端 build/lint 通过。
-- R01–R03 尚未合并 main、执行 V8/V9 迁移或完成业务手测；MRN 为 synthetic mock，不是 live 医院 API。
+- R01–R03 已按用户后续明确要求无冲突合并本机 main，merge `c4cf3d3`。尚未执行 V8/V9 迁移或完成业务手测；MRN 为 synthetic mock，不是 live 医院 API。独立 UI polish 尚未合并。
 - M08–M11：仍 deferred，不启动。
 - UI/UX Pro Max：本地 `C:/Users/alexy/.codex/skills/ui-ux-pro-max/SKILL.md`、scripts/search.py 及 data 存在，搜索脚本实际运行成功。不是仅保存一个下载链接。
 

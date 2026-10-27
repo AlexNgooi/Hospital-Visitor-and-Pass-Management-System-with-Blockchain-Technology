@@ -1,12 +1,12 @@
 # R01–R03：手动 pass 与新表单的用户检查指南
 
-2026-10-27。本文对应独立 `codex/manual-pass-integration` 整合分支，**尚未合并 main，也未部署或启动**。源码审核/构建状态见[组合审阅记录](../evidence/changes/COORDINATOR/INTEGRATION_REVIEW.md)；需求、模块和共享决定见仓库根 `planning/16_MANUAL_PASS_MODULE_COORDINATION.md`。
+2026-10-27。本文对应已审核的 `codex/manual-pass-integration` 整合版，**现已按用户要求合并本机 main（merge `c4cf3d3`），尚未部署、启动新版或执行 V8/V9 迁移**。源码审核/构建状态见[组合审阅记录](../evidence/changes/COORDINATOR/INTEGRATION_REVIEW.md)；需求、模块和共享决定见仓库根 `planning/16_MANUAL_PASS_MODULE_COORDINATION.md`。
 
 这份清单全部为 **NOT_RUN**。构建通过不代表数据库迁移、并发或业务验收通过。
 
 ## 启动前提
 
-- 当前运行 demo 仍是原来的源码/数据，不会因为独立分支已准备好就变成新版。先由用户决定整合/合并和启动时机；本轮助手没有停止旧服务、连接数据库或更新 schema。
+- main 源码已合并，但当前运行 demo 不会自动更新；新版启动时机仍由用户决定。本轮助手没有停止/重启旧服务、连接数据库或更新 schema。
 - 新版含新增 V8/V9，V1–V7 不改写。后续从旧库升级前，先由用户按既有 owner/backup 流程保护数据和匹配的私有 keys。备份/恢复和真实迁移尚未验证，不执行 repair/baseline/clean 或直接修改 native3306。
 - 现有启动器的端口、容器名和资源 owner 是固定的；不要从新 worktree 自动认领旧库、复制私有 control/keys/.env 或与当前运行的 demo 抢端口。旧启动/保留数据说明见 MANUAL_M00_M07.md；其中“扫描、TEST_ID、强制24小时”等业务步骤已由本文的新流程替代。
 - 这里只使用合成姓名、IC、地址、患者和电话。MRN API 是假的，WhatsApp/blockchain 仍 disabled。当前账户、counter grant、动态 QR 入口与 ADMIN/COUNTER_STAFF 角色分离继续有效。

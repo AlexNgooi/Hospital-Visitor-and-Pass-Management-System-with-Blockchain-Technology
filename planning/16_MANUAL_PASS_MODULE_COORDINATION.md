@@ -1,9 +1,15 @@
 ---
 type: module-coordination
 updated: 2026-10-27
-status: integrated-source-build-checked-not-merged-pending-user-manual-test
+status: merged-pending-user-manual-test
 ---
 # Manual pass change — R01–R03 coordination
+
+## Latest: user-authorized local main merge — 2026-10-27
+
+The user explicitly requested “把R01 -03 merge 去main” in chat `01a17d68-73a3-7962-b09b-46eb13c34bdc`. Reviewed integration head `7af56594908daec51ce65dc5fb5d61c2c3d431f7` was merged without conflicts into local main `84c1008` as `c4cf3d3a7143501b00426ad1a0364b64938ac0fd`. Status is **MERGED_PENDING_USER_MANUAL_TEST**; earlier not-merged statements below describe the historical integration review.
+
+Post-merge comparison `git diff --exit-code codex/manual-pass-integration HEAD -- Implementation` passed with no difference before this documentation update; `git diff --check HEAD^1 HEAD` passed. The merged application sources exactly match the already built/linted integration source, so build/test suites were not repeated. Existing untracked industry output was preserved. UI commit `ccfca27` remains separate. No push, deployment, service restart, database access or V8/V9 execution occurred; SQL/business/manual acceptance remains NOT_RUN. New feature work remains deferred in favour of UI under planning/17.
 
 ## Human authorization and limits
 

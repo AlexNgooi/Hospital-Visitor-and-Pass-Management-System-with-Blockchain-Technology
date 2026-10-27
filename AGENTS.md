@@ -6,6 +6,8 @@
 
 > **2026-10-27 用户最新优先级：UI 优先，新增 feature 暂缓。** 当前 chat `01a17d68-73a3-7962-b09b-46eb13c34bdc` 的用户明确要求先把 UI 做好。本轮只推进前端布局、导航、视觉与响应式优化；现有 R01–R03 整合成果保留，不继续新增业务功能，不启动 M08–M11。UI 独立分支 `codex/ui-first-polish` 基于 `codex/manual-pass-integration` 的 `7af5659`；不自动合并 main 或更改运行中 demo。执行记录见 `planning/17_UI_FIRST_PRIORITY.md`。本条覆盖旧计划中的功能推进优先级。
 
+> **2026-10-27 R01–R03 已按用户明确要求合并本机 main。** 当前 chat 用户要求“把R01 -03 merge 去main”，已将审核整合分支 `codex/manual-pass-integration` 的 `7af5659` 无冲突合并，merge 为 `c4cf3d3`。状态 `MERGED_PENDING_USER_MANUAL_TEST`；应用源码与已构建整合版一致。没有合并独立 UI polish、push、启动/重启服务或执行 V8/V9 迁移。此前“尚未合并/不得自动合并”是历史状态，本次用户许可只覆盖已完成 R01–R03 的本地 merge；后续仍 UI 优先，新增 feature 暂缓。
+
 # HSAAS 项目导航
 
 这是 HSAAS Visitor and Pass Management FYP 的规划工作区。
