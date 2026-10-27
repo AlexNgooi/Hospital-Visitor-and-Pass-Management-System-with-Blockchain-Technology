@@ -13,7 +13,7 @@ Worktree `C:/Users/alexy/.codex/worktrees/a527/FYP Dev`, branch `codex/r01-regis
 | 3 | e3782f2445424530ecf2c3e5153db30bb4d152de | V1 replay injection boundary, original lookup capture time, accurate IC labels and backend contexts |
 | 4 | 8dee3ed50e96e1010436629cd741d82edb1c60ca | Four frontend forms, mock patient/terms/multiple locations, explicit staff reveal and frontend contexts |
 
-The final delivery head is the subsequent documentation-only commit containing this handoff; resolve it with `git rev-parse codex/r01-registration-mrn`. Coordinator already source-reviewed/approved commits 1+2 for R02/R03 dependency import; full feature acceptance is still pending. R01 imported no other module commit.
+Original documentation delivery was 81081702b04e40457a5b802492bc86a747709a51. The coordinator-requested automatic MRN follow-up below extends that chain; resolve the final documentation head with `git rev-parse codex/r01-registration-mrn`. Coordinator already source-reviewed/approved commits 1+2 for R02/R03 dependency import; full feature acceptance is still pending. R01 imported no other module commit.
 
 ## Delivered behavior and boundaries
 
@@ -54,3 +54,13 @@ Database/Flyway execution, SQL constraints/backfill on an actual database, busin
 ## Integration follow-up owned by coordinator
 
 Update shared OpenAPI/generated contracts for v2 form metadata, termsAcknowledgement, destinationCodes, nullable mock patient/token/expiry outcomes, ward-free lookup input and explicit review-fields POST/DTO. No shared runtime composition change is required: existing registration/review beans/features load owned changes. V8 must be included before R02 V9/R03 readers, but no migration was executed here. Preserve approval boundaries for combined source checks/main merge/application startup and manual SQL/business checks.
+
+## Coordinator final-review repair: automatic MRN lookup
+
+Repair commit `61a132ecbcc59bc5feef83ed02266c9314d05d5b` follows 81081702b04e40457a5b802492bc86a747709a51 and changes only registration frontend contracts.ts, registration.tsx and CONTEXT.md. Valid completed Penjaga MRN input now automatically looks up on blur in the visit-details step. The existing button remains an explicit retry. Both triggers share the protected transport and one current context+normalized-MRN in-flight key. An automatic-attempt key prevents repeated blur from retrying the same completed success/failure; MRN edit resets that attempt eligibility. No retry timer or failure loop exists.
+
+MRN/ward edits abort and invalidate prior requests while clearing feedback/proof immediately; category/context/unmount also abort and fence pending work. Optional AbortSignal is forwarded by the owned port, with no backend endpoint/dependency/shared client change. Responses still require the captured revision, and mock lookup never changes staff approval. Manual ward fallback remains available after failure.
+
+For this actual frontend logic change, `pnpm run build` and `pnpm run lint` both succeeded again (same existing >500 kB bundle advisory, no lint diagnostics); staged diff check passed. Backend sources unchanged, so no backend packaging was repeated. Database/app/browser/test/business execution all remain NOT_RUN.
+
+Additional user manual scenarios (NOT_RUN): tab/click away from a valid MRN and observe lookup without pressing the button; invalid/incomplete MRN must not dispatch. Blur then activate retry while lookup is pending must not duplicate the request. After failure, repeated blur must not create a retry loop; explicit retry remains available. Edit MRN during a request or change category/context/unmount and verify stale patient/proof cannot return. Staff confirmation must remain unchecked even after automatic MATCH.
