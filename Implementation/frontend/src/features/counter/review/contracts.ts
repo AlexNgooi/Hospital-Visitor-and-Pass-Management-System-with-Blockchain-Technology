@@ -36,6 +36,20 @@ export const queueSchema = z.object({
 }).strict();
 const maskedIdSchema = z.string().min(3).max(80).regex(/^[A-Za-z0-9* -]+$/).refine(masking);
 
+/** Explicit staff reveal is parsed independently so default detail/queue can never acquire raw fields. */
+export const reviewFieldsSchema = z.object({
+  id: idSchema, version: versionSchema,
+  fieldSchemaVersion: z.enum(["synthetic-registration-v1", "manual-registration-v2"]),
+  fields: z.array(z.object({
+    name: z.enum(["fullName", "identificationType", "identificationNumber", "phone", "mrn", "wardCode", "relationship",
+      "organisation", "company", "contactPerson", "destinationCode", "visitPurpose", "deliveryPurpose", "workPurpose",
+      "currentAddress", "patientName", "bed", "patientSource", "patientResolvedAt", "destinations"]),
+    label: z.string().min(1).max(120), value: z.string().min(1).max(8192),
+  }).strict()).max(24),
+  terms: z.object({ policyVersion: z.literal("penjaga-pass-terms-v1"), capturedAt: utcSchema }).strict().nullable(),
+}).strict();
+export type ReviewFields = z.infer<typeof reviewFieldsSchema>;
+
 /** MRN feedback never becomes staff confirmation; only review metadata can represent completed review. */
 export const detailSchema = queueItemSchema.extend({
   maskedIdentification: maskedIdSchema,
@@ -88,6 +102,8 @@ export interface QueueQuery { counterId: string; category: Category | "ALL"; sta
 export interface ReviewPort {
   list(query: QueueQuery, signal?: AbortSignal): Promise<Queue>;
   detail(id: string, signal?: AbortSignal): Promise<Detail>;
+  /** Optional only for older injected read ports; production exposes the explicit audited POST. */
+  reviewFields?(id: string, expectedVersion: number, signal?: AbortSignal): Promise<ReviewFields>;
   verify(id: string, input: Verify): Command<ReviewResult>;
   reject(id: string, input: Reject): Command<ReviewResult>;
 }

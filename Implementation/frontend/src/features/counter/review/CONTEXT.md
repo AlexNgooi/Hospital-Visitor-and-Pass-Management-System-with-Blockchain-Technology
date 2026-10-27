@@ -1,3 +1,9 @@
+# R01 authorized staff comparison — 2026-10-27
+
+- Existing masked queue/detail and explicit manual evidence remain the default. Production ReviewPort adds reviewFields POST with expected version/current authority/CSRF; raw fields are parsed independently and never included in normal detail.
+- Explicit Reveal/Hide controls show a bounded old/new schema field list, requested locations, synthetic patient snapshot and separate pass terms/time. No raw data in browser storage, idempotency commands, URL, logs or report state.
+- Selection, authorization refresh/loss, changed version, stale queue, conflict and unmount fence pending requests and clear sensitive memory. Mock feedback never prechecks identity/MRN/ward confirmations. Necessary frontend build/lint only; all browser/business/test execution NOT_RUN.
+
 # Counter review · M04
 
 - Inputs: planning/03 S01/R04/Q06, planning/04 C03/C04/C08/C09/C11, UI v4 S04/S05, and the existing M01 shared extension contract.

@@ -39,6 +39,9 @@
 .review-checks input { appearance: auto; flex: 0 0 20px; width: 20px; height: 20px; accent-color: var(--primary); }
 .review-checks:disabled label { cursor: not-allowed; color: var(--muted); }
 .review-history { display: grid; gap: 6px; border-top: 1px solid var(--border); margin-top: 16px; padding-top: 16px; font-size: 14px; }
+/* Explicit comparison fields wrap inside the existing panel and never replace the masked default identity. */
+.review-reveal { display:grid;gap:12px;border:1px solid var(--border);border-radius:8px;padding:12px;margin:12px 0;min-width:0; }
+.review-reveal .review-facts { margin:0; }
 .review-reject-dialog { display: grid; gap: 16px; max-height: calc(100dvh - 32px); overflow-y: auto; }
 .review-reject-dialog .review-notice a { display: inline-flex; min-height: 44px; align-items: center; }
 /* Reflow supports normal phones and browser zoom; no fixed action bar obscures focused controls. */

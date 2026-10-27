@@ -18,6 +18,12 @@
 .registration-form .registration-step h3 { margin:0;font-size:18px;color:var(--ink); }
 .registration-form h3 { font-size:20px;margin:0 0 14px;scroll-margin-top:24px; }
 .registration-fields { display:grid;gap:12px; }
+/* Checkbox groups keep multi-location selection keyboard/touch reachable without platform multi-select gestures. */
+.registration-locations { min-width:0;grid-column:1 / -1;border:1px solid var(--border);border-radius:8px;padding:12px;max-height:280px;overflow:auto; }
+.registration-locations legend { padding:0 4px;font-weight:600; }
+.registration-locations label { display:flex;align-items:center;gap:10px;min-height:44px;cursor:pointer;overflow-wrap:anywhere; }
+.registration-locations input { width:20px;height:20px;min-height:20px;padding:0;flex-shrink:0;accent-color:var(--primary); }
+.registration-locations:focus-visible { outline:3px solid var(--focus);outline-offset:2px; }
 .registration-fixed-field { font-size:14px;margin:0;align-self:center;line-height:1.5; }
 .registration-form .field { margin-bottom:0;min-width:0;gap:4px; }
 .registration-form > .field { margin-bottom:10px; }

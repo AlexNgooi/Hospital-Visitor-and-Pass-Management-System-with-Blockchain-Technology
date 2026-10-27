@@ -7,8 +7,9 @@ import { Button, StatusPanel } from "../../../components/ui/primitives";
 import type { Command } from "../../../lib/api-client";
 import { ClientError, safeError } from "../../../lib/errors";
 import { formatMyt } from "../../../lib/time";
+import type { SessionUser } from "../../../lib/contracts";
 import { reviewPort } from "./client";
-import { categoryLabels, reasonLabels, statusLabels, type Category, type Detail, type Queue, type Reason, type ReviewPort, type ReviewResult, type Status, type Verify } from "./contracts";
+import { categoryLabels, reasonLabels, statusLabels, type Category, type Detail, type Queue, type Reason, type ReviewFields, type ReviewPort, type ReviewResult, type Status, type Verify } from "./contracts";
 import "./review.css";
 
 type Mutation =
@@ -29,11 +30,11 @@ export function RegistrationReview({ port = reviewPort }: { port?: ReviewPort })
   if (!counter || !state.user.counterIds.includes(counter)) {
     return <StatusPanel kind="empty" title="No counter access">Ask the administrator to assign counter access.</StatusPanel>;
   }
-  return <ReviewWorkspace key={`${state.user.id}:${counter}`} counterId={counter} port={port} recheckSession={refresh} />;
+  return <ReviewWorkspace key={`${state.user.id}:${counter}`} authority={state.user} counterId={counter} port={port} recheckSession={refresh} />;
 }
 
 /** Current reads are fenced by request generation; writes are explicit and retain one immutable command handle. */
-function ReviewWorkspace({ counterId, port, recheckSession }: { counterId: string; port: ReviewPort; recheckSession: () => void }) {
+function ReviewWorkspace({ counterId, port, recheckSession, authority }: { counterId: string; port: ReviewPort; recheckSession: () => void; authority: SessionUser }) {
   const [category, setCategory] = useState<Category | "ALL">("ALL");
   const [status, setStatus] = useState<Status | "ALL">("SUBMITTED");
   const [page, setPage] = useState(0);
@@ -64,18 +65,35 @@ function ReviewWorkspace({ counterId, port, recheckSession }: { counterId: strin
   const detailHeading = useRef<HTMLHeadingElement | null>(null);
   const rejectionSummary = useRef<HTMLParagraphElement | null>(null);
   const commandNoticeRef = useRef<HTMLDivElement | null>(null);
+  const [revealed, setRevealed] = useState<ReviewFields | null>(null);
+  const [revealBusy, setRevealBusy] = useState(false), [revealError, setRevealError] = useState("");
+  const revealGeneration = useRef(0), revealAbort = useRef<AbortController | null>(null);
+
+  /** Sensitive comparison fields live only in this selected-version memory and every clear fences late responses. */
+  const clearReveal = useCallback(() => {
+    revealGeneration.current++; revealAbort.current?.abort(); setRevealed(null); setRevealBusy(false); setRevealError("");
+  }, []);
+  useEffect(() => {
+    // The auth provider owns session updates; clear sensitive feature memory after its committed scope change.
+    let current = true;
+    queueMicrotask(() => { if (current) clearReveal(); });
+    return () => { current = false; };
+  }, [authority, clearReveal]);
 
   /** Authorization failures remove stale operational data instead of leaving a previous counter's view visible. */
   const deny = useCallback(() => {
+    clearReveal();
     accessLostRef.current = true;
     setAccessLost(true); setQueue(null); setDetail(null); setSelected(null);
     detailGeneration.current++; detailAbort.current?.abort();
-  }, []);
+  }, [clearReveal]);
   const resetChecks = useCallback(() => {
+    clearReveal();
     setIdentity(false); setMrn(false); setWard(false); setConflict(false); setReason(""); setReasonError(false);
-  }, []);
+  }, [clearReveal]);
   /** These refs track the latest network requests, not DOM nodes captured by an effect. */
   const cancelReads = useCallback(() => {
+    revealGeneration.current++; revealAbort.current?.abort();
     queueGeneration.current++; queueAbort.current?.abort();
     detailGeneration.current++; detailAbort.current?.abort();
   }, []);
@@ -143,6 +161,30 @@ function ReviewWorkspace({ counterId, port, recheckSession }: { counterId: strin
   const editable = Boolean(detail && detail.status === "SUBMITTED" && !detailBusy && !queueError && !staleDetail && !conflict && !locked);
   const penjaga = detail?.categoryCode === "PENJAGA";
   const approveReady = editable && detail?.source === "SYNTHETIC" && identity && (!penjaga || (mrn && ward)) && (detail?.version ?? 0) < Number.MAX_SAFE_INTEGER;
+  useEffect(() => {
+    let current = true;
+    if (staleDetail || conflict || queueError) queueMicrotask(() => { if (current) clearReveal(); });
+    return () => { current = false; };
+  }, [staleDetail, conflict, queueError, clearReveal]);
+
+  /** A successful lookup never checks staff confirmations; reveal only supplies the necessary human comparison inputs. */
+  async function revealFields() {
+    if (!detail || !port.reviewFields || revealBusy || staleDetail || conflict || locked || queueError) return;
+    clearReveal(); const generation = ++revealGeneration.current, detailSequence = detailGeneration.current;
+    const controller = new AbortController(); revealAbort.current = controller;
+    setRevealBusy(true);
+    try {
+      const value = await port.reviewFields(detail.id, detail.version, controller.signal);
+      if (!alive.current || generation !== revealGeneration.current || detailSequence !== detailGeneration.current) return;
+      if (value.id !== detail.id || value.version !== detail.version) throw new ClientError("invalid-response");
+      setRevealed(value);
+    } catch (error) {
+      if (!alive.current || generation !== revealGeneration.current || isAbort(error)) return;
+      setRevealError(safeError(error));
+      if (lostAccess(error)) deny();
+      else if (error instanceof ClientError && error.status === 409) { setConflict(true); resetChecks(); }
+    } finally { if (alive.current && generation === revealGeneration.current) setRevealBusy(false); }
+  }
 
   /** Reads may recover an unknown command's current state, but only the original handle can confirm its own result. */
   async function run(pending: Extract<Mutation, { kind: "pending" | "unknown" }>) {
@@ -257,6 +299,17 @@ function ReviewWorkspace({ counterId, port, recheckSession }: { counterId: strin
               <div><dt>Submitted</dt><dd>{formatMyt(detail.submittedAt)} MYT</dd></div><div><dt>Version</dt><dd>{detail.version}</dd></div>
               {penjaga && <><div><dt>MRN</dt><dd>{detail.maskedMrn ?? "Not available"}</dd></div><div><dt>MRN feedback</dt><dd>{detail.mrnMode === "mock" ? "Mock" : "Manual"} · {feedbackLabel(detail.mrnFeedback)}</dd></div></>}</dl>
             {penjaga && <p className="review-notice">MRN feedback is not patient verification. Compare the synthetic MRN and ward records before approving.</p>}
+            {port.reviewFields && <section className="review-reveal" aria-label="Staff comparison fields">
+              <p className="muted">Reveal registration fields only when needed for your counter review. Access is recorded in the local audit.</p>
+              <div className="review-actions"><Button variant="secondary" busy={revealBusy} disabled={locked || staleDetail || conflict || Boolean(queueError)} onClick={() => void revealFields()}>Reveal fields for staff comparison</Button>
+                {revealed && <Button variant="ghost" onClick={clearReveal}>Hide fields</Button>}</div>
+              {revealError && <p className="review-notice review-warning" role="alert">{revealError}</p>}
+              {revealed && !staleDetail && !conflict && !queueError && revealed.id === detail.id && revealed.version === detail.version && <>
+                <p className="muted">Schema: {revealed.fieldSchemaVersion}</p>
+                <dl className="review-facts">{revealed.fields.map(field => <div key={field.name}><dt>{field.label}</dt><dd>{field.value}</dd></div>)}</dl>
+                {revealed.terms && <p>Pass terms: {revealed.terms.policyVersion} · {formatMyt(revealed.terms.capturedAt)} MYT</p>}
+              </>}
+            </section>}
             {(staleDetail || conflict) && <p className="review-notice review-warning" role="alert">This record changed. Refresh the detail and complete the checks again.</p>}
             {detail.review && <div className="review-history"><h3>Review record</h3><p>Staff {detail.review.actorId} · {formatMyt(detail.review.reviewedAt)} MYT</p>
               <p>{detail.review.source === "SYNTHETIC_MANUAL" ? "Synthetic staff verification" : "Local review"}</p>{detail.review.reasonCode && <p>{reasonLabels[detail.review.reasonCode]}</p>}</div>}
