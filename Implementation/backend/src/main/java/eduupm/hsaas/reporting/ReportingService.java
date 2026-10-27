@@ -47,7 +47,7 @@ public class ReportingService {
             add(sql,args,"noDeadline","SELECT COUNT(*)"+assignments+"a.closed_at IS NULL AND a.due_at IS NULL"+assignmentScope(filter),assignmentArgs(filter,false));
             var dueArgs=new ArrayList<Object>();dueArgs.add(DatabaseTime.sql(now));dueArgs.addAll(assignmentArgs(filter,false));
             add(sql,args,"overdue","SELECT COUNT(*)"+assignments+"a.closed_at IS NULL AND a.due_at IS NOT NULL AND a.due_at<=?"+assignmentScope(filter),dueArgs);
-            // Unassigned inventory has no issued destination. Only category and approved deployment provenance apply.
+            // Inventory intentionally ignores the selected assignment destination, including destination-bound manual cards.
             String cardScope=" AND environment=? AND ((enrollment_method='SCAN' AND data_origin='SIMULATED') OR (enrollment_method='MANUAL' AND data_origin='SYNTHETIC'))"+(filter.categoryId()==null?"":" AND category_id=?");
             var cardArgs=new ArrayList<Object>();cardArgs.add(environment);if(filter.categoryId()!=null)cardArgs.add(filter.categoryId());
             add(sql,args,"available","SELECT COUNT(*) FROM cards WHERE status='AVAILABLE'"+cardScope,cardArgs);
