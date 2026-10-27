@@ -4,6 +4,8 @@
 
 > 2026-10-18交付状态：M05/M06功能与M07文档已按本次授权审核并合并本机main；运行源码761491e，merge分别6e458b7/0917266/8100520。必要组合静态/构建检查通过，Docker不可用导致SQL与业务/恢复NOT_RUN；用户自己启动及手测。当前入口Implementation/docs/runbooks/MANUAL_M00_M07.md，准确记录planning/14_M05_M07_COORDINATION.md。不push、不部署、不改native库，M08–M11未启动。
 
+> **2026-10-27 用户最新优先级：UI 优先，新增 feature 暂缓。** 当前 chat `01a17d68-73a3-7962-b09b-46eb13c34bdc` 的用户明确要求先把 UI 做好。本轮只推进前端布局、导航、视觉与响应式优化；现有 R01–R03 整合成果保留，不继续新增业务功能，不启动 M08–M11。UI 独立分支 `codex/ui-first-polish` 基于 `codex/manual-pass-integration` 的 `7af5659`；不自动合并 main 或更改运行中 demo。执行记录见 `planning/17_UI_FIRST_PRIORITY.md`。本条覆盖旧计划中的功能推进优先级。
+
 # HSAAS 项目导航
 
 这是 HSAAS Visitor and Pass Management FYP 的规划工作区。
