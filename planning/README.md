@@ -2,6 +2,8 @@
 
 # HSAAS FYP 当前规划入口
 
+**2026-10-27 R01–R03源码交付**：三个独立模块均已完成源码审核，完整代码已放入独立 `codex/manual-pass-integration` 分支；组合后端打包（跳过测试执行）、前端构建/lint通过。**尚未合并main或改动运行demo，数据库/业务/手动验收NOT_RUN**。准确源码、路径、限制和下一步见[16整合记录](16_MANUAL_PASS_MODULE_COORDINATION.md)。新手动指南和组合review在该整合分支内，不把当前main的旧应用当成新版。
+
 **2026-10-27 模块启动：[R01–R03分工与协调](16_MANUAL_PASS_MODULE_COORDINATION.md)**。用户已授权本chat代开独立chat/worktree并开始实施新变更，覆盖昨日design-only安排；Penjaga仅IC、每登记一张活动pass已确认。功能与验收尚未完成，不自动merge main或改动当前运行demo。
 
 **2026-10-26 新需求/设计入口：[手动 pass 与表单变更](15_MANUAL_PASS_AND_FORM_CHANGE.md)**。用户要求取消 pass reader，staff 手动选卡/发还；Vendor/Contractor 多张多地点、Executive 一张；归还期限可设或不设，发/还时间即进/出日期时间；按 PDF 更新 Penjaga 字段，以假 MRN API 回填患者/ward/bed，条款勾选并记时间。用户明确本轮**先更新需求和设计，暂不改应用代码**。02/03/04 的 2026-10-26 增量优先于冲突旧规则；新功能 **NOT_IMPLEMENTED / NOT_RUN**。旧图/UI 原型尚未同步，以下 M00–M07 状态仅代表旧实现。
