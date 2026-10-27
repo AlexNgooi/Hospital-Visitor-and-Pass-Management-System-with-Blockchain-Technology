@@ -61,7 +61,7 @@ Actual app IDs/workspace paths and initial status are filled after creation. STA
 
 | Module | Chat ID / host | Worktree / branch | State |
 |---|---|---|---|
-| R01 | 01a17ab3-135b-7fd2-b581-28455a3e3591 / local | C:/Users/alexy/.codex/worktrees/a527/FYP Dev / codex/r01-registration-mrn | STARTED; active turn and clean baseline confirmed |
+| R01 | 01a17ab3-135b-7fd2-b581-28455a3e3591 / local | C:/Users/alexy/.codex/worktrees/a527/FYP Dev / codex/r01-registration-mrn | SOURCE_REVIEW_REPAIR_REQUIRED; automatic MRN trigger requested after initial handoff 8108170 |
 | R02 | 01a17ab3-1361-7e42-a8c4-44a3e5d6d79a / local | C:/Users/alexy/.codex/worktrees/b799/FYP Dev / codex/r02-manual-pass | STARTED; active turn and branch confirmed |
 | R03 | 01a17ab3-1270-7892-827f-c87162b13d80 / local | C:/Users/alexy/.codex/worktrees/8add/FYP Dev / codex/r03-admin-reporting | SOURCE_REVIEWED_READY_FOR_INTEGRATION_PENDING_USER_MANUAL_TEST; final head 2f58825, not merged |
 
@@ -117,3 +117,11 @@ Coordinator inspected final evidence commit/head `2f58825231da2242f6f6cd85da0531
 Owned integration sequence is `b55bec85e967218f76241de94972c377ac8123f6`, `ccef771e3d11136a3d66f8ae62855c133c44ec48`, `0cea15b35f3bbacb210dd634a0def52a4149d550`, then evidence `2f58825231da2242f6f6cd85da0531cfbd3d71da`. R03 imported R02 `5b80b0a` as `900acccc8c3378a46e328cf6afea1e5622445355`, R01 `bb963e6` as `ef67819d4ecb847298c4267e23a5d6c7989c6bd5`, and R01 repair `58bb6db` as `2d43605f2a30e147ddcd696a661c7e50bdff559d`. Later integration must not duplicate imported checkpoint patches.
 
 Module-reported checks recorded in HANDOFF: frozen frontend install without lock changes, frontend build/lint, and backend `-DskipTests package` after approved dependency import at `2d43605` (80 main/26 existing test sources compiled, test bodies skipped); Vite >500kB warning and existing deprecated API note remain documented. Coordinator performed source/evidence/diff review, not independent command reruns. SQL/migrations/upgrade/concurrency/business/browser/UAT/restore/live integration remain NOT_RUN. No database/app operation or main implementation merge occurred. R03 remains available for concrete later integration repairs; no new work is required on the approved contract.
+
+### R01 final feature review — automatic lookup repair requested
+
+R01 submitted backend follow-up `e3782f2445424530ecf2c3e5153db30bb4d152de`, frontend `8dee3ed50e96e1010436629cd741d82edb1c60ca` and initial evidence head `81081702b04e40457a5b802492bc86a747709a51`. Coordinator inspected the versioned payload encoder, legacy replay boundaries, server MRN proof/context/expiry/patient binding, lookup capture timestamp, source field schemas, current-authority audited review reveal, form/review runtime schemas and stale-response/state clearing. Existing FoundationConfig supplies strict duplicate JSON detection to the registration parser; no unnecessary duplicate-parser change was requested.
+
+The backend follow-up aligns with the reviewed contract: old v1 replays reject v2-only fields outside their old encoding, and patientResolvedAt uses the original proof created_at. No V8 schema/port change followed the previously approved dependency repair. R01-reported package/build/lint results remain scoped source checks, not independent coordinator reruns or runtime acceptance.
+
+One required user-facing correction remains: the frontend at `8dee3ed` invokes MRN lookup only from its button, while the user requested automatic search after entering MRN. Coordinator requested automatic lookup on valid completed-field blur or short valid-input debounce, with the existing button retained for deliberate retry. Reuse context+MRN in-flight deduplication/stale-response fences, immediately clear old patient/proof on edits, cancel pending triggers on scope/category/unmount, preserve manual failure fallback, and avoid auto-approval or automatic failure retry loops. Frontend build/lint after this logic change are appropriate; no new backend endpoint, dependency, tests, DB or browser execution. Final source acceptance awaits separate repair SHA and updated handoff.
