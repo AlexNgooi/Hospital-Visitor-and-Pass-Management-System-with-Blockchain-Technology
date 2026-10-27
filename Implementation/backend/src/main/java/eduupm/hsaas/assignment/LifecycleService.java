@@ -23,7 +23,7 @@ import eduupm.hsaas.registration.RegistrationLifecyclePort;
 import eduupm.hsaas.registration.RegistrationReviewPort;
 import static eduupm.hsaas.assignment.LifecycleStore.*;
 
-/** Real transactional simulation: current authority, inventory, assignments, evidence, local audit and replay commit together. */
+/** Manual lifecycle and historical scan support share current authority, root locks, local audit and replay. */
 public final class LifecycleService {
     private final LifecycleStore store;
     private final LifecycleSecurity security;
@@ -35,7 +35,8 @@ public final class LifecycleService {
     private final JsonMapper json;
     private final Clock clock;
     private final FoundationProperties properties;
-    private final TransactionTemplate tx;
+    final TransactionTemplate tx;
+    private final ManualLifecycle manual;
 
     LifecycleService(LifecycleStore store,Accounts accounts,SessionCapabilities capabilities,RegistrationLifecyclePort roots,
             RegistrationReviewPort reviewRoots,ReaderPort reader,IdempotencyPort idem,LocalAuditPort audit,JsonMapper json,
@@ -43,10 +44,16 @@ public final class LifecycleService {
         this.store=store; this.security=new LifecycleSecurity(accounts,capabilities,store.jdbc); this.roots=roots; this.reviewRoots=reviewRoots;
         this.reader=reader; this.idem=idem; this.audit=audit; this.json=json; this.clock=clock; this.properties=properties;
         tx=new TransactionTemplate(manager); tx.setIsolationLevel(TransactionDefinition.ISOLATION_READ_COMMITTED);
+        manual=new ManualLifecycle(this,store,security,roots,idem,audit,json,clock,properties.environment());
     }
 
     /** A uniqueness loser only queries a winner under fresh authority; it never silently reapplies the command. */
     SafeResult command(LifecycleSecurity.Context context,boolean admin,String operation,String target,String key,String body) {
+        // Manual writes never discover or consume a scan, including recovery of historical stock.
+        if(Set.of("CARD_ENROLL","ISSUE","RETURN","RETURN_BATCH","RESTORE").contains(operation))
+            return manual.command(context,admin,operation,target,key,body);
+        // Legacy reader actions remain explicitly gated; manual operations above bypass this dependency.
+        if(operation.startsWith("SCAN_") && !properties.readerMode().equals("mock")) throw new ApiFailure(503,"SERVICE_UNAVAILABLE","The legacy reader is disabled.");
         if(TransactionSynchronizationManager.isActualTransactionActive()) throw new IllegalStateException("Lifecycle starts outside a domain transaction");
         for(int attempt=0;attempt<2;attempt++) {
             var actor=security.preflight(context,admin);
@@ -62,7 +69,7 @@ public final class LifecycleService {
                     var replay=idem.replay(namespace,encoding);
                     if(replay.isPresent()) return replay.get().result();
                     if(recovery) throw new ApiFailure(409,"IDEMPOTENCY_CONFLICT","Check the original command before retrying.");
-                    var locked=lock(plan,context,current,operation,input);
+                    var locked=lock(plan,context,current,operation);
                     replay=idem.replay(namespace,encoding);
                     if(replay.isPresent()) return replay.get().result();
                     var result=apply(operation,input,plan,locked,context,current.id());
@@ -78,7 +85,7 @@ public final class LifecycleService {
 
     /** Nonlocking discovery supplies only immutable coordinates; lock() rejects any changed active mapping. */
     private Plan discover(String operation,String target,LifecycleInput input,boolean admin) {
-        Long counter=null; String registration=null,card=null,assignment=null,job=null,result=null,device=null;
+        Long counter=null; String registration=null,card=null,assignment=null,job=null,device=null;
         String namespaceTarget=target;
         if(operation.equals("SCAN_START")) {
             counter=LifecycleInput.decimal(input.text("counterId")); String purpose=input.text("purpose");
@@ -94,9 +101,7 @@ public final class LifecycleService {
         } else if(operation.equals("SCAN_SIMULATE") || operation.equals("SCAN_CANCEL")) {
             job=LifecycleInput.uuid(target); var scan=store.job(job,false); counter=scan.counter(); device=scan.device();
             if(!scan.environment().equals(properties.environment())) throw CardRules.unavailable();
-        } else if(operation.equals("CARD_ENROLL")) namespaceTarget="REGISTER";
-        else if(operation.equals("ISSUE")) { registration=Long.toString(LifecycleInput.decimal(input.text("registrationId"))); namespaceTarget=registration; }
-        else if(Set.of("RETURN","CONTACT_REVEAL","FOLLOWUP").contains(operation)) assignment=LifecycleInput.uuid(target);
+        } else if(Set.of("CONTACT_REVEAL","FOLLOWUP").contains(operation)) assignment=LifecycleInput.uuid(target);
         else card=LifecycleInput.uuid(target);
 
         if(assignment!=null) {
@@ -112,33 +117,18 @@ public final class LifecycleService {
             if(counter!=null && counter!=registrationCounter) throw CardRules.unavailable();
             counter=registrationCounter;
         }
-        if(Set.of("ISSUE","RETURN","CARD_ENROLL","RESTORE").contains(operation)) {
-            result=LifecycleInput.uuid(input.text("scanResultId")); var evidence=store.evidence(result,false); var scan=store.job(evidence.job(),false);
-            if(!scan.environment().equals(properties.environment()) || !evidence.environment().equals(properties.environment())) throw CardRules.unavailable();
-            if(counter!=null && counter!=scan.counter()) throw CardRules.unavailable();
-            counter=scan.counter(); job=scan.id(); device=scan.device();
-            if(operation.equals("ISSUE")) {
-                var found=store.byUid(evidence.uid()); if(found==null) throw CardRules.unavailable(); card=found.id();
-            }
-        }
-        if(card!=null && assignment==null && !Set.of("ISSUE","SCAN_START").contains(operation)) {
+        if(card!=null && assignment==null && !operation.equals("SCAN_START")) {
             if(!store.card(card,false).environment().equals(properties.environment())) throw CardRules.unavailable();
             var active=store.activeForCard(card);
             if(active!=null) { assignment=active.id(); registration=Long.toString(active.registration()); }
         }
         // ADMIN card actions may close an active assignment without acquiring any staff capability.
         if(registration!=null && counter==null && !admin) counter=LifecycleInput.decimal(roots.discover(registration).counterId());
-        return new Plan(namespaceTarget,counter,registration,card,assignment,job,result,device);
+        return new Plan(namespaceTarget,counter,registration,card,assignment,job,device);
     }
 
-    /** Relative locks: authority -> category(enroll) -> device -> registration -> card -> assignment -> job -> result. */
-    private Locked lock(Plan plan,LifecycleSecurity.Context context,Accounts.Account actor,String operation,LifecycleInput input) {
-        Long enrollmentCategory=null;
-        if(operation.equals("CARD_ENROLL")) {
-            var e=store.evidence(plan.result(),false);
-            var categories=store.jdbc.query("SELECT id FROM visitor_categories WHERE code=? AND active=TRUE FOR SHARE",(rs,n)->rs.getLong(1),e.category());
-            CardRules.require(!categories.isEmpty(),"CARD_CATEGORY_UNAVAILABLE"); enrollmentCategory=categories.getFirst();
-        }
+    /** Legacy scan/device prefix precedes root references; manual inventory never enters this device path. */
+    private Locked lock(Plan plan,LifecycleSecurity.Context context,Accounts.Account actor,String operation) {
         Device device=null;
         if(plan.device()!=null) {
             if(operation.equals("SCAN_START")) {
@@ -154,12 +144,12 @@ public final class LifecycleService {
         if(registration!=null && (!registration.environment().equals(properties.environment()) || !registration.origin().equals("SYNTHETIC"))) throw CardRules.unavailable();
         Card card=plan.card()==null?null:store.card(plan.card(),true);
         Assignment assignment=plan.assignment()==null?null:store.assignment(plan.assignment(),true);
-        if(card!=null && (!card.environment().equals(properties.environment()) || !card.origin().equals("SIMULATED"))) throw CardRules.unavailable();
-        if(assignment!=null && (!assignment.environment().equals(properties.environment()) || !assignment.origin().equals("SIMULATED"))) throw CardRules.unavailable();
-        if(card!=null && !Set.of("ISSUE","SCAN_START","SCAN_SIMULATE","SCAN_CANCEL").contains(operation)) {
+        if(card!=null && (!card.environment().equals(properties.environment()) || !Set.of("SIMULATED","SYNTHETIC").contains(card.origin()))) throw CardRules.unavailable();
+        if(assignment!=null && (!assignment.environment().equals(properties.environment()) || !Set.of("SIMULATED","MANUAL").contains(assignment.origin()))) throw CardRules.unavailable();
+        if(card!=null && !Set.of("SCAN_START","SCAN_SIMULATE","SCAN_CANCEL").contains(operation)) {
             var active=store.activeForCard(card.id());
             // A new active assignment may require an earlier root lock: abort instead of chasing it out of order.
-            if(!Objects.equals(active==null?null:active.id(),plan.assignment()) && !Set.of("RETURN","CONTACT_REVEAL","FOLLOWUP").contains(operation)) {
+            if(!Objects.equals(active==null?null:active.id(),plan.assignment()) && !Set.of("CONTACT_REVEAL","FOLLOWUP").contains(operation)) {
                 throw new ApiFailure(409,"VERSION_CONFLICT","The active assignment changed. Refresh before continuing.");
             }
         }
@@ -167,7 +157,7 @@ public final class LifecycleService {
             CardRules.require(assignment.cardId().equals(plan.card()) && Long.toString(assignment.registration()).equals(plan.registration()),"ASSIGNMENT_CHANGED");
             if(actor.role().equals("COUNTER_STAFF") && (assignment.counter()!=plan.counter() || assignment.returnCounter()!=plan.counter())) throw CardRules.unavailable();
         }
-        return new Locked(device,registration,card,assignment,enrollmentCategory);
+        return new Locked(device,registration,card,assignment);
     }
 
     private SafeResult apply(String operation,LifecycleInput input,Plan plan,Locked locked,LifecycleSecurity.Context context,long actor) {
@@ -176,10 +166,7 @@ public final class LifecycleService {
             case "SCAN_START" -> start(input,plan,locked,context,actor,now);
             case "SCAN_SIMULATE" -> simulate(input,plan,locked,context,actor,now);
             case "SCAN_CANCEL" -> cancel(plan,locked,context,actor,now);
-            case "CARD_ENROLL" -> enroll(input,plan,locked,context,actor,now);
-            case "ISSUE" -> issue(input,plan,locked,context,actor,now);
-            case "RETURN" -> returned(input,plan,locked,context,actor,now);
-            case "MARK_LOST","DISABLE","RESTORE" -> inventoryAction(operation,input,plan,locked,context,actor,now);
+            case "MARK_LOST","DISABLE" -> inventoryAction(operation,input,plan,locked,context,actor,now);
             case "FOLLOWUP" -> followup(input,locked,actor,now);
             default -> throw new IllegalArgumentException("Unknown lifecycle operation");
         };
@@ -232,25 +219,6 @@ public final class LifecycleService {
         return new SafeResult(job.id(),null,state,1);
     }
 
-    /** Validation and consumption occur after all domain locks and within the same transaction as the business change. */
-    private Evidence evidence(Plan plan,Locked locked,LifecycleSecurity.Context context,long actor,String purpose,String target,Instant now) {
-        var job=store.job(plan.job(),true); guard(job,locked.device(),context,actor,now);
-        CardRules.require(job.status().equals("SUCCEEDED") && job.purpose().equals(purpose) && job.target().equals(target),"SCAN_BINDING_INVALID");
-        var result=store.evidence(plan.result(),true);
-        CardRules.require(result.job().equals(job.id()) && result.origin().equals("SIMULATED")
-                && result.environment().equals(job.environment()) && result.environment().equals(properties.environment()),"SCAN_BINDING_INVALID");
-        // Re-derive the finite trusted mapping rather than accepting a corrupted/mismatched persisted profile.
-        var trusted=reader.read(result.sample());
-        CardRules.require(trusted.normalizedUid().equals(result.uid()) && trusted.profileCode().equals(result.profile())
-                && trusted.categoryCode().equals(result.category()),"SCAN_PROFILE_UNKNOWN");
-        return result;
-    }
-    private void consume(Plan plan,Instant now) {
-        int updated=store.jdbc.update("UPDATE scan_jobs SET status='CONSUMED',consumed_at=? WHERE id=? AND status='SUCCEEDED' AND expires_at>?",
-                DatabaseTime.sql(now),plan.job(),DatabaseTime.sql(now));
-        CardRules.require(updated==1,"SCAN_STATE_CONFLICT");
-        store.jdbc.update("UPDATE reader_devices SET active_scan_job_id=NULL WHERE id=? AND active_scan_job_id=?",plan.device(),plan.job());
-    }
     private void requireOwner(Job job,LifecycleSecurity.Context context,long actor) {
         if(job.actor()!=actor || !job.owner().equals(context.owner())) throw CardRules.unavailable();
     }
@@ -261,56 +229,7 @@ public final class LifecycleService {
                 && job.environment().equals(properties.environment()),"SCAN_BINDING_INVALID");
         CardRules.require(now.isBefore(job.expires()),"SCAN_EXPIRED");
     }
-    private SafeResult enroll(LifecycleInput input,Plan plan,Locked locked,LifecycleSecurity.Context context,long actor,Instant now) {
-        var result=evidence(plan,locked,context,actor,"ENROLL","REGISTER",now);
-        CardRules.require(store.byUid(result.uid())==null,"CARD_ALREADY_ENROLLED");
-        String card=uuid(),code=reader.read(result.sample()).cardCode();
-        store.jdbc.update("INSERT INTO cards(id,normalized_uid,card_code,category_id,category_code,profile_code,status,enrolled_by,enrolled_at,data_origin,environment) VALUES(?,?,?,?,?,?,'AVAILABLE',?,?,'SIMULATED',?)",
-                card,result.uid(),code,locked.enrollmentCategory(),result.category(),result.profile(),actor,DatabaseTime.sql(now),properties.environment());
-        consume(plan,now); event("CARD_REGISTERED",card,null,null,actor,null,"AVAILABLE",null,0L,null,now);
-        return new SafeResult(card,code,"AVAILABLE",0);
-    }
-
-    /** The fixed due instant and rule version are captured from one ordinary settings snapshot, never recalculated later. */
-    private SafeResult issue(LifecycleInput input,Plan plan,Locked locked,LifecycleSecurity.Context context,long actor,Instant now) {
-        var r=locked.registration(); var card=locked.card(); CardRules.version(r.version(),input.version());
-        CardRules.require(r.status().equals("VERIFIED") && r.origin().equals("SYNTHETIC") && r.environment().equals(properties.environment()),"REGISTRATION_STATE_CONFLICT");
-        CardRules.require(card.status().equals("AVAILABLE") && card.origin().equals("SIMULATED") && card.environment().equals(r.environment())
-                && card.category().equals(r.categoryCode()) && Long.toString(card.categoryId()).equals(r.categoryId()),"CARD_CATEGORY_MISMATCH");
-        CardRules.require(input.bool("handoverConfirmed"),"HANDOVER_REQUIRED");
-        CardRules.require(store.jdbc.queryForObject("SELECT COUNT(*) FROM card_assignments WHERE active_registration_id=?",Integer.class,
-                LifecycleInput.decimal(plan.registration()))==0,"ASSIGNMENT_ALREADY_ACTIVE");
-        var result=evidence(plan,locked,context,actor,"ISSUE",plan.registration(),now);
-        CardRules.require(result.uid().equals(card.uid()) && result.profile().equals(card.profile()),"SCAN_BINDING_INVALID");
-        var rules=store.jdbc.query("SELECT setting_key,value_int,version FROM system_settings WHERE setting_key=?",
-                (rs,n)->new Rule(rs.getString(1),rs.getInt(2),rs.getLong(3)),"return_hours_"+r.categoryCode());
-        if(rules.isEmpty()) throw new ApiFailure(503,"SERVICE_UNAVAILABLE","The demonstration return rule is unavailable.");
-        var rule=rules.getFirst(); Instant due=now.plus(rule.hours(),ChronoUnit.HOURS); String id=uuid(),reference="P-DEMO-"+uuid().replace("-","");
-        store.jdbc.update("INSERT INTO card_assignments(id,pass_reference,card_id,registration_id,issue_counter_id,return_counter_id,issued_by,issued_at,due_at,return_rule_key,return_rule_version,handover_confirmed_at,operation_origin,environment) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,'SIMULATED',?)",
-                id,reference,card.id(),LifecycleInput.decimal(plan.registration()),plan.counter(),plan.counter(),actor,DatabaseTime.sql(now),DatabaseTime.sql(due),rule.key(),rule.version(),DatabaseTime.sql(now),properties.environment());
-        changeCard(card,"ISSUED"); consume(plan,now);
-        event("ISSUED",card.id(),id,LifecycleInput.decimal(plan.registration()),actor,card.status(),"ISSUED",card.version(),card.version()+1,null,now);
-        return new SafeResult(id,reference,"ISSUED",0);
-    }
-
-    private SafeResult returned(LifecycleInput input,Plan plan,Locked locked,LifecycleSecurity.Context context,long actor,Instant now) {
-        var a=locked.assignment(); var card=locked.card(); CardRules.version(a.version(),input.version());
-        CardRules.require(a.closed()==null && Set.of("ISSUED","OVERDUE").contains(card.status()),"CARD_STATE_CONFLICT");
-        CardRules.require(input.bool("physicalReceived"),"RECEIPT_CONFIRMATION_REQUIRED");
-        var result=evidence(plan,locked,context,actor,"RETURN",a.id(),now);
-        CardRules.require(result.uid().equals(card.uid()) && result.profile().equals(card.profile()),"SCAN_BINDING_INVALID");
-        // A return at/after the deadline records the overdue transition even if the periodic monitor has not run yet.
-        overdueLocked(a,card,now);
-        int changed=store.jdbc.update("UPDATE card_assignments SET closed_at=?,closure_reason='RETURNED',returned_at=?,returned_by=?,version=version+1 WHERE id=? AND closed_at IS NULL AND version=?",
-                DatabaseTime.sql(now),DatabaseTime.sql(now),actor,a.id(),a.version());
-        CardRules.require(changed==1,"VERSION_CONFLICT");
-        var current=store.card(card.id(),false); changeCard(current,"AVAILABLE"); consume(plan,now);
-        store.jdbc.update("UPDATE overdue_alerts SET resolved_at=? WHERE assignment_id=? AND resolved_at IS NULL",DatabaseTime.sql(now),a.id());
-        event("RETURNED",card.id(),a.id(),a.registration(),actor,current.status(),"AVAILABLE",current.version(),current.version()+1,null,now);
-        return new SafeResult(a.id(),a.reference(),"RETURNED",a.version()+1);
-    }
-
-    /** Lost closes the active loan and keeps an unresolved case; restore is an explicit DEMO policy, never a hospital approval. */
+    /** Lost closes the active loan without an actual return; manual restore is handled by the separate custody command. */
     private SafeResult inventoryAction(String operation,LifecycleInput input,Plan plan,Locked locked,LifecycleSecurity.Context context,long actor,Instant now) {
         var card=locked.card(); var a=locked.assignment(); CardRules.version(card.version(),input.version());
         String reason=input.text("reasonCode"),next;
@@ -320,8 +239,10 @@ public final class LifecycleService {
             if(a!=null) {
                 CardRules.require(a.closed()==null,"ASSIGNMENT_STATE_CONFLICT");
                 CardRules.require(a.version()<CardRules.MAX_VERSION,"VERSION_CONFLICT");
-                int changed=store.jdbc.update("UPDATE card_assignments SET closed_at=?,closure_reason='LOST',version=version+1 WHERE id=? AND closed_at IS NULL AND version=?",
-                        DatabaseTime.sql(now),a.id(),a.version());
+                // A due pass records its overdue transition before a lost closure, just as an actual return does.
+                overdueLocked(a,card,now); card=store.card(card.id(),false);
+                int changed=store.jdbc.update("UPDATE card_assignments SET closed_at=?,closed_by=?,closure_reason='LOST',version=version+1 WHERE id=? AND closed_at IS NULL AND version=?",
+                        DatabaseTime.sql(now),actor,a.id(),a.version());
                 CardRules.require(changed==1,"VERSION_CONFLICT");
                 store.jdbc.update("UPDATE overdue_alerts SET resolved_at=? WHERE assignment_id=? AND resolved_at IS NULL",DatabaseTime.sql(now),a.id());
             }
@@ -330,22 +251,11 @@ public final class LifecycleService {
         } else if(operation.equals("DISABLE")) {
             CardRules.require(card.status().equals("AVAILABLE") && a==null,"CARD_STATE_CONFLICT");
             requireReason(reason,Set.of("DAMAGED","REMOVED_FROM_SERVICE")); next="DISABLED";
-        } else {
-            CardRules.require(Set.of("LOST","DISABLED").contains(card.status()) && a==null,"CARD_STATE_CONFLICT");
-            CardRules.require(input.bool("physicalFoundConfirmed") && input.bool("inventoryCheckedConfirmed"),"RECOVERY_CONFIRMATION_REQUIRED");
-            requireReason(reason,Set.of("DEMO_RECOVERED_AND_CHECKED"));
-            var result=evidence(plan,locked,context,actor,"RESTORE",card.id(),now);
-            CardRules.require(result.uid().equals(card.uid()) && result.profile().equals(card.profile()),"SCAN_BINDING_INVALID");
-            if(card.status().equals("LOST")) {
-                int updated=store.jdbc.update("UPDATE lost_cases SET resolved_at=?,resolved_by=?,recovery_scan_result_id=? WHERE unresolved_card_id=?",
-                        DatabaseTime.sql(now),actor,result.id(),card.id()); CardRules.require(updated==1,"LOST_CASE_UNRESOLVED");
-            }
-            consume(plan,now); next="AVAILABLE";
-        }
+        } else throw new IllegalArgumentException("Unsupported inventory action");
         changeCard(card,next);
-        event(operation.equals("MARK_LOST")?"MARKED_LOST":operation.equals("DISABLE")?"DISABLED":"RESTORED",card.id(),a==null?null:a.id(),
+        event(operation.equals("MARK_LOST")?"MARKED_LOST":"DISABLED",card.id(),a==null?null:a.id(),
                 a==null?null:a.registration(),actor,card.status(),next,card.version(),card.version()+1,reason,now);
-        return new SafeResult(card.id(),card.code(),operation.equals("RESTORE")?"RESTORED":next,card.version()+1);
+        return new SafeResult(card.id(),card.code(),next,card.version()+1);
     }
 
     /** Internal followup is restricted to the active due assignment and cannot enqueue an external notification. */
@@ -382,7 +292,7 @@ public final class LifecycleService {
                     var contact=roots.lifecycleContact(registration);
                     event("CONTACT_REVEALED",card.id(),current.id(),current.registration(),actor.id(),null,"CONTACT_REVEALED",null,null,"OVERDUE_RETURN_FOLLOWUP",now);
                     if(replay.isEmpty()) idem.success(namespace,encoding,200,new SafeResult(current.id(),current.reference(),"OVERDUE",current.version()));
-                    return new Reveal(current.id(),contact.phone(),now.plusSeconds(30),"SIMULATED");
+                    return new Reveal(current.id(),contact.phone(),now.plusSeconds(30),current.origin().equals("MANUAL")?"SYNTHETIC":"SIMULATED");
                 });
             } catch(DuplicateKeyException conflict) {
                 if(attempt==1) throw new ApiFailure(409,"IDEMPOTENCY_CONFLICT","Check the original reveal command.");
@@ -392,27 +302,28 @@ public final class LifecycleService {
     }
 
     /** Monitor and request paths share this transition under the same root/card/assignment order. */
-    private void overdueLocked(Assignment a,Card card,Instant now) {
-        if(a.closed()!=null || now.isBefore(a.due()) || !card.status().equals("ISSUED")) return;
+    void overdueLocked(Assignment a,Card card,Instant now) {
+        if(a.closed()!=null || a.due()==null || now.isBefore(a.due()) || !card.status().equals("ISSUED")) return;
         changeCard(card,"OVERDUE");
         store.jdbc.update("INSERT INTO overdue_alerts(assignment_id,created_at) VALUES(?,?)",a.id(),DatabaseTime.sql(now));
         event("OVERDUE",card.id(),a.id(),a.registration(),null,"ISSUED","OVERDUE",card.version(),card.version()+1,null,now);
     }
-    private void requireOverdue(Assignment a,Instant now) { CardRules.require(a.closed()==null && !now.isBefore(a.due()),"ASSIGNMENT_NOT_OVERDUE"); }
+    private void requireOverdue(Assignment a,Instant now) { CardRules.require(a.closed()==null && a.due()!=null && !now.isBefore(a.due()),"ASSIGNMENT_NOT_OVERDUE"); }
     private void requireReason(String value,Set<String> allowed) { if(!allowed.contains(value)) throw LifecycleInput.invalid(); }
-    private void changeCard(Card card,String next) {
+    void changeCard(Card card,String next) {
         CardRules.require(card.version()<CardRules.MAX_VERSION,"VERSION_CONFLICT");
         int changed=store.jdbc.update("UPDATE cards SET status=?,version=version+1 WHERE id=? AND status=? AND version=?",next,card.id(),card.status(),card.version());
         CardRules.require(changed==1,"VERSION_CONFLICT");
     }
     private void event(String type,String card,String assignment,Long registration,Long actor,String previous,String state,Long oldVersion,Long version,String reason,Instant now) {
-        String event=audit.append(LocalAuditPort.Action.valueOf(type),"CARD",card,actor,new LocalAuditPort.Snapshot(previous,state,oldVersion,version,"SIMULATED"));
+        String event=audit.append(LocalAuditPort.Action.valueOf(type),"CARD",card,actor,new LocalAuditPort.Snapshot(previous,state,oldVersion,version,
+                (assignment!=null && store.assignment(assignment,false).origin().equals("MANUAL")) || store.card(card,false).origin().equals("SYNTHETIC")?"SYNTHETIC_MANUAL":"SIMULATED"));
         store.jdbc.update("INSERT INTO lifecycle_events(id,assignment_id,card_id,registration_id,event_type,actor_id,occurred_at,reason_code,commitment_event_id) VALUES(?,?,?,?,?,?,?,?,?)",
                 uuid(),assignment,card,registration,type,actor,DatabaseTime.sql(now),reason,event);
     }
     /** One assignment per transaction bounds lock duration; failures retry on a later monitor tick without external work. */
     public void markOverdueBatch() {
-        var ids=store.jdbc.query("SELECT a.id FROM card_assignments a JOIN cards c ON c.id=a.card_id WHERE a.closed_at IS NULL AND a.due_at<=? AND c.status='ISSUED' AND a.environment=? AND c.environment=? ORDER BY a.due_at,a.id LIMIT 50",
+        var ids=store.jdbc.query("SELECT a.id FROM card_assignments a JOIN cards c ON c.id=a.card_id WHERE a.closed_at IS NULL AND a.due_at<=? AND c.status='ISSUED' AND a.environment=? AND c.environment=? AND "+CARD_SOURCE+" AND "+ASSIGNMENT_SOURCE+" ORDER BY a.due_at,a.id LIMIT 50",
                 (rs,n)->rs.getString(1),DatabaseTime.sql(clock.instant()),properties.environment(),properties.environment());
         for(String id:ids) {
             var discovered=store.assignment(id,false);
@@ -425,7 +336,54 @@ public final class LifecycleService {
     }
 
     /** Read endpoints recheck current authority even though the shell has already selected a role/counter. */
-    List<ReaderPort.Sample> samples(LifecycleSecurity.Context context,boolean admin) { security.preflight(context,admin); return reader.samples(); }
+    InventoryReferences inventoryReferences(LifecycleSecurity.Context context) {
+        security.preflight(context,true);
+        return tx.execute(status->{
+            security.lock(context,true,List.of());
+            return new InventoryReferences(
+                    store.jdbc.query("SELECT id,code,name FROM visitor_categories WHERE active=TRUE AND code IN ('EXECUTIVE','PENJAGA','VENDOR','CONTRACTOR') ORDER BY id",
+                            (rs,n)->new Reference(Long.toString(rs.getLong(1)),rs.getString(2),rs.getString(3))),
+                    boundedDestinations());
+        });
+    }
+    /** Reject an oversized reference catalogue rather than send an unbounded inventory form payload. */
+    private List<Reference> boundedDestinations() {
+        var values=store.jdbc.query("SELECT id,code,name FROM destinations WHERE active=TRUE ORDER BY id LIMIT 501",
+                (rs,n)->new Reference(Long.toString(rs.getLong(1)),rs.getString(2),rs.getString(3)));
+        if(values.size()>500) throw new ApiFailure(503,"SERVICE_UNAVAILABLE","The destination catalogue exceeds this form's supported size.");
+        return values;
+    }
+
+    /** The root is the only eligibility reader; list availability is advisory and the write locks/revalidates it. */
+    IssueContext issueContext(LifecycleSecurity.Context context,String id,int page) {
+        security.preflight(context,false);
+        var coordinates=roots.discover(Long.toString(LifecycleInput.decimal(id)));
+        return tx.execute(status->{
+            security.lock(context,false,List.of(LifecycleInput.decimal(coordinates.counterId())));
+            var root=roots.lockLifecycle(coordinates,context.owner());
+            if(!root.environment().equals(properties.environment()) || !root.origin().equals("SYNTHETIC")) throw CardRules.unavailable();
+            CardRules.require(root.status().equals("VERIFIED"),"REGISTRATION_STATE_CONFLICT");
+            var eligible=root.destinations();
+            var rules=store.jdbc.query("SELECT setting_key,value_int,version FROM system_settings WHERE setting_key=?",
+                    (rs,n)->new ManualLifecycle.ReturnDefault(rs.getString(1),(Integer)rs.getObject(2),rs.getLong(3)),"return_hours_"+root.categoryCode());
+            if(rules.isEmpty()) throw new ApiFailure(503,"SERVICE_UNAVAILABLE","Return defaults are unavailable.");
+            var rule=rules.getFirst(); Instant now=clock.instant();
+            var args=new ArrayList<Object>(); args.add(properties.environment()); args.add(LifecycleInput.decimal(root.categoryId()));
+            String destinations=eligible.isEmpty()?"FALSE":("(c.destination_id IS NULL OR c.destination_id IN ("+String.join(",",Collections.nCopies(eligible.size(),"?")) +"))");
+            for(var destination:eligible) args.add(LifecycleInput.decimal(destination.id()));
+            String filter=" FROM cards c LEFT JOIN destinations d ON d.id=c.destination_id WHERE c.environment=? AND c.category_id=? AND c.status='AVAILABLE' AND "+CARD_SOURCE+" AND "+destinations;
+            long total=Objects.requireNonNull(store.jdbc.queryForObject("SELECT COUNT(*)"+filter,Long.class,args.toArray()));
+            args.add(page*25);
+            var cards=store.jdbc.query("SELECT c.*,d.name AS destination_label"+filter+" ORDER BY c.card_code,c.id LIMIT 25 OFFSET ?",(rs,n)->store.cardView(rs),args.toArray());
+            long active=Objects.requireNonNull(store.jdbc.queryForObject("SELECT COUNT(*) FROM card_assignments WHERE active_registration_id=?",Long.class,LifecycleInput.decimal(id)));
+            return new IssueContext(id,root.reference(),root.categoryCode(),root.version(),root.multipleActivePassesAllowed(),active,eligible,
+                    rule.hours(),rule.version(),new Page<>(page,25,total,cards,now));
+        });
+    }
+
+    List<ReaderPort.Sample> samples(LifecycleSecurity.Context context,boolean admin) { security.preflight(context,admin);
+        if(!properties.readerMode().equals("mock")) throw new ApiFailure(503,"SERVICE_UNAVAILABLE","The legacy reader is disabled.");
+        return reader.samples(); }
     List<CounterView> counters(LifecycleSecurity.Context context) {
         security.preflight(context,true);
         return tx.execute(status->{security.lock(context,true,List.of()); return store.jdbc.query("SELECT id,code,name FROM counters WHERE active=TRUE ORDER BY id",
@@ -434,15 +392,22 @@ public final class LifecycleService {
     Page<CardView> cards(LifecycleSecurity.Context context,int page) {
         security.preflight(context,true);
         return tx.execute(status->{security.lock(context,true,List.of());
-            long total=Objects.requireNonNull(store.jdbc.queryForObject("SELECT COUNT(*) FROM cards WHERE environment=?",Long.class,properties.environment()));
+            long total=Objects.requireNonNull(store.jdbc.queryForObject("SELECT COUNT(*) FROM cards c WHERE c.environment=? AND "+CARD_SOURCE,Long.class,properties.environment()));
             return new Page<>(page,25,total,store.inventory(page,properties.environment()),clock.instant()); });
     }
     Page<AssignmentView> assignments(LifecycleSecurity.Context context,long counter,int page,boolean overdue) {
+        return assignments(context,counter,page,overdue,null);
+    }
+    /** A registration filter narrows this counter-scoped pass list; it grants no additional root access. */
+    Page<AssignmentView> assignments(LifecycleSecurity.Context context,long counter,int page,boolean overdue,Long registration) {
         security.preflight(context,false);
         return tx.execute(status->{security.lock(context,false,List.of(counter)); Instant now=clock.instant();
-            Long total=overdue?store.jdbc.queryForObject("SELECT COUNT(*) FROM card_assignments WHERE issue_counter_id=? AND return_counter_id=? AND environment=? AND closed_at IS NULL AND due_at<=?",Long.class,counter,counter,properties.environment(),DatabaseTime.sql(now)):
-                    store.jdbc.queryForObject("SELECT COUNT(*) FROM card_assignments WHERE issue_counter_id=? AND return_counter_id=? AND environment=?",Long.class,counter,counter,properties.environment());
-            return new Page<>(page,25,total==null?0:total,store.assignments(counter,page,overdue,now,properties.environment()),now); });
+            String filter=" FROM card_assignments a JOIN cards c ON c.id=a.card_id WHERE a.issue_counter_id=? AND a.return_counter_id=? AND a.environment=? AND c.environment=a.environment AND "+CARD_SOURCE+" AND "+ASSIGNMENT_SOURCE;
+            var args=new ArrayList<Object>(List.of(counter,counter,properties.environment()));
+            if(registration!=null) { filter+=" AND a.registration_id=?"; args.add(registration); }
+            if(overdue) { filter+=" AND a.closed_at IS NULL AND a.due_at<=?"; args.add(DatabaseTime.sql(now)); }
+            Long total=store.jdbc.queryForObject("SELECT COUNT(*)"+filter,Long.class,args.toArray());
+            return new Page<>(page,25,total==null?0:total,store.assignments(counter,page,overdue,now,properties.environment(),registration),now); });
     }
     AssignmentView assignment(LifecycleSecurity.Context context,String id) {
         security.preflight(context,false); var a=store.assignment(LifecycleInput.uuid(id),false);
@@ -480,9 +445,13 @@ public final class LifecycleService {
         catch(java.security.NoSuchAlgorithmException failure) { throw new IllegalStateException("SHA-256 unavailable"); }
     }
     private static String deviceId(long counter) { return UUID.nameUUIDFromBytes(("HSAAS_SIMULATED_READER_V1:"+counter).getBytes(StandardCharsets.UTF_8)).toString(); }
-    private record Rule(String key,int hours,long version) { }
-    private record Plan(String target,Long counter,String registration,String card,String assignment,String job,String result,String device) { }
-    private record Locked(Device device,RegistrationLifecyclePort.Access registration,Card card,Assignment assignment,Long enrollmentCategory) { }
+    private record Plan(String target,Long counter,String registration,String card,String assignment,String job,String device) { }
+    private record Locked(Device device,RegistrationLifecyclePort.Access registration,Card card,Assignment assignment) { }
     public record Reveal(String assignmentId,String phone,Instant expiresAt,String source) { @Override public String toString() { return "Reveal[REDACTED]"; } }
     public record CounterView(String id,String code,String name) { }
+    /** Safe reference metadata is separate from identity/contact and immutable per-pass snapshots. */
+    public record Reference(String id,String code,String label) { }
+    public record InventoryReferences(List<Reference> categories,List<Reference> destinations) { }
+    public record IssueContext(String registrationId,String publicReference,String categoryCode,long version,boolean multipleActivePassesAllowed,
+            long activePassCount,List<RegistrationLifecyclePort.Destination> destinations,Integer defaultReturnHours,long returnRuleVersion,Page<CardView> cards) { }
 }
