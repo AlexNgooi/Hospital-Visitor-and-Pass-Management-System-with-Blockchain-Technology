@@ -1,10 +1,24 @@
 ---
 type: baseline-review
 revision: current
-updated: 2026-10-10
-status: m00-m04-functions-merged-user-manual-test
+updated: 2026-10-26
+status: new-requirements-designed-not-implemented
 ---
 # 当前基线评审、来源与未决项
+
+## 2026-10-27 最新模块启动授权
+
+用户要求分配task并启动多chat，一module一chat。当前coordinator `01a17867-7222-74d0-8dc6-c33b0e939c15` 按[16](16_MANUAL_PASS_MODULE_COORDINATION.md)创建R01登记/MRN/审核、R02手动库存/多pass生命周期、R03管理/设置/报表的独立worktree开发；本次覆盖昨日仅设计安排，未授权自动main merge或运行demo变更。用户同时明确Penjaga仅IC、每登记一张活动pass；下方同类未决状态已解决。新功能尚未交付、SQL/业务/手动验收NOT_RUN，旧M08–M11未启动。
+
+## 2026-10-26 最新需求决定与状态（优先于下方历史阶段）
+
+本轮用户明确选择只更新需求和设计，暂不改应用代码；来源、PDF 字段核对和实施影响见 [15](15_MANUAL_PASS_AND_FORM_CHANGE.md)，需求/架构/数据/API 主规范 03/02/04 已同步。取消 pass reader 前置，staff 手动选择并确认发还；Vendor/Contractor 多张多地点、Executive 同登记一张活动 pass；归还期限可设/不设。Admin 权限基本不变，动态登记 QR 保留。
+
+用户答复已解决三项选择：**issued_at/returned_at 作为进/出日期时间；医院尚无 API，先设计假的 MRN API 回填合成患者姓名/ward/bed；Penjaga 条款勾选+server time，不需要电子签名**。纸本只作字段来源，不自动启动罚款/收据/账单业务。新功能全部 NOT_IMPLEMENTED / NOT_RUN，本轮未运行应用/测试、未改源码/DDL、未 push/部署、未访问医院系统或 native 数据库。
+
+Penjaga IC/Passport 类型及格式（PDF 中英标签不同）、是否改变 Penjaga 单卡规则仍待确认。真实医院 API 的 endpoint/auth/response/test account 与资料保留仍未提供。旧 O01 的“四类实际字段全部未知”已被新字段清单部分解决；旧 O02/O03 reader/profile 前置不再适用于新 manual 发还。旧 U03 的“mock 不等于职员核实”继续适用；旧 C14/C15 DEMO 字段只描述历史 schema，不作为新表单的永久字段规则。
+
+M00–M07 历史交付按 [14](14_M05_M07_COORDINATION.md)，不能将历史构建/测试结果套用给这次变更。M08–M11 未启动，不自动创建/消息派发模块 chat。旧 v3 和 2026-10-23 output 图/UI 尚未同步新需求。
 
 ## 2026-10-10最新状态（优先于下方历史阶段）
 

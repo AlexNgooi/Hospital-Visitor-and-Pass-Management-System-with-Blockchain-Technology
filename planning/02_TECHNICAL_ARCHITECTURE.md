@@ -1,14 +1,31 @@
 ---
 type: architecture
 revision: v3
-updated: 2026-10-08
+updated: 2026-10-27
 status: proposed-implementation
 ---
 # HSAAS 技术架构 v3
 
+**2026-10-27 执行更新**：用户授权[16](16_MANUAL_PASS_MODULE_COORDINATION.md)所列R01–R03独立开发，覆盖昨日仅设计限制；Penjaga仅IC/每登记一张活动pass已确认。下方旧“单卡待确认”不再适用；其余架构变更尚待实施/验收。
+
 这是基于 proposal、实施指南、UI v4 与 2026-10-08 用户范围调整的目标架构。正式边界是 `Implementation/`，已有 frontend/backend 骨架和 infra/P0 证据，尚无业务验收。需求由 [03](03_REQUIREMENTS_AND_TEST_PLAN.md) 管理，数据/API 由 [04](04_DATA_MODEL_AND_API_PLAN.md) 管理，目录由 [09](09_FOLDER_STRUCTURE.md) 管理，变更依据见 [10](10_BASELINE_REVIEW.md)，模块/coordinator 见 [12](12_THREE_MONTH_CHAT_PLAN.md)。
 
-## 当前启用边界（2026-10-08）
+## 2026-10-26 架构变更设计（优先于下方 reader 目标）
+
+用户本轮只授权需求/设计更新，应用代码未变。新需求与来源见 [03](03_REQUIREMENTS_AND_TEST_PLAN.md) / [15](15_MANUAL_PASS_AND_FORM_CHANGE.md)。原 M00–M07 实现及下方 2026-10-08 章节描述历史模式，不代表新流程已实现。
+
+- **Manual pass lifecycle**：保留 React/Spring Boot/MySQL、本地审计、事务/幂等与角色/柜台权限；counter staff 手动选库存 pass 并确认发还，移除 reader-agent、在线设备、ScanJob、UID/profile/scan result 对新发还的依赖。旧 reader 章节/图仅作历史设计，真实 reader 的 M08 不再是必需前置，不因此启动或删除旧模块。
+- **Assignment cardinality**：登记到借用由全局 1:1 活动约束改为按类别的 1:N；Vendor/Contractor 可多张并关联多个 location，Executive 每份登记最多一张活动 pass。Penjaga 暂沿用单卡待用户确认。每张卡仍最多一条活动借用；在服务端同一 registration 锁下校验类别规则，不能靠 UI 限制。
+- **Optional deadline and time**：每 assignment 可选 due_at；只有非空且已到期的活动借用才进入 OVERDUE。issued_at/returned_at 分别作为用户指定的进/出日期时间，UTC 存储、MYT 展示；未归还和遗失不伪造 returned_at。多 pass 支持部分归还，报表分别计算登记数和 pass 数。
+- **MRN mock lookup**：沿用服务端 HospitalVerificationPort，先设计完全合成的假 API。有效匿名 QR/grant 会话下，Penjaga 输入 MRN 后自动显示最少 patient name/ward/bed；前端丢弃过时响应，变更 MRN 清除旧结果，提交校验服务器绑定的 lookup 凭据。mock 与 staff 人工核实分开，界面明确 MOCK/SYNTHETIC。医院 API 尚缺文档，不启用 live、不保存病历。
+- **Versioned forms and consent**：新四类字段见03；旧 synthetic schema/history 可读，不把旧字段校验静默改成新版本。Penjaga 条款勾选 + server captured time/policy version，不建电子签名功能；隐私告知与条款分别留痕。PDF 中 staff 办理区和收费条款不作为 visitor 输入或自动新增收费需求。
+- **Admin and disabled integrations**：Admin 基本 RBAC 不变，库存维护适配手动 pass code/地点及状态，不自动获得 staff 操作权。动态登记 QR 继续保留；WhatsApp/blockchain 继续 disabled。
+
+事务方案是先按现有顺序锁当前权限/柜台与 registration，再按稳定 ID 顺序锁所选 cards/assignments；manual 新路径无需 device/scan 锁，所有写路径仍须统一锁图。多选 issue 建议整批原子提交；部分归还只更新已确认收到的 pass。上述是待实施设计，DDL/精确 wire/锁图须在后续开发中冻结；本轮不执行 migration、应用或测试。
+
+旧 v3 及 2026-10-23 output 图/原型尚未同步 manual、多 pass、optional deadline 和新表单。图的旧收据不能证明新语义已同步。医院字段格式/保留/live 契约继续按10/15待确认。
+
+## 历史已实现模式边界（2026-10-08，目标变更见上）
 
 当前只启用 Web、backend/MySQL、本地审计、动态 QR、synthetic 卡扫描及 MRN mock/manual 模型。`READER_MODE=mock` 仅允许 synthetic demo/test 环境，production 设 disabled 且禁止模拟发卡；`MRN_MODE=mock/manual`；`NOTIFICATION_MODE=disabled`；`BLOCKCHAIN_MODE=disabled`。默认配置、服务启动和 API 均校验模式，不只是隐藏前端按钮。
 

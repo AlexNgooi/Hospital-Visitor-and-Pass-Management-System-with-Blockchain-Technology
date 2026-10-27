@@ -1,11 +1,15 @@
+> **2026-10-27 最新授权（R01–R03）**：用户已在当前 coordinator chat `01a17867-7222-74d0-8dc6-c33b0e939c15`（local）明确要求分配任务并启动多 chat，一模块一 chat，实施 planning/15 的新变更。授权为三个模块创建独立 chat/worktree、直接开发、双向技术答疑与交接，覆盖旧的本轮 design-only/不得代开限制；每模块不再重复问开发许可。Penjaga 已确认仅 IC、每登记一张活动 pass。执行/ownership/迁移/检查边界以 `planning/16_MANUAL_PASS_MODULE_COORDINATION.md` 为准；仅必要静态/构建检查，不运行应用/数据库/业务验收，不 push/部署/改 native 库，不自动 merge main，旧 M08–M11 不启动。
+
 ---
 type: folder-contract
-updated: 2026-10-18
+updated: 2026-10-26
 ---
 
 > **2026-10-18 最新授权（M05–M07）**：用户已指定新 coordinator chat `01a14da5-91fe-7bf1-a120-183975085f8b`（local），授权代开三个独立模块 chat/worktree、直接开发、双向答疑、审核和仅本地 merge；只做必要 testing，合并后由用户手动启动及业务测试。本条覆盖下文旧的 M05–M07 自行协调/未许可/禁止一切测试安排；M08–M11 未启动、不 push、不部署、不修改旧 native 库。当前执行与共享契约见 `planning/14_M05_M07_COORDINATION.md`（从仓库根目录解析）。
 
 # planning 契约
+
+2026-10-26 新需求入口为 [15_MANUAL_PASS_AND_FORM_CHANGE.md](15_MANUAL_PASS_AND_FORM_CHANGE.md)，主规范02/03/04的同日增量覆盖旧reader、单活动registration和强制期限规则。用户明确本轮仅更新需求/设计，暂不改应用代码；不启动模块、不运行应用/测试。新功能 NOT_IMPLEMENTED / NOT_RUN；历史M00–M07交付事实保留，旧图/UI尚未同步。
 
 单一职责：维护可执行、可追溯的项目设计规范。
 

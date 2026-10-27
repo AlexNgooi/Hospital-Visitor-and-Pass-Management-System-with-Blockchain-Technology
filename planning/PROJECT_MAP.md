@@ -1,15 +1,21 @@
 ---
 type: compact-system-map
 revision: current
-verified_date: 2026-10-08
+verified_date: 2026-10-26
 subject: local-planning-workspace
 ---
 # 项目修改影响索引
+
+2026-10-27执行入口：[R01–R03协调与ownership](16_MANUAL_PASS_MODULE_COORDINATION.md)。用户已授权独立chat/worktree开发，覆盖昨日仅设计范围；Penjaga仅IC和每登记一张活动pass已明确。应用交付/验收仍待完成。
+
+**2026-10-26 优先入口：[manual pass / 新字段变更](15_MANUAL_PASS_AND_FORM_CHANGE.md)**。本轮仅需求/设计，应用未改。旧扫描、全类别单活动借用和强制期限由02/03/04新增量替代；下方旧实现/模块叙述保留历史语境，不作为当前新需求实现状态。M00–M07旧交付状态见14，新功能 NOT_IMPLEMENTED / NOT_RUN。
 
 这是小型 ICM map，保留主规范唯一事实归属。M00/M01 当前本地基础/UI范围已验收，M02 已审核合并；准确测试与限制见各 REVIEW。实际登记/审核/发卡与外部集成仍未验收。`live`=当前文档或已注明的本地实现；`ghost`=目标业务尚未验收，不代表骨架不存在。
 
 | 对象 / 名称映射 | Universe | 事实归属 | 修改首先影响 |
 |---|---|---|---|
+| Manual pass / 多地点多 pass / optional due / 发还=进出 | 已确认需求；设计未实现 | [需求 P01–P07/C01/C02](03_REQUIREMENTS_AND_TEST_PLAN.md) | [数据/API 增量](04_DATA_MODEL_AND_API_PLAN.md)、assignment/card/reader/monitoring、counter lifecycle UI、admin 库存/settings/report/CSV、未来 forward migration；旧图待重绘 |
+| PDF Penjaga / Executive IC-Lesen / Vendor-Contractor fields / mock patient lookup | 已确认主体字段；Penjaga证件/单卡待确认 | [需求字段](03_REQUIREMENTS_AND_TEST_PLAN.md) | registration/hospital/review、新 form/consent schema、server-bound lookup、frontend contracts；[来源及未决项](15_MANUAL_PASS_AND_FORM_CHANGE.md) |
 | Registration；UI Approved=VERIFIED | live 规范 / ghost 实现 | [需求](03_REQUIREMENTS_AND_TEST_PLAN.md) | [数据/API](04_DATA_MODEL_AND_API_PLAN.md)、[登记工作流](diagrams/v3/03-registration-issue-workflow.archify.json)、UI v4 |
 | Dynamic registration QR / entry grant | M02–M04功能本地已合并；组合用户手动验收待完成，生产未验收 | [需求 R01/R06](03_REQUIREMENTS_AND_TEST_PLAN.md) | [架构 §9](02_TECHNICAL_ARCHITECTURE.md)、[QR 数据/API](04_DATA_MODEL_AND_API_PLAN.md)、[M02 REVIEW](../Implementation/docs/evidence/modules/M02/REVIEW.md)、M03/M04 REVIEW、手动运行指南；旧图待同步 |
 | Card；旧 Pass inventory=cards | live 规范 / ghost 实现 | [数据/API](04_DATA_MODEL_AND_API_PLAN.md) | [需求](03_REQUIREMENTS_AND_TEST_PLAN.md)、[归还工作流](diagrams/v3/04-return-overdue-workflow.archify.json)、未来 Flyway |

@@ -1,14 +1,60 @@
 ---
 type: data-api-contract
 revision: v3
-updated: 2026-10-08
+updated: 2026-10-27
 status: proposed-implementation
 ---
 # HSAAS 数据模型与 API 契约 v3
 
+**2026-10-27 执行更新**：用户授权[16](16_MANUAL_PASS_MODULE_COORDINATION.md)所列R01–R03独立开发，覆盖昨日仅设计限制；Penjaga仅IC/每登记最多一张活动pass。V8预留R01、V9预留R02、V10仅R03确需且经审阅后使用，V1–V7不重写、不在任何库执行迁移。精确新增wire/DDL/共享port先交本轮coordinator审阅。
+
 状态和业务验收以 [03](03_REQUIREMENTS_AND_TEST_PLAN.md) 为准，执行边界以 [02](02_TECHNICAL_ARCHITECTURE.md) 为准。本文件包含当前与长期目标模型；正式V1–V5已在main，不能将下方长期目标表当作已实现。旧 `passes/pass_assignments/pass_events` 命名统一到 `cards/card_assignments/lifecycle_events`；UI 的 Pass ID 是一次 Assignment 的 `pass_reference`，不是 NFC UID。
 
-## 1. 聚合与实体
+## 2026-10-26 数据/API 增量设计（覆盖冲突的旧目标，未实施）
+
+来源与范围见 [15](15_MANUAL_PASS_AND_FORM_CHANGE.md)，业务唯一主表见 [03](03_REQUIREMENTS_AND_TEST_PLAN.md)。用户本轮选择仅更新需求/设计；V1–V7 和应用源码均不改，不启用 live API。下方旧 scanResultId、活动 registration 全局唯一、必填 due_at 和 synthetic-registration-v1 是历史/原设计，不能用于判定新需求已满足。
+
+### 新字段和 MRN 查询
+
+新 form schema 必须版本化；Penjaga 加 current address 和条款 acknowledgement，姓名/电话/证件/MRN 由 visitor 填，patient name/ward/bed 从受控 mock lookup 取得。Executive 改为 name、IC/Lesen type+number、phone、ward、patient name；Vendor/Contractor 为 name、IC、phone、company、多个 locations。旧 relationship/organisation/contactPerson/purpose 不再是新表单必填；历史按原 schema 读取，不能重新解释或删除。
+
+Penjaga 的 IC/Passport 可选类型和格式尚待确认，不能依据 PDF 的两个不同语言标签自定。未来新 schema 的格式/长度白名单另行冻结；旧 TEST_ID/DEMO 输入限制保持旧版本语义。演示 fixtures 一律合成数据，不能把允许新字段的设计当成真实资料采集/保留批准。
+
+保留 `POST /api/public/mrn-validations` 的职责边界，未来演进输入为有效 formContext + visitor 输入 MRN，不要求 visitor 先手动选 ward 才能查。成功响应设计包含 safe feedback、source/mode、最少 patient name/ward/bed、验证凭据及 expiry；不可用字段明确 nullable。具体 JSON 字段/新 schema/version 待实施冻结，当前服务并未返回这些患者字段。
+
+凭据必须绑定 anonymous scope、原 formContext、MRN fingerprint、最少患者结果、adapter/schema version 和 expiry；MRN/context 变化或凭据过期不得沿用旧结果。服务端提交不能信任 caller 自填 patient name/ward。lookup 需要有效 grant/CSRF/限流，不提供 public patient list；mock miss/timeout 不伪造字段，保留旧人工核实路径。mock 结果仍不满足 staff verified predicate，不进入日志/QR/原文审计。
+
+条款 acknowledgement 与原 privacy acknowledgement 区分 purpose/policy version/server captured time；不建立 signature 图片或电子签名字段。旧 consents 与 schema 读取兼容。
+
+### 库存、借用和 manual 命令
+
+| 对象 | 待实施数据/约束 |
+|---|---|
+| cards | 以唯一 pass/card code、类别、地点和状态供手动维护/选择；不要求新 manual 库存具备 normalized_uid/profile/enrollment scan。旧 UID/profile/证据仍保留历史，不创建虚假值绕过旧 NOT NULL/CHECK |
+| card_assignments | 保留每张卡的 assignment/Pass ID/registration、issued_by/at、returned_by/at、closed_at、状态/柜台/本地审计；每张新增或明确 destination 引用/必要历史快照与 nullable due_at |
+| 活动唯一性 | 保留 active_card 唯一；替换 V6 的全类别 active_registration 唯一，Vendor/Contractor 可多条。Executive 在同一 registration 锁下限制最多一条活动借用；Penjaga 暂沿用一条待确认。不能只删 UNIQUE 而不补类别及并发保护 |
+| 时间约束 | due_at=null 明确无期限；非空须晚于 issued_at。returned_at 只在实体收回确认后由服务器时钟写入；lost closed_at 不能冒充 returned_at |
+| 来源 | 区分手动操作方式与数据真实性。manual 不等于 PHYSICAL/live hospital verification；合成患者和库存保留 SYNTHETIC 来源，旧 SIMULATED 记录不改写 |
+| reader/scan | 旧表/外键保留历史；manual 新写路径不要求 scan_result_id，不制造 CONSUMED job/result。遗失找回/库存恢复中旧必需扫描约束也需前向迁移兼容，由现有 Admin 权限办理 |
+| due/settings/monitoring | 设置可支持无期限默认/选择；新命令明确选择有/无期限，不静默继承24小时。scheduler/overdue/报表只对非空 due_at 判断到期；原历史期限不回写 |
+
+未来 `POST /api/staff/card-assignments` 改为手动库存选择命令设计：registrationId、expectedVersion/库存版本、选中 pass IDs、逐 pass location/有无期限/具体 dueAt、handoverConfirmed；actor/counter/status 来源仍由服务器决定。具体字段名/数组大小/版本和响应 schema 尚未冻结，不能按此调用当前 API。
+
+多选 issue 建议同一 Idempotency-Key 原子提交并返回每张 assignment 的结果；任一卡冲突则整批回滚。同 key/body 重放原结果；不同 body 409，UNKNOWN 保留原命令。保留真实当前权限检查，绝不能让 caller 自选 source、actor 或扫描结果冒充证据。
+
+归还命令改为 staff 手动选择该登记下实际收到的活动 assignment(s)，带版本/physical received confirmation，不带伪造 RETURN scan。支持只归还一部分；每张关闭、库存 AVAILABLE、returned_at/by、事件/审计/幂等同事务，其余不变。正常借用状态与 LOST 恢复仍分开。
+
+Manual 锁图保留 accounts/authority/counter 前缀，随后 registration → 按稳定 ID 排序的 cards → assignments → 事件/审计/幂等；return/overdue/lost/restore 使用一致相对顺序，先发现 IDs、锁后重读，不能持后序锁追新资源。新增批量路径需后续审阅完整锁图，不能声称本轮已证明无死锁。
+
+### 时间/读模型/迁移
+
+每张 assignment 的 issued_at=进、returned_at=出，due_at 只表示预计期限；UI/历史/导出提供完整 MYT 日期时间、操作职员、location 和未归还状态。多卡登记摘要如显示最后出时间，仅在全部正常归还后由最后 returned_at 派生；遗失显示独立状态。登记数与 pass 数使用不同分母。
+
+新 staff DTO 需要满足人工核实新字段，同时按当前角色/柜台授权并控制 PII 显示；不得在 public reference 上增加个人资料查询。Admin 聚合/导出权限与掩码基本不变。所有旧 DTO/schema/generated client 只在后续实际变更时同步。
+
+实施时新增 forward migration；V1–V7 不重写。涉及 null due_at/assignment_window、active_registration 唯一性、card 必需 UID/profile、来源 CHECK、consent 及 lost restore 扫描外键/检查等，须先核对实际 schema 和历史数据再选方案。新迁移编号未预留，不能因本设计就直接修改已应用 V6/V7。所有数据库执行与新业务验收均 NOT_RUN。
+
+## 1. 聚合与实体（旧实现/长期模型，冲突处以上方增量为准）
 
 当前 schema 先落实核心数据、QR、幂等、synthetic 扫描和本地审计。notification_jobs/receipts、audit_outbox、proof_verification_jobs 为后续迁移目标，disabled 时不建任务。下面长表同时列出长期模型，不能据此声称当前已存在这些表。
 
