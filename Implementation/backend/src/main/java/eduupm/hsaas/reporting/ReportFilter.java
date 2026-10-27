@@ -24,8 +24,8 @@ public record ReportFilter(LocalDate from,LocalDate to,Long categoryId,Long dest
     }
     public LocalDateTime start(){return DatabaseTime.sql(from.atStartOfDay(MYT).toInstant());}
     public LocalDateTime end(){return DatabaseTime.sql(to.plusDays(1).atStartOfDay(MYT).toInstant());}
-    /** Registration aliases are fixed by service code; user input is always bound as a SQL parameter. */
-    public String scope(String alias){return (categoryId==null?"":" AND "+alias+".category_id=?")+(destinationId==null?"":" AND "+alias+".destination_id=?");}
+    /** EXISTS matches any requested location while counting each registration once; aliases are service-owned. */
+    public String scope(String alias){return (categoryId==null?"":" AND "+alias+".category_id=?")+(destinationId==null?"":" AND EXISTS (SELECT 1 FROM registration_destinations rd WHERE rd.registration_id="+alias+".id AND rd.destination_id=?)");}
     public List<Object> scopeArgs(){var args=new ArrayList<Object>();if(categoryId!=null)args.add(categoryId);if(destinationId!=null)args.add(destinationId);return args;}
     public List<Object> periodArgs(){var args=new ArrayList<Object>();args.add(start());args.add(end());args.addAll(scopeArgs());return args;}
 }

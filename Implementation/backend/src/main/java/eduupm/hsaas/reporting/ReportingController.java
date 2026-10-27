@@ -20,4 +20,8 @@ public class ReportingController {
     @PostMapping("/exports") public ReportingService.Export export(@RequestParam MultiValueMap<String,String> parameters,HttpServletRequest request,HttpServletResponse response){
         var proof=AdminAccess.proof(request,response);return reports.export(proof,ReportFilter.parse(parameters,clock));
     }
+    /** Pass-level metadata uses the same ADMIN proof, MYT filters, CSRF and committed export audit as registrations. */
+    @PostMapping("/pass-exports") public ReportingService.Export exportPasses(@RequestParam MultiValueMap<String,String> parameters,HttpServletRequest request,HttpServletResponse response){
+        var proof=AdminAccess.proof(request,response);return reports.exportPasses(proof,ReportFilter.parse(parameters,clock));
+    }
 }
