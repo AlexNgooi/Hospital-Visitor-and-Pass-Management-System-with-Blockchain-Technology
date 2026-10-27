@@ -1,3 +1,10 @@
+# R01 review extension — 2026-10-27
+
+- Current planning/16 authorization supersedes historical M04 ownership/test directions below for this change.
+- Masked queue/detail and C09 explicit manual verification retain their shape/authority. Mock lookup never checks staff confirmations or approves a registration.
+- POST /api/staff/registrations/{id}/review-fields accepts exact expectedVersion, requires current COUNTER_STAFF/counter/session/CSRF, locks root version, returns a bounded schema-aware field list and appends REGISTRATION_REVIEW_FIELDS_VIEWED before commit. No PII idempotency/history audit body.
+- Old and new schema fields are reviewed by their own definitions; separate pass terms show server policy/time. Necessary compile/package only; tests, database, app/browser/business checks NOT_RUN.
+
 # Counter review contract · M04
 
 - Inputs: planning/03 S01/R04, planning/04 C03/C04/C08/C09/C11, and the M00 audit/idempotency ports.

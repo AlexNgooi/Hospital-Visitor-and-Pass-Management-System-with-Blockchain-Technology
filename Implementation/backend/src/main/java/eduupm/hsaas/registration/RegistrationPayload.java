@@ -22,6 +22,8 @@ public final class RegistrationPayload {
         if (input.has("termsAcknowledgement")) allowed(input.path("termsAcknowledgement"), Set.of("acknowledged", "policyVersion"));
         String category = text(input.path("categoryCode"), "categoryCode", 16);
         String version = text(input.path("fieldSchemaVersion"), "fieldSchemaVersion", 64);
+        // A retained legacy replay must not silently ignore new v2 properties outside its original HMAC schema.
+        if (RegistrationFields.LEGACY_VERSION.equals(version)) allowed(form, new HashSet<>(RegistrationFields.LEGACY_FIELDS));
         return new Parsed(input, context, category, version);
     }
 

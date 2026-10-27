@@ -192,7 +192,8 @@ public final class RegistrationService {
                 (rs, n) -> new FeedbackRecord(rs.getString("anonymous_scope_id"), rs.getString("grant_id"), rs.getLong("binding_version"),
                         rs.getBytes("mrn_fingerprint"), rs.getString("fingerprint_key_version"), rs.getLong("ward_id"), rs.getString("mode"),
                         rs.getString("adapter_version"), rs.getString("outcome"), DatabaseTime.instant(rs.getObject("expires_at", LocalDateTime.class)),
-                        rs.getString("patient_name"), rs.getString("bed_label"), rs.getString("field_schema_version")), digest(token.asString()));
+                        rs.getString("patient_name"), rs.getString("bed_label"), rs.getString("field_schema_version"),
+                        DatabaseTime.instant(rs.getObject("created_at", LocalDateTime.class))), digest(token.asString()));
         if (rows.isEmpty()) { throw RegistrationFields.invalid("mrnValidationToken"); }
         var value = rows.getFirst();
         if (!clock.instant().isBefore(value.expires())) { throw new ApiFailure(409, "MRN_VALIDATION_EXPIRED", "Repeat the demo check or continue for manual review."); }
@@ -210,7 +211,7 @@ public final class RegistrationService {
         form.put("wardCode", ward); form.put("patientName", value.patientName());
         if (value.bed() != null) form.put("bed", value.bed());
         form.put("patientSource", "MOCK_SYNTHETIC"); form.put("patientAdapterVersion", value.adapter());
-        form.put("patientResolvedAt", TIME.format(clock.instant()));
+        form.put("patientResolvedAt", TIME.format(value.created()));
         return value.outcome();
     }
     private byte[] fingerprint(String anonymous, FormContext context, String mrn, String ward, String keyVersion) {
@@ -247,7 +248,7 @@ public final class RegistrationService {
     public record SchemaReply(FormContext formContext, String fieldSchemaVersion, String source, String notificationStatus,
             PrivacyPolicy privacy, List<CategorySchema> categories, List<DestinationOption> destinations, PrivacyPolicy terms) { }
     private record FeedbackRecord(String scope, String grant, long version, byte[] fingerprint, String keyVersion, long ward,
-            String mode, String adapter, String outcome, Instant expires, String patientName, String bed, String schema) {
+            String mode, String adapter, String outcome, Instant expires, String patientName, String bed, String schema, Instant created) {
         @Override public String toString() { return "FeedbackRecord[REDACTED]"; }
     }
 }

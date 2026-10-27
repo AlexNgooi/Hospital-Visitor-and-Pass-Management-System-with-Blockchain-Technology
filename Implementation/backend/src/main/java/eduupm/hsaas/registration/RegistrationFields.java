@@ -30,7 +30,7 @@ public final class RegistrationFields {
                 field("fullName", "Nama penuh", "TEXT", 100, "TEXT", "Gunakan nama sintetik.", List.of()),
                 field("identificationType", "Jenis pengenalan", "SELECT", 5, "ENUM", "", category.equals("EXECUTIVE")
                         ? List.of(new Option("IC", "IC"), new Option("LESEN", "Lesen")) : List.of(new Option("IC", "IC"))),
-                field("identificationNumber", "No. IC / Lesen", "TEXT", 30, "IDENTIFICATION", "IC: 12 digit. Lesen: 5–30 huruf/nombor/tanda sempang.", List.of()),
+                field("identificationNumber", category.equals("EXECUTIVE") ? "No. IC / Lesen" : "No. IC", "TEXT", 30, "IDENTIFICATION", "IC: 12 digit. Lesen: 5–30 huruf/nombor/tanda sempang.", List.of()),
                 field("phone", "No. telefon", "PHONE", 16, "PHONE", "Gunakan nombor sintetik sahaja.", List.of())));
         if (category.equals("PENJAGA")) {
             result.add(field("currentAddress", "Alamat terkini", "TEXT", 500, "TEXT", "Gunakan alamat rekaan.", List.of()));
