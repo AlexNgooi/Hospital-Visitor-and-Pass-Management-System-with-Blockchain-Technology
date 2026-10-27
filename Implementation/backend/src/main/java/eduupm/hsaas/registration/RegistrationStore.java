@@ -71,15 +71,23 @@ public final class RegistrationStore implements RegistrationReviewPort, Registra
 
     /** Normalized destination discovery is internal, never an authorization check or another root writer. */
     private LifecycleReferences lifecycleReferences(String registrationId) {
-        var rows = jdbc.query("SELECT category_id,destination_id FROM visitor_registrations WHERE id=?", (rs,n)->new long[]{rs.getLong(1),rs.getLong(2)},id(registrationId));
+        var rows = jdbc.query("SELECT category_id,destination_id,field_schema_version FROM visitor_registrations WHERE id=?",
+                (rs,n)->new LifecycleReferences(rs.getLong(1),rs.getLong(2),rs.getString(3),List.of()),id(registrationId));
         if (rows.isEmpty()) throw notFound();
+        var root = rows.getFirst();
+        if (!RegistrationFields.LEGACY_VERSION.equals(root.schema()) && !RegistrationFields.VERSION.equals(root.schema()))
+            throw new ApiFailure(409,"FIELD_SCHEMA_VERSION_CONFLICT","Registration schema is not supported for lifecycle operations.");
         var destinations = jdbc.query("SELECT destination_id FROM registration_destinations WHERE registration_id=? ORDER BY destination_id",
                 (rs,n)->rs.getLong(1),id(registrationId));
-        // Pre-v2 records retain their singleton meaning even if imported from an older backup without a relation row.
-        if (destinations.isEmpty()) destinations=List.of(rows.getFirst()[1]);
-        return new LifecycleReferences(rows.getFirst()[0],List.copyOf(destinations));
+        // Only the known legacy schema has singleton fallback; missing v2 data is never repaired or fabricated here.
+        if (destinations.isEmpty()) {
+            if (!RegistrationFields.LEGACY_VERSION.equals(root.schema()))
+                throw new ApiFailure(409,"FIELD_SCHEMA_VERSION_CONFLICT","Registration destinations are unavailable.");
+            destinations=List.of(root.primaryDestination());
+        }
+        return new LifecycleReferences(root.category(),root.primaryDestination(),root.schema(),List.copyOf(destinations));
     }
-    private record LifecycleReferences(long category, List<Long> destinations) { }
+    private record LifecycleReferences(long category, long primaryDestination, String schema, List<Long> destinations) { }
     private record LifecycleDestination(RegistrationLifecyclePort.Destination destination, boolean active) { }
 
     /** Receipt validation is SQL-zero on a foreign/suspended transaction and ADMIN never receives raw contact. */
