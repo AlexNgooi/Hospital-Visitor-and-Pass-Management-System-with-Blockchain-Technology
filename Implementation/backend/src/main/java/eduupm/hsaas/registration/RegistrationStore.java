@@ -46,14 +46,49 @@ public final class RegistrationStore implements RegistrationReviewPort, Registra
             try { capabilities.lockOwners(List.of(new SessionCapabilities.OwnerUse(owner,id(coordinates.counterId()))),null); }
             catch(ApiFailure denied) { if(denied.status()==410) throw notFound(); throw denied; }
         }
+        // Discover immutable references, then lock category -> sorted numeric destinations BEFORE the root.
+        var reference = lifecycleReferences(coordinates.id());
+        var categoryActive = jdbc.query("SELECT active FROM visitor_categories WHERE id=? FOR SHARE", (rs,n)->rs.getBoolean(1), reference.category());
+        if (categoryActive.isEmpty()) throw notFound();
+        var eligible = new ArrayList<RegistrationLifecyclePort.Destination>();
+        for (long destinationId : reference.destinations()) {
+            var values = jdbc.query("SELECT id,code,name,active FROM destinations WHERE id=? FOR SHARE", (rs,n) ->
+                    new LifecycleDestination(new RegistrationLifecyclePort.Destination(Long.toString(rs.getLong(1)),rs.getString(2),
+                            RegistrationMasking.destination(rs.getString(3))),rs.getBoolean(4)), destinationId);
+            if (values.isEmpty()) throw notFound();
+            if (categoryActive.getFirst() && values.getFirst().active()) eligible.add(values.getFirst().destination());
+        }
         var locked=lock(coordinates);
-        var rows=jdbc.query("SELECT public_reference,category_id,data_origin,form_data FROM visitor_registrations WHERE id=?",
-                (rs,n)->new String[]{rs.getString(1),Long.toString(rs.getLong(2)),rs.getString(3),rs.getString(4)},id(coordinates.id()));
+        // A changed reference set must fail instead of chasing an earlier lock after the root.
+        if (!reference.equals(lifecycleReferences(coordinates.id()))) throw new ApiFailure(409,"VERSION_CONFLICT","Registration destinations changed.");
+        var rows=jdbc.query("SELECT public_reference,category_id,data_origin,form_data,field_schema_version FROM visitor_registrations WHERE id=?",
+                (rs,n)->new String[]{rs.getString(1),Long.toString(rs.getLong(2)),rs.getString(3),rs.getString(4),rs.getString(5)},id(coordinates.id()));
         if(rows.isEmpty()) throw notFound();
         var row=rows.getFirst(); var form=json.readTree(row[3]);
         return new RegistrationLifecyclePort.Access(coordinates,row[0],row[1],locked.categoryCode(),locked.status(),locked.environment(),row[2],
-                locked.version(),RegistrationMasking.name(form.path("fullName").asText()),RegistrationMasking.phone(form.path("phone").asText()),staff);
+                locked.version(),RegistrationMasking.name(form.path("fullName").asText()),RegistrationMasking.phone(form.path("phone").asText()),staff,row[4],eligible);
     }
+
+    /** Normalized destination discovery is internal, never an authorization check or another root writer. */
+    private LifecycleReferences lifecycleReferences(String registrationId) {
+        var rows = jdbc.query("SELECT category_id,destination_id,field_schema_version FROM visitor_registrations WHERE id=?",
+                (rs,n)->new LifecycleReferences(rs.getLong(1),rs.getLong(2),rs.getString(3),List.of()),id(registrationId));
+        if (rows.isEmpty()) throw notFound();
+        var root = rows.getFirst();
+        if (!RegistrationFields.LEGACY_VERSION.equals(root.schema()) && !RegistrationFields.VERSION.equals(root.schema()))
+            throw new ApiFailure(409,"FIELD_SCHEMA_VERSION_CONFLICT","Registration schema is not supported for lifecycle operations.");
+        var destinations = jdbc.query("SELECT destination_id FROM registration_destinations WHERE registration_id=? ORDER BY destination_id",
+                (rs,n)->rs.getLong(1),id(registrationId));
+        // Only the known legacy schema has singleton fallback; missing v2 data is never repaired or fabricated here.
+        if (destinations.isEmpty()) {
+            if (!RegistrationFields.LEGACY_VERSION.equals(root.schema()))
+                throw new ApiFailure(409,"FIELD_SCHEMA_VERSION_CONFLICT","Registration destinations are unavailable.");
+            destinations=List.of(root.primaryDestination());
+        }
+        return new LifecycleReferences(root.category(),root.primaryDestination(),root.schema(),List.copyOf(destinations));
+    }
+    private record LifecycleReferences(long category, long primaryDestination, String schema, List<Long> destinations) { }
+    private record LifecycleDestination(RegistrationLifecyclePort.Destination destination, boolean active) { }
 
     /** Receipt validation is SQL-zero on a foreign/suspended transaction and ADMIN never receives raw contact. */
     @Override public RegistrationLifecyclePort.Contact lifecycleContact(RegistrationLifecyclePort.Access access) {
@@ -67,7 +102,7 @@ public final class RegistrationStore implements RegistrationReviewPort, Registra
 
     /** The already-locked grant supplies all counter/environment authority; form data is an approved normalized whitelist. */
     long create(GrantAccess access, String anonymousScope, Category category, Destination destination,
-            Map<String, String> form, String mode, String feedback) {
+            Map<String, ?> form, String mode, String feedback) {
         assertGrantReceipt(access);
         boolean penjaga = category.code().equals("PENJAGA");
         String sql = "INSERT INTO visitor_registrations(public_reference,entry_grant_id,anonymous_scope_id,counter_id,category_id,category_code,"
@@ -92,6 +127,17 @@ public final class RegistrationStore implements RegistrationReviewPort, Registra
         jdbc.update("INSERT INTO registration_consents(registration_id,purpose,granted,policy_version,captured_at) VALUES(?,'PRIVACY_ACK',TRUE,?,?)",
                 registrationId, RegistrationFields.PRIVACY_VERSION, DatabaseTime.sql(clock.instant()));
     }
+    /** Distinct requested locations join root creation, grant consumption, consent, audit and idempotency atomically. */
+    void recordDestinations(long registrationId, List<Destination> destinations) {
+        RegistrationReadPort.ReadScope.requireTransaction();
+        for (var destination : destinations) jdbc.update("INSERT INTO registration_destinations(registration_id,destination_id) VALUES(?,?)", registrationId,destination.id());
+    }
+    /** Pass terms are not privacy or a notification opt-in; capture time comes solely from the server clock. */
+    void acknowledgeTerms(long registrationId) {
+        RegistrationReadPort.ReadScope.requireTransaction();
+        jdbc.update("INSERT INTO registration_consents(registration_id,purpose,granted,policy_version,captured_at) VALUES(?,'PASS_TERMS',TRUE,?,?)",
+                registrationId,RegistrationFields.TERMS_VERSION,DatabaseTime.sql(clock.instant()));
+    }
     String reference(long registrationId) {
         RegistrationReadPort.ReadScope.requireTransaction();
         return jdbc.queryForObject("SELECT public_reference FROM visitor_registrations WHERE id=?", String.class, registrationId);
@@ -111,6 +157,21 @@ public final class RegistrationStore implements RegistrationReviewPort, Registra
                 (rs, n) -> new Destination(rs.getLong("id"), rs.getString("code"), rs.getString("name")), code);
         if (rows.isEmpty() || !RegistrationFields.selectableCode(rows.getFirst().code())) { throw RegistrationFields.invalid(field); }
         return rows.getFirst();
+    }
+    /** Discover codes without locks, then lock stable numeric destination IDs and reject any catalogue replacement. */
+    List<Destination> resolveDestinations(List<String> codes) {
+        var catalogue = destinations();
+        var selected = new ArrayList<Destination>();
+        for (String code : codes) {
+            var match = catalogue.stream().filter(value -> value.code().equals(code)).findFirst();
+            if (match.isEmpty()) throw RegistrationFields.invalid("formData.destinationCodes");
+            selected.add(match.get());
+        }
+        return selected.stream().sorted(java.util.Comparator.comparingLong(Destination::id)).map(value -> {
+            var locked = destination(value.code(),"formData.destinationCodes");
+            if (locked.id()!=value.id()) throw new ApiFailure(409,"VERSION_CONFLICT","Destination catalogue changed.");
+            return locked;
+        }).toList();
     }
     List<Category> categories(String restriction) {
         return jdbc.query("SELECT id,code,name FROM visitor_categories WHERE active=TRUE ORDER BY id",
@@ -215,6 +276,39 @@ public final class RegistrationStore implements RegistrationReviewPort, Registra
                 penjaga ? allowed(value.mode(), Set.of("mock", "manual")) : null,
                 penjaga ? allowed(value.feedback(), Set.of("NOT_CHECKED", "MATCH", "NO_MATCH", "TIMEOUT", "UNAVAILABLE")) : null,
                 allowed(value.environment(), Set.of("development", "synthetic", "test")), allowed(value.source(), Set.of("SYNTHETIC")), metadata(value));
+    }
+
+    /** Exact staff scope is consumed before SQL; the caller audits this bounded reveal before response commit. */
+    @Override public ReviewFields readReviewFields(ReadScope scope, String registrationId, long expectedVersion) {
+        if (scope == null) throw new IllegalStateException("Capture the staff scope before revealing review fields");
+        scope.consume();
+        var rows = jdbc.query(SCOPED + " AND r.id=?", this::row,scope.actorId(),id(scope.counterId()),id(registrationId));
+        if (rows.isEmpty()) throw notFound();
+        var value = rows.getFirst();
+        if (value.version()!=expectedVersion) throw new ApiFailure(409,"VERSION_CONFLICT","Registration changed. Refresh before reviewing.");
+        String schema = jdbc.queryForObject("SELECT field_schema_version FROM visitor_registrations WHERE id=?",String.class,value.id());
+        var definitions = RegistrationFields.VERSION.equals(schema) ? RegistrationFields.fields(value.category())
+                : RegistrationFields.LEGACY_VERSION.equals(schema) ? RegistrationFields.legacyFields(value.category()) : List.<RegistrationFields.FieldSpec>of();
+        if (definitions.isEmpty()) throw new IllegalStateException("Unsupported stored registration schema");
+        var fields = new ArrayList<ReviewField>();
+        for (var definition : definitions) {
+            if (definition.name().equals("destinationCodes")) continue;
+            String content = text(value.form(),definition.name());
+            if (!content.isEmpty()) fields.add(new ReviewField(definition.name(),definition.label(),content));
+        }
+        // Only server-created patient snapshots join the Penjaga reveal; none appear in default queue/detail/CSV.
+        if (RegistrationFields.VERSION.equals(schema) && value.category().equals("PENJAGA")) {
+            for (String name : List.of("patientName","bed","patientSource","patientResolvedAt")) {
+                String content = text(value.form(),name);
+                if (!content.isEmpty()) fields.add(new ReviewField(name,name,content));
+            }
+        }
+        var locations = jdbc.query("SELECT d.code,d.name FROM registration_destinations rd JOIN destinations d ON d.id=rd.destination_id WHERE rd.registration_id=? ORDER BY d.id",
+                (rs,n)->rs.getString(1)+" · "+RegistrationMasking.destination(rs.getString(2)),value.id());
+        if (!locations.isEmpty()) fields.add(new ReviewField("destinations","Requested locations",String.join(", ",locations)));
+        var terms = jdbc.query("SELECT policy_version,captured_at FROM registration_consents WHERE registration_id=? AND purpose='PASS_TERMS'",
+                (rs,n)->new Consent(rs.getString(1),TIME.format(instant(rs,"captured_at"))),value.id());
+        return new ReviewFields(registrationId,value.version(),schema,fields,terms.isEmpty()?null:terms.getFirst());
     }
 
     private QueueItem item(RootRow value) {

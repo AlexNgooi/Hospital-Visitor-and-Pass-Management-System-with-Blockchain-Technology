@@ -5,20 +5,22 @@ import type { EntryGrant } from "../registration-qr/contracts";
 
 /** Only approved demo metadata can drive the form; unknown fields and variants fail closed. */
 export const fieldNames = ["fullName", "identificationType", "identificationNumber", "phone", "mrn", "wardCode", "relationship",
-  "organisation", "company", "contactPerson", "destinationCode", "visitPurpose", "deliveryPurpose", "workPurpose"] as const;
+  "organisation", "company", "contactPerson", "destinationCode", "visitPurpose", "deliveryPurpose", "workPurpose",
+  "currentAddress", "patientName", "destinationCodes"] as const;
 export type FieldName = typeof fieldNames[number];
 const option = z.object({ value: z.string().max(32), label: z.string().max(120) }).strict();
 const field = z.object({
-  name: z.enum(fieldNames), label: z.string().min(1).max(100), kind: z.enum(["TEXT", "PHONE", "SELECT", "DESTINATION"]),
-  maxLength: z.number().int().min(1).max(500), rule: z.enum(["TEXT", "PHONE", "DEMO_ID", "DEMO_MRN", "REFERENCE", "ENUM"]),
+  name: z.enum(fieldNames), label: z.string().min(1).max(100), kind: z.enum(["TEXT", "PHONE", "SELECT", "DESTINATION", "DESTINATIONS"]),
+  maxLength: z.number().int().min(1).max(500), rule: z.enum(["TEXT", "PHONE", "DEMO_ID", "DEMO_MRN", "REFERENCE", "ENUM", "IDENTIFICATION", "REFERENCES"]),
   hint: z.string().max(300), options: z.array(option).max(10),
 }).strict();
 export const schemaReply = z.object({
-  formContext: formContextSchema, fieldSchemaVersion: z.literal("synthetic-registration-v1"), source: z.literal("SYNTHETIC"),
+  formContext: formContextSchema, fieldSchemaVersion: z.literal("manual-registration-v2"), source: z.literal("SYNTHETIC"),
   notificationStatus: z.literal("NOT_ENABLED"),
   privacy: z.object({ policyVersion: z.literal("synthetic-privacy-v1"), text: z.string().min(1).max(1000) }).strict(),
+  terms: z.object({ policyVersion: z.literal("penjaga-pass-terms-v1"), text: z.string().min(1).max(1000) }).strict(),
   categories: z.array(z.object({ id: z.string().regex(/^[1-9][0-9]*$/), code: z.enum(["PENJAGA", "EXECUTIVE", "VENDOR", "CONTRACTOR"]),
-    label: z.string().min(1).max(120), fields: z.array(field).min(7).max(8) }).strict()).min(1).max(4),
+    label: z.string().min(1).max(120), fields: z.array(field).min(6).max(7) }).strict()).min(1).max(4),
   destinations: z.array(z.object({ code: z.string().regex(/^[A-Za-z0-9_-]{1,32}$/), label: z.string().min(1).max(120) }).strict()).max(10000),
 }).strict().superRefine((value, context) => {
   // Duplicate names must not silently collapse fields or catalogue values into an ambiguous command.
@@ -32,9 +34,11 @@ export const receiptSchema = z.object({ publicReference: z.string().regex(/^R-[A
 export const feedbackSchema = z.object({
   feedback: z.enum(["MATCH", "NO_MATCH", "TIMEOUT", "UNAVAILABLE"]), mode: z.enum(["mock", "manual"]), source: z.literal("SYNTHETIC"),
   validationToken: z.string().regex(/^[A-Za-z0-9_-]{43}$/).nullable(), expiresAt: z.iso.datetime({ precision: 6 }).nullable(),
-}).strict().refine(value => value.mode === "manual"
-  ? value.validationToken === null && value.expiresAt === null
-  : value.validationToken !== null && value.expiresAt !== null);
+  patient: z.object({ patientName: z.string().min(1).max(100), wardCode: z.string().regex(/^[A-Za-z0-9_-]{1,32}$/),
+    wardLabel: z.string().min(1).max(120), bed: z.string().min(1).max(64).nullable() }).strict().nullable(),
+}).strict().refine(value => value.feedback === "MATCH"
+  ? value.mode === "mock" && value.validationToken !== null && value.expiresAt !== null && value.patient !== null
+  : value.validationToken === null && value.expiresAt === null && value.patient === null);
 export type RegistrationSchema = z.infer<typeof schemaReply>;
 export type FieldSpec = z.infer<typeof field>;
 export type Feedback = z.infer<typeof feedbackSchema>;
@@ -43,8 +47,9 @@ export interface Submission {
   readonly formContext: EntryGrant["formContext"];
   readonly categoryCode: RegistrationSchema["categories"][number]["code"];
   readonly fieldSchemaVersion: RegistrationSchema["fieldSchemaVersion"];
-  readonly formData: Readonly<Partial<Record<FieldName, string>>>;
+  readonly formData: Readonly<Partial<Record<FieldName, string | readonly string[]>>>;
   readonly privacyAcknowledgement: { readonly acknowledged: true; readonly policyVersion: "synthetic-privacy-v1" };
+  readonly termsAcknowledgement?: { readonly acknowledged: true; readonly policyVersion: "penjaga-pass-terms-v1" };
   readonly mrnValidationToken?: string;
 }
 /** Public CSRF transport never retries writes; one immutable command owns the original serialized body/key. */
@@ -52,8 +57,8 @@ export function createRegistrationPort(client: ApiClient = apiClient) {
   return {
     schema: (formContext: EntryGrant["formContext"], signal?: AbortSignal) =>
       client.post("/api/public/registration-schema", { formContext }, schemaReply, { signal }),
-    feedback: (formContext: EntryGrant["formContext"], mrn: string, wardCode: string) =>
-      client.post("/api/public/mrn-validations", { formContext, mrn, wardCode }, feedbackSchema),
+    feedback: (formContext: EntryGrant["formContext"], mrn: string, signal?: AbortSignal) =>
+      client.post("/api/public/mrn-validations", { formContext, mrn }, feedbackSchema, { signal }),
     submission: (body: Submission) => client.command("/api/public/registrations", body, receiptSchema),
   };
 }

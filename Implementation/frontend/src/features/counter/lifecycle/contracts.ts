@@ -6,7 +6,7 @@ const decimal = z.string().regex(/^[1-9][0-9]{0,18}$/);
 const version = z.number().int().nonnegative().safe();
 const utc = z.iso.datetime({ offset: false });
 const category = z.enum(["EXECUTIVE", "PENJAGA", "VENDOR", "CONTRACTOR"]);
-const source = z.literal("SIMULATED");
+const source = z.enum(["SIMULATED", "SYNTHETIC"]);
 const environment = z.enum(["synthetic", "test"]);
 const label = z.string().min(1).max(120).refine(value => !/[\p{C}]/u.test(value));
 export const safeResultSchema = z.object({
@@ -14,16 +14,23 @@ export const safeResultSchema = z.object({
   status: z.enum(["AVAILABLE", "CLAIMED", "SUCCEEDED", "CONSUMED", "CANCELLED", "EXPIRED", "ISSUED", "RETURNED", "LOST", "DISABLED", "RESTORED", "OVERDUE", "FOLLOWUP_RECORDED"]), version,
 }).strict();
 export const cardSchema = z.object({
-  id: uuid, cardCode: label, maskedUid: z.string().regex(/^\*{3}[0-9A-F]{4}$/), categoryCode: category,
+  id: uuid, cardCode: label, maskedUid: z.string().regex(/^\*{3}[0-9A-F]{4}$/).nullable(), categoryCode: category,
   status: z.enum(["AVAILABLE", "ISSUED", "OVERDUE", "LOST", "DISABLED"]), version, source, environment,
-}).strict();
+  destinationId: decimal.nullable(), destinationLabel: label.nullable(), enrollmentMethod: z.enum(["SCAN", "MANUAL"]),
+}).strict().refine(card => card.enrollmentMethod === "MANUAL"
+  ? card.source === "SYNTHETIC" && card.maskedUid === null && card.destinationId !== null && card.destinationLabel !== null
+  : card.source === "SIMULATED" && card.maskedUid !== null, "Inventory method and provenance must agree");
 export const assignmentSchema = z.object({
   id: uuid, passReference: z.string().regex(/^P-DEMO-[a-f0-9]{32}$/), cardId: uuid, cardCode: label,
   registrationId: decimal, counterId: decimal, status: z.enum(["ISSUED", "OVERDUE", "RETURNED", "LOST"]),
-  issuedAt: utc, dueAt: utc, returnRuleKey: z.string().regex(/^return_hours_(EXECUTIVE|PENJAGA|VENDOR|CONTRACTOR)$/),
+  issuedAt: utc, dueAt: utc.nullable(), returnRuleKey: z.string().regex(/^return_hours_(EXECUTIVE|PENJAGA|VENDOR|CONTRACTOR)$/),
   returnRuleVersion: version, returnedAt: utc.nullable(), closedAt: utc.nullable(), closureReason: z.enum(["RETURNED", "LOST"]).nullable(),
-  version, operationOrigin: source, environment,
-}).strict();
+  version, operationOrigin: z.enum(["SIMULATED", "MANUAL"]), environment, dataSource: source,
+  destinationId: decimal.nullable(), destinationCode: label.nullable(), destinationLabel: label.nullable(),
+  issuedBy: decimal, returnedBy: decimal.nullable(), closedBy: decimal.nullable(),
+}).strict().refine(pass => (pass.operationOrigin === "MANUAL"
+  ? pass.dataSource === "SYNTHETIC" && pass.destinationId !== null && pass.destinationCode !== null && pass.destinationLabel !== null
+  : pass.dataSource === "SIMULATED") && (pass.status !== "OVERDUE" || pass.dueAt !== null), "Pass method, provenance and deadline must agree");
 export const pageSchema = <T extends z.ZodType>(item: T) => z.object({
   items: z.array(item).max(25), total: version, page: version, pageSize: z.literal(25), serverNow: utc,
 }).strict();
@@ -50,3 +57,15 @@ export type History = z.infer<typeof historySchema>;
 export type Reveal = z.infer<typeof revealSchema>;
 export type CardPage = z.infer<ReturnType<typeof pageSchema<typeof cardSchema>>>;
 export type AssignmentPage = z.infer<ReturnType<typeof pageSchema<typeof assignmentSchema>>>;
+
+/** Reference and issue-context contracts contain no registration form or patient information. */
+export const referenceSchema = z.object({ id: decimal, code: label, label }).strict();
+export const inventoryReferencesSchema = z.object({ categories: z.array(referenceSchema).max(4), destinations: z.array(referenceSchema).max(500) }).strict();
+export const issueContextSchema = z.object({
+  registrationId: decimal, publicReference: label, categoryCode: category, version, multipleActivePassesAllowed: z.boolean(), activePassCount: version,
+  destinations: z.array(referenceSchema), defaultReturnHours: z.number().int().min(1).max(720).nullable(), returnRuleVersion: version,
+  cards: pageSchema(cardSchema),
+}).strict();
+export type IssueContext = z.infer<typeof issueContextSchema>;
+export type InventoryReferences = z.infer<typeof inventoryReferencesSchema>;
+export type PassSelection = { cardId: string; expectedVersion: number; destinationId: string; dueAt: string | null };

@@ -35,6 +35,15 @@ public class ReviewController {
         ReviewHttp.noStore(response); return reads.detail(ReviewHttp.context(request), id, parameters);
     }
 
+    /** Explicit POST uses existing session/current counter checks and framework CSRF; no public reveal capability exists. */
+    @PostMapping(value = "/api/staff/registrations/{id}/review-fields", consumes = "application/json")
+    public RegistrationReadPort.ReviewFields reviewFields(@PathVariable String id, @RequestBody String body,
+            HttpServletRequest request, HttpServletResponse response) {
+        ReviewHttp.noStore(response);
+        var context = ReviewHttp.context(request);
+        return reads.reviewFields(context,id,ReviewFieldsRequest.version(body));
+    }
+
     /** Approval and verification are one command; no caller actor/time or pass-related fields are accepted. */
     @PostMapping(value = "/api/staff/registrations/{id}/verify", consumes = "application/json")
     public IdempotencyPort.SafeResult verify(@PathVariable String id, @RequestHeader(name = "Idempotency-Key", required = false) String key,

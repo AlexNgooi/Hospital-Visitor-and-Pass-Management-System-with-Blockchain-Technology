@@ -16,7 +16,7 @@ import eduupm.hsaas.monitoring.OverdueMonitor;
 import eduupm.hsaas.reader.SyntheticReader;
 import eduupm.hsaas.registration.*;
 
-/** Explicit opt-in cannot activate simulation in production or silently substitute a fake registration root. */
+/** Manual lifecycle needs explicit synthetic/test opt-in, but never an enabled reader or fake registration root. */
 @Configuration(proxyBeanMethods=false)
 @ConditionalOnProperty(name="hsaas.lifecycle.enabled",havingValue="true")
 @EnableScheduling
@@ -24,8 +24,8 @@ public class LifecycleConfiguration {
     @Bean public LifecycleService lifecycleService(JdbcTemplate jdbc,Accounts accounts,SessionCapabilities capabilities,
             RegistrationLifecyclePort roots,RegistrationReviewPort reviewRoots,IdempotencyPort idem,LocalAuditPort audit,
             JsonMapper json,Clock clock,FoundationProperties properties,PlatformTransactionManager manager) {
-        if(!properties.readerMode().equals("mock") || !Set.of("synthetic","test").contains(properties.environment())) {
-            throw new IllegalStateException("Lifecycle simulation requires explicit synthetic/test environment and mock reader");
+        if(!Set.of("synthetic","test").contains(properties.environment())) {
+            throw new IllegalStateException("Lifecycle requires an explicit synthetic/test environment");
         }
         return new LifecycleService(new LifecycleStore(jdbc),accounts,capabilities,roots,reviewRoots,new SyntheticReader(),idem,audit,json,clock,properties,manager);
     }

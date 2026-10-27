@@ -10,7 +10,7 @@ import tools.jackson.databind.json.JsonMapper;
 import eduupm.hsaas.common.ApiFailure;
 import eduupm.hsaas.common.RequestEncoding;
 
-/** Strict fixed-schema commands reject caller actor/source/UID and retain original parsed values for C11 hashing. */
+/** Strict legacy-reader and local-exception commands retain original values; manual writes use ManualInput. */
 final class LifecycleInput {
     private final JsonNode input;
     private final List<String> fields;
@@ -21,11 +21,7 @@ final class LifecycleInput {
             case "SCAN_START" -> List.of("counterId","purpose","targetId");
             case "SCAN_SIMULATE" -> List.of("nonce","leaseToken","sampleCode");
             case "SCAN_CANCEL" -> List.of();
-            case "CARD_ENROLL" -> List.of("scanResultId");
-            case "ISSUE" -> List.of("registrationId","expectedVersion","scanResultId","handoverConfirmed");
-            case "RETURN" -> List.of("expectedVersion","scanResultId","physicalReceived");
             case "MARK_LOST","DISABLE" -> List.of("expectedVersion","reasonCode");
-            case "RESTORE" -> List.of("expectedVersion","scanResultId","physicalFoundConfirmed","inventoryCheckedConfirmed","reasonCode");
             case "CONTACT_REVEAL" -> List.of("reasonCode");
             case "FOLLOWUP" -> List.of("reasonCode");
             default -> throw new IllegalArgumentException("Unknown lifecycle command");

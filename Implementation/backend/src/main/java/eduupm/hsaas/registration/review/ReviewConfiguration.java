@@ -23,7 +23,7 @@ public class ReviewConfiguration {
     }
     /** Enabling now requires the real read facet as well; GET never falls back to a synthetic production queue. */
     @Bean public ReviewReadService reviewReadService(RegistrationReadPort reads, RegistrationReviewPort roots,
-            SessionCapabilities capabilities, Accounts accounts, PlatformTransactionManager manager) {
-        return new ReviewReadService(reads, roots, capabilities, accounts, manager);
+            SessionCapabilities capabilities, Accounts accounts, PlatformTransactionManager manager, LocalAuditPort audit) {
+        return new ReviewReadService(reads, roots, capabilities, accounts, manager, audit);
     }
 }

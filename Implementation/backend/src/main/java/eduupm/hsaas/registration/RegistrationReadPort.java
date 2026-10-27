@@ -18,6 +18,21 @@ public interface RegistrationReadPort {
     /** Exact-scope validation precedes any SQL; missing and cross-counter IDs share the same 404 response. */
     Detail readMaskedDetail(ReadScope scope, String registrationId);
 
+    /** Explicit CSRF-protected audited staff comparison, separate from the masked default projection. */
+    default ReviewFields readReviewFields(ReadScope scope, String registrationId, long expectedVersion) {
+        throw new IllegalStateException("The registration adapter does not support explicit review fields");
+    }
+
+    /** Only a bounded schema-aware allowlist may be revealed; never expose arbitrary root JSON or diagnostics. */
+    record ReviewFields(String id, long version, String fieldSchemaVersion, List<ReviewField> fields, Consent terms) {
+        public ReviewFields { fields = List.copyOf(fields); }
+        @Override public String toString() { return "ReviewFields[REDACTED]"; }
+    }
+    record ReviewField(String name, String label, String value) {
+        @Override public String toString() { return "ReviewField[REDACTED]"; }
+    }
+    record Consent(String policyVersion, String capturedAt) { }
+
     /** Missing filters mean ALL internally; the wire never requires an ALL value or a second pagination scheme. */
     record ReadQuery(String category, String status, int page, int pageSize) {
         public ReadQuery {

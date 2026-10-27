@@ -1,6 +1,6 @@
 import { ApiClient, apiClient } from "../../../lib/api-client";
 import { ClientError } from "../../../lib/errors";
-import { detailSchema, queueSchema, rejectSchema, resultSchema, verifySchema, type ReviewPort } from "./contracts";
+import { detailSchema, queueSchema, rejectSchema, resultSchema, reviewFieldsSchema, verifySchema, type ReviewPort } from "./contracts";
 
 /** Candidate read DTO v1 is kept inside M04 until M03/coordinator freeze the root adapter contract. */
 export function createReviewPort(client: ApiClient = apiClient): ReviewPort {
@@ -14,6 +14,11 @@ export function createReviewPort(client: ApiClient = apiClient): ReviewPort {
     },
     detail(id, signal) {
       return client.get(`/api/staff/registrations/${safeId(id)}`, detailSchema, { signal, authRequired: true });
+    },
+    reviewFields(id, expectedVersion, signal) {
+      // PII is never retained in an idempotency command; each explicit reveal has a current-authority local audit.
+      return client.post(`/api/staff/registrations/${safeId(id)}/review-fields`, { expectedVersion }, reviewFieldsSchema,
+        { signal, authRequired: true });
     },
     verify(id, input) {
       return client.command(`/api/staff/registrations/${safeId(id)}/verify`, verifySchema.parse(input), resultSchema, { authRequired: true });

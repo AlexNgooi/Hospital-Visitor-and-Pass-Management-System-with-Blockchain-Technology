@@ -47,6 +47,17 @@ public class LifecycleController {
     public Page<CardView> cards(@RequestParam(defaultValue="0") String page,HttpServletRequest request,HttpServletResponse response) {
         noStore(response); return service.cards(context(request),page(page));
     }
+    /** Inventory metadata is ADMIN-only; it does not expose any registration or patient details. */
+    @GetMapping("/api/admin/cards/references")
+    public LifecycleService.InventoryReferences references(HttpServletRequest request,HttpServletResponse response) {
+        noStore(response); return service.inventoryReferences(context(request));
+    }
+    /** Root-owned eligible destinations and compatible available stock are reauthorized on every page. */
+    @GetMapping("/api/staff/registrations/{id}/issue-context")
+    public LifecycleService.IssueContext issueContext(@PathVariable String id,@RequestParam(defaultValue="0") String page,
+            HttpServletRequest request,HttpServletResponse response) {
+        noStore(response); return service.issueContext(context(request),id,page(page));
+    }
     @PostMapping(value="/api/admin/cards",consumes="application/json")
     public SafeResult enroll(@RequestBody String body,@RequestHeader(name="Idempotency-Key",required=false) String key,HttpServletRequest request,HttpServletResponse response) {
         return write(request,response,"CARD_ENROLL","REGISTER",key,body);
@@ -64,8 +75,10 @@ public class LifecycleController {
         return write(request,response,"RESTORE",id,key,body);
     }
     @GetMapping({"/api/staff/card-assignments","/api/staff/overdue"})
-    public Page<AssignmentView> assignments(@RequestParam String counterId,@RequestParam(defaultValue="0") String page,HttpServletRequest request,HttpServletResponse response) {
-        noStore(response); return service.assignments(context(request),LifecycleInput.decimal(counterId),page(page),request.getServletPath().equals("/api/staff/overdue"));
+    public Page<AssignmentView> assignments(@RequestParam String counterId,@RequestParam(defaultValue="0") String page,
+            @RequestParam(required=false) String registrationId,HttpServletRequest request,HttpServletResponse response) {
+        noStore(response); return service.assignments(context(request),LifecycleInput.decimal(counterId),page(page),request.getServletPath().equals("/api/staff/overdue"),
+                registrationId==null?null:LifecycleInput.decimal(registrationId));
     }
     @GetMapping("/api/staff/card-assignments/{id}")
     public AssignmentView assignment(@PathVariable String id,HttpServletRequest request,HttpServletResponse response) {

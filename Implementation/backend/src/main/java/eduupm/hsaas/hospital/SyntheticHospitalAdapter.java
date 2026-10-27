@@ -14,5 +14,11 @@ public final class SyntheticHospitalAdapter implements HospitalVerificationPort 
         if (mrn.equals("DEMO-MRN-UNAVAILABLE")) { return Outcome.UNAVAILABLE; }
         return java.util.Set.of("DEMO-MRN-4821", "DEMO-MRN-MATCH").contains(mrn) ? Outcome.MATCH : Outcome.NO_MATCH;
     }
-    @Override public String version() { return "synthetic-mrn-v1"; }
+    @Override public String version() { return "synthetic-mrn-v2"; }
+    /** Fixed fixtures are explicit mock identities; an absent catalogue ward is handled as unavailable by the service. */
+    @Override public Lookup lookup(String mrn) {
+        var outcome = verify(mrn, "DEMO_WARD");
+        return new Lookup(outcome, outcome == Outcome.MATCH
+                ? new Patient("Pesakit Demo 4821", "DEMO_WARD", "DEMO-BED-01") : null);
+    }
 }

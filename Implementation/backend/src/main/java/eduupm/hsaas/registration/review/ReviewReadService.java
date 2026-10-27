@@ -10,6 +10,8 @@ import org.springframework.transaction.support.TransactionTemplate;
 import eduupm.hsaas.auth.Accounts;
 import eduupm.hsaas.auth.SessionCapabilities;
 import eduupm.hsaas.common.ApiFailure;
+import eduupm.hsaas.common.LocalAuditPort;
+import eduupm.hsaas.registration.RegistrationVersions;
 import eduupm.hsaas.registration.RegistrationReadPort;
 import eduupm.hsaas.registration.RegistrationReviewPort;
 
@@ -20,13 +22,40 @@ public final class ReviewReadService {
     private final SessionCapabilities capabilities;
     private final Accounts accounts;
     private final TransactionTemplate transaction;
+    private final LocalAuditPort audit;
 
     /** Locking authorization needs a normal RC transaction even though the root operation only SELECTs masked data. */
     public ReviewReadService(RegistrationReadPort reads, RegistrationReviewPort roots, SessionCapabilities capabilities,
             Accounts accounts, PlatformTransactionManager manager) {
+        this(reads,roots,capabilities,accounts,manager,null);
+    }
+    /** The production wiring always supplies local audit; old read-only callers remain source compatible. */
+    public ReviewReadService(RegistrationReadPort reads, RegistrationReviewPort roots, SessionCapabilities capabilities,
+            Accounts accounts, PlatformTransactionManager manager, LocalAuditPort audit) {
         this.reads = reads; this.roots = roots; this.capabilities = capabilities; this.accounts = accounts;
+        this.audit = audit;
         this.transaction = new TransactionTemplate(manager);
         this.transaction.setIsolationLevel(TransactionDefinition.ISOLATION_READ_COMMITTED);
+    }
+
+    /** This reveal has no idempotency result containing PII; every successful retrieval appends its own safe audit. */
+    public RegistrationReadPort.ReviewFields reviewFields(ReviewService.StaffContext context, String id, long expectedVersion) {
+        var actor = currentActor(context);
+        RegistrationVersions.checked(expectedVersion);
+        if (audit == null) throw new IllegalStateException("Review field access requires local audit");
+        var coordinates = roots.discover(id);
+        if (coordinates == null || !Objects.equals(id,coordinates.id())) throw unavailable();
+        return transaction.execute(status -> {
+            guard(context,actor.id(),coordinates.counterId());
+            // Hold the root version stable through its reveal and audit, following the current authority prefix.
+            var locked = roots.lock(coordinates);
+            if (locked.version()!=expectedVersion) throw new ApiFailure(409,"VERSION_CONFLICT","Refresh the registration before reviewing.");
+            var result = reads.readReviewFields(reads.captureReadScope(context.ownerContextId(),coordinates.counterId()),id,expectedVersion);
+            if (result == null || !id.equals(result.id()) || result.version()!=expectedVersion) throw unavailable();
+            audit.append(LocalAuditPort.Action.REGISTRATION_REVIEW_FIELDS_VIEWED,"REGISTRATION",id,actor.id(),
+                    new LocalAuditPort.Snapshot(locked.status(),locked.status(),expectedVersion,expectedVersion,"SYNTHETIC_MANUAL"));
+            return result;
+        });
     }
 
     /** A query counter narrows one selected view; it is not passed to the root until the complete current prefix holds. */

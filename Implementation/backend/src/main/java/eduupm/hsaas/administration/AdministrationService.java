@@ -4,6 +4,9 @@ import java.nio.charset.StandardCharsets;
 import java.time.Clock;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import tools.jackson.core.StreamReadFeature;
+import tools.jackson.databind.DeserializationFeature;
 import tools.jackson.databind.json.JsonMapper;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -113,21 +116,28 @@ public class AdministrationService {
         });
     }
 
-    /** One typed integer catalogue intentionally cannot change disabled integrations, session security or retention policy. */
+    /** A null return-hours value explicitly defaults future passes to no deadline; it is never coerced to zero. */
     public List<Setting> settings(Proof proof) {
-        return tx.execute(status->{access.require(proof);return jdbc.query("SELECT id,setting_key,value_int,version FROM system_settings ORDER BY id",(rs,n)->new Setting(Long.toString(rs.getLong(1)),rs.getString(2),rs.getInt(3),rs.getLong(4)));});
+        return tx.execute(status->{access.require(proof);return jdbc.query("SELECT id,setting_key,value_int,version FROM system_settings ORDER BY id",(rs,n)->new Setting(Long.toString(rs.getLong(1)),rs.getString(2),rs.getObject(3,Integer.class),rs.getLong(4)));});
     }
 
     /** Changes affect future issue commands only; the assignment owner stores its chosen value and version at issue time. */
+    public void setting(Proof proof,String id,String body) {
+        setting(proof,id,SettingChange.parse(json,body));
+    }
+
+    /** Existing authority and setting locks serialize the expected-version check, null choice and immutable history. */
     public void setting(Proof proof,String id,SettingChange input) {
         if(input==null)throw AdminInputs.invalid();
         long targetId=AdminInputs.id(id),version=AdminInputs.version(input.version());String reason=AdminInputs.reason(input.reason());
-        if(input.value()==null || input.value()<1 || input.value()>720)throw AdminInputs.invalid();
+        if(input.value()!=null && (input.value()<1 || input.value()>720))throw AdminInputs.invalid();
         tx.executeWithoutResult(status->{
             accounts.lock(accounts.find(proof.login()).id());
             var actor=access.require(proof);
-            var rows=jdbc.query("SELECT version FROM system_settings WHERE id=? FOR UPDATE",(rs,n)->rs.getLong(1),targetId);
-            if(rows.isEmpty())throw new ApiFailure(404,"NOT_FOUND","Setting not found.");if(rows.getFirst()!=version)throw new ApiFailure(409,"VERSION_CONFLICT","Reload this setting.");
+            var rows=jdbc.query("SELECT setting_key,version FROM system_settings WHERE id=? FOR UPDATE",(rs,n)->new SettingKey(rs.getString(1),rs.getLong(2)),targetId);
+            if(rows.isEmpty())throw new ApiFailure(404,"NOT_FOUND","Setting not found.");if(rows.getFirst().version()!=version)throw new ApiFailure(409,"VERSION_CONFLICT","Reload this setting.");
+            // This endpoint cannot broaden into arbitrary security/integration settings if another catalogue is added later.
+            if(!Set.of("return_hours_EXECUTIVE","return_hours_PENJAGA","return_hours_VENDOR","return_hours_CONTRACTOR").contains(rows.getFirst().key()))throw AdminInputs.invalid();
             var previous=snapshot("SETTING",id);
             jdbc.update("UPDATE system_settings SET value_int=?,version=version+1,updated_by=?,updated_at=? WHERE id=?",input.value(),actor.id(),DatabaseTime.sql(clock.instant()),targetId);
             audit.append(LocalAuditPort.Action.ADMIN_CHANGED,"SETTING",id,actor.id(),new LocalAuditPort.Snapshot(null,null,version,version+1,"LOCAL"));
@@ -165,6 +175,22 @@ public class AdministrationService {
     public record Reference(String id,String code,String name,boolean active,long version){}
     public record ReferenceCreate(String code,String name,String reason){}
     public record ReferenceChange(Long version,String name,Boolean active,String reason){}
-    public record Setting(String id,String key,int value,long version){}
-    public record SettingChange(Long version,Integer value,String reason){}
+    private record SettingKey(String key,long version){}
+    public record Setting(String id,String key,Integer value,long version){}
+    /** Required JSON keys distinguish a deliberate no-deadline choice from an accidentally omitted value. */
+    public record SettingChange(Long version,Integer value,String reason){
+        public static SettingChange parse(JsonMapper json,String input) {
+            try {
+                if(input==null || input.length()>512)throw AdminInputs.invalid();
+                var body=json.rebuild().enable(StreamReadFeature.STRICT_DUPLICATE_DETECTION)
+                        .enable(DeserializationFeature.FAIL_ON_TRAILING_TOKENS).build().readTree(input);
+                if(body==null || !body.isObject() || body.size()!=3 || !body.has("version") || !body.has("value") || !body.has("reason"))throw AdminInputs.invalid();
+                for(String field:body.propertyNames())if(!Set.of("version","value","reason").contains(field))throw AdminInputs.invalid();
+                var version=body.path("version");var value=body.path("value");var reason=body.path("reason");
+                if(!version.isIntegralNumber() || !version.canConvertToLong() || !reason.isString())throw AdminInputs.invalid();
+                if(!value.isNull() && (!value.isIntegralNumber() || !value.canConvertToInt() || value.asInt()<1 || value.asInt()>720))throw AdminInputs.invalid();
+                return new SettingChange(AdminInputs.version(version.asLong()),value.isNull()?null:value.asInt(),AdminInputs.reason(reason.asString()));
+            }catch(RuntimeException failure){throw AdminInputs.invalid();}
+        }
+    }
 }

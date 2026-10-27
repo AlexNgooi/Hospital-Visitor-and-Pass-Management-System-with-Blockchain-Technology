@@ -2,9 +2,9 @@ import { Button } from "../../../components/ui/primitives";
 import { formatMyt } from "../../../lib/time";
 import type { History } from "./contracts";
 
-/** Capability copy reflects actual local simulation and never implies a message was sent or a chain proof exists. */
+/** Manual custody confirmation remains explicitly synthetic and never claims a live hospital or reader integration. */
 export function SimulationNotice() {
-  return <aside className="lc-mode"><strong>SIMULATED · demonstration only</strong><span>Local audit only · WhatsApp NOT_ENABLED · Blockchain NOT_ENABLED · Physical reader and hospital policy deferred.</span></aside>;
+  return <aside className="lc-mode"><strong>MANUAL · synthetic demonstration data</strong><span>Confirm card custody in this demonstration. Local audit only · WhatsApp NOT_ENABLED · Blockchain NOT_ENABLED · No live hospital or reader claim.</span></aside>;
 }
 export function LifecycleHistory({ items }: { items: History | null }) {
   if (!items) return null;

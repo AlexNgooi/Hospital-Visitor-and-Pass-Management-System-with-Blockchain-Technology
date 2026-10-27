@@ -1,3 +1,11 @@
+# R01 current contract — 2026-10-27
+
+- planning/16 and coordinator C-R02 authorize manual-registration-v2, V8, four current forms and separate Penjaga pass terms. Legacy synthetic-registration-v1 history and its retained successful request encoding remain readable; fresh submissions require v2.
+- Sole registration persistence/port owner. Normalized registration_destinations is immutable after creation; lifecycle locks current authority -> category -> ascending numeric destination SHARE locks -> root/recheck -> caller cards/assignments. Only known legacy records may fall back to primary destination. Unknown schema or missing v2 relation fails safely.
+- Lifecycle Access exposes active allowed catalogue choices and category cardinality without patient/form JSON. Inactive references never block existing return/lost operations by active filtering alone.
+- Default queue/detail remains masked. Explicit current-counter staff review-fields POST requires CSRF/expected version and safe local audit before response; no PII in audit/idempotency/reports/public read.
+- Current verification: necessary backend compile/package with tests skipped only; SQL, app, browser, business/concurrency/UAT NOT_RUN. Earlier M03 text below is historical and does not authorize test execution.
+
 # M03 registration root contract
 
 - Inputs: planning/03 R02–R05 and R06 submission; planning/04 C05/C09–C12; reviewed M00/M02 ports and LOCK_GRAPH.

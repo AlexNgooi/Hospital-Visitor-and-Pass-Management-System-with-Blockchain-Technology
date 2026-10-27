@@ -12,7 +12,7 @@ import "./registration.css";
 
 interface Draft {
   readonly context: string; readonly category: string; readonly values: Partial<Record<FieldName, string>>;
-  readonly step: number; readonly acknowledged: boolean; readonly feedback: Feedback | null;
+  readonly step: number; readonly acknowledged: boolean; readonly termsAcknowledged: boolean; readonly feedback: Feedback | null;
 }
 interface Pending { readonly command: Command<Receipt>; readonly counter: string; readonly original: Draft }
 const common = new Set<FieldName>(["fullName", "identificationType", "identificationNumber", "phone"]);
@@ -86,10 +86,13 @@ function RegistrationForm({ entry, port, initial, onDraft, onSubmit }: {
   const [loadAttempt, setLoadAttempt] = useState(0);
   const [category, setCategory] = useState(initial?.category ?? ""), [values, setValues] = useState(initial?.values ?? {});
   const [step, setStep] = useState(initial?.step ?? 0), [acknowledged, setAcknowledged] = useState(initial?.acknowledged ?? false);
+  const [termsAcknowledged, setTermsAcknowledged] = useState(initial?.termsAcknowledged ?? false);
   const [feedback, setFeedback] = useState<Feedback | null>(initial?.feedback ?? null), [checking, setChecking] = useState(false), [feedbackError, setFeedbackError] = useState("");
-  const [errors, setErrors] = useState<Partial<Record<FieldName | "privacyAcknowledgement", string>>>({});
+  const [errors, setErrors] = useState<Partial<Record<FieldName | "privacyAcknowledgement" | "termsAcknowledgement", string>>>({});
   const [errorRevision,setErrorRevision] = useState(0);
   const summary = useRef<HTMLElement>(null), stage = useRef<HTMLHeadingElement>(null), revision = useRef(0), focusedErrorRevision=useRef(0);
+  const mrnRequest = useRef<{ key: string; controller: AbortController } | null>(null);
+  const automaticMrnKey = useRef<string | null>(null);
   useEffect(() => {
     let alive = true;const abort = new AbortController();
     void port.schema(entry.formContext, abort.signal).then(value => {
@@ -99,12 +102,12 @@ function RegistrationForm({ entry, port, initial, onDraft, onSubmit }: {
       setSchema(value);setCategory(current => value.categories.some(item => item.code === current) ? current : value.categories[0].code);
     }).catch(error => { if (alive) setLoadError(safeError(error, "ms")); }).finally(() => { if (alive) setLoading(false); });
     // This ref is a non-DOM request fence shared by the effect and event callbacks.
-    const fence = revision;
-    return () => { alive = false;abort.abort();fence.current++; };
+    const fence = revision, activeMrn = mrnRequest;
+    return () => { alive = false;abort.abort();fence.current++;activeMrn.current?.controller.abort();activeMrn.current=null; };
   }, [entry, port, loadAttempt]);
   const current = schema?.categories.find(item => item.code === category);
-  useEffect(() => { onDraft({ context: contextKey(entry), category, values, step, acknowledged, feedback }); },
-    [entry, category, values, step, acknowledged, feedback, onDraft]);
+  useEffect(() => { onDraft({ context: contextKey(entry), category, values, step, acknowledged, termsAcknowledged, feedback }); },
+    [entry, category, values, step, acknowledged, termsAcknowledged, feedback, onDraft]);
   useEffect(() => { stage.current?.focus(); }, [step]);
   useEffect(() => {
     // Focus only after a validation gesture; clearing one field must not steal focus while other errors remain.
@@ -122,17 +125,32 @@ function RegistrationForm({ entry, port, initial, onDraft, onSubmit }: {
   const definitions = current.fields, visible = definitions.filter(field => step === 0 ? common.has(field.name) : step === 1 && !common.has(field.name));
   const update = (name: FieldName, value: string) => {
     setValues(previous => ({ ...previous, [name]: value }));setErrors(previous => ({ ...previous, [name]: undefined }));
-    if (name === "mrn" || name === "wardCode") { revision.current++;setFeedback(null);setFeedbackError(""); }
+    if (name === "mrn" || name === "wardCode") {
+      mrnRequest.current?.controller.abort();mrnRequest.current=null;
+      revision.current++;setFeedback(null);setFeedbackError("");setChecking(false);
+      if (name === "mrn") automaticMrnKey.current=null;
+      // A changed MRN cannot retain a ward inherited from a previous successful patient lookup.
+      if (name === "mrn" && feedback?.patient) setValues(previous => ({ ...previous, wardCode: "" }));
+    }
   };
   const validation = (fields: FieldSpec[]) => {
     const next: typeof errors = {};
     for (const field of fields) {
-      const raw = values[field.name] ?? (field.name === "identificationType" ? "TEST_ID" : "");
+      if (field.name === "wardCode" && category === "PENJAGA" && feedback?.patient) continue;
+      const raw = values[field.name] ?? (field.name === "identificationType" ? "IC" : "");
+      if (field.kind === "DESTINATIONS") {
+        const selected = raw ? raw.split(",") : [];
+        if (!selected.length || selected.length > 50 || new Set(selected).size !== selected.length
+            || selected.some(code => !schema.destinations.some(item => item.code === code))) next[field.name] = "Pilih sekurang-kurangnya satu lokasi.";
+        continue;
+      }
       // Mirror the server's printable Character.isWhitespace/isSpaceChar union after rejecting original controls.
       const normalized = raw.normalize("NFC").replace(/^[\u0020\u00a0\u1680\u2000-\u200a\u2028\u2029\u202f\u205f\u3000]+|[\u0020\u00a0\u1680\u2000-\u200a\u2028\u2029\u202f\u205f\u3000]+$/gu,"");
       const valid = normalized.length > 0 && Array.from(normalized).length <= field.maxLength && !/[\p{Cc}\p{Cf}\p{Cs}]/u.test(raw)
         && (field.rule !== "DEMO_ID" || /^DEMO-[A-Z0-9]{4,24}$/.test(normalized))
         && (field.rule !== "DEMO_MRN" || /^DEMO-MRN-[A-Z0-9]{4,16}$/.test(normalized))
+        && (field.rule !== "IDENTIFICATION" || ((values.identificationType ?? "IC") === "IC"
+          ? /^(?:[0-9]{12}|[0-9]{6}-[0-9]{2}-[0-9]{4})$/.test(normalized) : /^[A-Za-z0-9][A-Za-z0-9-]{4,29}$/.test(normalized)))
         && (field.rule !== "PHONE" || /^\+[0-9]{8,15}$/.test(normalized))
         && (field.rule !== "ENUM" || field.options.some(option => option.value === normalized))
         && (field.kind !== "DESTINATION" || schema.destinations.some(option => option.code === normalized));
@@ -142,32 +160,48 @@ function RegistrationForm({ entry, port, initial, onDraft, onSubmit }: {
   };
   const reportErrors = (invalid: typeof errors) => { setErrors(invalid);setErrorRevision(value => value + 1); };
   const next = () => { const invalid = validation(visible);reportErrors(invalid);if (!Object.keys(invalid).length) setStep(step + 1); };
-  const checkMrn = async () => {
-    const invalid = validation(definitions.filter(field => field.name === "mrn" || field.name === "wardCode"));
-    reportErrors(invalid);if (Object.keys(invalid).length) return;
+  /** Valid MRN blur looks up once; manual retry shares the same in-flight fence and never duplicates that request. */
+  const checkMrn = async (automatic = false) => {
+    if (category !== "PENJAGA" || step !== 1) return;
+    const invalid = validation(definitions.filter(field => field.name === "mrn"));
+    if (!automatic) reportErrors(invalid);
+    if (Object.keys(invalid).length) return;
+    // This normalization is only for deduplication; transport still sends the original input to server validation.
+    const mrn = values.mrn!.normalize("NFC").trim(), key = contextKey(entry) + ":" + mrn;
+    if (mrnRequest.current?.key === key || (automatic && automaticMrnKey.current === key)) return;
+    mrnRequest.current?.controller.abort();
+    const controller = new AbortController();mrnRequest.current={key,controller};automaticMrnKey.current=key;
     const captured = ++revision.current;setChecking(true);setFeedback(null);setFeedbackError("");
-    try { const result = await port.feedback(entry.formContext, values.mrn!, values.wardCode!);if (revision.current === captured) setFeedback(result); }
+    try { const result = await port.feedback(entry.formContext, values.mrn!, controller.signal);if (revision.current === captured) setFeedback(result); }
     catch { if (revision.current === captured) setFeedbackError("Semakan tidak tersedia. Pengesahan manual di kaunter masih boleh diteruskan."); }
-    finally { setChecking(false); }
+    finally {
+      if (revision.current === captured) setChecking(false);
+      if (mrnRequest.current?.controller === controller) mrnRequest.current=null;
+    }
   };
   const send = () => {
     const invalid = validation(definitions);if (!acknowledged) invalid.privacyAcknowledgement = "Baca dan akui notis demo sebelum menghantar.";
+    if (category === "PENJAGA" && !termsAcknowledged) invalid.termsAcknowledgement = "Baca dan setujui terma kad penjaga.";
     reportErrors(invalid);
     if (Object.keys(invalid).length) {
       if (definitions.some(field => invalid[field.name])) setStep(definitions.some(field => common.has(field.name) && invalid[field.name]) ? 0 : 1);
       return;
     }
     // Whitelist the selected category and preserve raw input for the server's original-value HMAC.
-    const formData = Object.fromEntries(definitions.map(field => [field.name, values[field.name] ?? (field.name === "identificationType" ? "TEST_ID" : "")]));
+    const formData = Object.fromEntries(definitions.filter(field => !(current.code === "PENJAGA" && feedback?.patient && field.name === "wardCode"))
+      .map(field => [field.name, field.kind === "DESTINATIONS" ? (values[field.name] ?? "").split(",")
+        : values[field.name] ?? (field.name === "identificationType" ? "IC" : "")]));
     const body: Submission = { formContext: entry.formContext, categoryCode: current.code, fieldSchemaVersion: schema.fieldSchemaVersion,
       formData, privacyAcknowledgement: { acknowledged: true, policyVersion: schema.privacy.policyVersion },
+      ...(current.code === "PENJAGA" ? { termsAcknowledgement: { acknowledged: true as const, policyVersion: schema.terms.policyVersion } } : {}),
       ...(current.code === "PENJAGA" && feedback?.validationToken ? { mrnValidationToken: feedback.validationToken } : {}) };
-    onSubmit(body, { context: contextKey(entry), category, values, step, acknowledged, feedback }, entry.scope.counterId);
+    onSubmit(body, { context: contextKey(entry), category, values, step, acknowledged, termsAcknowledged, feedback }, entry.scope.counterId);
   };
   const changeCategory = (value: string) => {
-    revision.current++;setCategory(value);setFeedback(null);setFeedbackError("");setAcknowledged(false);setErrors({});
+    mrnRequest.current?.controller.abort();mrnRequest.current=null;automaticMrnKey.current=null;
+    revision.current++;setCategory(value);setFeedback(null);setFeedbackError("");setAcknowledged(false);setTermsAcknowledged(false);setChecking(false);setErrors({});
     // Retain common fields only: another category cannot inherit hidden MRN/company/purpose properties.
-    setValues(previous => Object.fromEntries(Object.entries(previous).filter(([name]) => common.has(name as FieldName))));
+    setValues(previous => ({ ...Object.fromEntries(Object.entries(previous).filter(([name]) => common.has(name as FieldName))),      identificationType: value === "EXECUTIVE" ? previous.identificationType ?? "IC" : "IC" }));
   };
   const feedbackText = feedback?.feedback === "MATCH" ? "Padanan demo. Pengesahan manual kakitangan masih diperlukan."
     : feedback?.feedback === "NO_MATCH" ? "Tiada padanan demo. Semak input atau teruskan untuk pengesahan manual."
@@ -178,38 +212,63 @@ function RegistrationForm({ entry, port, initial, onDraft, onSubmit }: {
       <p>Gunakan data sintetik sahaja. Pilih maklumat di bawah untuk membetulkannya.</p>
       <div>{Object.entries(errors).filter(([, error]) => error).map(([name]) =>
         <a key={name} href={"#registration-" + name} onClick={event => {event.preventDefault();document.getElementById("registration-" + name)?.focus();}}>
-          {name === "privacyAcknowledgement" ? "Notis demo" : definitions.find(field => field.name === name)?.label}</a>)}</div>
+          {name === "privacyAcknowledgement" ? "Notis demo" : name === "termsAcknowledgement" ? "Terma kad penjaga" : definitions.find(field => field.name === name)?.label}</a>)}</div>
     </details> : <p className="registration-demo"><ShieldCheck size={16} aria-hidden="true" />DEMO sahaja · Gunakan data sintetik.</p>}
     <div className="registration-step"><span>Langkah {step + 1} / 3</span>
       <h3 ref={stage} tabIndex={-1}>{step === 0 ? "Maklumat pelawat" : step === 1 ? "Butiran lawatan" : "Semak pendaftaran"}</h3></div>
     {step === 0 && <div className="field"><label htmlFor="registration-category">Kategori pelawat</label>
       <select id="registration-category" value={category} onChange={event => changeCategory(event.target.value)}>
         {schema.categories.map(item => <option key={item.code} value={item.code}>{item.label}</option>)}</select></div>}
-    <div className="registration-fields">{visible.map(field => field.name === "identificationType"
-      ? <p className="registration-fixed-field" key={field.name}>{field.label}: <strong>ID demo (TEST_ID)</strong></p>
+    <div className="registration-fields">{visible.filter(field => !(category === "PENJAGA" && feedback?.patient && field.name === "wardCode")).map(field =>
+      field.kind === "DESTINATIONS" ? <fieldset className="registration-locations" key={field.name} id={"registration-" + field.name} tabIndex={-1}
+        aria-describedby={errors[field.name] ? "registration-" + field.name + "-error" : undefined}>
+        <legend>{field.label}</legend><p className="muted">{field.hint}</p>
+        {schema.destinations.map(location => {
+          const selected = (values.destinationCodes ?? "").split(",").filter(Boolean);
+          return <label key={location.code}><input type="checkbox" checked={selected.includes(location.code)}
+            onChange={event => update("destinationCodes", (event.target.checked ? [...selected, location.code] : selected.filter(code => code !== location.code)).join(","))} />{location.label}</label>;
+        })}
+        {errors[field.name] && <span className="field-error" id={"registration-" + field.name + "-error"}>{errors[field.name]}</span>}</fieldset>
       : field.kind === "SELECT" || field.kind === "DESTINATION"
       ? <div className="field" key={field.name}><label htmlFor={"registration-" + field.name}>{field.label}</label>
-        <select id={"registration-" + field.name} value={values[field.name] ?? ""}
+        <select id={"registration-" + field.name} value={values[field.name] ?? (field.name === "identificationType" ? "IC" : "")}
           aria-invalid={Boolean(errors[field.name])} aria-describedby={errors[field.name] ? "registration-" + field.name + "-error" : undefined}
           onChange={event => update(field.name, event.target.value)}>
-          <option value="">Pilih {field.label.toLowerCase()}</option>
+          {field.name !== "identificationType" && <option value="">Pilih {field.label.toLowerCase()}</option>}
           {(field.kind === "DESTINATION" ? schema.destinations.map(item => ({value:item.code,label:item.label})) : field.options)
             .map(option => <option key={option.value} value={option.value}>{option.label}</option>)}</select>
         {errors[field.name] && <span className="field-error" id={"registration-" + field.name + "-error"}>{errors[field.name]}</span>}</div>
       : <InputField key={field.name} id={"registration-" + field.name} label={field.label} value={values[field.name] ?? ""}
         type={field.kind === "PHONE" ? "tel" : "text"} autoComplete="off"
-        hint={errors[field.name] ? undefined : field.rule === "DEMO_ID" ? "Contoh: DEMO-ABCD" : field.rule === "DEMO_MRN" ? "Contoh: DEMO-MRN-4821"
+        hint={errors[field.name] ? undefined : field.rule === "DEMO_MRN" ? "Contoh sintetik: DEMO-MRN-4821"
           : field.rule === "PHONE" ? "Contoh sintetik: +999123456789" : field.hint || undefined}
-        error={errors[field.name]} onChange={event => update(field.name, event.target.value)} />)}</div>
+        error={errors[field.name]} onChange={event => update(field.name, event.target.value)}
+        onBlur={field.name === "mrn" ? () => void checkMrn(true) : undefined} />)}</div>
     {step === 1 && category === "PENJAGA" && <div className="registration-mrn">
       <Button variant="secondary" busy={checking} onClick={() => void checkMrn()}>Semak MRN demo</Button>
-      <p className="muted">Pilihan sahaja; anda boleh teruskan untuk pengesahan manual.</p>{feedbackText && <p role="status">{feedbackText}</p>}</div>}
+      <p className="muted">MRN yang lengkap disemak automatik apabila anda meninggalkan medan. Gunakan butang untuk cuba semula atau teruskan untuk pengesahan manual.</p>
+      {checking && <p role="status">Semakan MRN demo sedang dijalankan…</p>}{feedbackText && <p role="status">{feedbackText}</p>}
+      {feedback?.patient && <dl className="registration-review" aria-label="Pesakit MOCK / SYNTHETIC">
+        <div><dt>Nama pesakit (MOCK / SYNTHETIC)</dt><dd>{feedback.patient.patientName}</dd></div>
+        <div><dt>Wad / Katil</dt><dd>{feedback.patient.wardLabel} / {feedback.patient.bed ?? "Tidak tersedia"}</dd></div>
+      </dl>}</div>}
     {step === 2 && <><div className="registration-review-region" tabIndex={0} role="region" aria-label="Ringkasan pendaftaran, tatal untuk butiran">
       <dl className="registration-review">{definitions.map(field => <div key={field.name}>
-      <dt>{field.name === "identificationNumber" ? "No. demo" : field.name === "relationship" ? "Hubungan"
+      <dt>{field.name === "relationship" ? "Hubungan"
         : field.name.endsWith("Purpose") ? "Tujuan" : field.label}</dt>
-      <dd>{field.name === "identificationType" ? "TEST_ID" : field.kind === "DESTINATION"
-        ? schema.destinations.find(destination => destination.code === values[field.name])?.label : values[field.name]}</dd></div>)}</dl></div>
+      <dd>{field.name === "identificationType" ? values.identificationType ?? "IC" : field.kind === "DESTINATIONS"
+        ? (values[field.name] ?? "").split(",").map(code => schema.destinations.find(item => item.code === code)?.label).join(", ")
+        : field.kind === "DESTINATION" ? field.name === "wardCode" && feedback?.patient ? feedback.patient.wardLabel
+        : schema.destinations.find(destination => destination.code === values[field.name])?.label : values[field.name]}</dd></div>)}</dl></div>
+      {category === "PENJAGA" && <>
+        {feedback?.patient && <p>MOCK / SYNTHETIC · {feedback.patient.patientName} · {feedback.patient.wardLabel} / {feedback.patient.bed ?? "Tidak tersedia"}</p>}
+        <p className="registration-policy">{schema.terms.text}</p>
+        <div className="registration-ack"><input id="registration-termsAcknowledgement" type="checkbox" checked={termsAcknowledged}
+          aria-invalid={Boolean(errors.termsAcknowledgement)} aria-describedby={errors.termsAcknowledgement ? "registration-terms-error" : undefined}
+          onChange={event => {setTermsAcknowledged(event.target.checked);setErrors(previous => ({...previous,termsAcknowledgement:undefined}));}} />
+          <label htmlFor="registration-termsAcknowledgement">Saya bersetuju dengan terma kad akses penjaga.</label></div>
+        {errors.termsAcknowledgement && <p id="registration-terms-error" className="field-error">{errors.termsAcknowledgement}</p>}
+      </>}
       <p className="registration-policy">{schema.privacy.text}</p>
       <div className="registration-ack"><input id="registration-privacyAcknowledgement" type="checkbox" checked={acknowledged}
         aria-invalid={Boolean(errors.privacyAcknowledgement)} aria-describedby={errors.privacyAcknowledgement ? "registration-privacy-error" : undefined}

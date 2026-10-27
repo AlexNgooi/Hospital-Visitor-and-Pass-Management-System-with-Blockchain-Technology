@@ -21,5 +21,6 @@ public class AdministrationController {
     @PostMapping("/{kind:destinations|counters}") public Map<String,Boolean> createReference(@PathVariable String kind,@RequestBody ReferenceCreate input,HttpServletRequest request,HttpServletResponse response){service.createReference(AdminAccess.proof(request,response),kind,input);return Map.of("saved",true);}
     @PatchMapping("/{kind:categories|destinations|counters}/{id}") public Map<String,Boolean> reference(@PathVariable String kind,@PathVariable String id,@RequestBody ReferenceChange input,HttpServletRequest request,HttpServletResponse response){service.reference(AdminAccess.proof(request,response),kind,id,input);return Map.of("saved",true);}
     @GetMapping("/settings") public List<Setting> settings(HttpServletRequest request,HttpServletResponse response){return service.settings(AdminAccess.proof(request,response));}
-    @PatchMapping("/settings/{id}") public Map<String,Boolean> setting(@PathVariable String id,@RequestBody SettingChange input,HttpServletRequest request,HttpServletResponse response){service.setting(AdminAccess.proof(request,response),id,input);return Map.of("saved",true);}
+    /** Parse the explicit nullable choice before mutation; omission must never silently remove future deadlines. */
+    @PatchMapping("/settings/{id}") public Map<String,Boolean> setting(@PathVariable String id,@RequestBody String input,HttpServletRequest request,HttpServletResponse response){service.setting(AdminAccess.proof(request,response),id,input);return Map.of("saved",true);}
 }
