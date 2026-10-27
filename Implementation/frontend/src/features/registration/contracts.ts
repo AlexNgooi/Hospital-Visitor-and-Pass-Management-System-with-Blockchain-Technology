@@ -57,8 +57,8 @@ export function createRegistrationPort(client: ApiClient = apiClient) {
   return {
     schema: (formContext: EntryGrant["formContext"], signal?: AbortSignal) =>
       client.post("/api/public/registration-schema", { formContext }, schemaReply, { signal }),
-    feedback: (formContext: EntryGrant["formContext"], mrn: string) =>
-      client.post("/api/public/mrn-validations", { formContext, mrn }, feedbackSchema),
+    feedback: (formContext: EntryGrant["formContext"], mrn: string, signal?: AbortSignal) =>
+      client.post("/api/public/mrn-validations", { formContext, mrn }, feedbackSchema, { signal }),
     submission: (body: Submission) => client.command("/api/public/registrations", body, receiptSchema),
   };
 }

@@ -2,6 +2,7 @@
 
 - Current manual-registration-v2 metadata renders IC-only Penjaga/Vendor/Contractor, IC-or-LESEN Executive, Penjaga address/MRN, Executive ward/patient and company/multiple locations for Vendor/Contractor. No legacy extra mandatory fields.
 - Penjaga mock response fills read-only patient name/ward/bed. MRN/context/category changes clear old proof/display; request generation rejects late responses. Failure retains inputs and offers a catalogue ward for manual staff review.
+- A valid completed Penjaga MRN automatically looks up on input blur in visit details. Same-context/MRN in-flight requests are deduplicated; repeat blur never retries a completed failure. The button remains an explicit retry. Edits/category/context/unmount abort and fence pending requests; lookup never approves staff review.
 - Penjaga pass terms have a separate unchecked checkbox/version from privacy. All draft/proof/unknown-command memory stays scoped to the original form; server controls captured times/patient snapshot.
 - Retain existing visual conventions and keyboard/touch labels, error summary and exact-command UNKNOWN recovery. Build/lint only; no browser/application/test execution. Earlier module test directions below are historical.
 

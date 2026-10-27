@@ -91,6 +91,8 @@ function RegistrationForm({ entry, port, initial, onDraft, onSubmit }: {
   const [errors, setErrors] = useState<Partial<Record<FieldName | "privacyAcknowledgement" | "termsAcknowledgement", string>>>({});
   const [errorRevision,setErrorRevision] = useState(0);
   const summary = useRef<HTMLElement>(null), stage = useRef<HTMLHeadingElement>(null), revision = useRef(0), focusedErrorRevision=useRef(0);
+  const mrnRequest = useRef<{ key: string; controller: AbortController } | null>(null);
+  const automaticMrnKey = useRef<string | null>(null);
   useEffect(() => {
     let alive = true;const abort = new AbortController();
     void port.schema(entry.formContext, abort.signal).then(value => {
@@ -100,8 +102,8 @@ function RegistrationForm({ entry, port, initial, onDraft, onSubmit }: {
       setSchema(value);setCategory(current => value.categories.some(item => item.code === current) ? current : value.categories[0].code);
     }).catch(error => { if (alive) setLoadError(safeError(error, "ms")); }).finally(() => { if (alive) setLoading(false); });
     // This ref is a non-DOM request fence shared by the effect and event callbacks.
-    const fence = revision;
-    return () => { alive = false;abort.abort();fence.current++; };
+    const fence = revision, activeMrn = mrnRequest;
+    return () => { alive = false;abort.abort();fence.current++;activeMrn.current?.controller.abort();activeMrn.current=null; };
   }, [entry, port, loadAttempt]);
   const current = schema?.categories.find(item => item.code === category);
   useEffect(() => { onDraft({ context: contextKey(entry), category, values, step, acknowledged, termsAcknowledged, feedback }); },
@@ -124,7 +126,9 @@ function RegistrationForm({ entry, port, initial, onDraft, onSubmit }: {
   const update = (name: FieldName, value: string) => {
     setValues(previous => ({ ...previous, [name]: value }));setErrors(previous => ({ ...previous, [name]: undefined }));
     if (name === "mrn" || name === "wardCode") {
+      mrnRequest.current?.controller.abort();mrnRequest.current=null;
       revision.current++;setFeedback(null);setFeedbackError("");setChecking(false);
+      if (name === "mrn") automaticMrnKey.current=null;
       // A changed MRN cannot retain a ward inherited from a previous successful patient lookup.
       if (name === "mrn" && feedback?.patient) setValues(previous => ({ ...previous, wardCode: "" }));
     }
@@ -156,13 +160,24 @@ function RegistrationForm({ entry, port, initial, onDraft, onSubmit }: {
   };
   const reportErrors = (invalid: typeof errors) => { setErrors(invalid);setErrorRevision(value => value + 1); };
   const next = () => { const invalid = validation(visible);reportErrors(invalid);if (!Object.keys(invalid).length) setStep(step + 1); };
-  const checkMrn = async () => {
+  /** Valid MRN blur looks up once; manual retry shares the same in-flight fence and never duplicates that request. */
+  const checkMrn = async (automatic = false) => {
+    if (category !== "PENJAGA" || step !== 1) return;
     const invalid = validation(definitions.filter(field => field.name === "mrn"));
-    reportErrors(invalid);if (Object.keys(invalid).length) return;
+    if (!automatic) reportErrors(invalid);
+    if (Object.keys(invalid).length) return;
+    // This normalization is only for deduplication; transport still sends the original input to server validation.
+    const mrn = values.mrn!.normalize("NFC").trim(), key = contextKey(entry) + ":" + mrn;
+    if (mrnRequest.current?.key === key || (automatic && automaticMrnKey.current === key)) return;
+    mrnRequest.current?.controller.abort();
+    const controller = new AbortController();mrnRequest.current={key,controller};automaticMrnKey.current=key;
     const captured = ++revision.current;setChecking(true);setFeedback(null);setFeedbackError("");
-    try { const result = await port.feedback(entry.formContext, values.mrn!);if (revision.current === captured) setFeedback(result); }
+    try { const result = await port.feedback(entry.formContext, values.mrn!, controller.signal);if (revision.current === captured) setFeedback(result); }
     catch { if (revision.current === captured) setFeedbackError("Semakan tidak tersedia. Pengesahan manual di kaunter masih boleh diteruskan."); }
-    finally { if (revision.current === captured) setChecking(false); }
+    finally {
+      if (revision.current === captured) setChecking(false);
+      if (mrnRequest.current?.controller === controller) mrnRequest.current=null;
+    }
   };
   const send = () => {
     const invalid = validation(definitions);if (!acknowledged) invalid.privacyAcknowledgement = "Baca dan akui notis demo sebelum menghantar.";
@@ -183,6 +198,7 @@ function RegistrationForm({ entry, port, initial, onDraft, onSubmit }: {
     onSubmit(body, { context: contextKey(entry), category, values, step, acknowledged, termsAcknowledged, feedback }, entry.scope.counterId);
   };
   const changeCategory = (value: string) => {
+    mrnRequest.current?.controller.abort();mrnRequest.current=null;automaticMrnKey.current=null;
     revision.current++;setCategory(value);setFeedback(null);setFeedbackError("");setAcknowledged(false);setTermsAcknowledged(false);setChecking(false);setErrors({});
     // Retain common fields only: another category cannot inherit hidden MRN/company/purpose properties.
     setValues(previous => ({ ...Object.fromEntries(Object.entries(previous).filter(([name]) => common.has(name as FieldName))),      identificationType: value === "EXECUTIVE" ? previous.identificationType ?? "IC" : "IC" }));
@@ -226,10 +242,12 @@ function RegistrationForm({ entry, port, initial, onDraft, onSubmit }: {
         type={field.kind === "PHONE" ? "tel" : "text"} autoComplete="off"
         hint={errors[field.name] ? undefined : field.rule === "DEMO_MRN" ? "Contoh sintetik: DEMO-MRN-4821"
           : field.rule === "PHONE" ? "Contoh sintetik: +999123456789" : field.hint || undefined}
-        error={errors[field.name]} onChange={event => update(field.name, event.target.value)} />)}</div>
+        error={errors[field.name]} onChange={event => update(field.name, event.target.value)}
+        onBlur={field.name === "mrn" ? () => void checkMrn(true) : undefined} />)}</div>
     {step === 1 && category === "PENJAGA" && <div className="registration-mrn">
       <Button variant="secondary" busy={checking} onClick={() => void checkMrn()}>Semak MRN demo</Button>
-      <p className="muted">Pilihan sahaja; anda boleh teruskan untuk pengesahan manual.</p>{feedbackText && <p role="status">{feedbackText}</p>}
+      <p className="muted">MRN yang lengkap disemak automatik apabila anda meninggalkan medan. Gunakan butang untuk cuba semula atau teruskan untuk pengesahan manual.</p>
+      {checking && <p role="status">Semakan MRN demo sedang dijalankan…</p>}{feedbackText && <p role="status">{feedbackText}</p>}
       {feedback?.patient && <dl className="registration-review" aria-label="Pesakit MOCK / SYNTHETIC">
         <div><dt>Nama pesakit (MOCK / SYNTHETIC)</dt><dd>{feedback.patient.patientName}</dd></div>
         <div><dt>Wad / Katil</dt><dd>{feedback.patient.wardLabel} / {feedback.patient.bed ?? "Tidak tersedia"}</dd></div>
