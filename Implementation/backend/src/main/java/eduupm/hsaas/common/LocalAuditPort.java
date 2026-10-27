@@ -47,6 +47,8 @@ public class LocalAuditPort {
         REGISTRATION_SUBMITTED,REGISTRATION_VERIFIED,REGISTRATION_REJECTED,ADMIN_CHANGED,ADMIN_BOOTSTRAPPED,
         CARD_REGISTERED,ISSUED,RETURNED,OVERDUE,MARKED_LOST,DISABLED,RESTORED,
         CONTACT_REVEALED,FOLLOWUP_RECORDED,REPORT_EXPORTED
+        // R01 explicit staff comparison is audited without storing any revealed field in this event.
+        ,REGISTRATION_REVIEW_FIELDS_VIEWED
     }
     /** The immutable safe snapshot deliberately has no generic payload or note extension. */
     public record Snapshot(String previousState,String state,Long previousVersion,Long version,String origin) { }

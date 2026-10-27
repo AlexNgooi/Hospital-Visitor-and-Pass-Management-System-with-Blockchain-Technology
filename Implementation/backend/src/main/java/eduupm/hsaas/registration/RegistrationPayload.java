@@ -14,11 +14,12 @@ public final class RegistrationPayload {
     /** Parses shape without current policy checks so a retained successful replay is not blocked by later policy changes. */
     public static Parsed submission(JsonMapper json, String body) {
         JsonNode input = parse(json, body);
-        allowed(input, Set.of("formContext", "categoryCode", "fieldSchemaVersion", "formData", "privacyAcknowledgement", "mrnValidationToken"));
+        allowed(input, Set.of("formContext", "categoryCode", "fieldSchemaVersion", "formData", "privacyAcknowledgement", "termsAcknowledgement", "mrnValidationToken"));
         var context = context(input.path("formContext"));
         var form = input.path("formData");
         allowed(form, new HashSet<>(RegistrationFields.ALL_FIELDS));
         allowed(input.path("privacyAcknowledgement"), Set.of("acknowledged", "policyVersion"));
+        if (input.has("termsAcknowledgement")) allowed(input.path("termsAcknowledgement"), Set.of("acknowledged", "policyVersion"));
         String category = text(input.path("categoryCode"), "categoryCode", 16);
         String version = text(input.path("fieldSchemaVersion"), "fieldSchemaVersion", 64);
         return new Parsed(input, context, category, version);
@@ -49,7 +50,20 @@ public final class RegistrationPayload {
         fields.add(RequestEncoding.Field.text("categoryCode", parsed.category()));
         fields.add(RequestEncoding.Field.text("fieldSchemaVersion", parsed.schemaVersion()));
         var form = new ArrayList<RequestEncoding.Field>();
-        for (String name : RegistrationFields.ALL_FIELDS) { form.add(stringField(input.path("formData"), name)); }
+        boolean legacy = RegistrationFields.LEGACY_VERSION.equals(parsed.schemaVersion());
+        // Existing successful v1 commands retain byte-for-byte canonical schema/order for their stored HMAC.
+        if (legacy && input.has("termsAcknowledgement")) throw RegistrationFields.invalid("termsAcknowledgement");
+        for (String name : legacy ? RegistrationFields.LEGACY_FIELDS : RegistrationFields.ALL_FIELDS) {
+            if (name.equals("destinationCodes")) {
+                var value = input.path("formData").path(name);
+                if (value.isMissingNode()) form.add(RequestEncoding.Field.missing(name));
+                else if (value.isNull()) form.add(RequestEncoding.Field.nil(name));
+                else {
+                    if (!value.isArray() || value.size() > 50) throw RegistrationFields.invalid("formData.destinationCodes");
+                    form.add(RequestEncoding.Field.texts(name, value.valueStream().map(item -> text(item, "formData.destinationCodes", 100)).toList()));
+                }
+            } else form.add(stringField(input.path("formData"), name));
+        }
         fields.add(RequestEncoding.Field.object("formData", form));
         var privacy = input.path("privacyAcknowledgement");
         RequestEncoding.Field acknowledgement;
@@ -59,7 +73,19 @@ public final class RegistrationPayload {
         else { throw RegistrationFields.invalid("privacyAcknowledgement"); }
         fields.add(RequestEncoding.Field.object("privacyAcknowledgement", List.of(acknowledgement, stringField(privacy, "policyVersion"))));
         fields.add(stringField(input, "mrnValidationToken"));
-        return RequestEncoding.encode(json, scope, "SUBMIT", "REGISTER", 1, fields);
+        if (!legacy) {
+            var terms = input.path("termsAcknowledgement");
+            if (terms.isMissingNode()) fields.add(RequestEncoding.Field.missing("termsAcknowledgement"));
+            else {
+                var flag = terms.path("acknowledged");
+                RequestEncoding.Field acknowledged = flag.isMissingNode() ? RequestEncoding.Field.missing("acknowledged")
+                        : flag.isNull() ? RequestEncoding.Field.nil("acknowledged")
+                        : flag.isBoolean() ? RequestEncoding.Field.bool("acknowledged", flag.asBoolean()) : null;
+                if (acknowledged == null) throw RegistrationFields.invalid("termsAcknowledgement");
+                fields.add(RequestEncoding.Field.object("termsAcknowledgement", List.of(acknowledged, stringField(terms, "policyVersion"))));
+            }
+        }
+        return RequestEncoding.encode(json, scope, "SUBMIT", "REGISTER", legacy ? 1 : 2, fields);
     }
 
     /** No record representation can emit raw form data into an exception or diagnostic. */
