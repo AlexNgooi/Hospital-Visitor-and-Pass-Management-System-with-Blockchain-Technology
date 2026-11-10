@@ -2,6 +2,7 @@
 .env
 .env.*
 !.env.example
+!.env.native.example.json
 application-local.yaml
 application-local.yml
 application-local.properties

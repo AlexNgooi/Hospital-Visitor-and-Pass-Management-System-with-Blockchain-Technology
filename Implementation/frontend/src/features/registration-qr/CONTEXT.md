@@ -1,5 +1,7 @@
 # Dynamic registration QR
 
+2026-11-10 explicit user request adds Copy link for the current validated QR entryUrl, including a readonly manual-copy fallback when Clipboard API access fails. Copy uses the same rotation/expiry/revocation boundary, checks freshness/online/visibility at click time, keeps URL data in component memory only, and hides feedback/fallback when their exact source is no longer current. No logging or persistence is introduced. Shared shell adds explicit new-tab links so review and QR can remain mounted in separate tabs/windows; no backend authorization is weakened. Browser/manual acceptance remains user-run.
+
 - Inputs: planning/02 section 9, planning/03 R01/R06, planning/04 C07/C10/C12 and M01 feature/client/vault contracts.
 - Responsibility: guarded live display and anonymous entry exchange/restart/recovery. Never implement M03 visitor fields or assume a QR proves physical presence.
 - Outputs: feature-local React/TypeScript/CSS; main only injects exported FeatureSlots. QR rendering uses a locally bundled encoder; decoder is test-only.

@@ -53,6 +53,10 @@
 .qr-display-feature .qr-live { font-size: 14px; line-height: 20px; padding: 2px 8px; }
 .qr-controls { display: flex; justify-content: center; flex-wrap: wrap; gap: 8px; margin-top: 6px; }
 .qr-controls .button { min-height: 44px; }
+/* Clipboard fallback is explicit, selectable and removed whenever its rotating source is no longer current. */
+.qr-copy-status { margin-top: 10px; font-size: 14px; line-height: 1.5; }
+.qr-manual-link { display: grid; gap: 6px; margin: 10px; text-align: left; font-size: 14px; }
+.qr-manual-link input { width: 100%; min-width: 0; min-height: 44px; padding: 8px; }
 .qr-display-feature .qr-guidance { padding: 0; font-size: 14px; }
 .qr-display-feature .qr-guidance p { margin: 0; line-height: 1.5; }
 .qr-display-feature .qr-safety { margin-top: 6px; }

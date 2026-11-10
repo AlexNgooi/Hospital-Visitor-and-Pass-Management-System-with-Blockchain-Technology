@@ -2,6 +2,8 @@
 
 # runbooks 契约
 
+2026-11-10：用户明确要求移除正常运行的 Docker 依赖。当前启动/停止/恢复入口为 MANUAL_NATIVE.md，使用专用 native schema/account 并保留数据；旧 runbook 的 Docker 操作只属历史版本。未启动应用、迁移或操作旧库；业务手测仍由用户执行。
+
 2026-10-27 R01–R03 新指南为 MANUAL_R01_R03.md，只对应独立整合分支的已审核源码；替代旧扫描/TEST_ID/强制期限办理步骤。组合静态/构建检查不代表已合并main、已升级数据库或已启动新版；所有用户业务/迁移/恢复检查仍NOT_RUN。不得从新worktree自动认领/删除现有demo或复制私有control/keys/.env。
 
 输入：已合并功能源码、模块 HANDOFF/REVIEW、用户最新操作授权。

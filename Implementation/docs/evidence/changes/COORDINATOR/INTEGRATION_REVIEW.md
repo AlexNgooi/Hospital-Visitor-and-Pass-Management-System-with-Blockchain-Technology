@@ -1,5 +1,7 @@
 # R01–R03 combined source review and build receipt
 
+> **2026-10-27 subsequent merge update:** The user explicitly requested the R01–R03 main merge in chat `01a17d68-73a3-7962-b09b-46eb13c34bdc`. Integration head `7af5659` was merged without conflicts into local main as `c4cf3d3`. Current status is **MERGED_PENDING_USER_MANUAL_TEST**. Post-merge Implementation tree comparison with the reviewed integration branch and merge diff whitespace check passed. Application sources are identical to the already built integration version; builds/tests were not repeated. No UI polish merge, push, app/database operation or migration occurred. All not-merged statements in the original receipt below refer to the earlier review, not the current main state.
+
 Date: 2026-10-27 (Asia/Singapore). Status: **INTEGRATED_SOURCE_BUILD_CHECKED_NOT_MERGED_PENDING_USER_MANUAL_TEST**.
 
 Coordinator chat: `01a17867-7222-74d0-8dc6-c33b0e939c15`, local. User authorization and exact shared decisions are in `planning/16_MANUAL_PASS_MODULE_COORDINATION.md` from the repository root. This is a source/build review, not hospital approval, SQL execution or business acceptance.

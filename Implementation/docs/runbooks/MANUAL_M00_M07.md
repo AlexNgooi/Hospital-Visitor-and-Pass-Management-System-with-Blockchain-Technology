@@ -1,5 +1,7 @@
 # M00–M07：本机演示启动、停止与恢复
 
+> **2026-11-10：当前启动入口已改为 [MANUAL_NATIVE.md](MANUAL_NATIVE.md)，正常运行无需 Docker。本文旧容器启动/停止/恢复命令只适用于历史版本，不能用于当前启动器。**
+
 2026-10-18：M00–M06功能已在本机main合并，运行源码为 `761491e89910566c83fa184cb0aaa79ee625f128`；本M07文档提交由coordinator审核合并。**用户业务/数据库/启动/备份恢复验收均NOT_RUN，状态MERGED_PENDING_USER_MANUAL_TEST。** 文档按真实源码整理，不把功能合并或构建当业务PASS。
 
 业务验收见 [逐项清单](MANUAL_ACCEPTANCE_M00_M07.md)，版本与历史证据见 [release manifest](RELEASE_MANIFEST_M00_M07.md)。新启动、业务、备份/恢复均 NOT_RUN；助手没有启动服务、浏览器或数据库。

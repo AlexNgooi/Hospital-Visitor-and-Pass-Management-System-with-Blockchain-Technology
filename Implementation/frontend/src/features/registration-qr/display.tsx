@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import QRCode from "qrcode";
-import { QrCode, ShieldCheck, WifiOff } from "lucide-react";
+import { Copy, QrCode, ShieldCheck, WifiOff } from "lucide-react";
 import { useCounterScope } from "../../app/counter-context";
 import { Button, StatusPanel } from "../../components/ui/primitives";
 import { safeError } from "../../lib/errors";
@@ -22,6 +22,8 @@ export function RegistrationQrDisplay({ port = qrPort }: { port?: QrPort }) {
   const [busy, setBusy] = useState(false);
   const [remaining, setRemaining] = useState(0);
   const [capabilityAttempt, setCapabilityAttempt] = useState(0);
+  const [copyResult, setCopyResult] = useState<{ source: DisplayValue; message: string } | null>(null);
+  const [manualLink, setManualLink] = useState<DisplayValue | null>(null);
   const generation = useRef(0);
   const panel = useRef<HTMLDivElement>(null);
 
@@ -115,6 +117,26 @@ export function RegistrationQrDisplay({ port = qrPort }: { port?: QrPort }) {
   useEffect(() => () => { generation.current++; }, []);
   const visible = value && display?.counter === counter;
 
+  /** Copy only the currently validated rotating capability, with a manual fallback for clipboard restrictions. */
+  const copyLink = async () => {
+    setCopyResult(null); setManualLink(null);
+    if (!visible || !value || !navigator.onLine || document.visibilityState === "hidden"
+        || !displayFresh(value.current, value.anchor, performance.now())) {
+      if (value) setCopyResult({ source: value, message: "Wait for a current registration link, then copy again." }); return;
+    }
+    const copied = value;
+    try {
+      await navigator.clipboard.writeText(copied.current.entryUrl);
+      setCopyResult({ source: copied, message: displayFresh(copied.current, copied.anchor, performance.now())
+        ? "Link copied. Open it immediately; it expires with this QR code."
+        : "That link has expired. Copy the current link again." });
+    } catch {
+      if (displayFresh(copied.current, copied.anchor, performance.now())) {
+        setManualLink(copied); setCopyResult({ source: copied, message: "Select and copy the link below, then open it immediately." });
+      } else setCopyResult({ source: copied, message: "That link has expired. Copy the current link again." });
+    }
+  };
+
   return <div className="qr-feature qr-display-feature">
     <header className="qr-intro"><h1>Visitor registration QR</h1><p className="muted">No visitor account is required.</p></header>
     {enabled === false ? <StatusPanel kind="empty" title="Registration QR is not enabled">Contact the administrator to enable the controlled registration entry.</StatusPanel> : <>
@@ -129,15 +151,20 @@ export function RegistrationQrDisplay({ port = qrPort }: { port?: QrPort }) {
           <p>Original counter {revocation.counter}</p><p>{message || "The original code remains hidden while the server confirms revocation."}</p>
           {revocation.status === "unknown" && <Button variant="secondary" busy={busy} onClick={() => void revoke()}>Retry revoke</Button>}
         </section> : <div className="qr-display-card" ref={panel}>
-          <div className="qr-display-heading"><QrCode size={20} aria-hidden="true" /><h2>Scan / Imbas untuk daftar</h2></div>
+          <div className="qr-display-heading"><QrCode size={20} aria-hidden="true" /><h2>Scan or copy link / Imbas atau salin pautan</h2></div>
           <div className="qr-scan-area" data-available={Boolean(visible)} aria-label="Current registration code">
             {visible ? <img src={value.image} alt="Scan this current QR with your phone camera to register" width={400} height={400} /> : <div className="qr-hidden"><WifiOff size={40} aria-hidden="true" /><strong>{busy ? "Preparing entry…" : display ? "Current code unavailable" : "Start a live display"}</strong><span>No scannable code is shown.</span></div>}
           </div>
           {visible && <div className="qr-display-meta"><span className="qr-live">Live · changes in {remaining} seconds</span></div>}
           {display && <div className="qr-controls">
+            <Button variant="secondary" disabled={!visible} onClick={() => void copyLink()}><Copy size={16} aria-hidden="true" />Copy link</Button>
             {visible && <Button variant="ghost" onClick={() => void panel.current?.requestFullscreen?.()}>Full screen</Button>}
             <Button variant="secondary" busy={busy} onClick={() => void revoke()}>Revoke display</Button>
           </div>}
+          {visible && copyResult?.source === value && <p role="status" className="qr-copy-status">{copyResult.message}</p>}
+          {visible && manualLink === value && <label className="qr-manual-link">Current registration link
+            <input readOnly value={value.current.entryUrl} onFocus={event => event.target.select()} />
+          </label>}
           {message && !revocation && <p role="status" className="qr-notice">{message}</p>}
           {enabled === null && message && <Button variant="secondary" onClick={() => {
             // Retry only the read-only availability probe; never replay an uncertain create or revoke command.
@@ -150,6 +177,8 @@ export function RegistrationQrDisplay({ port = qrPort }: { port?: QrPort }) {
           {/* Native details keeps complete guidance keyboard-accessible without displacing the current code/actions. */}
           <details><summary><ShieldCheck size={18} aria-hidden="true" />Entry limits and connection help</summary><div className="qr-guidance-body">
           <p>The server changes this QR every 30 seconds. Each code expires after 45 seconds.</p>
+          <p>Copy link opens the same registration form without scanning. Paste the whole link immediately, including the part after #. A copied link has the same expiry and revocation rules as the QR.</p>
+          <p>For a visitor on this computer, use a separate browser profile or private window. Staff pages can share tabs in the signed-in profile. A localhost link works only on this computer.</p>
           <p>Visitors who already opened a valid form have 20 minutes to submit it. Several visitors can scan the same current code.</p>
           <p>Keep this display connected. After a connection loss or sleep, the code stays hidden until revalidated.</p>
           <p className="muted">QR entry does not verify identity or physical presence. Staff verification remains required.</p>

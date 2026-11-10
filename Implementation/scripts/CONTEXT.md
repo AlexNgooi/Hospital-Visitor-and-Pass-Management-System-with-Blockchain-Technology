@@ -1,5 +1,7 @@
 # Manual demonstration scripts contract
 
+2026-11-10 user authorization supersedes the Docker lifecycle below. The current launcher uses a separately provisioned loopback native MySQL schema/account `hsaas_manual_native`, with credentials in ignored `infra/.env.native.json`. It never creates/drops a schema, starts/stops MySQL, or adopts an old Docker database. Explicit `start --initialize` requires an empty dedicated schema; ordinary `start`/`resume` never seeds. Stop retains data, private runtime keys and backups under ignored `tmp/manual-demo-native/`. Native restore requires a complete native bundle and an empty schema, and revokes old session/QR/unfinished-scan authority. See `docs/runbooks/MANUAL_NATIVE.md`. Historical Docker bundles and control metadata are not compatible or automatically copied. Checks are syntax, skip-tests builds and seed compilation only; actual startup/migrations/business/backup/restore remain user-run.
+
 Input: reviewed M00–M07 application, module flags and `docs/runbooks/MANUAL_M00_M07.md`.
 
 Responsibility: user-invoked isolated demonstration startup, exact owned-resource cleanup and local demonstration backup/restore. These scripts do not run acceptance tests or touch the native database. Reference/account seeds are explicitly synthetic; registration/card/assignment workflows remain real application operations.

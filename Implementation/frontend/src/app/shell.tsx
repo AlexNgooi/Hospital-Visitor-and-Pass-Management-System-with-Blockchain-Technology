@@ -15,7 +15,7 @@ import { useAuth } from "./auth-context";
 import { homeIcon as HomeIcon, type FeatureSlot } from "./features";
 import { CounterContext } from "./counter-context";
 
-/** Shared authenticated frame with role-separated navigation and accessible mobile drawer. */
+/** On-demand navigation keeps review and a separately opened QR display independently mounted. */
 export function WorkspaceShell({ slots }: { slots: readonly FeatureSlot[] }) {
   const { state, logout } = useAuth();
   const location = useLocation();
@@ -23,7 +23,8 @@ export function WorkspaceShell({ slots }: { slots: readonly FeatureSlot[] }) {
     path: location.pathname,
     open: false,
   });
-  const [counter, setCounter] = useState<string | null>(null);
+  // A new tab inherits only the requested counter; the server and current permissions still authorize it.
+  const [counter, setCounter] = useState<string | null>(() => new URLSearchParams(location.search).get("counter"));
   if (state.kind !== "authenticated") return null;
   const { user } = state;
   const isStaff = user.role === "COUNTER_STAFF";
@@ -41,7 +42,7 @@ export function WorkspaceShell({ slots }: { slots: readonly FeatureSlot[] }) {
   }
   const nav = (
     <>
-      <Link to={base} className="shell-brand">
+      <Link to={base} className="shell-brand" onClick={() => setDrawer({ path: location.pathname, open: false })}>
         <span className="brand-symbol" aria-hidden="true">
           H
         </span>
@@ -55,15 +56,23 @@ export function WorkspaceShell({ slots }: { slots: readonly FeatureSlot[] }) {
       <nav
         aria-label={isStaff ? "Counter navigation" : "Administrator navigation"}
       >
-        <NavLink to={base} end className="nav-link">
+        <NavLink to={base} end className="nav-link" onClick={() => setDrawer({ path: location.pathname, open: false })}>
           <HomeIcon size={19} aria-hidden="true" />
           Overview
         </NavLink>
         {navigation.map(({ path, label, icon: Icon }) => (
-          <NavLink key={path} to={path} className="nav-link">
-            {Icon && <Icon size={19} aria-hidden="true" />}
-            {label}
-          </NavLink>
+          <div className="nav-row" key={path}>
+            <NavLink to={path} className="nav-link" onClick={() => setDrawer({ path: location.pathname, open: false })}>
+              {Icon && <Icon size={19} aria-hidden="true" />}
+              {label}
+            </NavLink>
+            <Link to={`${path}${isStaff && activeCounter ? `?counter=${encodeURIComponent(activeCounter)}` : ""}`}
+              target="_blank" rel="noopener noreferrer" className="nav-new-tab"
+              onClick={() => setDrawer({ path: location.pathname, open: false })}
+              aria-label={`Open ${label} in a new tab`} title={`Open ${label} in a new tab`}>
+              <ArrowUpRight size={18} aria-hidden="true" />
+            </Link>
+          </div>
         ))}
       </nav>
       <div className="sidebar-footer">
@@ -77,8 +86,7 @@ export function WorkspaceShell({ slots }: { slots: readonly FeatureSlot[] }) {
   );
   return (
     <CounterContext.Provider value={activeCounter}>
-      <div className="workspace">
-        <aside className="sidebar">{nav}</aside>
+      <div className="workspace workspace-drawer-layout">
         <div className="workspace-body">
           <header className="topbar">
             <Dialog.Root
@@ -90,7 +98,7 @@ export function WorkspaceShell({ slots }: { slots: readonly FeatureSlot[] }) {
               <Dialog.Trigger asChild>
                 <Button
                   variant="ghost"
-                  className="mobile-menu"
+                  className="workspace-menu"
                   aria-label="Open navigation"
                 >
                   <Menu size={21} aria-hidden="true" />
@@ -157,6 +165,17 @@ export function WorkspaceShell({ slots }: { slots: readonly FeatureSlot[] }) {
                   <span className="badge">No counters assigned</span>
                 )}
                 <span className="muted">Authorised counters only</span>
+                {/* Native links preserve the current review/form and reuse the existing staff session. */}
+                <div className="workspace-tab-tools" aria-label="Open a parallel workspace">
+                  {navigation.filter(slot => ["/staff/registration-qr", "/staff/registrations"].includes(slot.path)).map(slot => (
+                    <Link key={slot.path} className="button button-secondary"
+                      to={`${slot.path}${activeCounter ? `?counter=${encodeURIComponent(activeCounter)}` : ""}`}
+                      target="_blank" rel="noopener noreferrer">
+                      {slot.path.endsWith("registration-qr") ? "Open QR in new tab" : "Open review in new tab"}
+                      <ArrowUpRight size={16} aria-hidden="true" />
+                    </Link>
+                  ))}
+                </div>
               </div>
             )}
             <Outlet />
