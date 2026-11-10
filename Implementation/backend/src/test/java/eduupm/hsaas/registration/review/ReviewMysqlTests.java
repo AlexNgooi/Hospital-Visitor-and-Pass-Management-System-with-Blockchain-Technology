@@ -34,9 +34,6 @@ import org.springframework.transaction.TransactionDefinition;
 import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
-import org.testcontainers.mysql.MySQLContainer;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.json.JsonMapper;
 import eduupm.hsaas.auth.LoginLimiter;
@@ -54,10 +51,10 @@ import static org.mockito.Mockito.*;
 /** Candidate real servlet/MySQL acceptance: roots are created by public QR/grant/submission HTTP, never private M03 fixtures. */
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @ActiveProfiles("test")
-@Testcontainers
+@org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable(named="HSAAS_LOCAL_MYSQL_TESTS", matches="true")
 class ReviewMysqlTests {
-    @Container static final MySQLContainer MYSQL = new MySQLContainer("mysql:8.0.45")
-            .withCommand("--log-bin-trust-function-creators=1");
+    @org.junit.jupiter.api.extension.RegisterExtension
+    static final eduupm.hsaas.testing.LocalMysql MYSQL = eduupm.hsaas.testing.LocalMysql.create();
     @LocalServerPort int port;
     @MockitoSpyBean JdbcTemplate jdbc;
     @Autowired JsonMapper json;

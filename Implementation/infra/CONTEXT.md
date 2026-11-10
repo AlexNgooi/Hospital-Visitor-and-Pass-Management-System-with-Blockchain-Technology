@@ -1,7 +1,7 @@
 # Native infrastructure contract
 
-Input: explicit user request on 2026-11-10 to remove Docker from normal webapp operation.
-Responsibility: loopback native MySQL configuration for a dedicated synthetic schema/account, hsaas_manual_native.
-Outputs: .env.native.example.json, README and MANUAL_NATIVE.md. Private .env.native.json is ignored. Compose was removed.
-Verification: static config review, launcher syntax and application build checks only. The assistant does not start services or execute migrations.
-Boundary: no access to old hsaas_db, automatic Docker data adoption, container deletion or Testcontainers fallback. Stop retains the dedicated schema, keys and backups.
+Input: current local-only runtime decision and MANUAL_NATIVE.md.
+Responsibility: explicit loopback connection template for the separately provisioned hsaas_manual_native schema/account.
+Output: .env.native.example.json and README. Private .env.native.json is ignored; SQL tests use their own account/schemas.
+Verification: static configuration, syntax and build checks. Database connection/startup/migrations are user-run.
+Boundary: no access to old hsaas_db, automatic adoption of old data or database-service control. Stop retains data and keys.

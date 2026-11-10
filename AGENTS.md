@@ -1,45 +1,21 @@
-> **2026-10-27 最新授权（R01–R03）**：用户已在当前 coordinator chat `01a17867-7222-74d0-8dc6-c33b0e939c15`（local）明确要求分配任务并启动多 chat，一模块一 chat，实施 planning/15 的新变更。授权为三个模块创建独立 chat/worktree、直接开发、双向技术答疑与交接，覆盖旧的本轮 design-only/不得代开限制；每模块不再重复问开发许可。Penjaga 已确认仅 IC、每登记一张活动 pass。执行/ownership/迁移/检查边界以 `planning/16_MANUAL_PASS_MODULE_COORDINATION.md` 为准；仅必要静态/构建检查，不运行应用/数据库/业务验收，不 push/部署/改 native 库，不自动 merge main，旧 M08–M11 不启动。
+# HSAAS 工作导航
 
-> **2026-10-18 最新授权（M05–M07）**：用户已指定新 coordinator chat `01a14da5-91fe-7bf1-a120-183975085f8b`（local），授权代开三个独立模块 chat/worktree、直接开发、双向答疑、审核和仅本地 merge；只做必要 testing，合并后由用户手动启动及业务测试。本条覆盖下文旧的 M05–M07 自行协调/未许可/禁止一切测试安排；M08–M11 未启动、不 push、不部署、不修改旧 native 库。当前执行与共享契约见 `planning/14_M05_M07_COORDINATION.md`（从仓库根目录解析）。
+当前入口：[planning/README.md](planning/README.md)。先读所属目录CONTEXT.md和任务相关规范，不加载整个历史证据树。
 
-> 2026-10-18交付状态：M05/M06功能与M07文档已按本次授权审核并合并本机main；运行源码761491e，merge分别6e458b7/0917266/8100520。必要组合静态/构建检查通过，Docker不可用导致SQL与业务/恢复NOT_RUN；用户自己启动及手测。当前入口Implementation/docs/runbooks/MANUAL_M00_M07.md，准确记录planning/14_M05_M07_COORDINATION.md。不push、不部署、不改native库，M08–M11未启动。
-
-> **2026-10-27 用户最新优先级：UI 优先，新增 feature 暂缓。** 本轮只推进前端布局、导航、视觉与响应式优化；R01–R03 整合成果保留，不启动新业务模块。当前 UI 分支为 `codex/ui-first-polish`，基于整合版 `7af5659`；不自动合并 main 或更改运行中 demo。执行记录见 `planning/17_UI_FIRST_PRIORITY.md`。本条覆盖旧计划中的功能推进优先级。
-
-# HSAAS 项目导航
-
-这是 HSAAS Visitor and Pass Management FYP 的规划工作区。
-当前基线入口是 planning/README.md；应用实施状态见 planning/10_BASELINE_REVIEW.md。
-
-| 当前任务 | 先读 |
+| 任务 | 先读 |
 |---|---|
-| 了解需求与验收 | planning/03_REQUIREMENTS_AND_TEST_PLAN.md |
-| 修改组件与安全边界 | planning/02_TECHNICAL_ARCHITECTURE.md |
-| 修改数据、状态或 API | planning/04_DATA_MODEL_AND_API_PLAN.md |
-| 初始化或修改 Implementation/ | planning/09_FOLDER_STRUCTURE.md / planning/11_ENVIRONMENT_AND_MANUAL_INITIALIZATION.md |
-| 查找修改影响与依据 | planning/PROJECT_MAP.md |
-| 手动初始化与环境 | planning/11_ENVIRONMENT_AND_MANUAL_INITIALIZATION.md |
-| Coordinator 分配、模块 chat、答疑、审核与 merge | planning/12_THREE_MONTH_CHAT_PLAN.md / planning/01_DEVELOPMENT_PLAN.md |
-| 查看长期架构图（动态 QR / coordinator 尚待同步） | planning/diagrams/v3/index.html |
-| 查 UI | output/ui-redesign-v4/README.md |
+| 当前计划、交付状态 | planning/01_DEVELOPMENT_PLAN.md / planning/10_BASELINE_REVIEW.md |
+| 需求与用户手测 | planning/03_REQUIREMENTS_AND_TEST_PLAN.md |
+| 架构/安全、数据/API | planning/02_TECHNICAL_ARCHITECTURE.md / planning/04_DATA_MODEL_AND_API_PLAN.md |
+| 修改位置与影响 | planning/09_FOLDER_STRUCTURE.md / planning/PROJECT_MAP.md |
+| 本机运行/备份恢复 | Implementation/docs/runbooks/MANUAL_NATIVE.md |
+| SQL测试环境 | Implementation/backend/LOCAL_TESTING.md |
+| 后续Sui Testnet | planning/SUI_TESTNET.md |
 
-每个任务只加载相关规范、必要输入与所属目录的 CONTEXT.md。
-目录契约见 CONTEXT.md；planning 只保留当前版本。
+当前授权：用户要求直接实施具体修改，手写代码有准确英文注释。使用隔离分支/worktree；普通实现步骤不重复求许可。当前优先UI与本机使用；不自动启动后续集成模块或其他聊天。
 
-代码规范：所有新写或修改的手写代码必须有英文注释，包括助手提供的代码示例。主要模块/类/函数说明职责，关键逻辑说明业务规则、设计原因与安全边界；代码变更时同步更新注释。所有 module chat 遵守，coordinator 审核后才可 merge。
+验证：只做必要源码/语法/类型/lint/构建检查，用户自己启动应用、数据库并进行浏览器/业务手测。NOT_RUN不能写PASS；历史证据只证明当时版本，不因文档整理改写成当前验收。
 
-最新开发方式（2026-10-08）：用户明确要求“不需要再 guide 我写了，直接帮我写，只不过代码里要写好注释英文”。已取消用户手写源码/逐步指导方式；模块获得自身一次开发许可后，由模块助手直接实现、测试、修复、写交接，coordinator 审核/merge。所有新增或修改代码必须有准确英文注释，不再要求用户逐步写代码或确认普通实现步骤。已有明确模块许可不重问，未有的仍按 planning/12 向用户申请一次；代码代写方式不自动扩展到未批准模块。旧文档/旧 chat 中手写限制由本规则覆盖。
+操作边界：不自动merge main、push、部署、重启已有服务或执行迁移，不修改原hsaas_db、不复制私有配置/密钥。正常应用及测试使用本机进程；SQL测试仅显式opt-in后在自己创建的精确随机schema中执行，不操作其他库或MySQL服务。Sui未来使用本机worker/CLI访问远程Testnet，当前disabled，不发布或发送交易。
 
-模块启动权：每个 module 的 chat 与开发必须由用户手动开启和启动。coordinator/助手只规划任务和依赖，不代开 chat、不自动派发或启动模块开发，不因 READY、依赖完成、日期到达或审核通过而自动启动下一模块；用户启动后再记录状态。
-
-本次明确授权例外（2026-10-08）：用户要求 coordinator 代开 M00–M04 五个独立 chat，使用 gpt-6.1-sol / high。先在 Local 做只读模块核对/契约准备；获各自开发许可后由模块助手直接实现，代码有英文注释。此授权不扩展至 M05–M11，不自动代开其他模块或并行修改共享 checkout；实施前按 planning/12 隔离分支/worktree。
-
-最新沟通与许可规则（2026-10-08）：用户要求“让他们有问题主动发回给你，只需要向我索求每个 module 的开发权限”。授权 module chat 主动向 coordinator（01a11b84-212d-7273-93a5-5dc16c698bdb，host local）发送问题/进度/交接，也授权 coordinator 向模块回复决定与返修要求；技术/契约/依赖问题由 coordinator 处理，用户只审批各模块开发权限。每模块取得用户明确许可后才开发，许可在已批准范围内持续有效，不逐步骤重复求授权；由模块助手直接编写、测试和修复，操作反馈不是额外许可。准备/只读核对不需要开发许可，coordinator 的技术答复不能替代用户许可；详见 planning/12。
-
-需要人类裁决时：模块仍先报 coordinator；coordinator 遇到实质 conflict、需求不清或不能确定如何选择，必须在本 coordinator chat 向用户提问，说明事实、选项、建议与影响，不能猜测后替用户决定。依赖该决定的动作等待答复，独立工作可继续。模块 chat 只请求自身开发许可，不把跨模块问题分散询问用户。
-
-协调权交接（2026-10-10）：用户要求本chat继续完成M03/M04的实现、审核、本地merge与复验；完成后M05–M11由用户自己coordinate。本chat不自动创建、派发、启动、审核或merge后续模块。未来模块的契约/共享文件/迁移编号/依赖/实质选择直接交用户协调，不继续向旧coordinator请求决定或自动发消息。用户在新chat明确启动指定模块即授予该模块范围的一次开发许可，助手直接实现并交回用户审核；新chat须从已合并基线隔离worktree，不并行修改共享Local。启动说明见planning/13_USER_MODULE_START_GUIDE.md；M03/M04未完成前不能声称交接或依赖已验收。
-
-当前优先前端、基础后端、动态 QR；实体卡/reader 与 live MRN 待条件，WhatsApp/blockchain 默认 disabled。当前 chat 为 coordinator，各模块独立 chat。M00/M01/M02 当前本地范围已验收，M02 main68后端/95前端与独立28浏览器检查通过，准确边界见 M02 REVIEW。2026-10-09 用户分别在M03/M04各自chat回复“继续”，coordinator已直接核实其承接各chat模块许可申请，现已在独立worktree启动，不重复求许可。M03 owns登记根聚合/V5候选，M04 owns审核子域并依赖M03 port，限定共享例外与基线见planning/12；2026-10-10用户已选择S-V1仅演示数据（TEST_ID/DEMO-，MRN DEMO-MRN-），详见planning/04 C14，实际医院字段仍deferred。M05及后续仍未获开发许可，不自动启动。
-
-2026-10-10最新交付与测试规则（覆盖旧验收/自动测试指令）：M00–M04功能已合并本机main，M03 merge0067637、M04 merge446f887，组合入口dc6982341ed6135b0917a5cfafc4200f06e43e96；最新组合状态MERGED_PENDING_USER_MANUAL_TEST，未另行构建/测试，不冒充完整验收。用户要求“只需要把功能做出来，我自己手动测试”：助手不自行新增或执行测试、不进行浏览器/业务验收，不因旧测试关卡未执行阻止已授权的功能交付；源码/diff审阅可继续，额外构建/运行按用户后续明确要求。旧PASS保留原范围，未执行写NOT_RUN。当前已无已知阻塞交付的生产功能缺陷。本chat至M04结束协调，M05–M11由用户在新chat手动启动并自己协调，问题/共享契约/迁移/依赖直接问用户，不自动向旧coordinator或其他chat发消息；不自动创建/启动/审核/merge后续模块。用户明确启动指定模块即为一次开发许可，助手直接写有准确英文注释的功能并交回用户审核。不push、不部署、不修改旧native数据库。启动见planning/13_USER_MODULE_START_GUIDE.md；当前手动运行见Implementation/docs/runbooks/MANUAL_M00_M04.md。
+已完成的模块协调记录与旧图不再作为当前指令；需要历史事实时查询Git和Implementation/docs/evidence/。不把旧聊天授权扩展到当前未请求的模块、消息或外部写入。

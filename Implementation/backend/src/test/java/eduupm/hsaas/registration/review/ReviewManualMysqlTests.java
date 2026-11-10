@@ -20,19 +20,17 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
-import org.testcontainers.mysql.MySQLContainer;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.json.JsonMapper;
 import static org.assertj.core.api.Assertions.*;
 
-/** A separate real manual-mode application/container verifies server configuration, without substituting a mock mode or root bean. */
+/** A separate real manual-mode application/schema verifies server configuration, without substituting a mock mode or root bean. */
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @ActiveProfiles("test")
-@Testcontainers
+@org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable(named="HSAAS_LOCAL_MYSQL_TESTS", matches="true")
 class ReviewManualMysqlTests {
-    @Container static final MySQLContainer MYSQL = new MySQLContainer("mysql:8.0.45");
+    @org.junit.jupiter.api.extension.RegisterExtension
+    static final eduupm.hsaas.testing.LocalMysql MYSQL = eduupm.hsaas.testing.LocalMysql.create();
     @LocalServerPort int port;
     @Autowired JdbcTemplate jdbc;
     @Autowired JsonMapper json;

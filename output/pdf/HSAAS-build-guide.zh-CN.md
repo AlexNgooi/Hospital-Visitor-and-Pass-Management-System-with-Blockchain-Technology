@@ -15,7 +15,7 @@
 
 本书依据你提供的 RFID/NFC flowchart、sequence diagram，以及工作区 planning/ 下的架构、数据模型和测试计划编写。原始 Mermaid 是流程依据；上次 Archify 图是摘要，省略了若干分支，不能据此宣称完整需求已经覆盖。
 
-现有 planning/07_FIGMA_UI_SPEC.md 中的 8-10px 圆角已被你后来的要求覆盖：本书采用红白主色，约 90% 容器直角。二维码、卡片类别和上链时机的实现假设在第 02、24、29 章说明。
+现有 planning/03_REQUIREMENTS_AND_TEST_PLAN.md 中的 8-10px 圆角已被你后来的要求覆盖：本书采用红白主色，约 90% 容器直角。二维码、卡片类别和上链时机的实现假设在第 02、24、29 章说明。
 
 ## 最终你应交付什么
 
@@ -1376,6 +1376,6 @@ https://docs.railway.com/databases/mysql
 [R21] Vite on Vercel；构建配置与 SPA deep-link rewrite。
 https://vercel.com/docs/frameworks/frontend/vite
 
-工作区项目依据：planning/README.md、02_TECHNICAL_ARCHITECTURE.md、03_REQUIREMENTS_AND_TEST_PLAN.md、04_DATA_MODEL_AND_API_PLAN.md、07_FIGMA_UI_SPEC.md、08_MERMAID_DIAGRAMS.md，以及你的原始 Mermaid 和最新红白直角设计要求。
+工作区项目依据：planning/README.md、02_TECHNICAL_ARCHITECTURE.md、03_REQUIREMENTS_AND_TEST_PLAN.md、04_DATA_MODEL_AND_API_PLAN.md、03_REQUIREMENTS_AND_TEST_PLAN.md、02_TECHNICAL_ARCHITECTURE.md，以及你的原始 Mermaid 和最新红白直角设计要求。
 
 本书将不确定项明确留在对应步骤：医院表单/MRN 合同、实际 reader/card 型号、类别 provisioning、门禁厂商接口、云端预算。它们不会阻止你先完成 mock 和接口层，但决定真实集成能否验收。

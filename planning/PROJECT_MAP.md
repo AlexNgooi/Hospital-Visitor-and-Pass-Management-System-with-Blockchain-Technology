@@ -1,37 +1,14 @@
----
-type: compact-system-map
-revision: current
-verified_date: 2026-10-26
-subject: local-planning-workspace
----
-# 项目修改影响索引
+# 修改影响索引
 
-2026-10-27执行入口：[R01–R03协调与ownership](16_MANUAL_PASS_MODULE_COORDINATION.md)。用户已授权独立chat/worktree开发，覆盖昨日仅设计范围；Penjaga仅IC和每登记一张活动pass已明确。应用交付/验收仍待完成。
+| 修改对象 | 先读 | 同步影响 |
+|---|---|---|
+| 当前范围/状态 | 01 / 10 | README、handoff，不重复历史台账 |
+| 表单/类别/MRN/条款 | 03 / 04 | registration、hospital、review、V8兼容、前端contracts |
+| 动态QR/Copy link/多标签 | 02 / 03 / 04 | registrationentry、auth、shell、entry vault；不能放宽grant/session边界 |
+| 发还/多pass/期限 | 03 / 04 | assignment、inventory、registration port、monitoring、V9约束、对应UI |
+| 报表/CSV/时间 | 03 / 04 | administration/reporting、脱敏、计数口径、UTC/MYT |
+| 本机运行/备份/恢复 | 11 / MANUAL_NATIVE | scripts、infra模板、独立schema/account及持久keys |
+| SQL测试环境 | backend/LOCAL_TESTING | testing/LocalMysql、动态测试配置；只触达自建随机测试库 |
+| 后续Sui | SUI_TESTNET / 02 / 04 | 本机worker、Move、outbox/验证协议、UI实际能力状态 |
 
-**2026-10-26 优先入口：[manual pass / 新字段变更](15_MANUAL_PASS_AND_FORM_CHANGE.md)**。本轮仅需求/设计，应用未改。旧扫描、全类别单活动借用和强制期限由02/03/04新增量替代；下方旧实现/模块叙述保留历史语境，不作为当前新需求实现状态。M00–M07旧交付状态见14，新功能 NOT_IMPLEMENTED / NOT_RUN。
-
-这是小型 ICM map，保留主规范唯一事实归属。M00/M01 当前本地基础/UI范围已验收，M02 已审核合并；准确测试与限制见各 REVIEW。实际登记/审核/发卡与外部集成仍未验收。`live`=当前文档或已注明的本地实现；`ghost`=目标业务尚未验收，不代表骨架不存在。
-
-| 对象 / 名称映射 | Universe | 事实归属 | 修改首先影响 |
-|---|---|---|---|
-| Manual pass / 多地点多 pass / optional due / 发还=进出 | 已确认需求；设计未实现 | [需求 P01–P07/C01/C02](03_REQUIREMENTS_AND_TEST_PLAN.md) | [数据/API 增量](04_DATA_MODEL_AND_API_PLAN.md)、assignment/card/reader/monitoring、counter lifecycle UI、admin 库存/settings/report/CSV、未来 forward migration；旧图待重绘 |
-| PDF Penjaga / Executive IC-Lesen / Vendor-Contractor fields / mock patient lookup | 已确认主体字段；Penjaga证件/单卡待确认 | [需求字段](03_REQUIREMENTS_AND_TEST_PLAN.md) | registration/hospital/review、新 form/consent schema、server-bound lookup、frontend contracts；[来源及未决项](15_MANUAL_PASS_AND_FORM_CHANGE.md) |
-| Registration；UI Approved=VERIFIED | live 规范 / ghost 实现 | [需求](03_REQUIREMENTS_AND_TEST_PLAN.md) | [数据/API](04_DATA_MODEL_AND_API_PLAN.md)、[登记工作流](diagrams/v3/03-registration-issue-workflow.archify.json)、UI v4 |
-| Dynamic registration QR / entry grant | M02–M04功能本地已合并；组合用户手动验收待完成，生产未验收 | [需求 R01/R06](03_REQUIREMENTS_AND_TEST_PLAN.md) | [架构 §9](02_TECHNICAL_ARCHITECTURE.md)、[QR 数据/API](04_DATA_MODEL_AND_API_PLAN.md)、[M02 REVIEW](../Implementation/docs/evidence/modules/M02/REVIEW.md)、M03/M04 REVIEW、手动运行指南；旧图待同步 |
-| Card；旧 Pass inventory=cards | live 规范 / ghost 实现 | [数据/API](04_DATA_MODEL_AND_API_PLAN.md) | [需求](03_REQUIREMENTS_AND_TEST_PLAN.md)、[归还工作流](diagrams/v3/04-return-overdue-workflow.archify.json)、未来 Flyway |
-| Assignment；UI Pass ID=pass_reference | live 规范 / ghost 实现 | [数据/API](04_DATA_MODEL_AND_API_PLAN.md) | [发卡时序](diagrams/v3/05-scan-issue-sequence.archify.json)、通知任务、验收 T-P01/P02/P03 |
-| ScanJob / Reader Agent | live 规范 / ghost 实现 | [架构](02_TECHNICAL_ARCHITECTURE.md) | [数据/API](04_DATA_MODEL_AND_API_PLAN.md)、[发卡时序](diagrams/v3/05-scan-issue-sequence.archify.json)、[未决硬件](10_BASELINE_REVIEW.md) |
-| One combined WhatsApp / disabled now | live 后续契约 / deferred M10 | [需求 N01/N02](03_REQUIREMENTS_AND_TEST_PLAN.md) | [架构](02_TECHNICAL_ARCHITECTURE.md)、[数据/API](04_DATA_MODEL_AND_API_PLAN.md)、[UI v4](../output/ui-redesign-v4/README.md)、旧异步图未表达 disabled |
-| Commitment / Proof | live 规范 / ghost 实现 | [架构](02_TECHNICAL_ARCHITECTURE.md) | [数据/API](04_DATA_MODEL_AND_API_PLAN.md)、未来 worker/Move、T-B01/B02/B03；不改成访客钱包 |
-| Auth / role / privacy | live 规范 / M00/M01 本地已验收；生产待验收 | [架构](02_TECHNICAL_ARCHITECTURE.md) | [需求](03_REQUIREMENTS_AND_TEST_PLAN.md)、所有 protected API、未来 session/device chains |
-| Implementation/ 代码边界与模块契约 | live M00–M02 / 后续业务 ghost | [目录](09_FOLDER_STRUCTURE.md) | [AGENTS](../AGENTS.md)、[P0 evidence](../Implementation/docs/evidence/foundation/P0_REVIEW.md)、模块REVIEW、目录图待同步 |
-| Coordinator / module chat / handoff / review / merge | live 协作与已记录交接 | [模块 Chat](12_THREE_MONTH_CHAT_PLAN.md) | [开发计划](01_DEVELOPMENT_PLAN.md)、[初始化参考](11_ENVIRONMENT_AND_MANUAL_INITIALIZATION.md)、[handoff 模板](_templates/module-handoff.md) |
-| M03/M04后用户接管协调 / 新chat启动 | live M00–M04功能已合并 / 用户手动验收待完成 | [模块 Chat](12_THREE_MONTH_CHAT_PLAN.md) | [用户启动指南](13_USER_MODULE_START_GUIDE.md)、根AGENTS、Implementation契约 |
-
-当前协作流程是“用户启动模块 -> 隔离实现英文注释功能 -> 用户手动测试/原chat返修 -> 用户决定审核/merge”。M00–M04功能已合并，组合未复验，旧coordinator不再协调后续模块。真实柜台登记/发卡、设备与链上流程仍是后续目标，不以本地QR/port测试代替；现有旧图仍待语义同步。
-
-Cold walk：根 AGENTS.md -> 本索引 -> 一份事实归属规范，可定位概念和一阶影响。更改消息策略首先打开 UI v4/需求 N01，再同步通知状态和异步图；它不要求更改库存 AVAILABLE/ISSUED 定义。更改 NFC profile 先核实硬件契约，它不等于更改 MRN API。
-
-2026-10-08 新规划覆盖旧阶段 chat/静态 QR/强制 P4 外部集成。当前修改规范/导航，未改外部 Trello/Figma。v3 六图保留长期目标，动态 QR/coordinator/disabled 语义尚待重绘；其他目录搬迁仍需 referrer 调查。
-
-当前手动运行入口：Implementation/docs/runbooks/MANUAL_M00_M04.md；后续每模块可复制启动消息：planning/13_USER_MODULE_START_GUIDE.md。助手不自动测试、push或启动M05–M11。
+上表简写均为本目录对应编号文件；运行说明在Implementation/docs/runbooks。详细职责见 [09](09_FOLDER_STRUCTURE.md)，根 [AGENTS](../AGENTS.md) 只路由与列操作边界。

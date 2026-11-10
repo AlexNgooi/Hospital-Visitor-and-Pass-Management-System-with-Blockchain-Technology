@@ -1,10 +1,14 @@
 # M00 backend foundation
 
-Java 21, Maven Wrapper, Spring Boot 4.1.1; package `eduupm.hsaas` is retained. API contracts and test evidence are in [M00](../docs/evidence/modules/M00/HANDOFF.md). This foundation supplies login/CSRF, current authorization, database readiness, closed integration modes, local audit/idempotency and capability ports. Registration/QR/card/reporting workflows belong to later modules.
+Java 21, Maven Wrapper, Spring Boot 4.1.1; package `eduupm.hsaas` is retained. API contracts and test evidence are in [M00](../docs/evidence/modules/M00/HANDOFF.md). This foundation supplies login/CSRF, current authorization, database readiness, closed integration modes, local audit/idempotency and capability ports. Registration/QR/manual-pass and reporting modules are included in the current application; current delivery status is in planning.
 
 ## Test and package
 
-From this directory, run `.\mvnw.cmd -B verify`. Docker must be available. Tests start `mysql:8.0.45` on a random mapped port, override every datasource credential and do not import `.env`. Fixtures, root access for the migration probe, failure triggers and database pause are confined to that disposable container. A Docker failure fails the test; there is no H2 or native-database fallback. `target/` reports and JARs are ignored.
+Package with `.\mvnw.cmd -B -DskipTests package`. Existing SQL cases now use
+explicitly enabled, independently owned native MySQL test schemas; instructions
+and account restrictions are in [LOCAL_TESTING.md](LOCAL_TESTING.md). Tests do not
+use application credentials or control the database service. Native test execution
+has not been performed in this change; skip-tests packaging proves compilation only.
 
 ## Run
 
@@ -12,7 +16,7 @@ Provide `HSAAS_DB_URL`, `HSAAS_DB_USER`, `HSAAS_DB_PASSWORD` in the process envi
 
 For explicitly local HTTP development, add `--spring.profiles.active=local`. The tracked `application-local.yaml` contains no secret and is the only profile importing `optional:file:./.env[.properties]`; it binds `127.0.0.1`, sets development mode and allows a non-Secure cookie. Local defaults are `jdbc:mysql://localhost:3306/hsaas_db` / user `hsaas`; a password is still required. `.env` is untracked Java Properties syntax (no shell quoting; escape backslashes). Never copy a developer `.env` into another checkout or attach it as evidence.
 
-Flyway runs V1–V3 and validates checksums; Hibernate only validates the schema. The database must already exist. Use a controlled migration-capable principal for initialization and review production grants separately. No migration seeds a staff credential or hospital reference catalogue. Do not automatically baseline an existing database, repair mismatches, clean schemas or edit applied SQL; see [migration ledger](../docs/evidence/modules/M00/MIGRATIONS.md).
+Flyway runs V1–V9 and validates checksums; Hibernate only validates the schema. The database must already exist. Use a controlled migration-capable principal for initialization and review production grants separately. No migration seeds a staff credential or hospital reference catalogue. Do not automatically baseline an existing database, repair mismatches, clean schemas or edit applied SQL; see [migration ledger](../docs/evidence/modules/M00/MIGRATIONS.md).
 
 ## First administrator
 

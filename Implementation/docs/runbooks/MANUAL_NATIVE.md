@@ -1,10 +1,10 @@
-# 最新版：无需 Docker 与多页面操作
+# 最新版：本机运行 与多页面操作
 
 2026-11-10。本次分支 `codex/no-docker-multi-page` 基于最新 UI `ccfca27`，包含 R01–R03。未合并 main、替换运行中的 demo 或操作旧数据库。
 
 ## 一次性准备
 
-Java 21、Node/pnpm、本机 MySQL 8.0；正常运行不需要 Docker。由用户在 MySQL 管理工具中创建新的专用数据库 `hsaas_manual_native`，字符集 utf8mb4；创建同名账号 `hsaas_manual_native`，允许从 `127.0.0.1` 连接，并且只授予该库所需的建表、迁移及数据读写权限。使用独立密码，不以 root 运行应用，不连接原 `hsaas_db`。若库/账号已存在先核对，不删除已有资料来满足初始化条件。
+Java 21、Node/pnpm、本机 MySQL 8.0；全部日常运行与测试工具使用本机进程。由用户在 MySQL 管理工具中创建新的专用数据库 `hsaas_manual_native`，字符集 utf8mb4；创建同名账号 `hsaas_manual_native`，允许从 `127.0.0.1` 连接，并且只授予该库所需的建表、迁移及数据读写权限。使用独立密码，不以 root 运行应用，不连接原 `hsaas_db`。若库/账号已存在先核对，不删除已有资料来满足初始化条件。
 
 在 `Implementation/infra/` 将 `.env.native.example.json` 复制为 `.env.native.json`，填入专用密码、端口（默认3306）和本机 mysql.exe/mysqldump.exe 路径。该私有文件被 Git 忽略，不提交或分享。
 
@@ -75,7 +75,7 @@ node Implementation/scripts/manual-demo.mjs start
 
 恢复需先停止应用，并由用户另行准备空的专用 schema，同时保留完整备份。`start --restore <备份完整目录>` 只接受本 native 备份根内的完整 bundle，非空库拒绝；不自动删除或覆盖现有数据。恢复保留业务历史，撤销旧登录、QR 与未完成扫描，需要重新登录。失败可能留下部分导入数据，启动器不会自动清库。
 
-旧 Docker 容器、数据卷、`hsaas_manual_m00_m07` 数据与旧 bundle 均保持原样，不自动迁移或删除。旧 bundle 不能直接用新 native 恢复命令；迁移需另行核对备份、schema 与匹配的私有密钥。历史 Testcontainers/集成 harness 保留为可选隔离测试设施，不是正常运行依赖。
+旧环境数据和旧格式bundle保持原样，不自动迁移或删除。旧bundle不能直接用新native恢复命令；迁移需另行核对备份、schema与匹配私有密钥。旧浏览器启动器已退役，SQL测试使用 [专用本机fixture](../../backend/LOCAL_TESTING.md)。
 
 ## 验证范围
 

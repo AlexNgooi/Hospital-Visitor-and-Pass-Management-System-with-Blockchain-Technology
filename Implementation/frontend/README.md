@@ -89,8 +89,8 @@ sign-out recovery against that fixture, with local axe and no login replay.
 WhatsApp/blockchain remain not enabled. Reader and live MRN remain unavailable.
 Real M00 session/CSRF/MySQL/HTTPS forwarding requires a separate integration review.
 
-The [disposable real integration harness](tests/real-integration/README.md) checks
-actual M00/MySQL wire and browser behavior. Its isolated records/faults are
-synthetic; its backend responses are real. Latest sanitized integration receipts
-are in `../docs/evidence/modules/M01/INTEGRATION_HANDOFF.md`. Production HTTPS
-acceptance remains separate.
+Current real application startup and parallel-page usage are in
+[MANUAL_NATIVE](../docs/runbooks/MANUAL_NATIVE.md). Business acceptance follows
+[R01-R03](../docs/runbooks/MANUAL_R01_R03.md). The earlier real-browser launchers
+were retired; historical receipts retain their original version/environment.
+Environment guard cases remain in `tests/real-integration/`.

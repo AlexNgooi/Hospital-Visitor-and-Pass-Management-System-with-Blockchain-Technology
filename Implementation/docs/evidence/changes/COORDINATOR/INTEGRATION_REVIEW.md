@@ -4,7 +4,7 @@
 
 Date: 2026-10-27 (Asia/Singapore). Status: **INTEGRATED_SOURCE_BUILD_CHECKED_NOT_MERGED_PENDING_USER_MANUAL_TEST**.
 
-Coordinator chat: `01a17867-7222-74d0-8dc6-c33b0e939c15`, local. User authorization and exact shared decisions are in `planning/16_MANUAL_PASS_MODULE_COORDINATION.md` from the repository root. This is a source/build review, not hospital approval, SQL execution or business acceptance.
+Coordinator chat: `01a17867-7222-74d0-8dc6-c33b0e939c15`, local. User authorization and exact shared decisions are in `planning/04_DATA_MODEL_AND_API_PLAN.md` from the repository root. This is a source/build review, not hospital approval, SQL execution or business acceptance.
 
 ## Reviewed source and isolation
 

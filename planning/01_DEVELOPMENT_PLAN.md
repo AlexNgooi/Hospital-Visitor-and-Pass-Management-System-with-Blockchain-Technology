@@ -1,83 +1,29 @@
----
-type: development-plan
-revision: current
-updated: 2026-10-18
-window: 2026-10-05..2027-01-03
-status: m00-m07-local-merged-user-manual-test-pending
----
+# 当前开发与交接计划
 
-> **2026-10-18 最新授权（M05–M07）**：用户已指定新 coordinator chat `01a14da5-91fe-7bf1-a120-183975085f8b`（local），授权代开三个独立模块 chat/worktree、直接开发、双向答疑、审核和仅本地 merge；只做必要 testing，合并后由用户手动启动及业务测试。本条覆盖下文旧的 M05–M07 自行协调/未许可/禁止一切测试安排；M08–M11 未启动、不 push、不部署、不修改旧 native 库。当前执行与共享契约见 `planning/14_M05_M07_COORDINATION.md`（从仓库根目录解析）。
+更新：2026-11-10。日期和历史模块编号不自动启动工作；交付状态见 [10](10_BASELINE_REVIEW.md)。
 
-> 2026-10-18当前交付：M05/M06与M07文档均已本地合并，运行源码761491e，状态MERGED_PENDING_USER_MANUAL_TEST。必要组合静态/构建检查通过；Docker不可用，SQL/业务/恢复NOT_RUN。执行事实见14_M05_M07_COORDINATION.md；用户启动见../Implementation/docs/runbooks/MANUAL_M00_M07.md。下方2026-10-10与更早安排保留历史范围，不覆盖本次明确授权。
+## 当前优先级
 
-# 三个月开发计划：coordinator 与独立模块 chat
+1. 完善 UI 与本机使用体验：多页面同时打开审核/QR、按需导航、Copy link、四类表单和发还操作反馈。
+2. 用户使用 [本机指南](../Implementation/docs/runbooks/MANUAL_NATIVE.md) 启动最新独立分支，并按 [R01–R03 清单](../Implementation/docs/runbooks/MANUAL_R01_R03.md) 检查。发现的问题在当前授权范围内修复。
+3. 用户决定审核及合并 main、应用升级和迁移时机；助手不自动替换运行版或升级旧库。
 
-## 2026-10-10最新状态（优先于下方历史阶段）
+## 已有范围与后续边界
 
-2026-10-10最新交付与测试规则（覆盖旧验收/自动测试指令）：M00–M04功能已合并本机main，M03 merge0067637、M04 merge446f887，组合入口dc6982341ed6135b0917a5cfafc4200f06e43e96；最新组合状态MERGED_PENDING_USER_MANUAL_TEST，未另行构建/测试，不冒充完整验收。用户要求“只需要把功能做出来，我自己手动测试”：助手不自行新增或执行测试、不进行浏览器/业务验收，不因旧测试关卡未执行阻止已授权的功能交付；源码/diff审阅可继续，额外构建/运行按用户后续明确要求。旧PASS保留原范围，未执行写NOT_RUN。当前已无已知阻塞交付的生产功能缺陷。本chat至M04结束协调，M05–M11由用户在新chat手动启动并自己协调，问题/共享契约/迁移/依赖直接问用户，不自动向旧coordinator或其他chat发消息；不自动创建/启动/审核/merge后续模块。用户明确启动指定模块即为一次开发许可，助手直接写有准确英文注释的功能并交回用户审核。不push、不部署、不修改旧native数据库。启动见planning/13_USER_MODULE_START_GUIDE.md；当前手动运行见Implementation/docs/runbooks/MANUAL_M00_M04.md。
+| 能力 | 当前策略 |
+|---|---|
+| 登录/角色、动态登记入口、四类表单、审核 | 本机前后端/MySQL；当前源码已实现，手测状态单列 |
+| 库存、单/多 pass、部分归还、可选期限、报表 | 手动办理，不以 reader/scan job 为前置 |
+| MRN | MOCK/SYNTHETIC，命中不替代职员人工核实；live 医院接口待批准 |
+| 通知 | disabled；将来若明确启用，保留单条组合详情与 UNKNOWN 不盲重发规则 |
+| Sui | disabled；未来本机 worker/CLI + 远程 Testnet，见 [接入计划](SUI_TESTNET.md) |
+| 实体读卡器 | 已退出当前办理流程；已有历史证据兼容读取，不重新启动旧 reader 模块 |
+| 云端托管 | 非当前运行前置，另有需要时再选择和验证 |
 
-下方日期/待办保留当时阶段事实，不作为当前继续测试或启动模块的命令。
+## 工作规则
 
-本 chat 是 HSAAS project coordinator，负责范围、模块分配、契约、答疑、审核与本地合并。每个模块使用自己的独立 chat；阶段只是时间和集成关卡，不再对应一个开发 chat。模块与协作协议的事实归属在 [12](12_THREE_MONTH_CHAT_PLAN.md)。本轮仅修改规划，不创建模块 chat，不实施业务代码。
-
-2026-10-10用户决定覆盖后续协调安排：本chat继续完成已许可M03/M04、审核/本地merge/复验，之后M05–M11由用户自己coordinate。下列未来阶段中的coordinator职责由用户承担，不是本chat的自动任务。每模块新chat的启动消息、依赖与人工审核交接见[用户启动指南](13_USER_MODULE_START_GUIDE.md)；当前模块实际状态见12/REVIEW，日期不证明完成。
-
-最新状态：2026-10-08 用户随后明确要求代开 M00–M04，五个独立 chat 已创建，统一 gpt-6.1-sol/high，初始仅 Local 只读准备；最新开发方式改为模块助手直接实现、测试和交接，英文注释必需，各模块仍一次开发许可。实际登记见 12，其他模块不自动开启。
-
-所有 module 的 chat 与开发均由用户手动开启和启动；coordinator 只准备分配计划、任务单与依赖条件，不代开或自动启动。阶段日期、依赖通过和 merge 完成不会自动启动下一模块。
-
-仍以 2026-10-05 至 2027-01-03 为 13 周规划窗口；2027-01-04 为应急余量。日期是目标而非完成证据。2026-10-08 实际已有 frontend/backend 骨架、infra 配置与 Git commit；[P0 检查](../Implementation/docs/evidence/foundation/P0_REVIEW.md) 表示技术初始化已补齐，业务功能仍未验收，不重复初始化。
-
-## 当前交付范围
-
-当前优先完成可运行的前端、基础后端和动态 QR 登记纵向流程，再完成审核、卡生命周期模拟、管理和本地报表。前端可先对契约 mock 开发，但最终当前版必须接真实 backend/MySQL；纯静态页面不算模块完成。
-
-| 依赖 / 能力 | 当前策略 | 后续保留 |
-|---|---|---|
-| 登录、权限、MySQL、审计、表单、审核、管理 | 当前实现 | 不依赖医院外部接口 |
-| 动态 QR 与手机扫码 | 当前 Must，M02 优先 | 服务端轮换、过期、撤销、表单会话与防绕过 |
-| 实体卡与读卡机 | 尚未准备；只在 synthetic demo/test 使用模拟扫描 | M08 接真实 PC/SC/profile，真实发卡验收另做 |
-| 病人资讯 / MRN API | synthetic mock + 授权人工核实模型 | M09 接获批接口；不采集完整病历 |
-| WhatsApp | NOTIFICATION_MODE=disabled；当前不收集发送用途的 opt-in，不创建发送任务 | M10；保留一条组合消息规则和 adapter 契约 |
-| Blockchain / Sui | BLOCKCHAIN_MODE=disabled；本地事件与审计可用，不创建待上链队列 | M11；保留 canonical schema、outbox、worker/Move/proof 设计 |
-
-simulation/mock、disabled、live 是不同状态。关闭集成显示“未启用”，不是 Pending、Sent、Delivered、Confirmed 或虚构健康状态。当前 release 的完成只覆盖当前范围；proposal 中尚未启用的链/消息/真实硬件目标必须在 FYP 报告单独说明，不能标为已完成。
-
-## 目标节奏与关卡
-
-| 阶段 | 目标日期 | 模块工作 | 可放行的结果 |
-|---|---|---|---|
-| P0 骨架 | 5–11 Oct | 已有初始化证据；coordinator 核对现状 | 不重建；未有业务验收 |
-| P1 基础与前端框架 | 12–25 Oct | M00 基础/安全；随后 M01 公共 UI | API/错误/权限契约固定；隔离 MySQL 测试；session/CSRF/RBAC；UI mock 可运行 |
-| P2 动态 QR 与登记 | 26 Oct–8 Nov | M02 动态 QR；M03 四类登记 | 真实手机扫码 → 有效会话 → 表单 → MySQL；过期码与直接绕过拒绝 |
-| P3 柜台与模拟生命周期 | 9–22 Nov | M04 审核；M05 synthetic 卡流程 | 审核 → 模拟 issue/return/overdue/lost；并发与幂等正确，来源明确 |
-| P4 管理与完整前端集成 | 23 Nov–6 Dec | M06 管理/报表；前述模块返修 | 当前范围页面接 backend；本地审计与 disabled 状态正确；无外部发送/链调用 |
-| P5 当前版冻结与验证 | 7–20 Dec | M07 跨模块 QA；coordinator review/merge | 当前 Must 冻结；安全、QR、性能、隐私、恢复与 golden dataset 证据 |
-| P6 交付与 FYP 证据 | 21 Dec–3 Jan | M07 + coordinator | 当前版 release candidate、UAT/SUS 或未执行原因、runbooks、需求/限制矩阵 |
-
-M02 的契约在 P1 固定，前端可以提前准备 QR 显示与失效状态；安全路径必须等 M00 后端能力通过后接入。每个模块可跨阶段继续返修，保留自己的 chat。外部依赖到位时由 coordinator 准备 deferred 模块的任务单与独立排期，仍由用户手动开启 chat 并启动开发；不自动占用当前关键路径，也不要求在 P4 强行上链或发送消息。
-
-## 容量、依赖与范围保护
-
-开发保持 WIP ≤2；每个任务拆到 2–3 个工作日内。一项在开发、一项在审核即可，不因有多个 chat 就并行写同一 checkout。每两周预留最后两天集成，每周保留约 20–30% 缓冲。用户已明确要求模块助手直接编写源码，所有新增/修改代码须有英文注释；模块获得一次范围许可后自行实现/测试/交接，不再让用户逐步手写。
-
-如果延期，依次削减高级图表/可选导出、非关键 UI polish；保留动态 QR 服务端验证、权限/PII、安全状态、核心事务一致性与测试。硬件/API/消息/链已经 deferred，不以它们的安装或现场可用性阻塞当前版。
-
-## 完成定义与审核
-
-模块通过验收后提交 Implementation/docs/evidence/modules/Mxx/HANDOFF.md，由 coordinator 按 [12 的审核与合并流程](12_THREE_MONTH_CHAT_PLAN.md) 检查提交、契约、变更、真实测试与影响。未审核/未合并不能作为其他模块的稳定依赖。
-
-- 当前范围需求具有 PASS / FAIL / NOT_RUN、commit、命令和可打开的 evidence；deferred 项记录 DEFERRED 范围、测试仍 NOT_RUN。
-- frontend build、backend verify、相关 MySQL/浏览器/E2E 验证按变更实际执行；mock 验证与 live 验证分开。
-- 共享 API/schema、migration 编号、路由和配置变更先回 coordinator；禁止模块自行改其他模块或合并 main。
-- 合并后重跑受影响的集成验收，记录 merge SHA、返修项与可放行依赖；不自动 push、发布或启动外部集成。
-- 周一选任务，周三处理 blocker，周五更新证据与风险；每两周演示当前范围和审阅 readiness。
-
-## 决策点
-
-- 25 Oct：基础与 API 契约稳定；独立测试环境有证据。
-- 8 Nov：动态 QR 登记纵向路径完成，不能以静态 URL QR 代替。
-- 22 Nov：本地 synthetic 生命周期正确，真实硬件验收仍独立列出。
-- 6 Dec：当前前后端主要流程贯通，所有 deferred 集成显示未启用。
-- 20 Dec：当前 Must 冻结。
-- 3 Jan：当前范围候选版本与 FYP 证据完成；外部目标未达成必须明确披露。
+- 用户提出具体修改即授权该范围直接实现，不重复询问普通步骤。
+- 不自动创建或启动其他聊天/模块、推送、部署、合并 main 或执行数据库迁移。
+- 代码放在隔离分支/worktree；修改共享契约时同步前后端、注释与文档。手写代码说明职责和关键边界，使用英文注释。
+- 助手只做必要源码、语法、类型、lint 和构建检查；业务、浏览器与数据库验收按既有用户手测安排，不自行执行。
+- 交接给出变更、版本、实际检查、NOT_RUN 项与运行入口。可用 [_templates/module-handoff.md](_templates/module-handoff.md)。

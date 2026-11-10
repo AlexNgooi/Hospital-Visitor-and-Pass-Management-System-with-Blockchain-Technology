@@ -1,15 +1,6 @@
-> **2026-10-18 最新授权（M05–M07）**：用户已指定新 coordinator chat `01a14da5-91fe-7bf1-a120-183975085f8b`（local），授权代开三个独立模块 chat/worktree、直接开发、双向答疑、审核和仅本地 merge；只做必要 testing，合并后由用户手动启动及业务测试。本条覆盖下文旧的 M05–M07 自行协调/未许可/禁止一切测试安排；M08–M11 未启动、不 push、不部署、不修改旧 native 库。当前执行与共享契约见 `planning/14_M05_M07_COORDINATION.md`（从仓库根目录解析）。
+# Current runbooks contract
 
-# runbooks 契约
-
-2026-11-10：用户明确要求移除正常运行的 Docker 依赖。当前启动/停止/恢复入口为 MANUAL_NATIVE.md，使用专用 native schema/account 并保留数据；旧 runbook 的 Docker 操作只属历史版本。未启动应用、迁移或操作旧库；业务手测仍由用户执行。
-
-2026-10-27 R01–R03 新指南为 MANUAL_R01_R03.md，只对应独立整合分支的已审核源码；替代旧扫描/TEST_ID/强制期限办理步骤。组合静态/构建检查不代表已合并main、已升级数据库或已启动新版；所有用户业务/迁移/恢复检查仍NOT_RUN。不得从新worktree自动认领/删除现有demo或复制私有control/keys/.env。
-
-输入：已合并功能源码、模块 HANDOFF/REVIEW、用户最新操作授权。
-
-职责：提供用户可执行的启动、停止、恢复及手动检查说明。当前 MANUAL_M00_M04.md 只描述独立临时演示环境，不修改 native 数据库，不读取 .env，不冒充生产配置。
-
-2026-10-10用户选择自己手动测试：助手维护准确说明、源码注释和未执行项，不自行执行测试/验收。示例代码/命令中的注释必须为英文；演示公开账号必须明确只属临时合成环境。未运行的启动步骤不能标 PASS。
-
-输出：可审阅运行说明、范围限制和停止方式；不自动启动服务、push、部署或开启后续模块。
+Input: current source, explicit user authorization and accurately scoped delivery evidence.
+Responsibility: MANUAL_NATIVE.md owns local startup/stop/backup/restore and parallel-page usage; MANUAL_R01_R03.md owns current manual-pass business acceptance.
+Output: current runnable instructions and explicit NOT_RUN status. Superseded scanned-flow environment guides were removed; history remains in Git/evidence.
+Boundary: do not read old evidence as startup instructions or relabel historical PASS as current native acceptance. No automatic database changes, service restart, merge, push or deployment.

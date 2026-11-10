@@ -1,16 +1,14 @@
-# Testcontainers must override these unreachable values; native MySQL is never a fallback.
+# Explicit native test fixtures override these unreachable values; application credentials are never a fallback.
 spring:
   config:
     import: ''
   datasource:
-    url: jdbc:mysql://127.0.0.1:1/TESTCONTAINERS_REQUIRED
-    username: TESTCONTAINERS_REQUIRED
-    password: TESTCONTAINERS_REQUIRED
+    url: jdbc:mysql://127.0.0.1:1/EXPLICIT_TEST_SCHEMA_REQUIRED
+    username: EXPLICIT_TEST_SCHEMA_REQUIRED
+    password: EXPLICIT_TEST_SCHEMA_REQUIRED
 hsaas:
   environment: test
   secure-cookie: false
 logging:
   level:
     org.springframework.security: WARN
-    org.testcontainers: WARN
-    com.github.dockerjava: WARN

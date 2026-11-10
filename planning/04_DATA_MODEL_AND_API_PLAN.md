@@ -1,26 +1,18 @@
----
-type: data-api-contract
-revision: v3
-updated: 2026-10-27
-status: proposed-implementation
----
-# HSAAS 数据模型与 API 契约 v3
+# 数据、API 与事务契约
 
-**2026-10-27 执行更新**：用户授权[16](16_MANUAL_PASS_MODULE_COORDINATION.md)所列R01–R03独立开发，覆盖昨日仅设计限制；Penjaga仅IC/每登记最多一张活动pass。V8预留R01、V9预留R02、V10仅R03确需且经审阅后使用，V1–V7不重写、不在任何库执行迁移。精确新增wire/DDL/共享port先交本轮coordinator审阅。
+更新：2026-11-10。当前主流程为 R01–R03 的新表单、手动库存、多 pass 与可选期限。业务来源见 [03](03_REQUIREMENTS_AND_TEST_PLAN.md)，结构边界见 [02](02_TECHNICAL_ARCHITECTURE.md)。
 
-状态和业务验收以 [03](03_REQUIREMENTS_AND_TEST_PLAN.md) 为准，执行边界以 [02](02_TECHNICAL_ARCHITECTURE.md) 为准。本文件包含当前与长期目标模型；正式V1–V5已在main，不能将下方长期目标表当作已实现。旧 `passes/pass_assignments/pass_events` 命名统一到 `cards/card_assignments/lifecycle_events`；UI 的 Pass ID 是一次 Assignment 的 `pass_reference`，不是 NFC UID。
+V1–V9 已存在于 `Implementation/backend/src/main/resources/db/migration/`；不改已应用 SQL、不预留虚构 V10、不自动执行迁移。实际执行和当前源码交付分开记录。旧 schema、扫描来源和已有记录必须兼容读取；下文旧 scan 协议仅用于已有迁移/记录兼容，不是新办理入口。通知/链状态机是未来协议，当前不创建任务。
 
-## 2026-10-26 数据/API 增量设计（覆盖冲突的旧目标，未实施）
-
-来源与范围见 [15](15_MANUAL_PASS_AND_FORM_CHANGE.md)，业务唯一主表见 [03](03_REQUIREMENTS_AND_TEST_PLAN.md)。用户本轮选择仅更新需求/设计；V1–V7 和应用源码均不改，不启用 live API。下方旧 scanResultId、活动 registration 全局唯一、必填 due_at 和 synthetic-registration-v1 是历史/原设计，不能用于判定新需求已满足。
+实际 wire 以 controller、前端 feature contracts 和 `Implementation/docs/api/openapi.json` 为准。下面保留当前仍适用的安全/幂等/QR契约以及已审阅 R01–R03 决定，删除过时发卡请求示例和聊天执行台账。
 
 ### 新字段和 MRN 查询
 
 新 form schema 必须版本化；Penjaga 加 current address 和条款 acknowledgement，姓名/电话/证件/MRN 由 visitor 填，patient name/ward/bed 从受控 mock lookup 取得。Executive 改为 name、IC/Lesen type+number、phone、ward、patient name；Vendor/Contractor 为 name、IC、phone、company、多个 locations。旧 relationship/organisation/contactPerson/purpose 不再是新表单必填；历史按原 schema 读取，不能重新解释或删除。
 
-Penjaga 的 IC/Passport 可选类型和格式尚待确认，不能依据 PDF 的两个不同语言标签自定。未来新 schema 的格式/长度白名单另行冻结；旧 TEST_ID/DEMO 输入限制保持旧版本语义。演示 fixtures 一律合成数据，不能把允许新字段的设计当成真实资料采集/保留批准。
+Penjaga仅IC，Executive可IC/Lesen；当前schema为manual-registration-v2，IC为12位数字、Lesen为5–30字符白名单，具体校验由RegistrationFields维护；旧 TEST_ID/DEMO 输入限制保持旧版本语义。演示 fixtures 一律合成数据，不能把允许新字段的设计当成真实资料采集/保留批准。
 
-保留 `POST /api/public/mrn-validations` 的职责边界，未来演进输入为有效 formContext + visitor 输入 MRN，不要求 visitor 先手动选 ward 才能查。成功响应设计包含 safe feedback、source/mode、最少 patient name/ward/bed、验证凭据及 expiry；不可用字段明确 nullable。具体 JSON 字段/新 schema/version 待实施冻结，当前服务并未返回这些患者字段。
+保留 `POST /api/public/mrn-validations` 的职责边界，当前输入为有效 formContext + visitor 输入 MRN，不要求 visitor 先手动选 ward 才能查。成功响应包含 safe feedback、source/mode、最少 patient name/ward/bed、验证凭据及 expiry；不可用字段明确 nullable。当前受控mock响应包含最少患者姓名/ward/bed与绑定proof，实际字段由RegistrationService及前端contracts维护；不向一般列表/报表泄露患者资料。
 
 凭据必须绑定 anonymous scope、原 formContext、MRN fingerprint、最少患者结果、adapter/schema version 和 expiry；MRN/context 变化或凭据过期不得沿用旧结果。服务端提交不能信任 caller 自填 patient name/ward。lookup 需要有效 grant/CSRF/限流，不提供 public patient list；mock miss/timeout 不伪造字段，保留旧人工核实路径。mock 结果仍不满足 staff verified predicate，不进入日志/QR/原文审计。
 
@@ -28,35 +20,35 @@ Penjaga 的 IC/Passport 可选类型和格式尚待确认，不能依据 PDF 的
 
 ### 库存、借用和 manual 命令
 
-| 对象 | 待实施数据/约束 |
+| 对象 | 当前数据/约束 |
 |---|---|
 | cards | 以唯一 pass/card code、类别、地点和状态供手动维护/选择；不要求新 manual 库存具备 normalized_uid/profile/enrollment scan。旧 UID/profile/证据仍保留历史，不创建虚假值绕过旧 NOT NULL/CHECK |
 | card_assignments | 保留每张卡的 assignment/Pass ID/registration、issued_by/at、returned_by/at、closed_at、状态/柜台/本地审计；每张新增或明确 destination 引用/必要历史快照与 nullable due_at |
-| 活动唯一性 | 保留 active_card 唯一；替换 V6 的全类别 active_registration 唯一，Vendor/Contractor 可多条。Executive 在同一 registration 锁下限制最多一条活动借用；Penjaga 暂沿用一条待确认。不能只删 UNIQUE 而不补类别及并发保护 |
+| 活动唯一性 | 保留 active_card 唯一；替换 V6 的全类别 active_registration 唯一，Vendor/Contractor 可多条。Executive 在同一 registration 锁下限制最多一条活动借用；Penjaga同样限制一条活动借用。不能只删 UNIQUE 而不补类别及并发保护 |
 | 时间约束 | due_at=null 明确无期限；非空须晚于 issued_at。returned_at 只在实体收回确认后由服务器时钟写入；lost closed_at 不能冒充 returned_at |
 | 来源 | 区分手动操作方式与数据真实性。manual 不等于 PHYSICAL/live hospital verification；合成患者和库存保留 SYNTHETIC 来源，旧 SIMULATED 记录不改写 |
 | reader/scan | 旧表/外键保留历史；manual 新写路径不要求 scan_result_id，不制造 CONSUMED job/result。遗失找回/库存恢复中旧必需扫描约束也需前向迁移兼容，由现有 Admin 权限办理 |
 | due/settings/monitoring | 设置可支持无期限默认/选择；新命令明确选择有/无期限，不静默继承24小时。scheduler/overdue/报表只对非空 due_at 判断到期；原历史期限不回写 |
 
-未来 `POST /api/staff/card-assignments` 改为手动库存选择命令设计：registrationId、expectedVersion/库存版本、选中 pass IDs、逐 pass location/有无期限/具体 dueAt、handoverConfirmed；actor/counter/status 来源仍由服务器决定。具体字段名/数组大小/版本和响应 schema 尚未冻结，不能按此调用当前 API。
+当前 `POST /api/staff/card-assignments` 为手动库存选择与原子批次发放。具体请求/响应字段和有限批次数量以LifecycleRequests、LifecycleService与前端contracts为准；actor/counter/status由服务器校验，不能照搬旧scan请求示例。
 
-多选 issue 建议同一 Idempotency-Key 原子提交并返回每张 assignment 的结果；任一卡冲突则整批回滚。同 key/body 重放原结果；不同 body 409，UNKNOWN 保留原命令。保留真实当前权限检查，绝不能让 caller 自选 source、actor 或扫描结果冒充证据。
+多选 issue 使用同一 Idempotency-Key 原子提交并返回每张 assignment 的结果；任一卡冲突则整批回滚。同 key/body 重放原结果；不同 body 409，UNKNOWN 保留原命令。保留真实当前权限检查，绝不能让 caller 自选 source、actor 或扫描结果冒充证据。
 
 归还命令改为 staff 手动选择该登记下实际收到的活动 assignment(s)，带版本/physical received confirmation，不带伪造 RETURN scan。支持只归还一部分；每张关闭、库存 AVAILABLE、returned_at/by、事件/审计/幂等同事务，其余不变。正常借用状态与 LOST 恢复仍分开。
 
-Manual 锁图保留 accounts/authority/counter 前缀，随后 registration → 按稳定 ID 排序的 cards → assignments → 事件/审计/幂等；return/overdue/lost/restore 使用一致相对顺序，先发现 IDs、锁后重读，不能持后序锁追新资源。新增批量路径需后续审阅完整锁图，不能声称本轮已证明无死锁。
+Manual 锁图保留 accounts/authority/counter 前缀，随后 registration → 按稳定 ID 排序的 cards → assignments → 事件/审计/幂等；return/overdue/lost/restore 使用一致相对顺序，先发现 IDs、锁后重读，不能持后序锁追新资源。R01–R03已落实该批次锁序；静态审阅不证明所有并发交错均无死锁。
 
 ### 时间/读模型/迁移
 
 每张 assignment 的 issued_at=进、returned_at=出，due_at 只表示预计期限；UI/历史/导出提供完整 MYT 日期时间、操作职员、location 和未归还状态。多卡登记摘要如显示最后出时间，仅在全部正常归还后由最后 returned_at 派生；遗失显示独立状态。登记数与 pass 数使用不同分母。
 
-新 staff DTO 需要满足人工核实新字段，同时按当前角色/柜台授权并控制 PII 显示；不得在 public reference 上增加个人资料查询。Admin 聚合/导出权限与掩码基本不变。所有旧 DTO/schema/generated client 只在后续实际变更时同步。
+当前staff DTO支持人工核实字段，并按角色/柜台授权控制PII显示；不得在public reference上增加个人资料查询。Admin聚合/导出保留授权、掩码和导出审计。后续修改实际wire时同步前后端contracts/OpenAPI，不从旧示例生成客户端。
 
-实施时新增 forward migration；V1–V7 不重写。涉及 null due_at/assignment_window、active_registration 唯一性、card 必需 UID/profile、来源 CHECK、consent 及 lost restore 扫描外键/检查等，须先核对实际 schema 和历史数据再选方案。新迁移编号未预留，不能因本设计就直接修改已应用 V6/V7。所有数据库执行与新业务验收均 NOT_RUN。
+V8/V9已包含新表单/consent/location、nullable due_at、分类活动借用唯一性和manual来源/历史兼容变化。V1–V7不重写，未来只追加forward migration，先核对实际schema与历史数据。迁移文件存在不代表已执行；当前数据库执行与完整新业务验收仍NOT_RUN。
 
 ## 1. 聚合与实体（旧实现/长期模型，冲突处以上方增量为准）
 
-当前 schema 先落实核心数据、QR、幂等、synthetic 扫描和本地审计。notification_jobs/receipts、audit_outbox、proof_verification_jobs 为后续迁移目标，disabled 时不建任务。下面长表同时列出长期模型，不能据此声称当前已存在这些表。
+当前V1–V9包含核心数据、QR、幂等、手动pass、历史扫描兼容和本地审计。notification_jobs/receipts、audit_outbox、proof_verification_jobs 为后续迁移目标，disabled 时不建任务。下面长表同时列出长期模型，不能据此声称当前已存在这些表。
 
 | 表 / 模型 | 主要字段与约束 |
 |---|---|
@@ -124,9 +116,9 @@ Outbox worker claim 用短事务和 lease fencing，不持有 DB lock 等待 pro
 
 ## 4. API 清单与权限
 
-以下路径是拟定契约，OpenAPI 在正式项目初始化后固化。浏览器写请求带 CSRF；重要命令带 `Idempotency-Key`。设备上传带独立 device token 和 lease_token。role 控制之外还校验 counter/job ownership。
+实际 HTTP 形状以当前 controller、feature contracts 和生成 OpenAPI 为准；下文同时包含明确标示的保留/后续协议。浏览器写请求带 CSRF；重要命令带 `Idempotency-Key`。设备上传带独立 device token 和 lease_token。role 控制之外还校验 counter/job ownership。
 
-### 公共契约预冻结：C01–C06（准备阶段，非开发批准）
+### 公共安全契约 C01–C06
 
 - C01 Auth/CSRF：`GET /api/public/csrf` 返回 `{headerName, token}`，headerName 初值 `X-CSRF-TOKEN`；M00 使用框架生成/校验 token，不自制 CSRF。`POST /api/auth/login` 为 JSON `{login,password}`，成功 200；login 成功与 `GET /api/auth/me` 均返回 `{id,login,role,counterIds}`，role 单值 `COUNTER_STAFF / ADMIN`，counterIds 由当前授权计算。logout 成功 204；匿名/失效 me 为 401。登录/注销后重新 bootstrap CSRF。U01 用户确认 login 为用户名/职员账号，不强制邮箱；UI 使用 Username / Staff account 标签，账号语法/归一化由 M00 准备统一规则，不能套用 email validator。
 - C02 安全错误：fieldErrors 固定为 `{field,code,message}` 数组，未有字段错误时 `[]`，不含 rejectedValue/raw input；其余字段按 §6。filter/controller 都使用同一安全格式。错误码最低集 `VALIDATION_FAILED / INVALID_CREDENTIALS / AUTHENTICATION_REQUIRED / ACCESS_DENIED / CSRF_INVALID / INTEGRATION_DISABLED / SERVICE_UNAVAILABLE`，QR/grant 专有码按后文。无网络或非 JSON 是 client fallback，不冒充 backend 错误对象。
@@ -135,17 +127,13 @@ Outbox worker claim 用短事务和 lease fencing，不持有 DB lock 等待 pro
 - C05 Grant/幂等：M03 通过 M02 port 加入同一外层事务，锁序按 §2，不独立提前消费；幂等 scope 用服务端稳定 anonymousScopeId + operation，不能用 caller 自填 scope 或暴露 cookie。会话 ID 轮换保留服务端 scope 属性；会话丢失不能用 reference 重建授权。相同 scope/key/body 的已成功命令，在安全响应保留窗口内可返回原非敏感 reference，即便 grant 已自然过期/消费/撤销；新命令仍按当前状态拒绝。幂等保留期初值 24h，匿名授权会话本身必须仍有效，清理/过期后不得伪造原结果或创建第二个登记。
 - C06 本地审计：M00 提供可参与外层事务的 LocalAuditPort，当前包含 `REGISTRATION_SUBMITTED / REGISTRATION_VERIFIED / REGISTRATION_REJECTED` 本地 action；只含所需安全关联/状态/version/actor/time，不复制表单/证件/MRN/note 原文。审计失败业务回滚，不自动加入链 catalogue 或发消息。schema 与 OpenAPI 由各 backend owner 提供，M01 管 generated client 入口，不手改生成代码；冻结前只能使用明确的 mock port。
 
-C01–C06 是 coordinator 的技术决定。2026-10-09 C01/C02 与基础权限、审计/幂等 port 已在 M00/M01 当前本地范围实现并验证；登记/审核由尚未启动的 M03/M04 实现，不把基础 port PASS 当完整业务 PASS。用户已明确批准 M02；其 token/keyring/lifecycle/grant 实现与本地测试已交回，coordinator 审核记录见 Implementation/docs/evidence/modules/M02/REVIEW.md。该许可不扩展至 M03/M04 或后续模块。
-
 C01 wire ID 补充（M01 实施问题）：login/me 的 `id` 为 JSON string，`counterIds` 为 JSON string 数组；数值主键在 HTTP 层输出十进制字符串，前端按 opaque string 保存/比较，不转 JavaScript Number，避免 Java long 超出精确整数范围。其他 DTO 的数据库主键遵循同一 string 原则；此决定不改变 version/期限等非 ID 字段契约。C10 scope 精确 DTO 现已在下文冻结；共享 restart 组件保留适配入口，接收业务模块校验后的安全标签/context，未知 details 不渲染或回显原对象，不代 M02 实现 exchange。
 
-C07/U02 单份表单：同一 anonymousScopeId 最多一条有效未提交 grant；exchange 发现不同入口已有有效表单先返回 409 `REGISTRATION_ENTRY_RESTART_REQUIRED` 与最小旧/新 scope 信息，不自动覆盖。客户端只在明确确认重新开始后重试（绑定 expected old grant reference/version）；服务端同时校验当前绑定与新 entry 有效性，原子撤销旧 grant/创建新 grant。取消/替换失败保留原 grant，旧页以原 grant reference/version 提交必须被拒，不能借共享 cookie 误用新 grant。成功重放按 C05，不把新的 grant 身份作为 PII 查询授权；同码同会话重试保持原 expiry。M02 提出具体 DTO/锁序/CAS 模型供 coordinator 评审，M03 必须显式校验提交表单上下文。
+C07/U02 单份表单：同一 anonymousScopeId 最多一条有效未提交 grant；exchange 发现不同入口已有有效表单先返回 409 `REGISTRATION_ENTRY_RESTART_REQUIRED` 与最小旧/新 scope 信息，不自动覆盖。客户端只在明确确认重新开始后重试（绑定 expected old grant reference/version）；服务端同时校验当前绑定与新 entry 有效性，原子撤销旧 grant/创建新 grant。取消/替换失败保留原 grant，旧页以原 grant reference/version 提交必须被拒，不能借共享 cookie 误用新 grant。成功重放按 C05，不把新的 grant 身份作为 PII 查询授权；同码同会话重试保持原 expiry。QR与registration使用同一已绑定上下文，并在提交时显式校验。
 
 C08 职员命令幂等：先验证当前 session/role、CSRF、对象/counter 权限，再按 server actorId + operation + targetId + key 查成功记录并比较 request_hash。同 key/body 返回原安全结果、不重新验证旧 SUBMITTED/version、不写第二份审计；同 key 不同 body 为 409 IDEMPOTENCY_CONFLICT。未成功记录才检查合法状态/expectedVersion，分别为 REGISTRATION_STATE_CONFLICT / VERSION_CONFLICT。保留初值 24h；撤销角色/counter 权限后禁止借重放绕过权限。M00 提供 request hash 的版本化 DTO encoding，保留 null/缺失语义，不能用原始 JSON 属性顺序直接散列；日志不得记录原 body/hash 输入中的 PII。
 
 C09 synthetic manual evidence v1：统一 M03/M04 的候选字段，verify payload 使用 `expectedVersion / identityConfirmed / manualEvidence`；Penjaga 加 `mrnConfirmed / wardConfirmed`。manualEvidence 为 `{methodCode,basisCodes}`，当前 synthetic methodCode=`SYNTHETIC_RECORD_COMPARISON`；basisCodes 白名单为 `IDENTITY_MATCH_CONFIRMED / MRN_MATCH_CONFIRMED / WARD_MATCH_CONFIRMED`，Penjaga 必须完整三项，其他类别仅身份项并拒绝 MRN/ward 注入。enum 最大 64 ASCII chars，未知字段/码拒绝，不开放自由 note/附件。schemaVersion=1、actor/time/environment/source/registration版本由服务端产生，source=SYNTHETIC_MANUAL；这不定义未来医院 manual 证据政策。拒绝 reasonCode 初值 `INFORMATION_INCOMPLETE / IDENTITY_NOT_CONFIRMED / MRN_WARD_NOT_CONFIRMED / INFORMATION_NOT_CONFIRMED`（MRN码仅Penjaga），必填且映射可读理由，当前不另加自由文本。
-
-M03 的其余 synthetic-registration-v1 字段与 MRN enum/validation token 方案仍是准备提案，coordinator 后续统一评审；不能写成真实医院 schema 获批。C09 是协调双方提案的技术命名/最小字段，不扩大 U03 的“职员模拟人工核实”决定。
 
 C10 单份表单 DTO/CAS 决定：
 
@@ -156,9 +144,7 @@ C10 单份表单 DTO/CAS 决定：
 - 统一 409 `REGISTRATION_ENTRY_CONTEXT_CHANGED` 表示预期 pointer/version 已改变。RESTART_REQUIRED 的统一安全错误允许可选 typed `details={currentFormContext,currentScope,requestedScope}`，仅此白名单形状，无 PII/token/raw input；其他错误默认 details 缺省。不要把 JSON 塞 message/fieldErrors，M00/M01 按 error code 解析明确类型。
 - 确认的网络重试：同一匿名 scope 的当前 grant 必须能证明创建自同一 confirmation transition（绑定 expected old context、新 challenge、当前新 context）。新 entry 仍有效时只返回这份新 grant，不再创建/续期；entry 已过期则返回 410 并引导 GET entry 恢复，GET 返回不是接受过期码的新 exchange。不得任意通过同 scope 相似字符串接受确认重放，transition 关联字段由 M02 提交，跨 expiry 幂等扩展不在当前契约。
 
-C10/§2 的局部顺序与 DTO 为技术决定。M02 已提交 auth guard/QR 锁图、真实 MySQL 首次 context 插入竞争、replace/revoke/权限撤销、审计回滚和消费 port 的事务测试；R1 返修增加外层事务挂起/REQUIRES_NEW 拒绝与恢复测试。coordinator 独立后端 68 项测试于 2026-10-09 13:44:55 +08 通过，最终模块验收/merge 仍以 M02 REVIEW 为准。实际 M03 登记提交及其完整并发图仍 NOT_RUN，不能用 synthetic consume port 测试代替。
-
-C12 最小确认关联（采纳 M02 补充）：只在新 grant 增 `replaces_grant_id`（FK旧 grant）与 `replaces_binding_version`（首次提示时的 expected version），两者同空/同非空；同 anonymous scope + 非 NULL replaces_binding_version 唯一。由 M02 定义目标模型，M00 登记 migration；没有新 confirmation 表/endpoint/token。关联、旧 grant 撤销、新 grant 与 context CAS 在同一领域事务更新。
+C12 最小确认关联（采纳 M02 补充）：只在新 grant 增 `replaces_grant_id`（FK旧 grant）与 `replaces_binding_version`（首次提示时的 expected version），两者同空/同非空；同 anonymous scope + 非 NULL replaces_binding_version 唯一。V4维护该关联；没有新 confirmation 表/endpoint/token。关联、旧 grant 撤销、新 grant 与 context CAS 在同一领域事务更新。
 
 确认重试必须在有效匿名会话中，new entry 签名/期限有效；当前 pointer/version 指向同一未撤销、未消费、20分钟未过期的新 grant；该 grant 的 challenge_id 等于本次新 challenge，replaces_grant_id 的引用与 expectedFormContext.grantReference 相同，replaces_binding_version 相同，scope/env/new display owner 能力全部有效。只返回这一已有 grant，不续期/增版本；不匹配返回 CONTEXT_CHANGED 或对应状态错误。旧 display 后来失效不影响以另一 owner/display 正常创建的新 grant，不能把新旧来源混用。entry 已过期按 C10 返回 410 后 GET 恢复，不新增跨 expiry 确认幂等协议。
 
@@ -166,15 +152,13 @@ M00/M02 合并锁图已采用为实现验证基线：identity_policy_gate（仅�
 
 C15登记增量：新submit/MRN反馈在grant前缀之后、登记根写入之前按category→destination持active reference共享锁；需要的MRN反馈行锁在reference之后、root之前。现有已持有grant/context更新属于重入，不能追新grant。审核root仅SELECT根行FOR UPDATE，不用JOIN destinations扩大锁。未来配置路径取相同子序列，不能持reference后回调QR/grant或追登记根；先完整发现/锁序设计后修改共享路径。具体竞争与原事务grant receipt SQL0拒绝须真实MySQL验证；本记录只固定实现方向。
 
-M00 owner guard 采用“先冻结 port，再做登录持久化/失效 spike”：M00 port 封装实际 Session metadata 的非锁读取，M02 不锁/依赖框架表。app_session_bindings / auth_session_contexts 与 users.security_epoch 的具体 DDL 待实现验证。auth context 的 confirmed_idle_expires_at 是成功保存确认后的保守期限上限；guard 取它、8h绝对期限、实际持久化 Session expiry 的最早值，同时检查真实 Session 存在、principal/mapping/current pointer/generation/epoch/当前授权，不把该字段当框架期限的权威副本。
+M00 owner guard 采用“先冻结 port，再做登录持久化/失效 spike”：M00 port 封装实际 Session metadata 的非锁读取，M02 不锁/依赖框架表。app_session_bindings / auth_session_contexts 与 users.security_epoch 的实际DDL由V2/V3维护，执行验证须单独记录。auth context 的 confirmed_idle_expires_at 是成功保存确认后的保守期限上限；guard 取它、8h绝对期限、实际持久化 Session expiry 的最早值，同时检查真实 Session 存在、principal/mapping/current pointer/generation/epoch/当前授权，不把该字段当框架期限的权威副本。
 
 framework save/flush/delete 阶段不持领域锁、不在领域事务内；成功 save 后用有界 REQUIRED 领域事务按 user→binding→context 重新校验并激活 PENDING 或续期 ACTIVE，hook 不再调用 save。首次登录必须确认持久化和激活才响应成功，PENDING 使用独立短 activation TTL。续期只允许正常已登录 owner 的成功 save；必须尚未超过旧 confirmed/absolute deadline 且全部映射有效，新上限不得超过持久化 expiry/absolute deadline。匿名 exchange/submit 不续 owner 期限，失败保存、迟到/旧 generation 保存不得复活失效或撤销能力。8h/24h 起点固定。
 
-2026-10-09 M02 请求结束保存审计发现：职员同一浏览器访问 public entry 会携带其 staff Session，纯 QR service 不调用 save 仍不足以保证上述边界。已冻结的“匿名 exchange/submit 不续 owner”也适用于此情形，不仅是另一访客延长 display owner。public entry capabilities/exchange/GET 与未来匿名登记 schema/submit/poll 均不能通过框架成功保存激活或续期 owner；正常 staff 操作的续期保留，保存前映射/撤销/期限检查不能跳过。不因此禁止职员浏览器使用匿名入口。M00 共享安全返修已审核合并 cf10a71；coordinator 独立 verify45 项测试于 12:55:16 +08 通过。M02 报告真实 staff-cookie capabilities/exchange/GET 路径于 12:58:44 +08 从 RED 转 GREEN，其回归亦包含在 coordinator 后续独立 68 项后端测试中。实际 M03 schema/submit/poll 仍须沿用此边界并验证自身路径。
+职员访问public entry可能携带staff Session；public capabilities/exchange/schema/submit/poll均不得通过框架保存激活或续期staff owner。正常staff请求续期保留，所有保存前映射/撤销/期限检查不能跳过；不因此禁止同浏览器访问匿名入口。
 
 logout 先按 user→binding→context 提交逻辑撤销，再删除框架 Session；delete 失败仍拒绝能力。账号/角色/权限更新与 target user epoch/audit 同事务；counter 关闭按 actor user→counter→actor binding/context 校验并停用，不反向追锁所有 owner。grant/display 可依据当前权威 guard 逻辑失效，物理清理为后续工作；API 不把仍 OPEN 的失效 grant 显示为有效。业务已提交但请求结束自动 save 失败为响应 UNKNOWN，不宣称业务回滚或换幂等 key；按 C05/C08 在有效会话内核查原命令。框架 reaper 不直接调用领域 hook。
-
-M00 已直接实现 spike，并经 coordinator 独立及合并后 verify40tests和真实C01联调验证、审核合并。安全前缀可供获自身用户许可后的 M02/M03 接入；新模块必须验证自己的完整QR/grant/registration事务图，不把基础前缀通过当全图通过。
 
 C11 M00 公共工程契约：
 
@@ -185,37 +169,19 @@ C11 M00 公共工程契约：
 - 每域依其已冻结对象锁序执行，M00 不代实现业务；并发/权限撤销/回滚/key轮换等验证必须真实 MySQL留证，当前 NOT_RUN。C11 技术方案不代表模块开发批准。
 - 2026-10-09 公共领域事务 manager 统一为 JpaTransactionManager（同 EntityManagerFactory/DataSource、READ_COMMITTED），JPA 聚合写与 JdbcTemplate audit/idempotency 加入同一 REQUIRED 外层事务；不混用两个默认 manager 分别提交。实际共享连接、flush/缓存边界与失败回滚由 M00 测试证明，后续模块沿此 port/事务契约实施，详见02。framework Session 持久化仍独立，不参加 grant/registration/audit/idempotency 原子提交。
 
-| 权限边界 | 方法 / 路径 | 返回与条件 |
+| 边界 | 当前入口 | 约束 |
 |---|---|---|
-| Public | GET /api/public/csrf；GET /api/public/config/registration | 最少公开配置，版本和 CSRF bootstrap；no-store |
-| Public | GET /api/public/registration-entry/capabilities | M02 module-owned最低 `{enabled:boolean}`，no-store/no-referrer，不含钥/入口token/人员或范围，不要求grant；disabled明确不可扫码 |
-| Public | POST /api/public/registration-entry/exchange | CSRF + entryToken；校验签名/服务端 expiry/scope/撤销，绑定匿名会话 grant；返回最低 scope/serverNow/grantExpiresAt，不返回 PII |
-| Public | GET /api/public/registration-entry | 读取本匿名会话当前 grant 的最少范围/expiry；无 grant 不可开启登记；no-store |
-| Public | POST /api/public/registrations | 有效 grant + CSRF + Idempotency-Key；原子消费并创建；201 public_reference，不返回个人资料/card/pass/due_at |
-| Public | POST /api/public/mrn-validations | 功能开关/限流；仅返回最低验证状态和绑定的限时 token，不返回患者姓名等；live 未批准时 mock/manual |
-| Human session | POST /api/auth/login；POST /api/auth/logout；GET /api/auth/me | 无 public signup；login/logout 的 CSRF 及 session fixation 处理 |
-| COUNTER_STAFF | GET /api/staff/registrations；GET /api/staff/registrations/{id} | 最少 operational DTO、分页/筛选/掩码 |
-| COUNTER_STAFF | POST /api/staff/registration-qr-sessions | CSRF；已授权 counter + 可选 category scope，创建绑定 actor 的显示会话 |
-| COUNTER_STAFF | GET /api/staff/registration-qr-sessions/{id}/current | ownership + counter 权限；当前时间槽的签名 entry URL/serverNow/rotateAt/expiresAt；锁定创建或重用 challenge，no-store |
-| COUNTER_STAFF | POST /api/staff/registration-qr-sessions/{id}/revoke | CSRF + ownership；撤销显示会话、challenge 和未提交 grant；刷新客户端无法复活旧会话 |
-| COUNTER_STAFF | POST /api/staff/registrations/{id}/verify；POST /api/staff/registrations/{id}/reject | 合法 SUBMITTED transition；手工 MRN evidence 和 rejection reason |
-| COUNTER_STAFF | POST /api/staff/scan-jobs；GET /api/staff/scan-jobs/{id}；POST .../{id}/cancel | 仅 ISSUE/RETURN、本人柜台设备与 target；202 job reference |
-| COUNTER_STAFF | POST /api/staff/card-assignments | scan_result_id、registration_id、due_at、handover_confirmed；201 Pass ID，不信任前端声称类别/卡状态 |
-| COUNTER_STAFF | POST /api/staff/card-assignments/{id}/return | RETURN 证据、physical_received；200 原借用结果；仅 ISSUED/OVERDUE |
-| COUNTER_STAFF | GET /api/staff/overdue；POST /api/staff/assignments/{id}/followups；POST .../{id}/contact-reveal | 内部跟进，reveal 有审计；不发消息 |
-| ADMIN | GET/POST/PATCH /api/admin/users；GET/PATCH /api/admin/settings | version 检查、保护最后管理员、撤销旧 session |
-| ADMIN | GET /api/admin/cards；POST /api/admin/scan-jobs；POST /api/admin/cards | enrollment 证据；未知 category profile 阻止注册 |
-| ADMIN | POST /api/admin/cards/{id}/mark-lost；.../disable；.../restore | 状态、原因、找回 evidence；不可任意 PATCH inventory status |
-| ADMIN | GET/POST/PATCH /api/admin/categories；GET/POST/PATCH /api/admin/destinations | validated field whitelist、version、历史引用保留 |
-| ADMIN | GET /api/admin/audit-events；GET /api/admin/blockchain-proofs | 掩码、实际 proof 状态，缺失与 mismatch 区分 |
-| ADMIN | POST /api/admin/blockchain-proofs/{id}/verify；.../{id}/retry | 202 verification job；retry 同 eventId，无消息重发副作用 |
-| ADMIN | GET /api/admin/integrations；GET /api/admin/notification-jobs | 健康、任务状态；无盲目 resend endpoint |
-| role-specific reads | GET /api/dashboard/summary；GET /api/dashboard/visitors-by-category；GET /api/dashboard/pass-utilisation | COUNTER_STAFF operational；ADMIN aggregate/report，明确掩码和时间范围 |
-| ADMIN | GET /api/reports/visitor-trends；POST /api/reports/exports | 时间/类别/地点；导出授权/审计/掩码与 CSV 转义 |
-| Device only | POST /api/device/scan-jobs/claim；POST .../{id}/results；POST /api/device/heartbeat | stateless scoped token；CSRF 例外只在 device chain；fencing/one-result |
-| Provider only | POST /api/integrations/whatsapp/webhook | provider 签名、事件去重、状态单调更新；不能信任裸 provider ID |
+| Public | `/api/public/csrf`、`/api/public/registration-entry`、`.../capabilities`、`.../exchange` | CSRF/有效challenge与匿名grant；无公开PII查询 |
+| Public | `POST /api/public/registration-schema`、`/mrn-validations`、`/registrations` | 以RegistrationController为准；schema/lookup需有效formContext，提交带幂等key |
+| Human session | `/api/auth/login`、`/logout`、`/me` | 服务端当前角色/柜台、session/CSRF，无public signup |
+| COUNTER_STAFF | `/api/staff/registration-qr-sessions` 及 `/{id}/current`、`/{id}/revoke` | owner/counter权限，动态期限与撤销 |
+| COUNTER_STAFF | `/api/staff/registrations` 及 `/{id}`、`/review-fields`、`/verify`、`/reject`、`/issue-context` | 掩码读取；授权审阅字段需单独审计；批准不发卡 |
+| COUNTER_STAFF | `/api/staff/card-assignments` 及 `/{id}`、`/return`、`/history`；`/api/staff/overdue` | 手动原子发放、逐张归还、nullable due、当前版本/柜台/来源 |
+| COUNTER_STAFF | `/api/staff/assignments/{id}/followups`、`/contact-reveal` | 内部跟进与受审计限时reveal，不发消息 |
+| ADMIN | `/api/admin/cards`、`/references`、`/{id}/mark-lost`、`/disable`、`/restore`、`/history` | 手动库存与原因/版本；不能任意PATCH状态 |
+| ADMIN | accounts/settings/reports/audit的当前controller | 当前权限、CAS、safe history、脱敏和CSV防护；精确路径与payload以对应controller/contracts为准 |
 
-“.../{id}” 在实现时展开为同一行最近的资源路径，最终 OpenAPI 必须是完整路径。MRN validation token 绑定匿名会话/nonce、MRN fingerprint、ward、mode/version 和 expiry；提交不能更换字段后沿用结果。访客公开 status lookup 默认不创建。
+旧scan API仅保留兼容能力，不是manual发还的前置。未实现的通知/区块链endpoint不在当前API清单中；后续启用另行定义，不将设计状态机当可调用接口。
 
 公共 config/CSRF 可以无 grant 读取最低 bootstrap；MRN validation、表单 schema/scope、登记提交要求有效 grant，避免动态入口被直接 API 绕过。entry token 在 QR URL fragment 中，页面清除 fragment 后经 POST body exchange；grant 身份用匿名会话 cookie，不放 URL/localStorage。exchange 同一有效 challenge 对同匿名会话重试重用有效 grant，不延长 grant 初始 expiry；多人各建自己的 grant。登记 payload 的 counter/category 必须匹配服务端 grant，不能自选柜台或脱离 category scope。
 
@@ -223,35 +189,6 @@ C11 M00 公共工程契约：
 
 当前生产禁用模拟 scan/issue；synthetic demo/test 由受保护 adapter 提供结果，保留 C02 绑定/lease/expiry 校验。同一业务 API 不能接受客户端 UID/source 假造扫描。proof verify/retry、notification webhook 与 provider poller 在 disabled 模式不执行，操作请求返回 409 INTEGRATION_DISABLED，读取返回 capability 未启用。
 
-## 5. 发卡命令与响应示例
-
-```json
-{
-  "registrationId": 123,
-  "scanResultId": "scan-example-only",
-  "dueAt": "2026-09-30T10:00:00Z",
-  "handoverConfirmed": true,
-  "returnCounterId": 1
-}
-```
-
-API 不接收 caller 自选 actor、UID、category 或 status 来替代扫描证据。服务器校验截止时间符合类别规则/获批 override，必要 override 要 actor/reason。相同 key/body 返回第一次成功的 assignment、Pass ID、due_at 和消息/审计任务引用；因过期重试不能二次发卡。
-
-```json
-{
-  "assignmentId": 456,
-  "passReference": "P-DEMO-456",
-  "cardCode": "C-DEMO-248",
-  "status": "ISSUED",
-  "dueAt": "2026-09-30T10:00:00Z",
-  "auditStatus": "LOCAL_ONLY",
-  "notificationStatus": "NOT_ENABLED",
-  "blockchainStatus": "NOT_ENABLED",
-  "operationOrigin": "SIMULATED"
-}
-```
-
-以上响应是当前 synthetic 模式的示例，不是实体卡已交付声明。将来启用消息/链后才返回实际 QUEUED/PENDING；未 opt-in 为 NOT_OPTED_IN（derived，无 job）。provider/Sui 失败不能把 committed 借用改为未发卡。真实模式必须在实体交付确认后提交；超时保留同 idempotency key 核查，不能另建命令。
 
 ## 6. 时间、错误与隐私契约
 
@@ -261,48 +198,37 @@ API 不接收 caller 自选 actor、UID、category 或 status 来替代扫描证
 
 审计 snapshot 的精确字段应只包含证明需要的业务属性（随机内部关联 ID、事件类型、时间、due_at、规则版本、actor pseudonymous ID等）；除非有医院明确批准，不承诺 IC/姓名/MRN。读取 PII 快照、联系方式 reveal、导出和删除都审计。保留规则区分 registration、contact、scan UID、message payload、commitment snapshot、日志与备份；未解决 lost case/legal hold 不能被自动清理。仅保留链上 hash 不保证清除本地证据后还能验证。
 
-## 7. Migration 顺序与验收
 
-### C13 M03/M04 根接口与审核编排（2026-10-09）
+## R01–R03 已审阅的共享决定
 
-用户已在各自chat启动两模块；M03唯一拥有 `RegistrationReviewPort` 与登记根adapter，M04引用同一接口实现审核command/controller/UI，不复制根SQL/实体或另建migration。coordinator已阅读M03 `REVIEW_PORT_DRAFT.md`，批准write interface/ReviewCoordinates/Verified与Rejected union/LockedRegistration方向；模块提交独立契约checkpoint供M04引用，不表示root持久化或端到端已验收。读取字段与待定S-V1一起冻结：
+### C-R01 nullable settings and separate pass reports
 
-- `discover(registrationId)` 返回内部 `ReviewCoordinates(id,counterId)`，只发现锁前资源，不授予授权、不能作公开存在查询。M04取真实server owner context/current role与CSRF，按全局staff user→counter→binding/context前缀锁定再进入root。
-- `lock(coordinates)` 返回不可由HTTP构造的 `LockedRegistration`；必须原READ_COMMITTED事务、唯一exact synchronization identity，锁registration后重读immutable coordinates，不持后序锁追新counter。recordDecision的receipt/resource/one-use校验必须在任何SQL前完成，尤其挂起外层后的REQUIRES_NEW拒绝不能先读或锁owner/root。可加载合法已审核状态，不在lock阶段提前检查SUBMITTED/version，成功幂等重放优先；expected/current version限JS-safe范围，增加超过上限拒绝而不回绕。
-- `recordDecision(receipt,expectedVersion,serverOwnerContextId,Decision)` 返回M00 `SafeResult`；Decision为Verified/Rejected结构化union，使用C09字段/理由。M03 root从server context/Clock/环境取得actor/time/source，验证同TX回执与C09，再CAS SUBMITTED/version并更新根状态和结构化review metadata；不独立commit、不自行写audit/idempotency。M03已有C09 `ManualEvidence/SyntheticReviewRules` 是唯一可复用backend规则，M04引用，避免两套validator漂移。
-- M04外层编排：当前授权前缀 → 成功idem replay（优先旧state/version） → miss时root lock → 再查idem成功记录防并发赢家 → root decision + LocalAuditPort + IdempotencyPort.success同事务。若使用 `requireHuman` 作预读，它必须在外层写事务前；不能先锁binding/context再追counter。实际权限撤销/并发重放/审计失败回滚由两模块联合真实MySQL验证。
-- M00 `lockOwners` 的401保留为失效会话；review对象/counter不可见的410 QR内部语义在M04边界转换为404 `NOT_FOUND` 与固定无对象/柜台信息message，不新增另一套404业务码；role403仍由角色边界保持。成功重放仍受当前session/counter权限检查。
-- `readMaskedQueue/readMaskedDetail` 由根adapter查询和掩码，只接受服务端已核实的当前counter scope，SQL过滤，不能用caller自填counterIds授予授权，不暴露raw form_data或新增PII reveal接口。queue wire选page/pageSize/items/total/serverNow，page从0、默认pageSize10/上限50、稳定submittedAt/id排序，UI可用更小页数适配视口；本版不并列另一套cursor wire。
+- Preserve `return_hours_<CATEGORY>` keys; V9 widens `value_int` to nullable with `value_int IS NULL OR value_int BETWEEN 1 AND 720`. NULL explicitly means default no deadline; no separate deadline_mode column or numeric sentinel. Preserve existing numeric defaults and historical assignment deadlines.
+- Settings GET uses nullable Integer, never getInt NULL→0. PATCH requires explicit present version/value/reason keys; null value means no deadline, missing value is rejected. Keep required version/reason, CAS and safe history including explicit JSON null. Staff per-pass explicit date/no-deadline choice overrides defaults.
+- R03 may add passPreview and ADMIN+CSRF `POST /api/admin/reports/pass-exports`, using the same bounded, audited Export envelope, safe CSV and actual escaped-JSON UTF8 response bound as registration exports. Use a separate hsaas-passes filename; preserve old registration export.
+- Submitted registrations, distinct issued registrations and current open registrations are different from issued/current/returned pass counts. Use EXISTS for requested multi-location filtering, never fan-out registration counts. Pass activity preview/export selects assignments with issue OR actual return OR lost closure in the selected MYT period, once per assignment; current metrics ignore historic dates. Null due is separate from overdue.
 
-当前synthetic categoryCode为 `EXECUTIVE/PENJAGA/VENDOR/CONTRACTOR`；数据库categoryScope ID仍是C10 decimal string。MRN反馈 `NOT_CHECKED/MATCH/NO_MATCH/TIMEOUT/UNAVAILABLE` 与staff verification分开，MATCH不表示身份/MRN/ward已核实，U03/C09人工核实规则不变。拟定验证token仅为受控反馈关联，最多5min且不超grant期限，绑定anonymous scope/formContext/MRN fingerprint/ward/mode/adapterVersion，改变字段或上下文拒绝旧token；超时/no token不阻止进入待人工审核，不能存病历或借token替代核实。具体wire/DDL仍需S-V1评审。
+### C-R02 normalized locations, lifecycle port and source boundaries
 
-C14 / S-V1用户决定（2026-10-10）：用户明确选择“仅演示数据：证件使用DEMO-，MRN使用DEMO-MRN-；正式医院格式以后接入”。当前所有登记source=SYNTHETIC，证件类型TEST_ID，号码DEMO-后4–24位大写ASCII字母/数字，Penjaga MRN为DEMO-MRN-后4–16位大写ASCII字母/数字。四类其余字段、masked read wire与V5须技术审核后实施，不再等待该输入选择。公共reference统一R-后128bit随机base64url；reference不授予公开查询PII权限。synthetic-registration-v1 / synthetic-privacy-v1仅是演示契约，不代表O01医院字段/用途/保留批准。WhatsApp disabled时不采集发送opt-in、不建job。真实医院数据、MRN/live、生产privacy政策继续deferred。
+- R01 V8 approved: `registration_destinations(registration_id,destination_id)` composite PK with both FKs, backfill old root singleton, retain root primary destination. Additional proposed temporary mock patient/bed/schema columns and PASS_TERMS consent purpose are approved; old schema/idempotent replays retain their canonical meaning. No real hospital integration or patient report fields.
+- Exact R01-owned port: `Destination(String id,String code,String label)` and Access `fieldSchemaVersion()`, `destinations()`, `multipleActivePassesAllowed()`; only Vendor/Contractor permit multiple active passes. Retain existing source-compatible constructor/callers.
+- After current authority is re-entered and before root/card locks, R01 lockLifecycle internally discovers immutable category/requested destination IDs, locks category then destination rows in ascending numeric ID FOR SHARE, locks root and revalidates coordinates/reference set. Changed IDs cause conflict rather than chasing earlier locks. New issue eligibility exposes active allowed choices (empty if category inactive); inactive references must not block return/lost/history. R02 takes no reverse-order reference locks after root/card; enrollment uses the same reference-type ordering.
+- Narrow ownership exception: R01 may append only `Action.REGISTRATION_REVIEW_FIELDS_VIEWED` and its English explanation to common/LocalAuditPort.java. No widening snapshot/state/origin whitelists. Staff review-fields POST requires current role/counter authority, CSRF, expected version, bounded schema-aware fields and no-store. Audit uses REGISTRATION/current allowed state/version/SYNTHETIC_MANUAL, commits before response and contains no raw PII; revealed values never enter idempotency or persistent browser storage and clear on auth/selection/version changes.
+- V9 assignments retain issued_by/at and actual returned_by/at, add closed_by, category_code, data_origin and destination_id/code/name snapshots. New method operation_origin=MANUAL pairs with data_origin=SYNTHETIC and required destination fields. Historical SIMULATED/SIMULATED remains distinct; fallback to root destination is allowed only for SIMULATED rows whose issued destination is null.
+- New MANUAL inventory has synthetic provenance, no fabricated UID/profile and a required destination. Historical SCAN/SIMULATED unbound inventory remains readable and can be manually issued only to an eligible root-approved location; new bound inventory must match the selected destination. Reports enforce configured environment and explicit allowed method/source pairs, never a live/PHYSICAL wildcard.
 
-M04审核编排增量决定：`hsaas.review.enabled` 默认不装配真实command服务；显式启用但缺真实M03 `RegistrationReviewPort` 必须启动失败，不静默使用mock，mockroot限测试。`DuplicateKeyException` 必须先退出整个原事务并回滚，再以新READ_COMMITTED事务重新校验当前session/role/counter和相同namespace/body/key的成功重放。新事务只作授权/查询/replay，不继续root decision、audit或idem写入；无成功结果则返回明确冲突，等待用户明确原命令重试，不自动再做审核或换key。其他DB/审计错误不走“重复key即成功”的路径。事务边界、权限撤销、不同body和零reapply先做mock服务测试；真实SQL/权限/审核E2E仍待M03接入后验收。
+### C-R03 V9 approval and export history
 
-### C15 S-V1实施与masked read技术放行（2026-10-10）
+- Reviewed R02 evidence `V9_DRAFT.sql`: nullable settings/card UID/profile, enrollment method/destination, nullable due, source/snapshot/category fields, generated single-active Executive/Penjaga constraint, retained active-card uniqueness/nonunique active-registration lookup and manual lost recovery are approved for the actual forward V9.
+- Required correction before copying: open assignments always have closed_by NULL; all new MANUAL closures require the current server actor. Backfill historical normal closures from returned_by and lost closures from lost_cases.opened_by where known, but allow genuinely unavailable historical SIMULATED closed_by to remain NULL. Do not fabricate actors or returned_at. R02 may implement this correction without another permission round; actual migration execution remains NOT_RUN.
+- Exact allowed export administration_history.current_value: `{exportKind:REGISTRATIONS|PASSES,rowCount:int,from:YYYY-MM-DD,to:YYYY-MM-DD,categoryId:decimalString|null,destinationId:decimalString|null}`. Values are service-derived/validated; no CSV/body/references/PII. report_exports stays unchanged, finite local audit remains REPORT_EXPORTED/EXPORTED/LOCAL. No V10 is required for this plan.
+- R01/R02 must provide small compatible dependency commit SHAs before R03 final SQL integration. Draft approval is not evidence that code is complete, imports succeeded, migrations ran or business checks passed.
 
-coordinator已审阅M03 `IMPLEMENTATION_CONTRACT.md`、`V5_CANDIDATE.sql`、`READ_PORT_CANDIDATE.md`，批准实际V5/SQL/API/UI实施，必须采用下列对齐修正；此记录不是模块验收、DDL执行或真实业务测试PASS。
+R02 isolated schema checkpoint `5b80b0ac22aba150d1aabd024cc50302ff967c2d` was then source-reviewed: only actual V9 migration plus R02 contract/draft evidence, including the required legacy closed_by correction. Coordinator approved R03 importing this checkpoint into its isolated branch; R01 V8/port checkpoint remains pending. No SQL/migration execution occurred. Cards exact inventory pairs are enrollment_method SCAN/data_origin SIMULATED or enrollment_method MANUAL/data_origin SYNTHETIC, always configured environment. Correlated destination-name JSON aggregation with deterministic Java sorting is accepted for registration previews/CSV, retaining inactive referenced history labels and avoiding fan-out/truncated concatenation.
 
-- common：fullName 1–100 Unicode code points、TEST_ID/DEMO-、phone为+后8–15digits；text持久化NFC+outer trim，不截断，先拒绝原始invalid Unicode/control/FORMAT，再以Character.isWhitespace/isSpaceChar的printable union移除两端空白（含NBSP/figure/narrow spaces），全空白拒绝；前端使用相同subset，长度按NFC codepoints。HMAC保留原始解析string/presence及固定schema order，不能用归一化后的值掩盖同key不同body；同normalized值但原始composed/decomposed/空白不同仍是不同body。
-- Penjaga：DEMO-MRN-、active wardCode<=32、relationship白名单PARENT/SPOUSE/SIBLING/CHILD/OTHER。Executive：organisation<=120、contactPerson<=100、active destinationCode<=32、visitPurpose<=500。Vendor/Contractor：company<=120、contactPerson<=100、active destinationCode<=32、分别deliveryPurpose/workPurpose<=500，以上均必填。目录只提供符合当前schema的code；历史登记不因reference停用而消失。严格reject跨类别/未知字段和caller counter/status/actor/source/expiry/WhatsApp字段。
-- `synthetic-privacy-v1`必需ack=true，server captureTime；BM说明只用synthetic data且没有医院真实隐私批准。所有登记SYNTHETIC，enabled限development/synthetic/test，production显式开启此演示schema须fail startup。
-- moduleowned POST `/api/public/registration-schema`仅原formContext，valid grant/CSRF且无consume/renew；POST `/api/public/mrn-validations`原formContext/mrn/wardCode、服务器模式，反馈token最多5min且不超grant期限、不保存raw MRN/token、反馈不代表verified；POST `/api/public/registrations`严格context/category/schema/formData/privacy及可选mrnValidationToken，201只publicReference。optional token MISSING/NULL都无反馈但HMAC不同，所有raw值/能力都不输出诊断。
-- V5仅per-registration root、PRIVACY_ACK consent、digest/fingerprint临时MRN反馈和grant.registration_id真实FK；父行先插再consume，同事务含审计/幂等。暂存过期删除索引化、每分钟最多500/batch，不删除history或生成通知/outbox。
-- submit先在短RC事务持匿名authority做success replay，miss释放后序binding锁，再进入M02原完整user→counter→binding/context等grant前缀。第二replay、登记/ack、exact receipt consume、audit/idem同事务；unique/changed-pointer loser全回滚后新事务重新anonymous guard/query-only replay，无winner返回明确冲突，无automatic reapply/newkey。
-- root create在ANY SQL前验证当前M02 GrantAccess resource/current exact synchronization identity，不提前consume或unbind；真正consume在parent/ack插入后执行。root-only helper不向M04提供新持久化捷径。UNKNOWN提交的原key/body/context由M03自有wrapper保留，显式原命令Retry和仅reference完成页在M02禁用fieldset之外；成功卸载entry poll，普通表单输入仍受原EntryGrant gate保护，不能自动换绑。
-- M03/M04命令一旦UNKNOWN，后续显式retry的4xx仅证明该次尝试被拒，不证明原命令未提交；必须保留原handle/key/body/version/context、禁止自动重试或创建新命令直到原结果确认。M04失去当前authority仍清除可见缓存并要求session核对，user/counter作用域改变则卸载旧workspace，不携旧命令跨身份。初次明确4xx仍按known rejection/conflict处理，不把两种情况混同。
-- root新增`RegistrationReadPort`独立facet，同一adapter实现root write/read，C13六dependency文件不改。最终methods：`captureReadScope(serverOwnerContextId,counterId)`、`readMaskedQueue(scope,ReadQuery)`、`readMaskedDetail(scope,id)`。owner来自真实server session，不由caller body/URL指定。Factory先original RC检查、discover actor→Accounts.lock currentrole(403)→M00 lockOwners完整同组前缀/actual metadata；QR-specific410对象不可见映射404 NOT_FOUND、401保留。opaque scope private构造/package-only capture、original exactsync/resource、一read operation、before ANY SQL校验、completion cleanup，REQUIRES_NEW拒绝且outerresume可用。
-- queue只selected single counter、SQL当前active user/role/permission/counter过滤，无caller counterIds授权；stable submittedAt DESC/id DESC，category/status缺省null表示ALL，不发送ALL码。page>=0/int、size1..50/default10、offset<=INT_MAX，默认page0。count/items在同RC authority锁内。queue/detail字段匹配M04 source03eca76 strict contracts，required nullable字段明确null；names最多首letter+***、证件/MRN最多安全后4+***、phone后4+***，无raw form/reveal。
 
-候选原稿的ASC与page1m cap已由此修正覆盖；M03提交精确read source/tests checkpoint供独立复跑后M04引用。根真实SQL/current权限/事务/HTTP/UI及联合审核仍需实际实现与测试。
+## 迁移与本机验证
 
-以下是依赖批次，不是已执行的 Flyway V 编号：identity/reference/session/idempotency/local audit → QR display/challenge/grant → registration/consent → synthetic cards/device/scan → assignment/active unique/lifecycle/alerts/lost → reporting/settings。M00 登记实际编号，每个 module 申请后使用；先检查库中已有 migration，不重写共享环境已应用版本。
+当前版本依序 V1 identity/reference、V2 JDBC session、V3 capability guards、V4 dynamic entry、V5 registration、V6 lifecycle、V7 administration、V8 form/location、V9 manual pass lifecycle。未来仅追加经审阅的 forward migration。现有记录的来源、nullable due_at、单卡唯一性及旧版本幂等结果不能被改写。
 
-历史迁移登记（2026-10-09，后续规则由下段覆盖）：V1 `foundation_identity_reference`、V2 `spring_session_jdbc`、V3 `session_capability_guards`、M02 V4 `dynamic_registration_entry` 已审核合并，临时MySQL clean/upgrade验证通过；已应用版本冻结，其他模块不得重用或重写。V5预留获用户许可的M03 registration/consent与确有必要的MRN临时验证，具体DDL先交coordinator审核；M04审核metadata由M03根模型存储，不独立新建登记迁移或重复实体。真实开发/生产库未在本次验证中使用。后续号继续由M00/coordinator台账登记；完整实际登记/review事务图仍需所属模块验证。
-
-M08 增加真设备/profile；M09 增加获批 MRN adapter 所需最少字段；M10 增 notification/receipts；M11 增 audit_outbox/verification jobs/链绑定。后两者在启用前完成 clean + upgrade、模式默认 disabled 与故障恢复验收。历史本地事件不自动入队，canonical snapshot 缺失或版本不兼容不能伪造历史承诺。表设计落地后生成 ERD/OpenAPI；当前仍为规划。
-
-## 2026-10-10功能合并台账与后续owner
-
-M03 V5__visitor_registration.sql已审核并随0067637合并main；V1–V4未重写。V5包含登记根、PRIVACY_ACK、临时MRN反馈及grant真实父关联，M04复用根metadata无独立迁移。M04审核服务/HTTP/UI随446f887合并，组合入口dc69823。当前只到VERIFIED/REJECTED，不存在M05活动卡借用或消息/链任务。新增编号从实际目录和用户台账核对，未来迁移/共享选择由用户协调，不发旧coordinator。合并后没有再运行迁移/构建/测试，native库未修改；临时库手动启动和验收见Implementation/docs/runbooks/MANUAL_M00_M04.md。
+测试使用本机专用测试账号与随机 `hsaas_test_<random>` schema；helper 只能删除它自己创建的精确库名。应用运行库、原 `hsaas_db` 与测试库严格分开。恢复、clean/upgrade 和并发验收仍需实际执行证据，静态打包不能替代。

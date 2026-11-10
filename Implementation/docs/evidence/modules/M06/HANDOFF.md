@@ -82,7 +82,7 @@ The first unquoted PowerShell Maven property invocation was rejected by Maven as
 
 ## User startup, manual checks and recovery
 
-M05 is already locally merged. After coordinator merges M06 and composes `administrationFeatures` from `frontend/src/features/administration/index.tsx`, use coordinator's `Implementation/scripts/manual-demo.mjs` launcher on a **new disposable demo database**, following the final M07 `Implementation/docs/runbooks/MANUAL_M00_M07.md` instructions. This module does not start services. Existing M00-M04 reference runbook is `Implementation/docs/runbooks/MANUAL_M00_M04.md`; final M00-M07 launcher/runbook is coordinator/M07-owned. Do not point V6/V7 at the old native database, run Flyway repair/baseline/clean or rewrite an applied migration. No new M06 enable flag is needed. Sign in with a demo ADMIN; new accounts require a staff login and 12+ character, <=72 UTF-8 byte initial password.
+M05 is already locally merged. After coordinator merges M06 and composes `administrationFeatures` from `frontend/src/features/administration/index.tsx`, use coordinator's `Implementation/scripts/manual-demo.mjs` launcher on a **new disposable demo database**, following the final M07 `Implementation/docs/runbooks/MANUAL_NATIVE.md` instructions. This module does not start services. Existing M00-M04 reference runbook is `Implementation/docs/runbooks/MANUAL_NATIVE.md`; final M00-M07 launcher/runbook is coordinator/M07-owned. Do not point V6/V7 at the old native database, run Flyway repair/baseline/clean or rewrite an applied migration. No new M06 enable flag is needed. Sign in with a demo ADMIN; new accounts require a staff login and 12+ character, <=72 UTF-8 byte initial password.
 
 Manual checks remain **NOT_RUN**:
 

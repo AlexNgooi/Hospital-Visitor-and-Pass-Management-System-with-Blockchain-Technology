@@ -8,7 +8,7 @@ import { access, mkdir, open, readFile, writeFile, rename, rm, realpath } from '
 import { dirname, resolve, relative, isAbsolute } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { pipeline } from 'node:stream/promises';
-import { createChildEnvironment } from '../frontend/tests/real-integration/environment.mjs';
+import { createChildEnvironment } from './child-environment.mjs';
 
 /** Native MySQL launcher: manages its child applications, never the database service or schema lifecycle. */
 const implementation = resolve(dirname(fileURLToPath(import.meta.url)), '..');

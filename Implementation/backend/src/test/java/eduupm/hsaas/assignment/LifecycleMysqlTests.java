@@ -10,9 +10,6 @@ import org.springframework.jdbc.datasource.DriverManagerDataSource;
 import org.springframework.orm.jpa.JpaTransactionManager;
 import org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean;
 import org.springframework.orm.jpa.vendor.HibernateJpaVendorAdapter;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
-import org.testcontainers.mysql.MySQLContainer;
 import eduupm.hsaas.auth.*;
 import eduupm.hsaas.common.*;
 import eduupm.hsaas.config.*;
@@ -23,9 +20,10 @@ import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
 /** Necessary narrow SQL checks only: owned MySQL, real Flyway/JPA transaction manager, no servlet/business service startup. */
-@Testcontainers
+@org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable(named="HSAAS_LOCAL_MYSQL_TESTS", matches="true")
 class LifecycleMysqlTests {
-    @Container static final MySQLContainer MYSQL=new MySQLContainer("mysql:8.0.45").withCommand("--log-bin-trust-function-creators=1");
+    @org.junit.jupiter.api.extension.RegisterExtension
+    static final eduupm.hsaas.testing.LocalMysql MYSQL = eduupm.hsaas.testing.LocalMysql.create();
     static JdbcTemplate jdbc;
     static JpaTransactionManager manager;
     static LocalContainerEntityManagerFactoryBean factory;
@@ -46,7 +44,7 @@ class LifecycleMysqlTests {
     }
     @AfterAll static void close() { if(factory!=null) factory.destroy(); }
 
-    /** Each case uses independent synthetic parents; no cleanup, migration or repair can touch a native database. */
+    /** Each case uses independent synthetic parents; cleanup and migration target only this generated test schema. */
     @BeforeEach void fixture() {
         String suffix=UUID.randomUUID().toString().substring(0,8);
         jdbc.update("INSERT INTO users(login,password_hash,role,created_at,updated_at) VALUES(?,'not-a-real-password','ADMIN',?,?)","m05_"+suffix,DatabaseTime.sql(NOW),DatabaseTime.sql(NOW));

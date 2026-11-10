@@ -1,33 +1,75 @@
----
-type: requirements
-revision: v3
-updated: 2026-10-27
-status: proposed-implementation
----
-# HSAAS 需求与验收基线 v3
+# 当前需求与验收
 
-**2026-10-27 最新决定**：用户授权按[16](16_MANUAL_PASS_MODULE_COORDINATION.md)启动R01–R03独立模块chat/worktree开发，覆盖下方昨日design-only限制；功能尚未交付，验收NOT_RUN。Penjaga已确认**仅IC、每登记最多一张活动pass**，旧IC/Passport与卡数未决项已解决。
+更新：2026-11-10。四类表单、manual pass、MRN mock、条款/日期规则按用户2026-10-26/27确认执行；本机运行和多页面/Copy link 按2026-11-10要求。R01–R03 源码已合并 main；当前手测状态见 [10](10_BASELINE_REVIEW.md)。
 
-范围保留 proposal 的长期目标，并按 2026-10-08 用户决定分为当前版与 deferred 集成。本文是当前实施需求的唯一主表；未表示医院已签署或软件已通过测试。依据与未决项见 [10](10_BASELINE_REVIEW.md)，模块分配见 [12](12_THREE_MONTH_CHAT_PLAN.md)。
+业务字段来源：用户说明及 `CamScanner 26-10-2026 20.27.pdf` 第1页（BORANG SERAH DAN PEMULANGAN KAD AKSES PENJAGA，22/08/2025）。PDF 的罚款、收费、固定柜台及转 ward 重办背景不自动成为新增功能。演示只用合成资料，真实 IC/MRN 采集与保留待医院批准。
 
-## 2026-10-26 当前需求变更（优先于旧扫描/synthetic 字段规则）
+## 当前使用体验
 
-用户明确要求本轮**只更新需求和设计，暂不改应用代码**。取消 reader 依赖，counter staff 手动选 pass、人工核实与发还；Vendor/Contractor 可借多张，Executive 每份登记最多一张活动 pass；期限可设或不设。用户确认“进/出”就是发/还 pass 的日期时间，Penjaga MRN 暂用假 API 回填患者姓名和 ward/bed，条款只勾选并记录时间，不要电子签名。完整来源、字段责任、设计与未决项见 [15](15_MANUAL_PASS_AND_FORM_CHANGE.md)。这些是新需求，状态 **NOT_IMPLEMENTED / NOT_RUN**，不能套用 M00–M07 历史 PASS。
+- QR 与审核可通过明确的新标签入口同时保持打开，继承当前授权柜台；同 profile 共享登录，不能据此切换成其他角色。
+- 导航默认隐藏，菜单打开，Escape/遮罩/关闭按钮收起，键盘焦点可返回。
+- Copy link 复制当前有效动态登记地址；与扫码共用过期/撤销/grant 规则，无永久入口。剪贴板被限制时允许手动复制当前只读链接。
+- 本机 loopback 链接仅适合同电脑；手机访问需可达 HTTPS 地址和实际真机验收。
 
-| 类别 | 本版所需字段与来源 |
+## 用户已确认的业务决定
+
+| 决定 | 新需求 |
 |---|---|
-| Penjaga | 自填姓名、电话、证件号码、现住址、MRN；lookup 回填 Nama Pesakit、Nama Wad/Katil；勾选访问卡条款并由服务器记录版本/时间。PDF 的 IC/Passport 标签差异待确认 |
-| Executive Visitor | Nama、IC/Lesen 类型二选一及对应号码、手机号、Wad、Nama Pesakit；不强加 MRN、organisation/contactPerson/purpose |
-| Vendor / Contractor | Nama、IC、手机号、Company、Location（支持多个目的地）；不强加旧 contactPerson/purpose |
+| Reader | 不再需要读卡器读取 pass；counter staff 在系统手动选择库存 pass 并确认 issue，发还流程不依赖真实或模拟扫描 |
+| 职员核实 | Counter staff 仍人工核实 visitor 资料，批准和 issue 分开；MRN lookup 不替代职员核实 |
+| Admin | 权限基本不变，继续管理账号、配置、库存、审计和报告；不因此自动取得 counter staff 操作权 |
+| 多张 pass | Vendor / Contractor 同一登记可借多张 pass，支持去多个 location；Executive 同一登记最多一张活动 pass |
+| 归还期限 | 可选择设定归还日期/时间，或不设期限；不设期限仍需实际归还并保留记录 |
+| 进出时间 | 用户明确选择 **发 pass 时间=进；还 pass 时间=出**，不新增独立门禁或 Check-in / Check-out 事件 |
+| MRN | Penjaga 手工输入 MRN，系统 lookup/verify 后自动显示患者姓名及 ward/bed；医院尚无 API 文档，先设计假的 API 和完全合成的数据 |
+| 条款 | 用户明确选择 **勾选同意并记录时间**，不需要电子签名/手写签名画板 |
 
-旧 relationship、额外 organisation/contactPerson/purpose 不继续作为新表单必填，旧 schema 历史保留。Penjaga 暂沿用单登记一张活动 pass，是否改变待确认。PDF 的归还/职员签核不转成 visitor 自填项，收费/罚款不自动纳入本轮。动态登记 QR 仍保留，取消的是 pass reader。
+2026-10-27 用户已确认 Penjaga 每份登记最多一张活动 pass；Vendor / Contractor 才适用多张例外。
 
-## 范围和术语
+## 表单字段与填写责任
 
-- 仅处理必须在柜台登记并领取实体卡的访客：Executive Visitor、Penjaga、Vendor、Contractor。普通探访、定位、门禁开启、完整病历、native app、Sui Mainnet 不在范围内。
-- Registration 是申请；数据库批准状态统一为 VERIFIED，UI 的 Approved 映射到 VERIFIED。批准本身没有 Pass ID/card assignment/due_at。
-- Card 是可重复使用的实体库存；Assignment 是一次借用，其 public pass_reference 在 UI 显示为 Pass ID。RETURNED 是事件，库存归还后变 AVAILABLE。
-- Visitor 不建账号；COUNTER_STAFF 操作柜台；ADMIN 管用户、配置、库存、审计、报告。系统服务和设备拥有独立凭据，不能冒充职员。
+| 类别 | Visitor 手工填写 | 系统 lookup 后显示 | 系统自动记录 |
+|---|---|---|---|
+| Penjaga | Nama、No. Telefon、证件号码、Alamat Terkini、No. MRN；勾选条款同意 | Nama Pesakit、Nama Wad / Katil | 条款版本/同意时间、登记时间、MRN 结果来源和时间 |
+| Executive Visitor | Nama、证件类型 IC 或 Lesen（二选一）及对应号码、手机号、Wad、Nama Pesakit | 无需强加 Penjaga 的 MRN 流程 | 登记时间 |
+| Vendor | Nama、IC、手机号、Company、Location（支持多个目的地） | 无 | 登记时间 |
+| Contractor | Nama、IC、手机号、Company、Location（支持多个目的地） | 无 | 登记时间 |
+
+Penjaga 的纸本证件栏马来文为 **No. Kad Pengenalan**，英文为 **Passport Num.**，两种标签不完全一致。2026-10-27 用户已裁决新表单 **只接受 IC**，不提供 Passport/Lesen；Executive 的 IC/Lesen 选项独立保留。具体字段校验在R01契约中记录。
+
+纸本 A 区的住址是本次 Penjaga 新增输入；B 区患者姓名及 ward/bed 改由 MRN lookup 回填，访客不能随意修改 lookup 结果。纸本没有 relationship 栏。旧 synthetic 表单中的 relationship、Executive organisation/contactPerson/visitPurpose、Vendor/Contractor contactPerson/deliveryPurpose/workPurpose 不再作为这版表单额外必填；历史记录保留原 schema 和原字段，不能抹除旧资料。
+
+纸本的收卡确认、security officer 姓名/签核/日期、收据引用、security section 备注属于职员办理区，不放进 visitor 注册表单。新系统由已登录 staff 的 actor、操作时间与归还确认代替手写办理记录。罚款/收据/收费功能未纳入本次范围。条款同意和隐私告知分别保留版本及时间，不把同意条款当成 WhatsApp opt-in。
+
+## 新办理流程设计
+
+1. Visitor 经现有动态 QR/grant 进入所属类别表单。
+2. Penjaga 输入 MRN 后触发 lookup；显示“查询中 / 找到 / 未找到 / 暂时不可用”，成功自动回填最少患者姓名和 ward/bed。改变 MRN 时立即清除旧患者显示和旧验证凭据；晚到响应不得覆盖较新的 MRN 结果。
+3. Visitor 填完本类别字段并提交；Penjaga 勾选访问卡条款，服务器记录版本与时间。登记进入待审核状态。
+4. Counter staff 人工核对资料并批准/拒绝，保留 actor、时间和结构化依据；假的 API 命中不自动批准。
+5. 对 VERIFIED 登记，staff 手动选择 AVAILABLE、类别/地点兼容且在当前权限范围内的 pass。Vendor / Contractor 可选择多张，逐张关联 location；Executive 保持一张活动 pass。确认实体交付后才写入 issue 成功。
+6. 每张 pass 可选择“无归还期限”或具体到期日期/时间。每张生成独立 assignment、Pass ID、issued_at 和审计事件；同一次多选 issue 建议采用单个原子命令，任一卡冲突则整批不发放，防止 UI 显示整批成功而实际仅部分成功。
+7. 归还时 staff 查找该 visitor/登记下未归还的 pass，手动选择实际收到的一张或多张并确认。只关闭被选 assignment，其余保持借出。每张记录 returned_at、returned_by 和本地审计；不伪造 RETURN scan。
+8. 对有期限且仍活动的 pass，`now >= due_at` 才成为逾期；无期限显示“未设归还期限”，不自动逾期，仍能归还、标记遗失和查看借出时长。
+
+“整批原子 issue、逐 pass 期限与 location、支持部分归还”已落实到 R01–R03 源码，仍需用户业务验收。多张数量上限没有用户指定，不任意新增固定业务上限；实施时仍需有限请求大小和库存约束。
+
+## 日期、时间和报告口径
+
+- 每个 assignment 显示完整发放日期/时间、实际归还日期/时间、经办职员和地点。UTC 存储、ISO8601 API、MYT（Asia/Kuala_Lumpur）展示沿用原契约。
+- 用户选择的“进/出”是发还 pass 的记录口径，不宣称检测到医院真实门禁进出。多 pass 每张独立记进出；如需登记级摘要，可显示最早 issued_at、尚未归还数量及全部正常归还后的最后 returned_at。
+- `due_at` 是预计期限，`returned_at` 才是实际“出”时间；无期限不能用占位日期、无限远日期或 24 小时默认值伪装。
+- 未归还显示“未归还”，returned_at 保持 null；遗失关闭显示遗失时间/状态，不能写成正常归还时间。
+- 报表分别统计登记数、发放 pass 数、未归还 pass 数、无期限借出及逾期数；Vendor 一份登记发三张不能被计为三位 visitor。借出历史和导出保留同样的日期、时区和状态口径。
+
+## 假 MRN API 设计边界
+
+继续使用 HospitalVerificationPort 的服务端 adapter 边界；假 API 只返回明确标示 **MOCK / SYNTHETIC** 的虚构 MRN、patient display name、ward 和可用 bed 信息，不读取真实医院系统或病历。界面明确显示演示来源。正式 MRN 的格式、授权、响应及测试环境继续待医院提供，不能因假 API 工作就宣称 live integration 完成。
+
+公共 lookup 受当前匿名会话、有效 QR grant/formContext、CSRF 和限流约束，不提供不受保护的全患者清单。成功结果通过服务器凭据绑定 MRN、患者最少字段、会话/上下文、adapter/schema 版本和有效期；提交不信任浏览器自行传入的患者姓名/ward。患者返回字段必须在隐私白名单内，默认不进入日志、二维码、审计原文或一般报表。
+
+Mock 未找到/超时/不可用时保留 visitor 已填内容，显示原因并允许 staff 按既有人工核实路径处理；不捏造患者资料、不自动批准。保留原 DEMO 记录语义，通过新 schema 承载这次字段；不把旧 TEST_ID/DEMO-only 校验当成新 IC/Lesen 设计已经实现。
+
 
 ## 功能需求与验收矩阵
 
@@ -45,7 +87,7 @@ Must 是当前目标版要求；Conditional/Deferred 是外部条件满足并由
 | C01 | Must / user 2026-10-26 | 库存按可辨识 pass code、类别/地点和状态管理，staff 手动选择 AVAILABLE pass；新办理流程不要求 UID/profile/reader 扫描，旧库存和扫描历史保留 | T-C01：无 reader 仍可维护/选库存，重复 pass code 和无效库存拒绝 |
 | C02 | Superseded / user 2026-10-26 | reader ScanJob 不再是发还前置；旧 job/result 仅保留历史，不为 manual 操作伪造扫描证据；staff 权限、counter scope、版本和幂等仍须校验 | T-C02：无设备/scan result 可办理；越权/跨柜台/重复命令仍安全拒绝 |
 | P01 | Must / user 2026-10-26 | VERIFIED + AVAILABLE + 类别/地点兼容 + staff 手动选卡和确认实体交付；每张独立 assignment/Pass ID/发放时间/可选期限，业务与本地审计原子完成 | T-P01：手动发卡、库存冲突/回滚、来源/actor/time |
-| P02 | Must / user 2026-10-26 | 每张库存卡最多一条活动借用；Vendor/Contractor 同登记可多张/多地点，Executive 最多一张活动 pass；Penjaga 暂沿用一张待确认；相同 key/body 重放原结果，不同 body 为409 | T-P02：多卡/多地点、Executive 第二张拒绝、并发同卡仅一赢家、幂等重放 |
+| P02 | Must / user 2026-10-26 | 每张库存卡最多一条活动借用；Vendor/Contractor 同登记可多张/多地点，Executive 最多一张活动 pass；Penjaga 每份登记最多一张活动 pass；相同 key/body 重放原结果，不同 body 为409 | T-P02：多卡/多地点、Executive 第二张拒绝、并发同卡仅一赢家、幂等重放 |
 | P03 | Must / user 2026-10-26 | staff 手动选择实际收到的 pass 并确认，正常/逾期借用可归还，无需 RETURN scan；多 pass 支持部分归还，其余不关闭；库存/returned_at/actor/审计原子完成，LOST 仍走遗失流程 | T-P03：还一张不关闭其他借用、重复归还/回滚、LOST 拒绝正常归还 |
 | P04 | Must / user 2026-10-26 | 仅 due_at 非空、仍活动且 ISSUED，并且 UTC now >= due_at 才逾期；无期限不产生逾期；每借用一条逾期事件/告警，配置不回写既有 due_at | T-P04：null 期限、截止边界、scheduler replay、归还竞争 |
 | P06 | Must / user 2026-10-26 | 每张发放可设归还日期时间或明确不设；不设仍须实际归还，UI 显示“未设归还期限”，不能自动套24小时或无限远日期 | T-P06：有期限/无期限、无期限归还/遗失、历史兼容 |
@@ -91,7 +133,8 @@ Must 是当前目标版要求；Conditional/Deferred 是外部条件满足并由
 | Q07 | 演示恢复目标建议 RPO 24h / RTO 4h；备份含数据库与必要 nonce/key 恢复流程 | 实际还原计时；医院批准前不作为 production 保证 |
 | Q08 | 已选事件的 100% 在受控测试恢复与排空后得到 proof；计时窗口、样本与网络写入证据 | outbox 与 catalogue 分母核对，报告未确认项；不以零事件获得 100% |
 
-Q08 随 M11 deferred；当前不报告链覆盖率。2026-10-26 目标流程是动态 QR → 新字段/假 MRN 回填 → 人工审核 → 手动选卡/确认交付 → 单/多 pass 借还；新流程尚未实现/测试。旧 synthetic 扫描 E2E 仅保留历史范围。真实 patient API、消息送达与链核验保持 NOT_RUN。
+Q08 随 M11 deferred；当前不报告链覆盖率。2026-10-26 目标流程是动态 QR → 新字段/假 MRN 回填 → 人工审核 → 手动选卡/确认交付 → 单/多 pass 借还；R01–R03 源码已实现，当前业务手测未完成。旧 synthetic 扫描 E2E 仅保留历史范围。真实 patient API、消息送达与链核验保持 NOT_RUN。
+
 
 ## 动态 QR 验收细则
 
@@ -109,21 +152,13 @@ U03 用户已确认 synthetic Penjaga 审批：mock 结果本身不能作为已�
 - T-R06-D：直接打开 `/register`、跳过 exchange、跨 cookie/session、篡改 counter/category 或停用显示会话均不能登记；注销/撤销显示会话同时撤销其未提交 grant。
 - T-R06-E：断网、服务器失联、浏览器休眠/恢复时不把过期码作为当前有效码；清楚显示刷新失败、过期和重新扫码动作。恢复先向服务端同步时间和新码。
 - T-R06-F：生产 HTTPS 真机扫描（手机系统相机/二维码 reader 即可，无 visitor app），公共入口无相机权限要求；QR 不含 PII，entry/grant 不写日志/URL analytics，证据遮挡 token。
-- T-R06-G：旧码在有效期内被转发仍可能被扫描；轮换不能证明人在柜台，也不能取代职员核实或 NFC。静态打印二维码不是当前登记替代入口。
+- T-R06-G：旧码在有效期内被转发仍可能被扫描；轮换不能证明人在柜台，也不能取代职员核实。静态打印二维码不是当前登记替代入口。
 
-## 测试分层与完成条件
 
-1. 单元：四类别规则、状态矩阵、截止时间、commitment 固定样例、报表算式。
-2. MySQL 集成：Flyway clean/upgrade、generated active unique 约束、相同锁顺序、业务/outbox/notification 原子写入、lease fencing。
-3. Device 集成：mock deterministic reader + 真机 enrollment/issue/return；错误 profile、拔插、取消、重放、旧 lease 拒绝。
-4. Provider resilience：MRN timeout/manual、WhatsApp ambiguous acceptance、重复/乱序 callback；Sui ambiguous commit/reconciliation、duplicate eventId、Testnet smoke。
-5. E2E：四类 QR -> review -> scan -> handover -> issue -> return；overdue/lost/admin/export/opt-out 与角色限制。
-6. UAT：counter 与 administrator 脚本、SUS、任务时间、数据核对、篡改演示、恢复与培训。
+## 验收与完成条件
 
-P0=0；P1=0，或有医院/导师记录的例外；每个 Must requirement 有 test result、实现版本和 evidence。未执行的测试不得标 PASS；mock 与真实接口分开留证。需求变更沿用 Kanban WIP 2，与 [01](01_DEVELOPMENT_PLAN.md) 的阶段门对齐，但不根据计划日期推断完成。
+业务手测执行 [R01–R03 清单](../Implementation/docs/runbooks/MANUAL_R01_R03.md)，环境与并行页面按 [本机运行指南](../Implementation/docs/runbooks/MANUAL_NATIVE.md)。本机 SQL 集成测试使用独立随机测试库和受限账号，需显式 opt-in；不连接演示或业务库。
 
-Traceability 字段：`Requirement ID | 来源路径/页 | 任务链接 | acceptance | commit/artifact | test | NOT_RUN/PASS/FAIL | evidence | reviewer`。
+检查层次：纯单元/组件 → 隔离本机 MySQL 事务/迁移/并发 → 四类真实应用操作 → 故障/恢复 → 获批外部接口/Testnet。现有手动流程不再以模拟/真实扫描作为 E2E 前置。
 
-## 未决需求
-
-2026-10-26 四类新字段、manual pass、mock MRN、条款同意与时间口径已按用户说明明确；Penjaga 证件类型/格式及是否改变单卡规则仍见 [15](15_MANUAL_PASS_AND_FORM_CHANGE.md)。硬件/profile 不再是新发还流程依赖。真实 IC/MRN 采集目的与保留、遗失恢复政策、live MRN 契约、WhatsApp provider/template、session timeout、性能/UAT样本与恢复值，继续登记在 [10](10_BASELINE_REVIEW.md#待确认事项)。所有演示样例使用 synthetic data。
+每项验收记录 `Requirement ID | acceptance | source/commit | NOT_RUN/PASS/FAIL | evidence | reviewer`。未执行不能标 PASS；历史 PASS 只证明当时版本和环境。当前 UI/本机切换未执行浏览器、迁移、业务或恢复验收；通知和真实链交易仍 deferred。未决事项见 [10](10_BASELINE_REVIEW.md)。
