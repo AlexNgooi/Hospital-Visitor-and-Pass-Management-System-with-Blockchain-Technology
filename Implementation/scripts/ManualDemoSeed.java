@@ -1,15 +1,15 @@
 import java.sql.DriverManager;
 import org.springframework.security.crypto.factory.PasswordEncoderFactories;
 
-/** Seeds only public demonstration identities/reference data in this launcher's empty disposable database. */
+/** Seeds public synthetic identities/reference data only in the dedicated native demonstration schema. */
 class ManualDemoSeed {
-    /** Refuses the native database and any populated identity store; every insert belongs to one transaction. */
+    /** Refuses unrelated schemas/accounts and any populated identity store; inserts share one transaction. */
     public static void main(String[] args) throws Exception {
         String url = System.getenv("HSAAS_DB_URL");
         if (args.length != 0 || url == null
-                || !url.matches("jdbc:mysql://127\\.0\\.0\\.1:(?!3306/)[0-9]+/hsaas_manual_m00_m07\\?connectionTimeZone=UTC")
-                || !"manual_demo".equals(System.getenv("HSAAS_DB_USER"))) {
-            throw new IllegalStateException("A new owned demonstration database is required");
+                || !url.matches("jdbc:mysql://127\\.0\\.0\\.1:[0-9]+/hsaas_manual_native\\?connectionTimeZone=UTC")
+                || !"hsaas_manual_native".equals(System.getenv("HSAAS_DB_USER"))) {
+            throw new IllegalStateException("The dedicated native demonstration schema/account is required");
         }
         try (var connection = DriverManager.getConnection(url, System.getenv("HSAAS_DB_USER"), System.getenv("HSAAS_DB_PASSWORD"))) {
             connection.setAutoCommit(false);

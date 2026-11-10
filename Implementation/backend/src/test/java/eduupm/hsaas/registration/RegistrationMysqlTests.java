@@ -21,9 +21,6 @@ import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
 import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.transaction.TransactionDefinition;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
-import org.testcontainers.mysql.MySQLContainer;
 import tools.jackson.databind.json.JsonMapper;
 import eduupm.hsaas.common.*;
 import eduupm.hsaas.common.RestartDetails.FormContext;
@@ -31,12 +28,13 @@ import eduupm.hsaas.auth.*;
 import static org.assertj.core.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
-/** Synthetic registration servlet and lock graph runs exclusively on an owned temporary MySQL, never a developer database. */
+/** Synthetic registration servlet and lock graph runs exclusively on an owned temporary MySQL, never an application schema. */
 @SpringBootTest(webEnvironment=SpringBootTest.WebEnvironment.RANDOM_PORT)
 @ActiveProfiles("test")
-@Testcontainers
+@org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable(named="HSAAS_LOCAL_MYSQL_TESTS", matches="true")
 class RegistrationMysqlTests {
-    @Container static final MySQLContainer MYSQL=new MySQLContainer("mysql:8.0.45").withCommand("--log-bin-trust-function-creators=1");
+    @org.junit.jupiter.api.extension.RegisterExtension
+    static final eduupm.hsaas.testing.LocalMysql MYSQL = eduupm.hsaas.testing.LocalMysql.create();
     @LocalServerPort int port;
     @MockitoSpyBean JdbcTemplate jdbc;
     @Autowired JsonMapper json;

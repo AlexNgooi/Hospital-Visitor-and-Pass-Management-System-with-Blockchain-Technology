@@ -11,6 +11,8 @@ import { registrationFeatures } from "./features/registration";
 import { counterReviewFeatures } from "./features/counter/review";
 import { counterLifecycleFeatures, adminInventoryFeatures } from "./features/counter/lifecycle";
 import { administrationFeatures } from "./features/administration";
+// Load the shared presentation layer after feature styles for consistent cross-module controls.
+import "./app/workspace-theme.css";
 
 // Compose reviewed modules under their existing role gates; ADMIN inventory never inherits staff issue/return authority.
 // Entry fragment capture above still runs before rendering or authenticated API activity.

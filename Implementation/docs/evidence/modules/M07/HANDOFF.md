@@ -17,9 +17,9 @@ Date: 2026-10-18, Asia/Singapore. Status: **DOCUMENTATION_REVIEW_READY / PENDING
 
 | File | Responsibility |
 |---|---|
-| [MANUAL_M00_M07.md](../../../runbooks/MANUAL_M00_M07.md) | Dedicated user startup, real routes/accounts, QR→four categories→review→SIMULATED enroll/issue/return, overdue/lost/recovery/admin/report steps; private backup/restore/stop and limits |
-| [MANUAL_ACCEPTANCE_M00_M07.md](../../../runbooks/MANUAL_ACCEPTANCE_M00_M07.md) |40 user scenarios, all33 requirement IDs, permissions/replay/expiry/concurrency/PII/UNKNOWN/recovery, optional expected accounting ledger; every new manual result NOT_RUN |
-| [RELEASE_MANIFEST_M00_M07.md](../../../runbooks/RELEASE_MANIFEST_M00_M07.md) | Exact source/merge/artifact Git objects, V1–V7 inventory, modes/report semantics, historical PASS at original SHA/scope and exact current compilation boundary |
+| [MANUAL_NATIVE.md](../../../runbooks/MANUAL_NATIVE.md) | Dedicated user startup, real routes/accounts, QR→four categories→review→SIMULATED enroll/issue/return, overdue/lost/recovery/admin/report steps; private backup/restore/stop and limits |
+| [MANUAL_R01_R03.md](../../../runbooks/MANUAL_R01_R03.md) |40 user scenarios, all33 requirement IDs, permissions/replay/expiry/concurrency/PII/UNKNOWN/recovery, optional expected accounting ledger; every new manual result NOT_RUN |
+| [MANUAL_R01_R03.md](../../../runbooks/MANUAL_R01_R03.md) | Exact source/merge/artifact Git objects, V1–V7 inventory, modes/report semantics, historical PASS at original SHA/scope and exact current compilation boundary |
 | CONTEXT.md / PREPARATION.md / HANDOFF.md | Module boundary, explicitly historical dependency-wait record, final delivery identity and review action |
 
 Only these six documentation files are M07-authored changes against coordinator main. `COORDINATOR_CHECKS.md` is coordinator-owned, inherited unchanged; M07 neither overwrites it nor authors REVIEW.md. Old MANUAL_M00_M04 and prior evidence remain unchanged as historical references. No business code, API/DTO/permission/state/migration/dependency/generated file/shared composition modification is authored by M07.

@@ -4,7 +4,7 @@
 as0067637; combined QR/registration/review entry isdc69823. The user's latest
 instruction stops further assistant testing and assigns manual acceptance to the
 user. Older coordinator-run/merged-regression gates below are historical,
-superseded instructions. See REVIEW and [manual runbook](../../../runbooks/MANUAL_M00_M04.md)
+superseded instructions. See REVIEW and [manual runbook](../../../runbooks/MANUAL_NATIVE.md)
 for the current boundary; no complete combined acceptance or push is claimed.
 
 - Module/chat: M03, 01a11ba4-e814-7832-bd40-f471edf417b4; module assistant directly implemented, tested and repaired.

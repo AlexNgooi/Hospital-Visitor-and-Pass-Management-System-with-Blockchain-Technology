@@ -22,6 +22,6 @@ security prefixes, with service-level current authority/counter checks and CSRF
 for writes. No role broadening or hand-edit of generated declarations is needed.
 
 Exact checkpoint/source review and dependency approval are tracked in
-`planning/16_MANUAL_PASS_MODULE_COORDINATION.md`. Consolidating a new generated
+`planning/04_DATA_MODEL_AND_API_PLAN.md`. Consolidating a new generated
 input requires a later reviewed combined specification; the old foundation input
 must not be silently relabelled as complete coverage of the new application.

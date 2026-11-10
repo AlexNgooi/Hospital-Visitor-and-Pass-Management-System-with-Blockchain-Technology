@@ -10,17 +10,15 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
-import org.testcontainers.mysql.MySQLContainer;
 import static org.assertj.core.api.Assertions.*;
 
-/** Disabled QR stays explicitly unavailable and creates no domain state; native database fallback is impossible. */
+/** Disabled QR creates no domain state; this fixture can reach only its explicitly owned native test schema. */
 @SpringBootTest(webEnvironment=SpringBootTest.WebEnvironment.RANDOM_PORT)
 @ActiveProfiles("test")
-@Testcontainers
+@org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable(named="HSAAS_LOCAL_MYSQL_TESTS", matches="true")
 class QrDisabledMysqlTests {
-    @Container static final MySQLContainer MYSQL=new MySQLContainer("mysql:8.0.45");
+    @org.junit.jupiter.api.extension.RegisterExtension
+    static final eduupm.hsaas.testing.LocalMysql MYSQL = eduupm.hsaas.testing.LocalMysql.create();
     @LocalServerPort int port;
     @Autowired JdbcTemplate jdbc;
     @DynamicPropertySource static void database(DynamicPropertyRegistry properties) {

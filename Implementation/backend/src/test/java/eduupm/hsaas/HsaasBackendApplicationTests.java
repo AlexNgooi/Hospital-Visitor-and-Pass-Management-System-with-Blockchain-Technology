@@ -38,9 +38,6 @@ import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
-import org.testcontainers.mysql.MySQLContainer;
 import eduupm.hsaas.auth.*;
 import eduupm.hsaas.common.*;
 import tools.jackson.databind.json.JsonMapper;
@@ -53,12 +50,12 @@ import static org.assertj.core.api.Assertions.assertThat;
 /** Runs real servlet/session filters against ephemeral MySQL with no developer-database fallback. */
 @SpringBootTest(webEnvironment=SpringBootTest.WebEnvironment.RANDOM_PORT)
 @ActiveProfiles("test")
-@Testcontainers
+@org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable(named="HSAAS_LOCAL_MYSQL_TESTS", matches="true")
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 class HsaasBackendApplicationTests {
     // Disposable MySQL permits test-only failure triggers; production permissions stay unchanged.
-    @Container static final MySQLContainer MYSQL=new MySQLContainer("mysql:8.0.45")
-        .withCommand("--log-bin-trust-function-creators=1");
+    @org.junit.jupiter.api.extension.RegisterExtension
+    static final eduupm.hsaas.testing.LocalMysql MYSQL = eduupm.hsaas.testing.LocalMysql.create();
     @LocalServerPort int port;
     @Autowired JdbcTemplate jdbc;
     @Autowired PasswordEncoder passwords;
@@ -79,7 +76,7 @@ class HsaasBackendApplicationTests {
     private long adminId,staffId;
     private static final String FIXTURE_PASSWORD="Synthetic-only-password_1";
 
-    /** All database credentials and the mapped port belong exclusively to the container. */
+    /** All database credentials and proxy ports belong exclusively to the owned native test fixture. */
     @DynamicPropertySource static void database(DynamicPropertyRegistry properties) {
         properties.add("spring.datasource.url",MYSQL::getJdbcUrl);
         properties.add("spring.datasource.username",MYSQL::getUsername);
@@ -89,7 +86,7 @@ class HsaasBackendApplicationTests {
         properties.add("hsaas.hash-key",()->Base64.getEncoder().encodeToString(new byte[32]));
     }
 
-    /** Removes only disposable-container fixtures; no native database can be reached by this test class. */
+    /** Removes only owned-schema fixtures; only the generated native test schema is reachable by this class. */
     @BeforeEach void fixtures() {
         reset(sessions,accountLoader,capabilityHooks);
         ((Map<?,?>)ReflectionTestUtils.getField(limiter,"buckets")).clear();
@@ -114,9 +111,9 @@ class HsaasBackendApplicationTests {
         var response=HttpClient.newHttpClient().send(HttpRequest.newBuilder(URI.create("http://localhost:"+port+"/api/health")).GET().build(),HttpResponse.BodyHandlers.ofString());
         assertThat(response.statusCode()).isEqualTo(200);
         assertThat(response.body()).contains("UP");
-        // V4-V7 add QR, synthetic registration, simulated assignments and administration without rewriting V1-V3.
-        // This expected count is maintained for future Docker-backed runs; it is not a current executed migration result.
-        assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM flyway_schema_history WHERE success=TRUE",Integer.class)).isEqualTo(7);
+        // V4-V9 add QR, registration, lifecycle, administration and manual forms/pass handling without rewriting V1-V3.
+        // This expected count is maintained for future native MySQL runs; it is not a current executed migration result.
+        assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM flyway_schema_history WHERE success=TRUE",Integer.class)).isEqualTo(9);
         assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM users",Integer.class)).isEqualTo(2);
     }
 
@@ -351,23 +348,25 @@ class HsaasBackendApplicationTests {
         assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM audit_events",Integer.class)).isEqualTo(1);
     }
 
-    /** V1 data must survive upgrade through the current V7 schema; a repeated migrate remains a no-op. */
+    /** V1 data survives all current forward migrations inside a second independently owned native test schema. */
     @Test void cleanAndUpgradeMigration() throws Exception {
-        try(var root=java.sql.DriverManager.getConnection(MYSQL.getJdbcUrl(),"root",MYSQL.getPassword()); var statement=root.createStatement()) {
-            statement.execute("CREATE DATABASE migration_probe CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci");
-        }
-        String url=MYSQL.getJdbcUrl().replace("/"+MYSQL.getDatabaseName(),"/migration_probe");
-        var first=Flyway.configure().dataSource(url,"root",MYSQL.getPassword()).target("1").load();
-        assertThat(first.info().applied()).isEmpty(); assertThat(first.migrate().migrationsExecuted).isEqualTo(1);
-        try(var connection=java.sql.DriverManager.getConnection(url,"root",MYSQL.getPassword()); var statement=connection.createStatement()) {
-            statement.execute("INSERT INTO counters(code,name) VALUES('UPGRADE_FIXTURE','Synthetic upgrade fixture')");
-        }
-        var latest=Flyway.configure().dataSource(url,"root",MYSQL.getPassword()).load();
-        // Six new versions follow the preserved V1 fixture; do not weaken upgrade/validation/no-op/data-survival assertions.
-        assertThat(latest.migrate().migrationsExecuted).isEqualTo(6); latest.validate();
-        assertThat(latest.migrate().migrationsExecuted).isZero();
-        try(var connection=java.sql.DriverManager.getConnection(url,"root",MYSQL.getPassword()); var statement=connection.createStatement(); var result=statement.executeQuery("SELECT COUNT(*) FROM counters WHERE code='UPGRADE_FIXTURE'")) {
-            assertThat(result.next()).isTrue(); assertThat(result.getInt(1)).isEqualTo(1);
+        try (var probe = eduupm.hsaas.testing.LocalMysql.create()) {
+            String url = probe.getJdbcUrl();
+            var first = Flyway.configure().dataSource(url, probe.getUsername(), probe.getPassword()).target("1").load();
+            assertThat(first.info().applied()).isEmpty(); assertThat(first.migrate().migrationsExecuted).isEqualTo(1);
+            try (var connection = java.sql.DriverManager.getConnection(url, probe.getUsername(), probe.getPassword());
+                 var statement = connection.createStatement()) {
+                statement.execute("INSERT INTO counters(code,name) VALUES('UPGRADE_FIXTURE','Synthetic upgrade fixture')");
+            }
+            var latest = Flyway.configure().dataSource(url, probe.getUsername(), probe.getPassword()).load();
+            // V2 through V9 follow the preserved V1 fixture; validation and repeat migration must remain safe.
+            assertThat(latest.migrate().migrationsExecuted).isEqualTo(8); latest.validate();
+            assertThat(latest.migrate().migrationsExecuted).isZero();
+            try (var connection = java.sql.DriverManager.getConnection(url, probe.getUsername(), probe.getPassword());
+                 var statement = connection.createStatement();
+                 var result = statement.executeQuery("SELECT COUNT(*) FROM counters WHERE code='UPGRADE_FIXTURE'")) {
+                assertThat(result.next()).isTrue(); assertThat(result.getInt(1)).isEqualTo(1);
+            }
         }
     }
 
@@ -650,27 +649,27 @@ class HsaasBackendApplicationTests {
         }
     }
 
-    /** Database loss is exercised by pausing only this disposable container and always unpausing it. */
+    /** Database loss severs only the fixture proxy connections; the native service and other schemas remain online. */
     @Test @Order(999) void databaseOfflineReadinessAndRecovery() throws Exception {
-        MYSQL.getDockerClient().pauseContainerCmd(MYSQL.getContainerId()).exec();
+        MYSQL.pauseConnections();
         try {
-            // Allow the bounded pool-validation and SQL timeouts to complete under concurrent Docker test load.
+            // Allow the bounded pool-validation and SQL timeouts to complete under concurrent native test load.
             var request=HttpRequest.newBuilder(URI.create("http://localhost:"+port+"/api/health")).timeout(java.time.Duration.ofSeconds(30)).GET().build();
             var response=HttpClient.newHttpClient().send(request,HttpResponse.BodyHandlers.ofString());
             assertThat(response.statusCode()).isEqualTo(503); assertThat(body(response).get("code")).isEqualTo("SERVICE_UNAVAILABLE");
             assertThat(response.body()).doesNotContain("jdbc:","SQLException","stackTrace");
-        } finally { MYSQL.getDockerClient().unpauseContainerCmd(MYSQL.getContainerId()).exec(); }
+        } finally { MYSQL.resumeConnections(); }
         assertThat(new Browser().get("/api/health").statusCode()).isEqualTo(200);
     }
 
-    /** Secondary contexts receive only the disposable container configuration, never local .env imports. */
+    /** Secondary contexts receive only the owned test schema configuration, never application .env imports. */
     private org.springframework.context.ConfigurableApplicationContext startApplication(WebApplicationType web,boolean bootstrapEnabled) {
         var environment=new StandardEnvironment(); var settings=new java.util.HashMap<String,Object>();
         settings.put("spring.datasource.url",MYSQL.getJdbcUrl()); settings.put("spring.datasource.username",MYSQL.getUsername()); settings.put("spring.datasource.password",MYSQL.getPassword());
         settings.put("spring.config.import",""); settings.put("server.port","0"); settings.put("hsaas.environment","test"); settings.put("hsaas.secure-cookie","false");
         settings.put("hsaas.bootstrap.enabled",Boolean.toString(bootstrapEnabled)); settings.put("logging.level.root","WARN");
         if(web==WebApplicationType.SERVLET) { settings.put("server.servlet.context-path","/foundation"); }
-        environment.getPropertySources().addFirst(new MapPropertySource("isolated-container",settings));
+        environment.getPropertySources().addFirst(new MapPropertySource("isolated-test-schema",settings));
         return new SpringApplicationBuilder(HsaasBackendApplication.class).environment(environment).profiles("test").web(web).logStartupInfo(false).run();
     }
 

@@ -16,7 +16,7 @@ test("OS/runtime allowlist drops inherited application credentials and unrelated
     HSAAS_DB_URL: "ignored",
     HSAAS_DB_PASSWORD: "public-fixture-only",
     CLASSPATH: "ignored",
-    DOCKER_HOST: "ignored",
+    UNRELATED_SERVICE_HOST: "ignored",
   });
   assert.deepEqual(clean, {
     PATH: "runtime-path",
@@ -53,7 +53,7 @@ for (const name of [
   });
 }
 
-test("host Spring datasource override refuses the actual harness before any resource startup", async () => {
+test("host Spring datasource override refuses the native launcher before any resource startup", async () => {
   const scratch = await mkdtemp(join(tmpdir(), "hsaas-m01-env-negative-"));
   // Resolve and verify the owned deletion target before running the test or entering cleanup.
   const target = resolve(scratch);
@@ -63,7 +63,7 @@ test("host Spring datasource override refuses the actual harness before any reso
     const clean = createChildEnvironment(process.env);
     const result = spawnSync(
       process.execPath,
-      [fileURLToPath(new URL("./harness.mjs", import.meta.url))],
+      [fileURLToPath(new URL("../../../scripts/manual-demo.mjs", import.meta.url))],
       {
         cwd: scratch,
         windowsHide: true,
@@ -80,12 +80,12 @@ test("host Spring datasource override refuses the actual harness before any reso
     assert.equal(result.stdout, "");
     assert.match(
       result.stderr,
-      /^REFUSED inherited Spring\/JVM\/runtime configuration; no resources started/,
+      /^Manual demonstration failed during configuration:/,
     );
     assert.ok(
       !result.stderr.includes("jdbc:") && !result.stderr.includes("127.0.0.1"),
     );
-    // The entry guard precedes even output directory creation and all Docker/Java/port operations.
+    // The entry guard precedes even output directory creation and all database/Java/port operations.
     assert.deepEqual(await readdir(scratch), []);
   } finally {
     // Remove only this mkdtemp directory after verifying its resolved parent and generated basename.

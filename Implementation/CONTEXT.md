@@ -1,17 +1,8 @@
-> **2026-10-27 最新授权（R01–R03）**：用户已在当前 coordinator chat `01a17867-7222-74d0-8dc6-c33b0e939c15`（local）明确要求分配任务并启动多 chat，一模块一 chat，实施 planning/15 的新变更。授权为三个模块创建独立 chat/worktree、直接开发、双向技术答疑与交接，覆盖旧的本轮 design-only/不得代开限制；每模块不再重复问开发许可。Penjaga 已确认仅 IC、每登记一张活动 pass。执行/ownership/迁移/检查边界以 `planning/16_MANUAL_PASS_MODULE_COORDINATION.md` 为准；仅必要静态/构建检查，不运行应用/数据库/业务验收，不 push/部署/改 native 库，不自动 merge main，旧 M08–M11 不启动。
-
-> **2026-10-18 最新授权（M05–M07）**：用户已指定新 coordinator chat `01a14da5-91fe-7bf1-a120-183975085f8b`（local），授权代开三个独立模块 chat/worktree、直接开发、双向答疑、审核和仅本地 merge；只做必要 testing，合并后由用户手动启动及业务测试。本条覆盖下文旧的 M05–M07 自行协调/未许可/禁止一切测试安排；M08–M11 未启动、不 push、不部署、不修改旧 native 库。当前执行与共享契约见 `planning/14_M05_M07_COORDINATION.md`（从仓库根目录解析）。
-
 # Implementation 契约
 
-- **输入规范**：[目录计划](../planning/09_FOLDER_STRUCTURE.md)、[初始化指南](../planning/11_ENVIRONMENT_AND_MANUAL_INITIALIZATION.md)、[阶段指南](../planning/12_THREE_MONTH_CHAT_PLAN.md)；业务依据按任务读取 [架构](../planning/02_TECHNICAL_ARCHITECTURE.md)、[需求](../planning/03_REQUIREMENTS_AND_TEST_PLAN.md)、[数据/API](../planning/04_DATA_MODEL_AND_API_PLAN.md)。
-- **单一职责**：保存 HSAAS 正式应用代码、运行配置和实施证据；沿用根 Git 仓库。当前 frontend/backend 为手动初始化的骨架，其余现有空目录不代表模块已实现。
-- **输出**：frontend/、backend/ 内代码与配置；实际开发时按需增加其他模块；实施结果写入 docs/evidence/modules/Mxx/HANDOFF.md，由 coordinator 在 REVIEW.md 记录审核/本地 merge。已有 foundation 证据保留。
-- **验证命令**：在 frontend/ 执行 `pnpm run build`；在 backend/ 执行 `.\mvnw.cmd test`，阶段验收执行 `.\mvnw.cmd verify`；在根目录执行 `git diff --cached --check`。构建通过不代表业务验收通过。
-- **代码注释**：所有新写或修改的手写代码及指导示例必须有英文注释。主要模块/类/函数说明职责；关键业务、权限、事务、并发、QR 过期/撤销、错误恢复逻辑说明原因与约束。修改代码时同步维护注释；自动生成文件不手改，说明写在生成入口或相邻手写封装。
-- **模块启动**：模块 chat 与开发仅由用户手动开启和启动；coordinator 准备任务、记录用户启动后的状态、答疑、审核与本地 merge，不代开模块或自动推进下一模块。
-- **2026-10-10交接边界**：本coordinator仅继续完成M03/M04的审核/merge/复验；后续模块由用户亲自协调。M05–M11问题/依赖/共享契约/迁移编号直接交用户，助手实施后交用户审核，不自动向旧coordinator发消息或自行merge main。新chat启动见planning/13_USER_MODULE_START_GUIDE.md。
-- **最新沟通/许可**：M00–M04 已按明确例外代开。所有模块主动向 coordinator 报问题/交接，coordinator 可回复技术决定；用户只给每模块一次明确开发许可。未经许可/依赖关卡/隔离仍不实施，范围内不重复求授权。用户已明确取消手写/guide方式：模块助手直接实现、测试、修复与交接，所有新增/修改代码有英文注释。具体 thread ID 和双向消息授权见 planning/12。
-- **人工检查**：按 planning/12 使用独立 module chat/branch/worktree，模块直接编写有英文注释的代码，coordinator 管共享契约、审核与本地 merge。确认当前/deferred 范围、真实测试和未决项；密码只在被忽略本机文件或环境变量，不提交 .env/依赖/产物/PII，不再次 git init。WhatsApp/blockchain disabled，reader mock 只用于 synthetic demo/test；准备阶段不冒充源码实施。
-
-2026-10-10最新交付与测试规则（覆盖旧验收/自动测试指令）：M00–M04功能已合并本机main，M03 merge0067637、M04 merge446f887，组合入口dc6982341ed6135b0917a5cfafc4200f06e43e96；最新组合状态MERGED_PENDING_USER_MANUAL_TEST，未另行构建/测试，不冒充完整验收。用户要求“只需要把功能做出来，我自己手动测试”：助手不自行新增或执行测试、不进行浏览器/业务验收，不因旧测试关卡未执行阻止已授权的功能交付；源码/diff审阅可继续，额外构建/运行按用户后续明确要求。旧PASS保留原范围，未执行写NOT_RUN。当前已无已知阻塞交付的生产功能缺陷。本chat至M04结束协调，M05–M11由用户在新chat手动启动并自己协调，问题/共享契约/迁移/依赖直接问用户，不自动向旧coordinator或其他chat发消息；不自动创建/启动/审核/merge后续模块。用户明确启动指定模块即为一次开发许可，助手直接写有准确英文注释的功能并交回用户审核。不push、不部署、不修改旧native数据库。启动见planning/13_USER_MODULE_START_GUIDE.md；当前手动运行见Implementation/docs/runbooks/MANUAL_M00_M04.md。
+输入：planning/README.md路由到当前需求、架构、数据/API和状态；所属组件CONTEXT约束本地边界。
+职责：正式前后端、版本化迁移、本机运行工具与交付证据。实际Java包保持eduupm.hsaas；前后端共享wire需同步。
+输出：有准确英文注释的源码与运行配置；dist/target/node_modules/tmp及私有配置/keys/备份不提交。
+验证：必要frontend build/lint、backend skip-tests package、脚本语法及文档检查。实际应用、数据库、浏览器/业务和恢复由用户手动运行。
+运行入口：docs/runbooks/MANUAL_NATIVE.md；业务手测：MANUAL_R01_R03.md；隔离SQL测试：backend/LOCAL_TESTING.md。
+边界：不自动merge main/push/部署/执行迁移；本机demo与随机测试库隔离，不访问原hsaas_db。链和通知默认disabled，不自动启动后续模块。
