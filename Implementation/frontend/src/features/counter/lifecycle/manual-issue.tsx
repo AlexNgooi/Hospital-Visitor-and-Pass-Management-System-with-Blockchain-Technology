@@ -1,3 +1,4 @@
+import { ToastNotice } from "../../../components/ui/toast";
 import { useEffect, useState } from "react";
 import { Button } from "../../../components/ui/primitives";
 import { formatMyt } from "../../../lib/time";
@@ -61,7 +62,7 @@ export function ManualIssue({ registrationId, commands, disabled, onDone, onAcce
     } catch { setError("Enter a valid return date and time, or select no deadline."); }
   }
   return <section className="lc-panel"><h2>Choose available cards</h2>
-    {error && <p role="alert" className="lc-error">{error}</p>}
+    {error && <ToastNotice>{error}</ToastNotice>}
     {loading && <p role="status">Loading eligible inventory…</p>}
     {context && <>
       <p>{context.multipleActivePassesAllowed ? "Multiple cards and destinations are allowed." : "One active pass per registration."} Currently active: {context.activePassCount}.</p>

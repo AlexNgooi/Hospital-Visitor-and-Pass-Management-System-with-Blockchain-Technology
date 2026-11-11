@@ -1,3 +1,4 @@
+import { ToastNotice } from "../../../components/ui/toast";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useAuth } from "../../../app/auth-context";
 import { useCounterScope } from "../../../app/counter-context";
@@ -78,9 +79,9 @@ function StaffWorkspace({ counterId, recheck }: { counterId: string; recheck: ()
 
   return <div className="lc-workspace">
     <header className="lc-header"><div><p className="lc-eyebrow">COUNTER {counterId}</p><h1>Pass lifecycle</h1><p className="muted">Manually issue, receive and follow up on visitor cards using synthetic demonstration data.</p></div><Button variant="secondary" disabled={commands.locked || denied} busy={busy} onClick={() => void refresh()}>Refresh lists</Button></header>
-    <SimulationNotice />{commands.notice}
+    <SimulationNotice />{commands.notice}{commands.recovery}
     {denied && <StatusPanel kind="error" title="Current access must be rechecked" action={<Button onClick={recheck}>Recheck session</Button>}>Visible records and contacts have been cleared. Keep an unknown original command until its result is confirmed.</StatusPanel>}
-    {error && <p role="alert" className="lc-error">{error}</p>}
+    {error && <ToastNotice>{error}</ToastNotice>}
     <section className="lc-panel"><h2>Approved registrations</h2><p className="muted">Select a VERIFIED registration, choose available compatible cards and confirm handover.</p>
       {queue ? <><div className="lc-table"><table><thead><tr><th>Registration</th><th>Visitor</th><th>Category</th><th>Destination</th><th>Action</th></tr></thead><tbody>
         {queue.items.map(item => <tr key={item.id}><td>{item.publicReference}</td><td>{item.maskedVisitorName}</td><td>{item.categoryCode}</td><td>{item.destinationLabel}</td><td><div className="lc-row"><Button variant="secondary" disabled={blocked} onClick={() => { reset(); setRegistrationFilter(item); setOverdue(false); setPage(0); setSelected(item); }}>Prepare issue</Button><Button variant="secondary" disabled={blocked} onClick={() => { reset(); setOverdue(false); setPage(0); setRegistrationFilter(item); }}>View this registration's passes</Button></div></td></tr>)}

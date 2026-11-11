@@ -1,3 +1,4 @@
+import { preserveToastInteraction } from "../components/ui/dialog-feedback";
 import { useState, type ReactNode } from "react";
 import {
   ArrowUpRight,
@@ -106,7 +107,7 @@ export function WorkspaceShell({ slots }: { slots: readonly FeatureSlot[] }) {
               </Dialog.Trigger>
               <Dialog.Portal>
                 <Dialog.Overlay className="dialog-overlay" />
-                <Dialog.Content className="mobile-drawer">
+                <Dialog.Content onInteractOutside={preserveToastInteraction} className="mobile-drawer">
                   <Dialog.Title className="sr-only">
                     Workspace navigation
                   </Dialog.Title>

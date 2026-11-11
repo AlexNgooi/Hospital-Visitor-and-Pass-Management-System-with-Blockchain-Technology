@@ -1,3 +1,4 @@
+import { ToastNotice } from "../../components/ui/toast";
 import { useEffect, useRef, useState } from "react";
 import { CheckCircle2, ShieldCheck } from "lucide-react";
 import { Button, InputField, StatusPanel } from "../../components/ui/primitives";
@@ -65,19 +66,19 @@ export function RegistrationPage({ port = registrationPort, entryPort, vault }: 
     </section> : pending ? <section className="registration-result" aria-live="polite">
       <span className="eyebrow">HSAAS · PENDAFTARAN</span>
       <h1 ref={heading} tabIndex={-1}>{unknown ? "Hasil belum disahkan" : "Menghantar pendaftaran"}</h1>
-      <p>{message || "Sila tunggu sehingga rujukan pendaftaran diterima."}</p>
+      <p>Sila tunggu sehingga rujukan pendaftaran diterima.</p>{message && <ToastNotice>{message}</ToastNotice>}
       {unknown && <><Button busy={busy} onClick={() => void execute(pending, true)}>Cuba semula permohonan asal</Button>
         <p className="muted">Jangan mulakan pendaftaran baharu. Percubaan ini menggunakan permohonan asal yang sama.</p></>}
       {busy && <p role="status">Sedang menyemak hasil…</p>}
     </section> : <>
-      {message && <p className="registration-notice" role="alert">{message}</p>}
+      {message && <ToastNotice>{message}</ToastNotice>}
       <RegistrationEntry compact port={entryPort} vault={vault}>{entry => <RegistrationForm key={contextKey(entry)} entry={entry} port={port}
         initial={draft?.context === contextKey(entry) ? draft : null} onDraft={setDraft} onSubmit={submit} />}</RegistrationEntry>
     </>}
   </div>;
 }
 
-/** Three steps keep fields in memory, with inline validation and a focusable linked error summary. */
+/** Three steps keep fields in memory, with toast validation and focus on the first invalid control. */
 function RegistrationForm({ entry, port, initial, onDraft, onSubmit }: {
   entry: EntryGrant; port: RegistrationPort; initial: Draft | null;
   onDraft: (draft: Draft) => void; onSubmit: (body: Submission, draft: Draft, counter: string) => void;
@@ -90,7 +91,7 @@ function RegistrationForm({ entry, port, initial, onDraft, onSubmit }: {
   const [feedback, setFeedback] = useState<Feedback | null>(initial?.feedback ?? null), [checking, setChecking] = useState(false), [feedbackError, setFeedbackError] = useState("");
   const [errors, setErrors] = useState<Partial<Record<FieldName | "privacyAcknowledgement" | "termsAcknowledgement", string>>>({});
   const [errorRevision,setErrorRevision] = useState(0);
-  const summary = useRef<HTMLElement>(null), stage = useRef<HTMLHeadingElement>(null), revision = useRef(0), focusedErrorRevision=useRef(0);
+  const stage = useRef<HTMLHeadingElement>(null), revision = useRef(0), focusedErrorRevision=useRef(0);
   const mrnRequest = useRef<{ key: string; controller: AbortController } | null>(null);
   const automaticMrnKey = useRef<string | null>(null);
   useEffect(() => {
@@ -113,7 +114,8 @@ function RegistrationForm({ entry, port, initial, onDraft, onSubmit }: {
     // Focus only after a validation gesture; clearing one field must not steal focus while other errors remain.
     if(focusedErrorRevision.current!==errorRevision) {
       focusedErrorRevision.current=errorRevision;
-      if(Object.values(errors).some(Boolean)) summary.current?.focus();
+      const first = Object.entries(errors).find(([, error]) => error)?.[0];
+      if(first) document.getElementById("registration-" + first)?.focus();
     }
   }, [errors,errorRevision]);
   if (loading) return <p role="status">Memuatkan borang…</p>;
@@ -201,19 +203,17 @@ function RegistrationForm({ entry, port, initial, onDraft, onSubmit }: {
     mrnRequest.current?.controller.abort();mrnRequest.current=null;automaticMrnKey.current=null;
     revision.current++;setCategory(value);setFeedback(null);setFeedbackError("");setAcknowledged(false);setTermsAcknowledged(false);setChecking(false);setErrors({});
     // Retain common fields only: another category cannot inherit hidden MRN/company/purpose properties.
-    setValues(previous => ({ ...Object.fromEntries(Object.entries(previous).filter(([name]) => common.has(name as FieldName))),      identificationType: value === "EXECUTIVE" ? previous.identificationType ?? "IC" : "IC" }));
+    setValues(previous => ({ ...Object.fromEntries(Object.entries(previous).filter(([name]) => common.has(name as FieldName))),
+      identificationType: value === "EXECUTIVE" ? previous.identificationType ?? "IC" : "IC" }));
   };
   const feedbackText = feedback?.feedback === "MATCH" ? "Padanan demo. Pengesahan manual kakitangan masih diperlukan."
     : feedback?.feedback === "NO_MATCH" ? "Tiada padanan demo. Semak input atau teruskan untuk pengesahan manual."
     : feedback ? "Semakan demo tidak tersedia. Teruskan untuk pengesahan manual." : feedbackError;
   return <div className="registration-form">
-    {Object.values(errors).some(Boolean) ? <details className="registration-errors" aria-live="polite">
-      <summary ref={summary}>DEMO · Data sintetik · {Object.values(errors).filter(Boolean).length} perlu disemak</summary>
-      <p>Gunakan data sintetik sahaja. Pilih maklumat di bawah untuk membetulkannya.</p>
-      <div>{Object.entries(errors).filter(([, error]) => error).map(([name]) =>
-        <a key={name} href={"#registration-" + name} onClick={event => {event.preventDefault();document.getElementById("registration-" + name)?.focus();}}>
-          {name === "privacyAcknowledgement" ? "Notis demo" : name === "termsAcknowledgement" ? "Terma kad penjaga" : definitions.find(field => field.name === name)?.label}</a>)}</div>
-    </details> : <p className="registration-demo"><ShieldCheck size={16} aria-hidden="true" />DEMO sahaja · Gunakan data sintetik.</p>}
+    <p className="registration-demo"><ShieldCheck size={16} aria-hidden="true" />DEMO sahaja · Gunakan data sintetik.</p>
+    {Object.values(errors).some(Boolean) && <ToastNotice revision={errorRevision} title="Sila semak maklumat borang">
+      {Object.entries(errors).filter(([, error]) => error).map(([name, error]) => <p key={name}>{definitions.find(field => field.name === name)?.label ?? (name === "termsAcknowledgement" ? "Terma kad penjaga" : "Notis demo")}: {error}</p>)}
+    </ToastNotice>}
     <div className="registration-step"><span>Langkah {step + 1} / 3</span>
       <h3 ref={stage} tabIndex={-1}>{step === 0 ? "Maklumat pelawat" : step === 1 ? "Butiran lawatan" : "Semak pendaftaran"}</h3></div>
     {step === 0 && <div className="field"><label htmlFor="registration-category">Kategori pelawat</label>
@@ -228,7 +228,7 @@ function RegistrationForm({ entry, port, initial, onDraft, onSubmit }: {
           return <label key={location.code}><input type="checkbox" checked={selected.includes(location.code)}
             onChange={event => update("destinationCodes", (event.target.checked ? [...selected, location.code] : selected.filter(code => code !== location.code)).join(","))} />{location.label}</label>;
         })}
-        {errors[field.name] && <span className="field-error" id={"registration-" + field.name + "-error"}>{errors[field.name]}</span>}</fieldset>
+        {errors[field.name] && <span className="feedback-sr-only" id={"registration-" + field.name + "-error"}>{errors[field.name]}</span>}</fieldset>
       : field.kind === "SELECT" || field.kind === "DESTINATION"
       ? <div className="field" key={field.name}><label htmlFor={"registration-" + field.name}>{field.label}</label>
         <select id={"registration-" + field.name} value={values[field.name] ?? (field.name === "identificationType" ? "IC" : "")}
@@ -237,7 +237,7 @@ function RegistrationForm({ entry, port, initial, onDraft, onSubmit }: {
           {field.name !== "identificationType" && <option value="">Pilih {field.label.toLowerCase()}</option>}
           {(field.kind === "DESTINATION" ? schema.destinations.map(item => ({value:item.code,label:item.label})) : field.options)
             .map(option => <option key={option.value} value={option.value}>{option.label}</option>)}</select>
-        {errors[field.name] && <span className="field-error" id={"registration-" + field.name + "-error"}>{errors[field.name]}</span>}</div>
+        {errors[field.name] && <span className="feedback-sr-only" id={"registration-" + field.name + "-error"}>{errors[field.name]}</span>}</div>
       : <InputField key={field.name} id={"registration-" + field.name} label={field.label} value={values[field.name] ?? ""}
         type={field.kind === "PHONE" ? "tel" : "text"} autoComplete="off"
         hint={errors[field.name] ? undefined : field.rule === "DEMO_MRN" ? "Contoh sintetik: DEMO-MRN-4821"
@@ -247,7 +247,7 @@ function RegistrationForm({ entry, port, initial, onDraft, onSubmit }: {
     {step === 1 && category === "PENJAGA" && <div className="registration-mrn">
       <Button variant="secondary" busy={checking} onClick={() => void checkMrn()}>Semak MRN demo</Button>
       <p className="muted">MRN yang lengkap disemak automatik apabila anda meninggalkan medan. Gunakan butang untuk cuba semula atau teruskan untuk pengesahan manual.</p>
-      {checking && <p role="status">Semakan MRN demo sedang dijalankan…</p>}{feedbackText && <p role="status">{feedbackText}</p>}
+      {checking && <p role="status">Semakan MRN demo sedang dijalankan…</p>}{feedbackText && <ToastNotice tone={feedbackError ? "error" : "info"}>{feedbackText}</ToastNotice>}
       {feedback?.patient && <dl className="registration-review" aria-label="Pesakit MOCK / SYNTHETIC">
         <div><dt>Nama pesakit (MOCK / SYNTHETIC)</dt><dd>{feedback.patient.patientName}</dd></div>
         <div><dt>Wad / Katil</dt><dd>{feedback.patient.wardLabel} / {feedback.patient.bed ?? "Tidak tersedia"}</dd></div>
@@ -267,14 +267,14 @@ function RegistrationForm({ entry, port, initial, onDraft, onSubmit }: {
           aria-invalid={Boolean(errors.termsAcknowledgement)} aria-describedby={errors.termsAcknowledgement ? "registration-terms-error" : undefined}
           onChange={event => {setTermsAcknowledged(event.target.checked);setErrors(previous => ({...previous,termsAcknowledgement:undefined}));}} />
           <label htmlFor="registration-termsAcknowledgement">Saya bersetuju dengan terma kad akses penjaga.</label></div>
-        {errors.termsAcknowledgement && <p id="registration-terms-error" className="field-error">{errors.termsAcknowledgement}</p>}
+        {errors.termsAcknowledgement && <p id="registration-terms-error" className="feedback-sr-only">{errors.termsAcknowledgement}</p>}
       </>}
       <p className="registration-policy">{schema.privacy.text}</p>
       <div className="registration-ack"><input id="registration-privacyAcknowledgement" type="checkbox" checked={acknowledged}
         aria-invalid={Boolean(errors.privacyAcknowledgement)} aria-describedby={errors.privacyAcknowledgement ? "registration-privacy-error" : undefined}
         onChange={event => {setAcknowledged(event.target.checked);setErrors(previous => ({...previous,privacyAcknowledgement:undefined}));}} />
         <label htmlFor="registration-privacyAcknowledgement">Saya telah membaca dan mengakui notis demo ini.</label></div>
-      {errors.privacyAcknowledgement && <p id="registration-privacy-error" className="field-error">{errors.privacyAcknowledgement}</p>}</>}
+      {errors.privacyAcknowledgement && <p id="registration-privacy-error" className="feedback-sr-only">{errors.privacyAcknowledgement}</p>}</>}
     <div className="registration-actions">{step > 0 && <Button variant="secondary" onClick={() => {setErrors({});setStep(step - 1);}}>Kembali</Button>}
       <Button disabled={checking} onClick={step === 2 ? send : next}>{step === 2 ? "Hantar pendaftaran" : "Seterusnya"}</Button></div>
   </div>;

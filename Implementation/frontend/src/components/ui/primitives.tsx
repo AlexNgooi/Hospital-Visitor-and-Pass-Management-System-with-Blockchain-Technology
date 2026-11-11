@@ -2,9 +2,12 @@ import type {
   ButtonHTMLAttributes,
   InputHTMLAttributes,
   ReactNode,
+  Ref,
 } from "react";
 import { AlertCircle, LoaderCircle } from "lucide-react";
 import * as Dialog from "@radix-ui/react-dialog";
+import { ToastNotice } from "./toast";
+import { preserveToastInteraction } from "./dialog-feedback";
 
 /** Consistent touch/focus/loading behavior shared by later feature modules. */
 export function Button({
@@ -16,6 +19,7 @@ export function Button({
 }: ButtonHTMLAttributes<HTMLButtonElement> & {
   variant?: "primary" | "secondary" | "ghost";
   busy?: boolean;
+  ref?: Ref<HTMLButtonElement>;
 }) {
   return (
     <button
@@ -31,7 +35,7 @@ export function Button({
   );
 }
 
-/** Labels and inline errors remain programmatically associated with their input. */
+/** Labels and nonvisual error descriptions remain associated with invalid fields. */
 export function InputField({
   label,
   error,
@@ -60,7 +64,7 @@ export function InputField({
         </span>
       )}
       {error && (
-        <span className="field-error" id={`${props.id}-error`}>
+        <span className="feedback-sr-only" id={`${props.id}-error`}>
           {error}
         </span>
       )}
@@ -80,10 +84,12 @@ export function StatusPanel({
   children?: ReactNode;
   action?: ReactNode;
 }) {
+  // Blocking errors use the shared toast; retry controls remain reachable after it expires.
+  if (kind === "error") return <ToastNotice title={title} action={action && <div className="status-action">{action}</div>}>{children}</ToastNotice>;
   return (
     <section
       className={`status-panel status-${kind}`}
-      role={kind === "error" ? "alert" : "status"}
+      role="status"
       aria-busy={kind === "loading"}
     >
       <span className="status-icon">
@@ -134,7 +140,7 @@ export function RestartConfirmation({
     >
       <Dialog.Portal>
         <Dialog.Overlay className="dialog-overlay" />
-        <Dialog.Content
+        <Dialog.Content onInteractOutside={preserveToastInteraction}
           className="dialog-content"
           onEscapeKeyDown={(event) => {
             if (busy) event.preventDefault();
@@ -149,7 +155,7 @@ export function RestartConfirmation({
             {requestedLabel}. Maklumat lama hanya dipadam selepas pertukaran
             disahkan.
           </Dialog.Description>
-          {error && <p role="alert">{error}</p>}
+          {error && <ToastNotice>{error}</ToastNotice>}
           <div className="dialog-actions">
             <Button
               variant="secondary"

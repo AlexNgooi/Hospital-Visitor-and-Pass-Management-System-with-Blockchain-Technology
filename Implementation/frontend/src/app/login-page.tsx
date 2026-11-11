@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type FormEvent } from "react";
+import { useState, type FormEvent } from "react";
 import {
   ArrowRight,
   Eye,
@@ -7,6 +7,7 @@ import {
   LockKeyhole,
 } from "lucide-react";
 import { Navigate, useNavigate } from "react-router-dom";
+import { ToastNotice } from "../components/ui/toast";
 import { Button, InputField } from "../components/ui/primitives";
 import { canonicalLogin } from "../lib/contracts";
 import { ClientError, safeError } from "../lib/errors";
@@ -24,15 +25,10 @@ export function LoginPage() {
   const [message, setMessage] = useState("");
   const [attempt, setAttempt] = useState(0);
   const [checkedSession, setCheckedSession] = useState(false);
-  const summary = useRef<HTMLDivElement>(null);
   const checking = auth.state.kind === "loading";
   const logoutUnresolved =
     auth.logoutState.kind === "pending" || auth.logoutState.kind === "unknown";
   const disabled = busy || checking || auth.mutationPending || logoutUnresolved;
-  useEffect(() => {
-    if (attempt && (message || Object.keys(errors).length))
-      summary.current?.focus();
-  }, [attempt, errors, message]);
   if (auth.state.kind === "authenticated")
     return (
       <Navigate
@@ -55,7 +51,10 @@ export function LoginPage() {
     if (!password) nextErrors.password = "Enter your password.";
     setErrors(nextErrors);
     setAttempt((value) => value + 1);
-    if (Object.keys(nextErrors).length || !login) return;
+    if (Object.keys(nextErrors).length || !login) {
+      requestAnimationFrame(() => document.getElementById(Object.keys(nextErrors)[0])?.focus());
+      return;
+    }
     setBusy(true);
     try {
       const user = await auth.login(login, password);
@@ -117,90 +116,16 @@ export function LoginPage() {
           </span>
           <h2>Welcome back</h2>
           <p className="login-intro">Sign in to your HSAAS workspace.</p>
-          {/* Keep concurrent session and form feedback together; field rules appear only beside their input. */}
-          <div className="login-feedback">
-            {auth.state.kind === "anonymous" && auth.state.expired && (
-              <p className="notice" role="status">
-                Your session has ended. Sign in again.
-              </p>
-            )}
-            {auth.state.kind === "error" && (
-              <div className="notice">
-                <p role="status">Unable to check your current session.</p>
-              </div>
-            )}
-            {checkedSession &&
-              auth.state.kind === "anonymous" &&
-              auth.logoutState.kind === "idle" && (
-                <p className="notice" role="status">
-                  No authorised staff session was found. You can sign in.
-                </p>
-              )}
-            {auth.logoutState.kind === "pending" && (
-              <p className="notice" role="status">
-                Signing out… Local staff access has been cleared.
-              </p>
-            )}
-            {auth.logoutState.kind === "unknown" && (
-              <div className="error-summary" role="alert">
-                <strong>Server sign-out could not be confirmed.</strong>
-                <p>
-                  Local staff access remains cleared. {auth.logoutState.message}
-                </p>
-                <Button
-                  variant="secondary"
-                  disabled={auth.mutationPending || checking}
-                  onClick={() => {
-                    void auth.logout().catch(() => {});
-                  }}
-                >
-                  Retry sign out
-                </Button>
-              </div>
-            )}
-            {auth.logoutState.kind === "confirmed" && (
-              <p className="notice" role="status">
-                Local staff access is cleared. Your staff session is no longer
-                authorised.
-              </p>
-            )}
-            {(message || Object.keys(errors).length > 0) && (
-              <div
-                className="error-summary"
-                role="alert"
-                aria-label="Please check your sign-in details"
-                tabIndex={-1}
-                ref={summary}
-              >
-                <strong>
-                  {message
-                    ? "Sign-in could not be completed"
-                    : "Check details:"}
-                </strong>
-                {message && <p>{message}</p>}
-                <ul>
-                  {Object.keys(errors).map((field) => (
-                    <li key={field}>
-                      <a
-                        href={`#${field}`}
-                        onClick={(event) => {
-                          event.preventDefault();
-                          document.getElementById(field)?.focus();
-                        }}
-                      >
-                        {field === "login" ? "Username" : "Password"}
-                      </a>
-                    </li>
-                  ))}
-                </ul>
-                {message && (
-                  <p className="field-hint">
-                    Check your current session before trying again.
-                  </p>
-                )}
-              </div>
-            )}
-          </div>
+          {/* Transient feedback is shared; invalid controls retain their accessible descriptions. */}
+          {auth.state.kind === "anonymous" && auth.state.expired && <ToastNotice tone="info">Your session has ended. Sign in again.</ToastNotice>}
+          {auth.state.kind === "error" && <ToastNotice>Unable to check your current session.</ToastNotice>}
+          {checkedSession && auth.state.kind === "anonymous" && auth.logoutState.kind === "idle" && <ToastNotice tone="info">No authorised staff session was found. You can sign in.</ToastNotice>}
+          {auth.logoutState.kind === "pending" && <ToastNotice tone="info">Signing out… Local staff access has been cleared.</ToastNotice>}
+          {auth.logoutState.kind === "unknown" && <ToastNotice title="Server sign-out could not be confirmed." action={<Button variant="secondary" disabled={auth.mutationPending || checking} onClick={() => { void auth.logout().catch(() => {}); }}>Retry sign out</Button>}>Local staff access remains cleared. {auth.logoutState.message}</ToastNotice>}
+          {auth.logoutState.kind === "confirmed" && <ToastNotice tone="success">Local staff access is cleared. Your staff session is no longer authorised.</ToastNotice>}
+          {(message || Object.keys(errors).length > 0) && <ToastNotice revision={attempt} title="Check your sign-in details">
+            {message || Object.values(errors).join(" ")}
+          </ToastNotice>}
           <form onSubmit={submit} noValidate aria-busy={busy}>
             <InputField
               id="login"

@@ -1,3 +1,4 @@
+import { ToastNotice } from "../../../components/ui/toast";
 import { useEffect, useRef, useState } from "react";
 import { Button } from "../../../components/ui/primitives";
 import { formatMyt } from "../../../lib/time";
@@ -53,7 +54,7 @@ export function ScanWorkflow({ admin, counterId, purpose, targetId, category, co
   return <section className="lc-scan" aria-label="Synthetic reader">
     <h3>SIMULATED reader · {purpose.toLowerCase()}</h3>
     <p className="muted">Counter {counterId}. Select a server-defined sample; UID, profile and category come from the adapter. Scan validity: 120 seconds.</p>
-    {sampleError && <p role="alert">{sampleError} <Button variant="secondary" onClick={() => { setSampleError(""); setReload(v => v + 1); }}>Reload samples</Button></p>}
+    {sampleError && <ToastNotice action={<Button variant="secondary" onClick={() => { setSampleError(""); setReload(v => v + 1); }}>Reload samples</Button>}>{sampleError}</ToastNotice>}
     <div className="lc-row">
       <label className="lc-field">Synthetic sample<select value={sample} disabled={blocked || Boolean(job?.status === "SUCCEEDED")} onChange={event => setSample(event.target.value)}>
         <option value="">Choose a sample</option>{samples.filter(value => !category || value.categoryCode === category).map(value => <option key={value.sampleCode} value={value.sampleCode}>{value.label}</option>)}
@@ -69,7 +70,7 @@ export function ScanWorkflow({ admin, counterId, purpose, targetId, category, co
       {job && ["CONSUMED", "CANCELLED", "EXPIRED"].includes(job.status) && <Button disabled={blocked} variant="secondary" onClick={() => { setJob(null); setJobId(null); onEvidence(null); onActive(false); }}>Prepare another scan</Button>}
     </div>
     {job && <p role="status">{job.status} · {remaining > 0 ? `${remaining}s remaining` : "expired or finished"} · expires {formatMyt(job.expiresAt)} MYT{job.sampleCode ? ` · ${job.sampleCode}` : ""}</p>}
-    {error && <p className="lc-error" role="alert">{error}</p>}
+    {error && <ToastNotice>{error}</ToastNotice>}
     <p className="lc-caption">After leaving this page, an unfinished scan may keep this reader busy until its two-minute expiry. No physical reader or external service is used.</p>
   </section>;
 }

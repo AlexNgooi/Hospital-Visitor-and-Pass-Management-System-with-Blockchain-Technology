@@ -6,3 +6,10 @@
 - **验证命令**：在本目录执行 `pnpm run build`、`pnpm run lint`、`pnpm run typecheck:test`、`pnpm test`、`pnpm run test:proxy`；proxy 测试使用显式 synthetic HTTP fixture，不是后端业务验收。开发启动执行 `pnpm run dev`，以终端显示的地址访问；只使用 pnpm 管理依赖。
 - **共享接入**：本模块唯一维护入口/router/CSS/依赖/client/generated/proxy；后续模块按 README 的 FeatureSlot、useAuth、useCounterScope 与 memory entryVault 契约接入，跨模块决定由 coordinator 管理，不直接改共享入口。所有新写/修改代码有英文注释。
 - **人工检查**：按阶段核对四类别、权限、loading/error 与 UI v4；批准不提前承诺 Pass ID；客户端资源和环境变量不包含数据库密码、私钥或真实 PII。
+
+## 2026-11-11 UI feedback and account selection
+
+- Card enrollment uses a controlled Radix modal with visible code/category/destination fields, cancellation, initial input focus and pending/UNKNOWN close guards. Recovery keeps the original command inside the modal's focus boundary.
+- `components/ui/toast.tsx` owns transient error/success/info feedback, native form-validation feedback and a shared live viewport above dialogs. Toasts expire after 5 seconds (success) or 9 seconds (error/info), pause while being read, and allow dismissal. Recovery controls and required business records remain in their pages. Invalid fields retain accessible descriptions; input values and backend error bodies never become toast text.
+- Staff accounts default to the signed-in administrator. A dropdown selects an account's details, role permissions and explicit counter grants; existing account editing and counter-access commands retain server-side version and revocation checks.
+- Build/lint passed on this branch. Test-source typechecking fails in the unchanged registration fixtures (old schema literal and missing patient projection). Application, browser, business and database checks remain user-run / NOT_RUN.

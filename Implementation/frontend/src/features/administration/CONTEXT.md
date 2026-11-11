@@ -1,5 +1,9 @@
 # M06 frontend administration
 
+## 2026-11-11 account browsing and toast feedback
+
+Staff accounts show the signed-in administrator first, using a labelled dropdown to inspect other accounts individually. Detail panels show the server-projected login, role/status, role responsibilities and counter grants, including revoked/inactive/unavailable access. Selection is reset on actor change; edits and counter grants retain existing reason, version, last-admin and session-revocation behavior. Async save/export/read errors and results use the shared toast; recovery buttons and stale-data labels remain available after dismissal. Save feedback survives version refresh of a deadline editor. Browser/UAT remains NOT_RUN.
+
 - Inputs: UI v4 A05-A12/X04-X06, planning/03 A/D and planning/14 C18-C20; feature-local runtime DTO schemas.
 - Output: administrationFeatures contains /admin/users, /admin/settings, /admin/reports, /admin/audit; coordinator owns main.tsx composition. No shell/router/client/generated/dependency edits.
 - Behavior: ADMIN roles and explicit counter grants; reason-required versioned reference/return-rule forms; local-only audit; real report dates/category/ward filters with five-second polling, serverUpdatedAt and visible stale/error. Dates are MYT regardless of browser timezone. Poll requests do not overlap and abort on unmount/query changes. Failed reads never synthesize zeros; 401/403 clear old protected data.

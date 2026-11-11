@@ -6,6 +6,7 @@ import "@fontsource/geist/latin-500.css";
 import "@fontsource/geist/latin-600.css";
 import "./index.css";
 import App from "./App.tsx";
+import { ToastProvider } from "./components/ui/toast";
 import "./app/entry";
 import { registrationFeatures } from "./features/registration";
 import { counterReviewFeatures } from "./features/counter/review";
@@ -28,7 +29,7 @@ const applicationFeatures = [
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
     <BrowserRouter>
-      <App features={applicationFeatures} />
+      <ToastProvider><App features={applicationFeatures} /></ToastProvider>
     </BrowserRouter>
   </StrictMode>,
 );

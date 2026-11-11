@@ -1,3 +1,4 @@
+import { ToastNotice } from "../../components/ui/toast";
 import { useEffect, useRef, useState } from "react";
 import QRCode from "qrcode";
 import { Copy, QrCode, ShieldCheck, WifiOff } from "lucide-react";
@@ -143,12 +144,12 @@ export function RegistrationQrDisplay({ port = qrPort }: { port?: QrPort }) {
       <div className="qr-toolbar"><span className="qr-counter">Counter {counter ?? "not selected"}</span><span className="qr-category">All categories</span>
         {!display && !revocation && <Button busy={busy} disabled={!enabled || !counter} onClick={() => void create()}>Display registration QR</Button>}
       </div>
-      {display && display.counter !== counter && <p className="qr-notice" role="status">The live display belongs to counter {display.counter}. Revoke it before starting a display for the selected counter.</p>}
+      {display && display.counter !== counter && <ToastNotice tone="info">The live display belongs to counter {display.counter}. Revoke it before starting a display for the selected counter.</ToastNotice>}
       <div className="qr-display-layout">
-        {revocation ? <section className="qr-revocation" role={revocation.status === "unknown" ? "alert" : "status"} aria-busy={revocation.status === "pending"}>
+        {revocation ? <section className="qr-revocation" aria-label="Display revocation recovery" aria-busy={revocation.status === "pending"}>
           {/* Recovery replaces the empty QR card so its original-source action stays near the heading. */}
           <h2>{revocation.status === "pending" ? "Revoking the original display" : "Display revocation is unconfirmed"}</h2>
-          <p>Original counter {revocation.counter}</p><p>{message || "The original code remains hidden while the server confirms revocation."}</p>
+          <p>Original counter {revocation.counter}</p><ToastNotice tone={revocation.status === "pending" ? "info" : "error"}>{message || "The original code remains hidden while the server confirms revocation."}</ToastNotice>
           {revocation.status === "unknown" && <Button variant="secondary" busy={busy} onClick={() => void revoke()}>Retry revoke</Button>}
         </section> : <div className="qr-display-card" ref={panel}>
           <div className="qr-display-heading"><QrCode size={20} aria-hidden="true" /><h2>Scan or copy link / Imbas atau salin pautan</h2></div>
@@ -161,11 +162,11 @@ export function RegistrationQrDisplay({ port = qrPort }: { port?: QrPort }) {
             {visible && <Button variant="ghost" onClick={() => void panel.current?.requestFullscreen?.()}>Full screen</Button>}
             <Button variant="secondary" busy={busy} onClick={() => void revoke()}>Revoke display</Button>
           </div>}
-          {visible && copyResult?.source === value && <p role="status" className="qr-copy-status">{copyResult.message}</p>}
+          {visible && copyResult?.source === value && <ToastNotice tone="info">{copyResult.message}</ToastNotice>}
           {visible && manualLink === value && <label className="qr-manual-link">Current registration link
             <input readOnly value={value.current.entryUrl} onFocus={event => event.target.select()} />
           </label>}
-          {message && !revocation && <p role="status" className="qr-notice">{message}</p>}
+          {message && !revocation && <ToastNotice>{message}</ToastNotice>}
           {enabled === null && message && <Button variant="secondary" onClick={() => {
             // Retry only the read-only availability probe; never replay an uncertain create or revoke command.
             setMessage(""); setCapabilityAttempt(value => value + 1);

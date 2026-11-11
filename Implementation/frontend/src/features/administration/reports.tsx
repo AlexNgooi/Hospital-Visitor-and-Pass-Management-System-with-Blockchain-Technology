@@ -1,3 +1,4 @@
+import { ToastNotice } from "../../components/ui/toast";
 import { useRef, useState } from "react";
 import { Button, InputField } from "../../components/ui/primitives";
 import { apiClient } from "../../lib/api-client";
@@ -32,6 +33,7 @@ function ReportResults({ query }: { query: string }) {
   const remote = useRemote(`/api/admin/reports?${query}`, reportSchema, 5000);
   const [exporting, setExporting] = useState(false), [exportMessage, setExportMessage] = useState("");
   const exportLock = useRef(false);
+  const [exportTone, setExportTone] = useState<"success" | "error">("success");
   /** One deliberate export at a time prevents duplicate audit writes before React renders the disabled button. */
   async function download(passes = false) {
     if (exportLock.current) return;
@@ -41,14 +43,14 @@ function ReportResults({ query }: { query: string }) {
       // Blob URLs are short lived and never written to persistent browser storage.
       const url = URL.createObjectURL(new Blob([result.csv], { type: "text/csv;charset=utf-8" }));
       const link = document.createElement("a"); link.href = url; link.download = result.filename; document.body.append(link); link.click(); link.remove(); window.setTimeout(() => URL.revokeObjectURL(url), 1000);
-      setExportMessage(`Exported ${result.rowCount} ${passes ? "pass history rows" : "masked registrations"}. Local audit recorded.`);
-    } catch (error) { setExportMessage(error instanceof ClientError && error.code === "EXPORT_TOO_LARGE" ? "Export exceeds the row or size limit. Narrow the date range or filters." : `${safeError(error)} An uncertain download may still have a local export audit. No automatic retry was sent.`); }
+      setExportTone("success"); setExportMessage(`Exported ${result.rowCount} ${passes ? "pass history rows" : "masked registrations"}. Local audit recorded.`);
+    } catch (error) { setExportTone("error"); setExportMessage(error instanceof ClientError && error.code === "EXPORT_TOO_LARGE" ? "Export exceeds the row or size limit. Narrow the date range or filters." : `${safeError(error)} An uncertain download may still have a local export audit. No automatic retry was sent.`); }
     finally { exportLock.current = false; setExporting(false); }
   }
   return <><LoadNotice busy={remote.busy && !remote.data} error={remote.error} reload={remote.reload} />
     {remote.data && <><div className={`admin-notice${remote.stale ? " admin-stale" : ""}`} role="status">{remote.stale ? "STALE · last successful data" : "Current query completed"} · server updated {formatMyt(remote.data.serverUpdatedAt)} · {remote.data.origin}<Button variant="secondary" disabled={remote.busy} onClick={remote.reload}>Refresh now</Button></div>
       <ReportMetrics report={remote.data} />
-      {exportMessage && <p role="status" className="admin-notice">{exportMessage}</p>}
+      {exportMessage && <ToastNotice tone={exportTone}>{exportMessage}</ToastNotice>}
       <section className="admin-card"><div className="admin-heading"><div><h2>Pass issue & return history</h2><p>First 50 passes issued, actually returned or closed lost in the selected MYT period. Each pass appears once, even when several events fall in the period.</p></div><Button busy={exporting} disabled={remote.stale || remote.busy} onClick={() => { void download(true); }}>Export pass history CSV</Button></div>
         <p>Issue = in; actual return = out. These are staff handover records. Lost closures keep a separate closure date and have no actual return. Exports contain pass metadata and staff IDs with no visitor or patient details. Limit: 10,000 rows and a bounded 1 MiB response.</p><PassHistory report={remote.data} /></section>
       <section className="admin-card"><div className="admin-heading"><div><h2>Masked registration preview</h2><p>{remote.data.from} to {remote.data.to}, inclusive MYT · first 50 registrations</p></div><Button busy={exporting} disabled={remote.stale || remote.busy} onClick={() => { void download(); }}>Export masked CSV</Button></div><p>Export includes registration metadata only; visitor labels are fully masked. Up to 10,000 rows, within a 1 MiB response limit per export.</p>

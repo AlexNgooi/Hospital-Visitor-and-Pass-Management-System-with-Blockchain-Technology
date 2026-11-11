@@ -1,3 +1,4 @@
+import { ToastNotice } from "../../components/ui/toast";
 import { Button } from "../../components/ui/primitives";
 import { safeError } from "../../lib/errors";
 import { reasons, type Reason } from "./contracts";
@@ -8,5 +9,5 @@ export function ReasonSelect({ value, onChange }: { value: Reason; onChange: (va
 }
 /** Errors are announced and retain an explicit retry action without fabricated empty data. */
 export function LoadNotice({ busy, error, reload }: { busy: boolean; error: unknown; reload: () => void }) {
-  return <>{busy && <p role="status">Loading current data…</p>}{Boolean(error) && <div className="admin-notice" role="alert">{safeError(error)} <Button variant="secondary" onClick={reload}>Refresh</Button></div>}</>;
+  return <>{busy && <p role="status">Loading current data…</p>}{Boolean(error) && <ToastNotice action={<Button variant="secondary" onClick={reload}>Refresh</Button>}>{safeError(error)}</ToastNotice>}</>;
 }

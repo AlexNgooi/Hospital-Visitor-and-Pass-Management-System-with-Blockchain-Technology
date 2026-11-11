@@ -1,6 +1,10 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState, type FormEvent } from "react";
+import * as Dialog from "@radix-ui/react-dialog";
+import { X } from "lucide-react";
 import { useAuth } from "../../../app/auth-context";
 import { Button, StatusPanel } from "../../../components/ui/primitives";
+import { ToastNotice } from "../../../components/ui/toast";
+import { preserveToastInteraction } from "../../../components/ui/dialog-feedback";
 import { formatMyt } from "../../../lib/time";
 import { lifecycleApi } from "./client";
 import { lifecycleAccessLost, lifecycleError, useLifecycleCommands } from "./commands";
@@ -32,10 +36,19 @@ function InventoryWorkspace({ recheck }: { recheck: () => void }) {
   const [busy, setBusy] = useState(false);
   const [denied, setDenied] = useState(false);
   const [error, setError] = useState("");
+  const [enrollError, setEnrollError] = useState("");
+  const [enrollAttempt, setEnrollAttempt] = useState(0);
+  const enrollTrigger = useRef<HTMLButtonElement>(null);
+  const codeInput = useRef<HTMLInputElement>(null);
+  const restoreEnrollFocus = useRef(false);
   const alive = useRef(true); const generation = useRef(0); const historyGeneration = useRef(0);
-  const deny = useCallback(() => { setDenied(true); setData(null); setSelected(null); setHistory(null); setReferences(null); }, []);
+  const deny = useCallback(() => { setDenied(true); setEnrolling(false); setCardCode(""); setData(null); setSelected(null); setHistory(null); setReferences(null); }, []);
   const commands = useLifecycleCommands(deny);
   const blocked = denied || commands.locked || busy;
+  useEffect(() => {
+    // A successful save refreshes inventory before its trigger becomes focusable again.
+    if (restoreEnrollFocus.current && !blocked && !enrolling) { enrollTrigger.current?.focus(); restoreEnrollFocus.current = false; }
+  }, [blocked, enrolling]);
   const reset = () => { historyGeneration.current++; setSelected(null); setEnrolling(false); setHistory(null); setReason(""); setRecovered(false); setChecked(false); };
   const refresh = useCallback(async () => {
     const seq = ++generation.current; setBusy(true); setError("");
@@ -61,29 +74,56 @@ function InventoryWorkspace({ recheck }: { recheck: () => void }) {
     catch (error) { if (alive.current && seq === historyGeneration.current) { setError(lifecycleError(error)); if (lifecycleAccessLost(error)) deny(); } }
   }
   const restore = selected && ["LOST", "DISABLED"].includes(selected.status);
+  /** Validate locally and retain the exact submitted command when its outcome is unknown. */
+  function enroll(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (blocked) return;
+    setEnrollAttempt(value => value + 1);
+    if (!/^[A-Za-z0-9_-]{1,64}$/.test(cardCode)) {
+      setEnrollError("Enter a unique pass code using 1–64 letters, digits, hyphens or underscores.");
+      codeInput.current?.focus(); return;
+    }
+    if (!references?.categories.some(item => item.code === categoryCode) || !references.destinations.some(item => item.id === destinationId)) {
+      setEnrollError("Select an available category and compatible destination."); return;
+    }
+    setEnrollError("");
+    commands.submit(lifecycleApi.enroll(cardCode, categoryCode, destinationId), "Card enrollment", () => { setCardCode(""); done(); });
+  }
   return <div className="lc-workspace">
     <header className="lc-header"><div><p className="lc-eyebrow">ADMINISTRATION</p><h1>Card inventory</h1><p className="muted">Enroll visible pass codes and manage local inventory using synthetic demonstration data.</p></div><Button variant="secondary" busy={busy} disabled={commands.locked || denied} onClick={() => void refresh()}>Refresh inventory</Button></header>
-    <SimulationNotice />{commands.notice}
+    <SimulationNotice />{commands.notice}{!enrolling && commands.recovery}
     {denied && <StatusPanel kind="error" title="Current access must be rechecked" action={<Button onClick={recheck}>Recheck session</Button>}>Inventory and selections have been cleared.</StatusPanel>}
-    {error && <p className="lc-error" role="alert">{error}</p>}
-    <section className="lc-panel"><div className="lc-header"><h2>Card stock</h2><Button disabled={blocked} onClick={() => { reset(); setEnrolling(true); }}>Enroll a card</Button></div>
+    {error && <ToastNotice>{error}</ToastNotice>}
+    <section className="lc-panel"><div className="lc-header"><h2>Card stock</h2><Button ref={enrollTrigger} disabled={blocked || !references} onClick={() => { reset(); setCardCode(""); setEnrollError(""); setEnrolling(true); }}>Enroll a card</Button></div>
       {data && <><p className="lc-caption">Updated {formatMyt(data.serverNow)} MYT · UID is masked</p><div className="lc-table"><table><thead><tr><th>Card</th><th>Destination / method</th><th>Category</th><th>Status</th><th>Action</th></tr></thead><tbody>
         {data.items.map(card => <tr key={card.id}><td>{card.cardCode}</td><td>{card.destinationLabel ?? "Legacy stock"} · {card.enrollmentMethod} / {card.source}</td><td>{card.categoryCode}</td><td><span className={`lc-badge lc-${card.status.toLowerCase()}`}>{card.status}</span></td><td><Button variant="secondary" disabled={blocked} onClick={() => void open(card)}>Open card</Button></td></tr>)}
       </tbody></table></div>{data.items.length === 0 && <p>No cards enrolled. Enter a unique visible pass code to create inventory.</p>}<Pager page={page} total={data.total} disabled={blocked} change={setPage} /></>}
     </section>
-    {(enrolling || restore) && <section className="lc-panel"><h2>{enrolling ? "Enroll manual inventory" : `Manual recovery · ${selected!.cardCode}`}</h2>
-      {enrolling ? <>
-        <label className="lc-field">Visible pass code<input value={cardCode} maxLength={64} disabled={blocked} onChange={event => setCardCode(event.target.value)} aria-describedby="pass-code-help" /></label>
+    <Dialog.Root open={enrolling} onOpenChange={next => { if (!next && !commands.locked) { setEnrolling(false); setCardCode(""); setEnrollError(""); } }}>
+      <Dialog.Portal><Dialog.Overlay className="dialog-overlay" />
+        <Dialog.Content onInteractOutside={preserveToastInteraction} className="dialog-content lc-enroll-dialog" onOpenAutoFocus={event => { event.preventDefault(); codeInput.current?.focus(); }}
+          onCloseAutoFocus={event => { event.preventDefault(); restoreEnrollFocus.current = true; if (!enrollTrigger.current?.disabled) { enrollTrigger.current?.focus(); restoreEnrollFocus.current = false; } }}
+          onEscapeKeyDown={event => { if (commands.locked) event.preventDefault(); }}
+          onPointerDownOutside={event => { if (commands.locked) event.preventDefault(); }}>
+          <div className="lc-header"><Dialog.Title>Enroll a card</Dialog.Title><Dialog.Close asChild><Button variant="ghost" disabled={commands.locked} aria-label="Close enrollment"><X size={20} aria-hidden="true" /></Button></Dialog.Close></div>
+          <Dialog.Description>Add the printed pass code, category and destination to card inventory.</Dialog.Description>
+          {enrollError && <ToastNotice revision={enrollAttempt}>{enrollError}</ToastNotice>}
+          <form className="lc-enroll-form" onSubmit={enroll} noValidate aria-busy={commands.pending}>
+        <label className="lc-field">Visible pass code<input ref={codeInput} value={cardCode} maxLength={64} disabled={blocked} required autoComplete="off" spellCheck={false} aria-invalid={Boolean(enrollError)} onChange={event => { setCardCode(event.target.value); setEnrollError(""); }} aria-describedby="pass-code-help" /></label>
         <p id="pass-code-help" className="muted">Use a unique code printed on the card: letters, digits, hyphen or underscore. No UID/profile or enrollment scan is required.</p>
         <label className="lc-field">Category<select value={categoryCode} disabled={blocked} onChange={event => setCategoryCode(event.target.value)}>{references?.categories.map(category => <option key={category.id} value={category.code}>{category.label}</option>)}</select></label>
         <label className="lc-field">Compatible destination<select value={destinationId} disabled={blocked} onChange={event => setDestinationId(event.target.value)}>{references?.destinations.map(destination => <option key={destination.id} value={destination.id}>{destination.label}</option>)}</select></label>
-        <Button disabled={blocked || !/^[A-Za-z0-9_-]{1,64}$/.test(cardCode) || !categoryCode || !destinationId} onClick={() => commands.submit(lifecycleApi.enroll(cardCode, categoryCode, destinationId), "Manual inventory enrollment", () => { setCardCode(""); done(); })}>Register manual card</Button>
-      </> : <>
+        {commands.recovery}
+        <div className="dialog-actions"><Dialog.Close asChild><Button variant="secondary" disabled={commands.locked}>Cancel</Button></Dialog.Close><Button type="submit" busy={commands.pending} disabled={blocked}>Register manual card</Button></div>
+          </form>
+        </Dialog.Content>
+      </Dialog.Portal>
+    </Dialog.Root>
+    {restore && <section className="lc-panel"><h2>Manual recovery · {selected!.cardCode}</h2>
         <p className="lc-mode">Demonstration recovery policy: confirm the same visible card is in custody and safe for inventory reuse. Its old lost assignment stays closed and has no actual return time.</p>
         <label className="lc-check"><input type="checkbox" disabled={blocked} checked={recovered} onChange={event => setRecovered(event.target.checked)} />I confirm this card was physically recovered.</label>
         <label className="lc-check"><input type="checkbox" disabled={blocked} checked={checked} onChange={event => setChecked(event.target.checked)} />I confirm the visible pass code and inventory checks before reuse.</label>
         <Button disabled={blocked || !recovered || !checked} onClick={() => commands.submit(lifecycleApi.inventoryAction(selected!.id, "restore", { expectedVersion: selected!.version, physicalFoundConfirmed: true, inventoryCheckedConfirmed: true, reasonCode: "DEMO_RECOVERED_AND_CHECKED" }), "Manual restoration", done)}>Restore card to AVAILABLE</Button>
-      </>}
     </section>}
     {selected && !restore && <section className="lc-panel"><h2>{selected.cardCode}</h2><p>{selected.categoryCode} · {selected.status} · version {selected.version}</p><p className="muted">Marking an issued or overdue card lost closes its active assignment and opens an unresolved lost case. A disabled card must first be AVAILABLE.</p>
       <label className="lc-field">Required safe reason<select value={reason} disabled={blocked} onChange={event => setReason(event.target.value)}><option value="">Choose a reason</option><option value="REPORTED_LOST">Reported lost</option><option value="MISSING_DURING_CHECK">Missing during inventory check</option>{selected.status === "AVAILABLE" && <><option value="DAMAGED">Damaged</option><option value="REMOVED_FROM_SERVICE">Removed from service</option></>}</select></label>

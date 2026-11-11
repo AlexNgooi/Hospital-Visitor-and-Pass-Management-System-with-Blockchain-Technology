@@ -1,6 +1,8 @@
+import { ToastNotice } from "../../../components/ui/toast";
+import { preserveToastInteraction } from "../../../components/ui/dialog-feedback";
 import { useCallback, useEffect, useRef, useState } from "react";
 import * as Dialog from "@radix-ui/react-dialog";
-import { CheckCircle2, ClipboardCheck, RefreshCw, ShieldCheck } from "lucide-react";
+import { ClipboardCheck, RefreshCw, ShieldCheck } from "lucide-react";
 import { useAuth } from "../../../app/auth-context";
 import { useCounterScope } from "../../../app/counter-context";
 import { Button, StatusPanel } from "../../../components/ui/primitives";
@@ -63,8 +65,6 @@ function ReviewWorkspace({ counterId, port, recheckSession, authority }: { count
   const writeLock = useRef(false);
   const accessLostRef = useRef(false);
   const detailHeading = useRef<HTMLHeadingElement | null>(null);
-  const rejectionSummary = useRef<HTMLParagraphElement | null>(null);
-  const commandNoticeRef = useRef<HTMLDivElement | null>(null);
   const [revealed, setRevealed] = useState<ReviewFields | null>(null);
   const [revealBusy, setRevealBusy] = useState(false), [revealError, setRevealError] = useState("");
   const revealGeneration = useRef(0), revealAbort = useRef<AbortController | null>(null);
@@ -218,8 +218,8 @@ function ReviewWorkspace({ counterId, port, recheckSession, authority }: { count
       }
       requestAnimationFrame(() => {
         if (alive.current) {
-          commandNoticeRef.current?.focus({ preventScroll: true });
-          commandNoticeRef.current?.scrollIntoView?.({ block: "start" });
+          // Toasts announce errors without stealing focus from the active form.
+          if (rejectOpen) document.getElementById("review-reason")?.focus();
         }
       });
     } finally { writeLock.current = false; }
@@ -237,7 +237,7 @@ function ReviewWorkspace({ counterId, port, recheckSession, authority }: { count
   }
   function reject() {
     if (!editable || !detail || writeLock.current) return;
-    if (!reason) { setReasonError(true); requestAnimationFrame(() => rejectionSummary.current?.focus()); return; }
+    if (!reason) { setReasonError(true); requestAnimationFrame(() => document.getElementById("review-reason")?.focus()); return; }
     try { void run({ kind: "pending", command: port.reject(detail.id, { expectedVersion: detail.version, reasonCode: reason }), id: detail.id, reference: detail.publicReference, version: detail.version, action: "reject" }); }
     catch { setCommandError("Select a valid rejection reason."); }
   }
@@ -263,9 +263,8 @@ function ReviewWorkspace({ counterId, port, recheckSession, authority }: { count
       <p className="muted">Verify the visitor, then approve or reject the registration.</p></div>
       <span className="review-capability"><ShieldCheck size={18} aria-hidden="true" />Local audit · Messages not enabled</span></header>
     <p className="review-boundary">Approval does not issue a card, create a Pass ID, set a return deadline, or send a message.</p>
-    {mutation.kind === "success" && <div className="review-notice review-success" role="status"><CheckCircle2 size={20} aria-hidden="true" />
-      <span>{statusLabels[mutation.result.status]} registration {mutation.result.reference}. No card or message was created.</span></div>}
-    {commandNotice && !rejectOpen && <div ref={commandNoticeRef} tabIndex={-1} className="review-notice review-warning" role="alert"><p>{commandNotice}</p>{unknownActions}</div>}
+    {mutation.kind === "success" && <ToastNotice tone="success">{statusLabels[mutation.result.status]} registration {mutation.result.reference}. No card or message was created.</ToastNotice>}
+    {commandNotice && !rejectOpen && <ToastNotice action={unknownActions}>{commandNotice}</ToastNotice>}
     <div className="review-grid">
       <section className="review-queue" aria-labelledby="review-queue-title">
         <div className="review-section-heading"><h2 id="review-queue-title">Registration queue</h2><Button variant="ghost" aria-label="Refresh queue" onClick={() => void loadQueue()} busy={queueBusy}><RefreshCw size={18} aria-hidden="true" /></Button></div>
@@ -273,7 +272,7 @@ function ReviewWorkspace({ counterId, port, recheckSession, authority }: { count
           <option value="ALL">All categories</option>{Object.entries(categoryLabels).map(([code, label]) => <option key={code} value={code}>{label}</option>)}</select></label>
           <label htmlFor="review-status">Status<select id="review-status" value={status} disabled={locked} onChange={(event) => { clearSelection(); setStatus(event.target.value as Status | "ALL"); setPage(0); }}>
             <option value="ALL">All statuses</option>{Object.entries(statusLabels).map(([code, label]) => <option key={code} value={code}>{label}</option>)}</select></label></div>
-        {Boolean(queueError) && <div className="review-notice review-warning" role="alert"><p>{safeError(queueError)}</p><p>Queue data may be stale. Review actions are paused until a fresh read succeeds.</p></div>}
+        {Boolean(queueError) && <ToastNotice><p>{safeError(queueError)}</p><p>Queue data may be stale. Review actions are paused until a fresh read succeeds.</p></ToastNotice>}
         {!queue && queueBusy ? <StatusPanel kind="loading" title="Loading registrations">Reading authorized counter records.</StatusPanel>
           : !queue ? <StatusPanel kind="error" title="Queue unavailable">Use Refresh queue to try again.</StatusPanel>
           : queue.items.length === 0 ? <StatusPanel kind="empty" title="No registrations in this view">Try another category or status.</StatusPanel>
@@ -303,14 +302,14 @@ function ReviewWorkspace({ counterId, port, recheckSession, authority }: { count
               <p className="muted">Reveal registration fields only when needed for your counter review. Access is recorded in the local audit.</p>
               <div className="review-actions"><Button variant="secondary" busy={revealBusy} disabled={locked || staleDetail || conflict || Boolean(queueError)} onClick={() => void revealFields()}>Reveal fields for staff comparison</Button>
                 {revealed && <Button variant="ghost" onClick={clearReveal}>Hide fields</Button>}</div>
-              {revealError && <p className="review-notice review-warning" role="alert">{revealError}</p>}
+              {revealError && <ToastNotice>{revealError}</ToastNotice>}
               {revealed && !staleDetail && !conflict && !queueError && revealed.id === detail.id && revealed.version === detail.version && <>
                 <p className="muted">Schema: {revealed.fieldSchemaVersion}</p>
                 <dl className="review-facts">{revealed.fields.map(field => <div key={field.name}><dt>{field.label}</dt><dd>{field.value}</dd></div>)}</dl>
                 {revealed.terms && <p>Pass terms: {revealed.terms.policyVersion} · {formatMyt(revealed.terms.capturedAt)} MYT</p>}
               </>}
             </section>}
-            {(staleDetail || conflict) && <p className="review-notice review-warning" role="alert">This record changed. Refresh the detail and complete the checks again.</p>}
+            {(staleDetail || conflict) && <ToastNotice>This record changed. Refresh the detail and complete the checks again.</ToastNotice>}
             {detail.review && <div className="review-history"><h3>Review record</h3><p>Staff {detail.review.actorId} · {formatMyt(detail.review.reviewedAt)} MYT</p>
               <p>{detail.review.source === "SYNTHETIC_MANUAL" ? "Synthetic staff verification" : "Local review"}</p>{detail.review.reasonCode && <p>{reasonLabels[detail.review.reasonCode]}</p>}</div>}
             {detail.status === "SUBMITTED" && <>
@@ -323,14 +322,14 @@ function ReviewWorkspace({ counterId, port, recheckSession, authority }: { count
               <div className="review-actions"><Button busy={mutation.kind === "pending" && mutation.action === "verify"} disabled={!approveReady} onClick={approve}>Approve registration</Button>
                 <Dialog.Root open={rejectOpen} onOpenChange={(next) => { if (mutation.kind !== "pending") { setRejectOpen(next); setReasonError(false); } }}>
                   <Dialog.Trigger asChild><Button variant="secondary" disabled={!editable}>Reject registration</Button></Dialog.Trigger>
-                  <Dialog.Portal><Dialog.Overlay className="dialog-overlay" /><Dialog.Content className="dialog-content review-reject-dialog"
+                  <Dialog.Portal><Dialog.Overlay className="dialog-overlay" /><Dialog.Content onInteractOutside={preserveToastInteraction} className="dialog-content review-reject-dialog"
                     onEscapeKeyDown={(event) => { if (mutation.kind === "pending") event.preventDefault(); }} onPointerDownOutside={(event) => { if (mutation.kind === "pending") event.preventDefault(); }}>
                     <Dialog.Title>Reject registration</Dialog.Title><Dialog.Description>Select a reason for {detail.publicReference}. Rejection does not send a message.</Dialog.Description>
-                    {reasonError && <p ref={rejectionSummary} tabIndex={-1} className="review-notice review-warning" role="alert">Choose a rejection reason. <a href="#review-reason">Go to reason</a></p>}
+                    {reasonError && <ToastNotice>Choose a rejection reason.</ToastNotice>}
                     <label className="review-reason" htmlFor="review-reason">Rejection reason<select id="review-reason" value={reason} disabled={locked} aria-invalid={reasonError} aria-describedby={reasonError ? "review-reason-error" : undefined} onChange={(event) => { setReason(event.target.value as Reason | ""); setReasonError(false); }}>
                       <option value="">Choose a reason</option>{Object.entries(reasonLabels).filter(([code]) => penjaga || code !== "MRN_WARD_NOT_CONFIRMED").map(([code, label]) => <option key={code} value={code}>{label}</option>)}</select></label>
-                    {reasonError && <p id="review-reason-error" className="field-error">A reason is required.</p>}
-                    {commandNotice && <div ref={commandNoticeRef} tabIndex={-1} className="review-notice review-warning" role="alert">{commandNotice}</div>}{unknownActions}
+                    {reasonError && <p id="review-reason-error" className="feedback-sr-only">A reason is required.</p>}
+                    {commandNotice && <ToastNotice>{commandNotice}</ToastNotice>}{unknownActions}
                     <div className="dialog-actions"><Dialog.Close asChild><Button variant="secondary" disabled={mutation.kind === "pending"}>Cancel</Button></Dialog.Close><Button busy={mutation.kind === "pending" && mutation.action === "reject"} disabled={!editable} onClick={reject}>Confirm rejection</Button></div>
                   </Dialog.Content></Dialog.Portal>
                 </Dialog.Root></div>

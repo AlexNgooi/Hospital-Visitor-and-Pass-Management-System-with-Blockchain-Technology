@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import type { Command } from "../../../lib/api-client";
 import { ClientError, safeError } from "../../../lib/errors";
 import { Button } from "../../../components/ui/primitives";
+import { ToastNotice } from "../../../components/ui/toast";
 
 type Pending = { execute: () => Promise<unknown>; success: (value: unknown) => void; label: string; unknown: boolean };
 
@@ -9,6 +10,7 @@ type Pending = { execute: () => Promise<unknown>; success: (value: unknown) => v
 export function useLifecycleCommands(deny: () => void) {
   const [state, setState] = useState<"idle" | "pending" | "unknown">("idle");
   const [message, setMessage] = useState("");
+  const [noticeTone, setNoticeTone] = useState<"info" | "success" | "error">("info");
   const pending = useRef<Pending | null>(null);
   const inFlight = useRef(false);
   const alive = useRef(true);
@@ -20,14 +22,14 @@ export function useLifecycleCommands(deny: () => void) {
     try {
       const result = await value.execute();
       if (!alive.current) return;
-      pending.current = null; setState("idle"); setMessage(`${value.label} confirmed.`); value.success(result);
+      pending.current = null; setState("idle"); setNoticeTone("success"); setMessage(`${value.label} confirmed.`); value.success(result);
     } catch (error) {
       if (!alive.current) return;
       const uncertain = value.unknown || !(error instanceof ClientError) || error.kind !== "api" || (error.status ?? 0) >= 500;
       const accessLost = lifecycleAccessLost(error);
       if (uncertain) { value.unknown = true; pending.current = value; setState("unknown"); }
       else { pending.current = null; setState("idle"); }
-      setMessage(uncertain ? "Result unknown. Keep this page and retry only the original command; do not create another operation." : lifecycleError(error));
+      setNoticeTone("error"); setMessage(uncertain ? "Result unknown. Keep this page and retry only the original command; do not create another operation." : lifecycleError(error));
       if (accessLost) deny();
     } finally { inFlight.current = false; }
   }
@@ -36,10 +38,10 @@ export function useLifecycleCommands(deny: () => void) {
     const value: Pending = { execute: () => command.execute(), success: result => success(result as T), label, unknown: false };
     pending.current = value; void execute(value);
   }
-  return { submit, locked: state !== "idle", notice: <div className="lc-command" role="status" aria-live="polite">
-    {state === "pending" ? "Submitting one command…" : message}
-    {state === "unknown" && <Button variant="secondary" onClick={() => { if (pending.current) void execute(pending.current); }}>Retry original command</Button>}
-  </div> };
+  // Keep recovery separate so a modal can expose it inside its focus boundary.
+  const recovery = state === "unknown" ? <Button variant="secondary" onClick={() => { if (pending.current) void execute(pending.current); }}>Retry original command</Button> : null;
+  return { submit, locked: state !== "idle", pending: state === "pending", recovery,
+    notice: <>{(state === "pending" || message) && <ToastNotice tone={state === "pending" ? "info" : noticeTone}>{state === "pending" ? "Submitting one command…" : message}</ToastNotice>}</> };
 }
 
 /** A lost current scope clears cached operational/contact data as well as disabling future commands. */
@@ -61,7 +63,7 @@ export function lifecycleError(error: unknown): string {
       DEADLINE_INVALID: "Choose a future return deadline, or explicitly select no deadline.",
       REGISTRATION_STATE_CONFLICT: "This registration is no longer approved for issue. Refresh the approved queue.",
       CARD_STATE_CONFLICT: "The card state does not allow this action. Refresh the inventory.",
-      CARD_ALREADY_ENROLLED: "This sample is already in inventory. Select another sample.",
+      CARD_ALREADY_ENROLLED: "This pass code is already in inventory. Enter a different unique code.",
       ASSIGNMENT_NOT_OVERDUE: "This assignment is no longer active and overdue. Refresh the list.",
       ASSIGNMENT_ALREADY_ACTIVE: "This registration already has an active assignment. Open it in the assignment list.",
       NOT_FOUND: "This record is unavailable in your current scope. Recheck your session and counter.",
