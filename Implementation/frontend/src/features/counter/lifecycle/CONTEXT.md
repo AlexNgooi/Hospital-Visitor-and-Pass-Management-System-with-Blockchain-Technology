@@ -1,5 +1,9 @@
 # M05 lifecycle and inventory UI
 
+## 2026-11-11 inventory modals
+
+Enrollment and card details use controlled Radix modals. The card row opens through an Eye icon with a card-specific accessible name and an Open card tooltip. Details include card metadata, custody/recovery or lost/disable controls, and local history with explicit loading/retry states. Late history reads are fenced on close; pending/UNKNOWN commands block dismissal and retain original-command recovery inside the modal. Focus returns to the row icon after close/refresh, falling back to enrollment or the inventory heading when needed. Shared toast feedback remains in use. Build/lint are the implementation checks; browser/business acceptance remains user-run / NOT_RUN.
+
 ## R02 current manual UI (2026-10-27)
 
 Inputs now include planning/15, planning/16 and docs/evidence/changes/R02/CONTRACT.md. Existing slots remain /staff/passes and /admin/cards. AdminInventory enrolls visible unique codes with category/destination and restores with explicit custody checks; StaffLifecycle/ManualIssue select bounded compatible inventory, actual issued destinations and per-pass deadline/no-deadline. Vendor/Contractor may select multiple cards; Executive/Penjaga have one active pass. Individual returns support partial return without closing other loans. Registration-scoped lists expose full MYT issue/actual-return times, server actor IDs and lost closure separately. No manual UI invokes a scan API or creates synthetic evidence. Legacy scan.tsx remains unused by these slots.
