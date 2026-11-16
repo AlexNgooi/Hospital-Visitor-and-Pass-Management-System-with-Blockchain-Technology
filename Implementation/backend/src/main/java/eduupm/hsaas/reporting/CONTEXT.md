@@ -18,3 +18,7 @@
 - Pass preview/export uses issue OR actual RETURNED return OR LOST closure within selected MYT range, once per assignment. Current metrics ignore period dates. Lost is never an actual return; full issued/returned/closed UTC API timestamps and staff IDs are preserved. Unknown legacy closer remains nullable and is labelled unavailable.
 - POST /api/admin/reports/pass-exports is ADMIN/session/CSRF protected and has the existing export row/escaped-JSON bounds, audit, history and no-retry behavior. File prefix is hsaas-passes; registration prefix remains hsaas-masked. No form_data/name/IC/MRN/phone/address query or output.
 - No V10, migration execution, application startup or test bodies. Only source review and necessary compile/package/build/lint under planning/16; manual SQL/business/concurrency acceptance stays NOT_RUN.
+
+## 2026-11-16 visualization and compiled export increment
+
+Report aggregates include current lost/disabled inventory plus MYT daily issued/actual-return groups. A compiled export combines REGISTRATION, PASS and METRIC rows in a fixed 25-column CSV, preserving separate grains and blank actual-return/deadline values. Combined row/escaped UTF-8 bounds reject rather than truncate. Chart export audits filter/snapshot metadata only; PNG generation stays in the browser. Existing source/environment, masked fields, READ_COMMITTED consistency, per-metric timestamp and category-only inventory scope remain authoritative. SMTP/SQL/browser acceptance is not implied by builds.

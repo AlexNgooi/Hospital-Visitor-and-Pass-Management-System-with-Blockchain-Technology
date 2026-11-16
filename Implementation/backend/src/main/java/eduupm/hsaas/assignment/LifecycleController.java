@@ -44,8 +44,9 @@ public class LifecycleController {
         return write(request,response,"SCAN_CANCEL",id,key,body);
     }
     @GetMapping("/api/admin/cards")
-    public Page<CardView> cards(@RequestParam(defaultValue="0") String page,HttpServletRequest request,HttpServletResponse response) {
-        noStore(response); return service.cards(context(request),page(page));
+    public LifecycleService.InventoryResult cards(@RequestParam(defaultValue="0") String page,@RequestParam(defaultValue="") String search,
+            @RequestParam(defaultValue="") String category,@RequestParam(defaultValue="") String destination,@RequestParam(defaultValue="") String status,HttpServletRequest request,HttpServletResponse response) {
+        noStore(response); return service.inventory(context(request),page(page),search,category,destination,status);
     }
     /** Inventory metadata is ADMIN-only; it does not expose any registration or patient details. */
     @GetMapping("/api/admin/cards/references")

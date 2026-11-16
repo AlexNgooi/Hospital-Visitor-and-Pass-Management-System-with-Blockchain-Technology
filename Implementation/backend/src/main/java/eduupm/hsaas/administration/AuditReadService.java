@@ -18,19 +18,29 @@ public class AuditReadService {
     public AuditReadService(JdbcTemplate jdbc,TransactionTemplate tx,AdminAccess access,Clock clock){this.jdbc=jdbc;this.tx=new TransactionTemplate(tx.getTransactionManager());this.tx.setIsolationLevel(TransactionDefinition.ISOLATION_READ_COMMITTED);this.access=access;this.clock=clock;}
     /** Date, actor and action filters use parameters; duplicate or unknown fields fail closed. */
     public Page read(Proof proof,MultiValueMap<String,String> query){
-        if(query.entrySet().stream().anyMatch(e->!Set.of("from","to","actorId","action","page").contains(e.getKey())||e.getValue().size()!=1))throw AdminInputs.invalid();
+        if(query.entrySet().stream().anyMatch(e->!Set.of("from","to","actorId","action","page","module").contains(e.getKey())||e.getValue().size()!=1))throw AdminInputs.invalid();
         var dates=new org.springframework.util.LinkedMultiValueMap<String,String>();for(String key:List.of("from","to"))if(query.containsKey(key))dates.add(key,query.getFirst(key));
         var range=ReportFilter.parse(dates,clock);Long actor=query.containsKey("actorId")?AdminInputs.id(query.getFirst("actorId")):null;
         String action=query.getFirst("action");if(action!=null&&Arrays.stream(LocalAuditPort.Action.values()).noneMatch(a->a.name().equals(action)))throw AdminInputs.invalid();
+        String module=query.getFirst("module");
+        String eventModule=module==null?"":switch(module){
+            case "staff" -> " AND target_ref LIKE 'USER:%'";
+            case "passes" -> " AND (target_ref LIKE 'CARD:%' OR target_ref LIKE 'ASSIGNMENT:%')";
+            case "registration" -> " AND target_ref LIKE 'REGISTRATION:%'";
+            case "reports" -> " AND target_ref LIKE 'REPORT_EXPORT:%'";
+            case "settings" -> " AND (target_ref LIKE 'SETTING:%' OR target_ref LIKE 'DESTINATION:%' OR target_ref LIKE 'CATEGORY:%' OR target_ref LIKE 'COUNTER:%')";
+            default -> throw AdminInputs.invalid();
+        };
+        String historyModule=module==null?"":switch(module){case "staff"->" AND entity_kind IN ('USER','PERMISSION')";case "reports"->" AND entity_kind='EXPORT'";case "settings"->" AND entity_kind IN ('SETTING','DESTINATION','CATEGORY','COUNTER')";default->" AND 1=0";};
         int page=0;try{if(query.containsKey("page"))page=Integer.parseInt(query.getFirst("page"));}catch(NumberFormatException failure){throw AdminInputs.invalid();}if(page<0||page>1000)throw AdminInputs.invalid();
         int offset=page*100;
         return tx.execute(status->{access.require(proof);var args=new ArrayList<Object>(List.of(range.start(),range.end()));
             String scope=actor==null?"":" AND actor_id=?";if(actor!=null)args.add(actor);
             var auditArgs=new ArrayList<>(args);String actionScope=action==null?"":" AND action=?";if(action!=null)auditArgs.add(action);auditArgs.add(offset);
-            var events=jdbc.query("SELECT event_id,action,target_ref,actor_id,safe_snapshot,occurred_at FROM audit_events WHERE occurred_at>=? AND occurred_at<?"+scope+actionScope+" ORDER BY occurred_at DESC,event_id DESC LIMIT 101 OFFSET ?",(rs,n)->new Event(rs.getString(1),rs.getString(2),rs.getString(3),rs.getObject(4)==null?null:Long.toString(rs.getLong(4)),rs.getString(5),DatabaseTime.instant(rs.getObject(6,LocalDateTime.class))),auditArgs.toArray());
+            var events=jdbc.query("SELECT event_id,action,target_ref,actor_id,safe_snapshot,occurred_at FROM audit_events WHERE occurred_at>=? AND occurred_at<?"+scope+eventModule+actionScope+" ORDER BY occurred_at DESC,event_id DESC LIMIT 101 OFFSET ?",(rs,n)->new Event(rs.getString(1),rs.getString(2),rs.getString(3),rs.getObject(4)==null?null:Long.toString(rs.getLong(4)),rs.getString(5),DatabaseTime.instant(rs.getObject(6,LocalDateTime.class))),auditArgs.toArray());
             // History uses the same MYT/actor filters; action filters apply to the event stream only and are labelled in the UI.
             args.add(offset);
-            var history=jdbc.query("SELECT id,entity_kind,entity_id,previous_version,version,previous_value,current_value,reason_code,actor_id,changed_at FROM administration_history WHERE changed_at>=? AND changed_at<?"+scope+" ORDER BY changed_at DESC,id DESC LIMIT 101 OFFSET ?",(rs,n)->new Change(Long.toString(rs.getLong(1)),rs.getString(2),rs.getString(3),rs.getObject(4)==null?null:rs.getLong(4),rs.getLong(5),rs.getString(6),rs.getString(7),rs.getString(8),Long.toString(rs.getLong(9)),DatabaseTime.instant(rs.getObject(10,LocalDateTime.class))),args.toArray());
+            var history=jdbc.query("SELECT id,entity_kind,entity_id,previous_version,version,previous_value,current_value,reason_code,actor_id,changed_at FROM administration_history WHERE changed_at>=? AND changed_at<?"+scope+historyModule+" ORDER BY changed_at DESC,id DESC LIMIT 101 OFFSET ?",(rs,n)->new Change(Long.toString(rs.getLong(1)),rs.getString(2),rs.getString(3),rs.getObject(4)==null?null:rs.getLong(4),rs.getLong(5),rs.getString(6),rs.getString(7),rs.getString(8),Long.toString(rs.getLong(9)),DatabaseTime.instant(rs.getObject(10,LocalDateTime.class))),args.toArray());
             return new Page(clock.instant(),"LOCAL_ONLY",events.size()>100,history.size()>100,events.stream().limit(100).toList(),history.stream().limit(100).toList());
         });
     }

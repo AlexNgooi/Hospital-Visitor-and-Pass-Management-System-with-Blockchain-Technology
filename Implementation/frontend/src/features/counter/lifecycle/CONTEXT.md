@@ -37,3 +37,7 @@ Outputs: counterLifecycleFeatures at /staff/passes and adminInventoryFeatures at
 One immutable UNKNOWN command remains in memory and permits only explicit original-handle retry; later 4xx never proves the original did not commit. Actor/counter change unmounts state. Current access loss clears cached records/contact/evidence. Phones are audited on each actual response and displayed at most 30 seconds, with no storage, links, clipboard or logging. Scan capabilities are memory-only and actor-session-bound.
 
 Initial checks: pnpm run build, pnpm run lint, pnpm run typecheck:test. These are compile/static checks, not UI/business acceptance. No browser/UAT was run. New feature slots are not composed by this module; coordinator will wire and build the integrated bundle. See M05 HANDOFF for manual flow and limitations.
+
+## 2026-11-16 Pass management
+
+The ADMIN slot is labelled Pass management with current inventory summary, complete server-side filters, readable pass/destination/category/status rows and a labelled detail modal retaining history and controlled lifecycle actions. Add pass remains a modal. Existing settings are reached through an in-page link, not a new nav task. Staff pass APIs and No pass semantics are unchanged.

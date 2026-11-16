@@ -35,3 +35,7 @@ Responsibilities: real persisted synthetic scan, card/assignment orchestration, 
 Authority locks precede device and domain locks. Use READ_COMMITTED on the existing JPA manager. No root SQL/entity duplication, no real device endpoint, no notification/outbox, no production simulation. RegistrationLifecyclePort is an approved read-only extension of the existing root; it never changes review status.
 
 Checks: backend `mvnw.cmd -B -DskipTests package`; narrowly scoped `mvnw.cmd -B -Dtest=LifecycleMysqlTests test` only on owned temporary MySQL. SQL execution requires the explicit dedicated native test account; no application-schema fallback. Full business/browser/UAT remain user-run. Evidence: Implementation/docs/evidence/modules/M05/.
+
+## 2026-11-16 inventory read increment
+
+ADMIN GET /api/admin/cards now accepts bounded search/category/destination/status filters across all matching authorized source/environment stock. A safe summary groups all statuses under search/category/destination and is independent of the status selection; the page remains bounded to 25 records. Card lifecycle mutations, naming, confirmations, history, idempotency and No pass handling are unchanged.

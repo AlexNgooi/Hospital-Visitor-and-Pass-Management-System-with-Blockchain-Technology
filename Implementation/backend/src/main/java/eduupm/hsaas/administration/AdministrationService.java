@@ -1,6 +1,5 @@
 package eduupm.hsaas.administration;
 
-import java.nio.charset.StandardCharsets;
 import java.time.Clock;
 import java.util.List;
 import java.util.Map;
@@ -30,47 +29,106 @@ public class AdministrationService {
     private final LocalAuditPort audit;
     private final Clock clock;
     private final JsonMapper json;
-    public AdministrationService(JdbcTemplate jdbc,TransactionTemplate tx,Accounts accounts,AccountChanges changes,AdminAccess access,PasswordEncoder passwords,LocalAuditPort audit,Clock clock,JsonMapper json) {
+    private final StaffOnboardingMail mail;
+    public AdministrationService(JdbcTemplate jdbc,TransactionTemplate tx,Accounts accounts,AccountChanges changes,AdminAccess access,PasswordEncoder passwords,LocalAuditPort audit,Clock clock,JsonMapper json,StaffOnboardingMail mail) {
         this.jdbc=jdbc;this.tx=new TransactionTemplate(tx.getTransactionManager());this.tx.setIsolationLevel(TransactionDefinition.ISOLATION_READ_COMMITTED);
-        this.accounts=accounts;this.changes=changes;this.access=access;this.passwords=passwords;this.audit=audit;this.clock=clock;this.json=json;
+        this.accounts=accounts;this.changes=changes;this.access=access;this.passwords=passwords;this.audit=audit;this.clock=clock;this.json=json;this.mail=mail;
     }
 
     /** Credentials and security epochs are excluded by SQL projection, even for administrators. */
     public List<UserView> users(Proof proof) {
-        return tx.execute(status->{ access.require(proof); return jdbc.query("SELECT id,login,role,active,version FROM users ORDER BY id",(rs,n)->
+        return tx.execute(status->{ access.require(proof); return jdbc.query("SELECT id,login,role,active,version,COALESCE(full_name,login),email,password_change_required,onboarding_delivery FROM users ORDER BY id",(rs,n)->
             new UserView(Long.toString(rs.getLong(1)),rs.getString(2),rs.getString(3),rs.getBoolean(4),rs.getLong(5),
-                jdbc.query("SELECT counter_id,active,version FROM user_counter_permissions WHERE user_id=? ORDER BY counter_id",(p,i)->new Permission(Long.toString(p.getLong(1)),p.getBoolean(2),p.getLong(3)),rs.getLong(1)))); });
+                jdbc.query("SELECT counter_id,active,version FROM user_counter_permissions WHERE user_id=? ORDER BY counter_id",(p,i)->new Permission(Long.toString(p.getLong(1)),p.getBoolean(2),p.getLong(3)),rs.getLong(1)),rs.getString(6),rs.getString(7),rs.getBoolean(8),rs.getString(9))); });
     }
 
-    /** Hashing happens before domain locks; uniqueness failures roll back the complete creation and audit. */
-    public void create(Proof proof,CreateUser input) {
+    /** The account commits before SMTP; only its hash is stored and an uncertain send is never retried automatically. */
+    public Delivery create(Proof proof,CreateUser input) {
+        // Require a current administrator before validation, hashing or configuration disclosure.
+        access.require(proof);
         if(input==null)throw AdminInputs.invalid();
-        String login=LoginNames.canonical(input.login()); String role=AdminInputs.role(input.role()); String reason=AdminInputs.reason(input.reason());
-        if(input.password()==null || input.password().length()<12 || input.password().getBytes(StandardCharsets.UTF_8).length>72) throw AdminInputs.invalid();
-        String hash=passwords.encode(input.password());
-        try { tx.executeWithoutResult(status->{
+        mail.requireConfigured();
+        String login=LoginNames.canonical(input.login()),role=AdminInputs.role(input.role());
+        String name=AdminInputs.name(input.fullName()),email=email(input.email());
+        String password=temporaryPassword(),hash=passwords.encode(password);
+        long id;
+        try { id=tx.execute(status->{
             jdbc.queryForObject("SELECT id FROM identity_policy_gate WHERE id=1 FOR UPDATE",Integer.class);
             accounts.lock(accounts.find(proof.login()).id()); var actor=access.require(proof);
-            jdbc.update("INSERT INTO users(login,password_hash,role,active,created_at,updated_at) VALUES(?,?,?,TRUE,?,?)",login,hash,role,DatabaseTime.sql(clock.instant()),DatabaseTime.sql(clock.instant()));
-            long id=jdbc.queryForObject("SELECT id FROM users WHERE login=?",Long.class,login);
-            audit.append(LocalAuditPort.Action.ADMIN_CHANGED,"USER",Long.toString(id),actor.id(),new LocalAuditPort.Snapshot(null,"ACTIVE",null,0L,"LOCAL"));
-            history("USER",Long.toString(id),null,0L,reason,actor.id());
-        }); } catch(DuplicateKeyException conflict) { throw new ApiFailure(409,"LOGIN_UNAVAILABLE","This login is unavailable."); }
+            jdbc.update("INSERT INTO users(login,password_hash,role,active,created_at,updated_at,full_name,email,password_change_required,temporary_password_expires_at,onboarding_delivery) VALUES(?,?,?,TRUE,?,?,?,?,TRUE,?,'PENDING')",
+                    login,hash,role,DatabaseTime.sql(clock.instant()),DatabaseTime.sql(clock.instant()),name,email,DatabaseTime.sql(clock.instant().plus(java.time.Duration.ofHours(24))));
+            long created=jdbc.queryForObject("SELECT id FROM users WHERE login=?",Long.class,login);
+            audit.append(LocalAuditPort.Action.ADMIN_CHANGED,"USER",Long.toString(created),actor.id(),new LocalAuditPort.Snapshot(null,"ACTIVE",null,0L,"LOCAL"));
+            audit.append(LocalAuditPort.Action.STAFF_EMAIL_REQUESTED,"USER",Long.toString(created),actor.id(),new LocalAuditPort.Snapshot(null,null,null,0L,"LOCAL"));
+            history("USER",Long.toString(created),null,0L,"STAFF_ONBOARDING",actor.id());
+            return created;
+        }); } catch(DuplicateKeyException conflict) { throw new ApiFailure(409,"LOGIN_UNAVAILABLE","That login or email is already in use."); }
+        return sendInitial(id,0,email,login,password);
+    }
+
+    /** Recovery is deliberate, versioned and rotates the previous temporary credential before sending a replacement. */
+    public Delivery resend(Proof proof,String userId,Resend input) {
+        access.require(proof);
+        if(input==null)throw AdminInputs.invalid(); mail.requireConfigured();
+        long id=AdminInputs.id(userId),version=AdminInputs.version(input.version());
+        String password=temporaryPassword(),hash=passwords.encode(password);
+        String[] recipient=tx.execute(status->{
+            long actorId=accounts.find(proof.login()).id();
+            java.util.stream.Stream.of(actorId,id).distinct().sorted().forEach(accounts::lock);
+            var actor=access.require(proof);
+            var rows=jdbc.query("SELECT login,email,active,password_change_required,version,onboarding_delivery,updated_at FROM users WHERE id=?",(rs,n)->new Object[]{rs.getString(1),rs.getString(2),rs.getBoolean(3),rs.getBoolean(4),rs.getLong(5),rs.getString(6),DatabaseTime.instant(rs.getObject(7,java.time.LocalDateTime.class))},id);
+            if(rows.isEmpty())throw new ApiFailure(404,"NOT_FOUND","Account not found.");var row=rows.getFirst();
+            if((long)row[4]!=version)throw new ApiFailure(409,"VERSION_CONFLICT","Reload the account before sending again.");
+            if(!(boolean)row[2] || !(boolean)row[3])throw new ApiFailure(409,"PASSWORD_ALREADY_SET","Only active accounts awaiting their first password can receive an initial password.");
+            if("PENDING".equals(row[5]) && ((java.time.Instant)row[6]).isAfter(clock.instant().minusSeconds(60)))
+                throw new ApiFailure(409,"STAFF_EMAIL_PENDING","Wait for the current email attempt before requesting a replacement.");
+            String address=email((String)row[1]);
+            jdbc.update("UPDATE users SET password_hash=?,temporary_password_expires_at=?,onboarding_delivery='PENDING',security_epoch=security_epoch+1,version=version+1,updated_at=? WHERE id=?",hash,DatabaseTime.sql(clock.instant().plus(java.time.Duration.ofHours(24))),DatabaseTime.sql(clock.instant()),id);
+            audit.append(LocalAuditPort.Action.STAFF_EMAIL_REQUESTED,"USER",userId,actor.id(),new LocalAuditPort.Snapshot(null,null,version,version+1,"LOCAL"));
+            return new String[]{address,(String)row[0]};
+        });
+        return sendInitial(id,version+1,recipient[0],recipient[1],password);
+    }
+
+    /** SMTP runs without domain locks. Version fencing prevents a late send from overwriting a newer onboarding state. */
+    private Delivery sendInitial(long id,long version,String email,String login,String password) {
+        String delivery=mail.send(email,login,password);
+        jdbc.update("UPDATE users SET onboarding_delivery=? WHERE id=? AND version=? AND password_change_required=TRUE AND onboarding_delivery='PENDING'",delivery,id,version);
+        return new Delivery(true,Long.toString(id),delivery);
+    }
+    public boolean emailConfigured(Proof proof) { return tx.execute(status->{access.require(proof);return mail.configured();}); }
+    private static String email(String value) {
+        String email=value==null?null:value.strip().toLowerCase(java.util.Locale.ROOT);
+        if(!StaffOnboardingMail.validEmail(email))throw AdminInputs.invalid();return email;
+    }
+    private static String temporaryPassword() {
+        byte[] bytes=new byte[24];new java.security.SecureRandom().nextBytes(bytes);
+        return java.util.Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);
     }
 
     /** An empty outer transaction lets the M00 port establish its own canonical lock prefix before history is appended. */
     public void update(Proof proof,String id,UserChange input) {
         if(input==null)throw AdminInputs.invalid();
-        long target=AdminInputs.id(id),version=AdminInputs.version(input.version()); String reason=AdminInputs.reason(input.reason());
+        long target=AdminInputs.id(id),version=AdminInputs.version(input.version()); String reason="ACCESS_REVIEW";
         String role=AdminInputs.role(input.role()); boolean active=AdminInputs.active(input.active());
-        tx.executeWithoutResult(status->{var previous=snapshot("USER",id);changes.update(proof,target,version,role,active);history("USER",id,version,version+1,reason,accounts.find(proof.login()).id(),previous);});
+        try { tx.executeWithoutResult(status->{var previous=snapshot("USER",id);changes.update(proof,target,version,role,active);
+            if(input.fullName()!=null) jdbc.update("UPDATE users SET full_name=? WHERE id=?",AdminInputs.name(input.fullName()),target);
+            if(input.email()!=null) {
+                String next=input.email().isBlank()?null:email(input.email());
+                String previousEmail=jdbc.queryForObject("SELECT email FROM users WHERE id=?",String.class,target);
+                if(!java.util.Objects.equals(next,previousEmail))
+                    jdbc.update("UPDATE users SET temporary_password_expires_at=CASE WHEN password_change_required THEN NULL ELSE temporary_password_expires_at END,onboarding_delivery=CASE WHEN password_change_required THEN 'UNKNOWN' ELSE onboarding_delivery END WHERE id=?",target);
+                jdbc.update("UPDATE users SET email=? WHERE id=?",next,target);
+            }
+            history("USER",id,version,version+1,reason,accounts.find(proof.login()).id(),previous);}); }
+        catch(DuplicateKeyException conflict) { throw new ApiFailure(409,"LOGIN_UNAVAILABLE","That login or email is already in use."); }
     }
 
     /** Permission version zero means no existing grant; every change revokes the affected account's old sessions. */
     public void permission(Proof proof,String id,String counterId,PermissionChange input) {
         if(input==null)throw AdminInputs.invalid();
         long target=AdminInputs.id(id),counter=AdminInputs.id(counterId),version=AdminInputs.version(input.version());
-        String reason=AdminInputs.reason(input.reason());boolean active=AdminInputs.active(input.active());
+        String reason="ACCESS_REVIEW";boolean active=AdminInputs.active(input.active());
         tx.executeWithoutResult(status->{var previous=snapshot("PERMISSION",id+":"+counterId);changes.counterPermission(proof,target,counter,version,active);history("PERMISSION",id+":"+counterId,version,version+1,reason,accounts.find(proof.login()).id(),previous);});
     }
 
@@ -167,10 +225,12 @@ public class AdministrationService {
     private static String table(String kind){return switch(kind){case "categories"->"visitor_categories";case "destinations"->"destinations";case "counters"->"counters";default->throw AdminInputs.invalid();};}
     private static String target(String kind){return switch(kind){case "categories"->"CATEGORY";case "destinations"->"DESTINATION";case "counters"->"COUNTER";default->throw AdminInputs.invalid();};}
     public record Permission(String counterId,boolean active,long version){}
-    public record UserView(String id,String login,String role,boolean active,long version,List<Permission> permissions){}
-    /** The password-bearing request cannot leak through accidental diagnostic formatting. */
-    public record CreateUser(String login,String password,String role,String reason){@Override public String toString(){return "CreateUser[REDACTED]";}}
-    public record UserChange(Long version,String role,Boolean active,String reason){}
+    public record UserView(String id,String login,String role,boolean active,long version,List<Permission> permissions,String fullName,String email,boolean passwordChangeRequired,String onboardingDelivery){}
+    /** Onboarding metadata is redacted from diagnostics; a password is never accepted from the client. */
+    public record CreateUser(String login,String fullName,String email,String role){@Override public String toString(){return "CreateUser[REDACTED]";}}
+    public record UserChange(Long version,String role,Boolean active,String fullName,String email){}
+    public record Resend(Long version){}
+    public record Delivery(boolean saved,String id,String emailStatus){}
     public record PermissionChange(Long version,Boolean active,String reason){}
     public record Reference(String id,String code,String name,boolean active,long version){}
     public record ReferenceCreate(String code,String name,String reason){}

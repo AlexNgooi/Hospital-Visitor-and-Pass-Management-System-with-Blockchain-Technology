@@ -14,7 +14,10 @@ public class AdministrationController {
     private final AdministrationService service;
     public AdministrationController(AdministrationService service){this.service=service;}
     @GetMapping("/users") public List<UserView> users(HttpServletRequest request,HttpServletResponse response){return service.users(AdminAccess.proof(request,response));}
-    @PostMapping("/users") public Map<String,Boolean> create(@RequestBody CreateUser input,HttpServletRequest request,HttpServletResponse response){service.create(AdminAccess.proof(request,response),input);return Map.of("saved",true);}
+    @PostMapping("/users") public Delivery create(@RequestBody CreateUser input,HttpServletRequest request,HttpServletResponse response){return service.create(AdminAccess.proof(request,response),input);}
+    /** Readiness is protected and never exposes SMTP configuration or credentials. */
+    @GetMapping("/staff-email") public Map<String,Boolean> staffEmail(HttpServletRequest request,HttpServletResponse response){return Map.of("configured",service.emailConfigured(AdminAccess.proof(request,response)));}
+    @PostMapping("/users/{id}/initial-email") public Delivery resend(@PathVariable String id,@RequestBody Resend input,HttpServletRequest request,HttpServletResponse response){return service.resend(AdminAccess.proof(request,response),id,input);}
     @PatchMapping("/users/{id}") public Map<String,Boolean> update(@PathVariable String id,@RequestBody UserChange input,HttpServletRequest request,HttpServletResponse response){service.update(AdminAccess.proof(request,response),id,input);return Map.of("saved",true);}
     @PatchMapping("/users/{id}/counters/{counterId}") public Map<String,Boolean> permission(@PathVariable String id,@PathVariable String counterId,@RequestBody PermissionChange input,HttpServletRequest request,HttpServletResponse response){service.permission(AdminAccess.proof(request,response),id,counterId,input);return Map.of("saved",true);}
     @GetMapping("/{kind:categories|destinations|counters}") public List<Reference> references(@PathVariable String kind,HttpServletRequest request,HttpServletResponse response){return service.references(AdminAccess.proof(request,response),kind);}

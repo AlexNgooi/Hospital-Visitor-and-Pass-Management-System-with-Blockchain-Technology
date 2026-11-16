@@ -392,6 +392,29 @@ public final class LifecycleService {
         return tx.execute(status->{security.lock(context,true,List.of()); return store.jdbc.query("SELECT id,code,name FROM counters WHERE active=TRUE ORDER BY id",
                 (rs,n)->new CounterView(Long.toString(rs.getLong(1)),rs.getString(2),rs.getString(3)));});
     }
+    /** Search and status summaries query all matching inventory, never only the currently loaded page. */
+    InventoryResult inventory(LifecycleSecurity.Context context,int page,String search,String category,String destination,String state) {
+        security.preflight(context,true);
+        if(search==null || search.length()>120 || search.codePoints().anyMatch(Character::isISOControl))throw new ApiFailure(400,"VALIDATION_FAILED","Check the inventory filters.");
+        if(!category.isEmpty() && !java.util.Set.of("EXECUTIVE","PENJAGA","VENDOR","CONTRACTOR").contains(category))throw new ApiFailure(400,"VALIDATION_FAILED","Check the inventory filters.");
+        if(!state.isEmpty() && !java.util.Set.of("AVAILABLE","ISSUED","OVERDUE","LOST","DISABLED").contains(state))throw new ApiFailure(400,"VALIDATION_FAILED","Check the inventory filters.");
+        Long destinationId=destination.isEmpty()?null:LifecycleInput.decimal(destination);
+        return tx.execute(status->{security.lock(context,true,List.of());
+            String scope=" FROM cards c LEFT JOIN destinations d ON d.id=c.destination_id WHERE c.environment=? AND "+CARD_SOURCE;
+            var args=new ArrayList<Object>();args.add(properties.environment());
+            if(!search.isBlank()){scope+=" AND LOCATE(LOWER(?),LOWER(c.card_code))>0";args.add(search.strip());}
+            if(!category.isEmpty()){scope+=" AND c.category_code=?";args.add(category);}
+            if(destinationId!=null){scope+=" AND c.destination_id=?";args.add(destinationId);}
+            var counts=new java.util.LinkedHashMap<String,Long>();for(String key:List.of("AVAILABLE","ISSUED","OVERDUE","LOST","DISABLED"))counts.put(key,0L);
+            store.jdbc.query("SELECT c.status,COUNT(*)"+scope+" GROUP BY c.status",(org.springframework.jdbc.core.RowCallbackHandler)rs->counts.put(rs.getString(1),rs.getLong(2)),args.toArray());
+            long total=state.isEmpty()?counts.values().stream().mapToLong(Long::longValue).sum():counts.get(state);
+            if(!state.isEmpty()){scope+=" AND c.status=?";args.add(state);}
+            args.add(page*25);
+            var items=store.jdbc.query("SELECT c.*,d.name AS destination_label"+scope+" ORDER BY c.enrolled_at DESC,c.id DESC LIMIT 25 OFFSET ?",(rs,n)->store.cardView(rs),args.toArray());
+            return new InventoryResult(page,25,total,items,clock.instant(),counts);
+        });
+    }
+    public record InventoryResult(int page,int pageSize,long total,List<CardView> items,Instant serverNow,java.util.Map<String,Long> summary){}
     Page<CardView> cards(LifecycleSecurity.Context context,int page) {
         security.preflight(context,true);
         return tx.execute(status->{security.lock(context,true,List.of());

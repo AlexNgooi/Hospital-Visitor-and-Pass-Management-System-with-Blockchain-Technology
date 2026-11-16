@@ -239,3 +239,9 @@ R02 isolated schema checkpoint `5b80b0ac22aba150d1aabd024cc50302ff967c2d` was th
 当前版本依序 V1 identity/reference、V2 JDBC session、V3 capability guards、V4 dynamic entry、V5 registration、V6 lifecycle、V7 administration、V8 form/location、V9 manual pass lifecycle。未来仅追加经审阅的 forward migration。现有记录的来源、nullable due_at、单卡唯一性及旧版本幂等结果不能被改写。
 
 测试使用本机专用测试账号与随机 `hsaas_test_<random>` schema；helper 只能删除它自己创建的精确库名。应用运行库、原 `hsaas_db` 与测试库严格分开。恢复、clean/upgrade 和并发验收仍需实际执行证据，静态打包不能替代。
+
+## 2026-11-16 authorized administrator increment
+
+V10 appends users.full_name/email/password_change_required/temporary_password_expires_at/onboarding_delivery; existing accounts keep passwords and complete setup status. Email is unique and normalized; initial plaintext credentials are never stored or returned. Initial change/resend increments account version/security epoch; pending setup cannot use business APIs. New staff metadata and current Me are covered by [the incremental OpenAPI](../Implementation/docs/api/admin-management.openapi.json), with matching runtime frontend schemas; the old foundation mirror/generated definitions stay historical. Account metadata edits retain old-session revocation and the last ready admin invariant. Staff reason inputs are replaced by automatic reason codes, while existing reference/settings reasons remain required.
+
+Reporting adds daily issue/actual-return groups and current lost/disabled inventory. Compiled CSV preserves REGISTRATION/PASS/METRIC grains; chart audit stores only filters and snapshot time. Inventory search/type/destination/status and audit module predicates stay parameter-bound or fixed allowlists. Visitor management, configurable registration fields and single/multiple pass policies are not included; four visitor form/identity/No pass rules remain unchanged. Migration, SMTP delivery, SQL and business acceptance are NOT_RUN; see [MANUAL_ADMIN](../Implementation/docs/runbooks/MANUAL_ADMIN.md).

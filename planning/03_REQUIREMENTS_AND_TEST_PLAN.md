@@ -171,3 +171,7 @@ U03 用户已确认 synthetic Penjaga 审批：mock 结果本身不能作为已�
 检查层次：纯单元/组件 → 隔离本机 MySQL 事务/迁移/并发 → 四类真实应用操作 → 故障/恢复 → 获批外部接口/Testnet。现有手动流程不再以模拟/真实扫描作为 E2E 前置。
 
 每项验收记录 `Requirement ID | acceptance | source/commit | NOT_RUN/PASS/FAIL | evidence | reviewer`。未执行不能标 PASS；历史 PASS 只证明当时版本和环境。当前 UI/本机切换未执行浏览器、迁移、业务或恢复验收；通知和真实链交易仍 deferred。未决事项见 [10](10_BASELINE_REVIEW.md)。
+
+## 2026-11-16 confirmed administrator design implementation
+
+The authorized admin UI scope is Overview, Staff management, Pass management and System audit. Reports merge into Overview. Staff list fields are name/account type/status; Create account opens its form only in a modal, adding full name/email and generating the temporary password server-side. Staff reason fields are removed; automatic audit remains. First login requires a new password before business APIs are usable. Real staff onboarding email requires explicit SMTP configuration and must not be confused with disabled visitor notifications. Visitor management was explicitly deferred, so category identity rules and single/multiple pass configuration remain unchanged. Acceptance and migration/email prerequisites are in [MANUAL_ADMIN](../Implementation/docs/runbooks/MANUAL_ADMIN.md); browser/SMTP/SQL/business checks remain NOT_RUN.

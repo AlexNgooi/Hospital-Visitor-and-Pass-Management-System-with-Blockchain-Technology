@@ -31,8 +31,8 @@ public class AccountChanges {
             requireAdmin(proof);
             Long version=jdbc.queryForObject("SELECT version FROM users WHERE id=?",Long.class,targetId);
             if(version==null || version!=expectedVersion) { throw new ApiFailure(409,"VERSION_CONFLICT","Account changed. Reload it."); }
-            if(target.active() && target.role().equals("ADMIN") && (!active || !role.equals("ADMIN"))
-                    && jdbc.queryForObject("SELECT COUNT(*) FROM users WHERE active=TRUE AND role='ADMIN'",Integer.class)<=1) {
+            if(target.active() && !target.passwordChangeRequired() && target.role().equals("ADMIN") && (!active || !role.equals("ADMIN"))
+                    && jdbc.queryForObject("SELECT COUNT(*) FROM users WHERE active=TRUE AND role='ADMIN' AND password_change_required=FALSE",Integer.class)<=1) {
                 throw new ApiFailure(409,"LAST_ADMIN_REQUIRED","Keep at least one active administrator.");
             }
             jdbc.update("UPDATE users SET role=?,active=?,version=version+1,security_epoch=security_epoch+1,updated_at=? WHERE id=?",role,active,DatabaseTime.sql(clock.instant()),targetId);

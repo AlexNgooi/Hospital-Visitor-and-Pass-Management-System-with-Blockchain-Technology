@@ -56,3 +56,13 @@ hsaas:
   hash-key: ${IDEMPOTENCY_HMAC_KEY:}
   # Keep previous key versions until their result retention and bounded in-flight window have ended.
   hash-keys: {}
+
+  # Staff onboarding is independent of disabled visitor notifications; opt in only with an approved sender.
+  staff-email:
+    enabled: ${HSAAS_STAFF_EMAIL_ENABLED:false}
+    host: ${HSAAS_STAFF_EMAIL_HOST:}
+    port: ${HSAAS_STAFF_EMAIL_PORT:587}
+    username: ${HSAAS_STAFF_EMAIL_USERNAME:}
+    password: ${HSAAS_STAFF_EMAIL_PASSWORD:}
+    from: ${HSAAS_STAFF_EMAIL_FROM:}
+    login-url: ${HSAAS_STAFF_EMAIL_LOGIN_URL:}

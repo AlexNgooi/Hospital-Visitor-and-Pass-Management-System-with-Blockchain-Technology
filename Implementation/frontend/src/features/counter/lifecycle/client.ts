@@ -1,14 +1,14 @@
 import { z } from "zod";
 import type { PassSelection, PassFilters } from "./contracts";
 import { apiClient } from "../../../lib/api-client";
-import { assignmentSchema, cardSchema, inventoryReferencesSchema, issueContextSchema, counterSchema, historySchema, jobSchema, pageSchema, revealSchema, safeResultSchema, sampleSchema } from "./contracts";
-import { passFeedSchema, passExportSchema } from "./contracts";
+import { assignmentSchema, inventoryReferencesSchema, issueContextSchema, counterSchema, historySchema, jobSchema, pageSchema, revealSchema, safeResultSchema, sampleSchema } from "./contracts";
+import { inventoryPageSchema, passFeedSchema, passExportSchema } from "./contracts";
 
 /** All commands snapshot exact bodies/keys in the shared memory-only transport; writes are never retried automatically. */
 export const lifecycleApi = {
   samples: (admin: boolean, signal?: AbortSignal) => apiClient.get(`/api/${admin ? "admin" : "staff"}/lifecycle/samples`, z.array(sampleSchema).max(48), { signal, authRequired: true }),
   counters: (signal?: AbortSignal) => apiClient.get("/api/admin/lifecycle/counters", z.array(counterSchema), { signal, authRequired: true }),
-  cards: (page: number, signal?: AbortSignal) => apiClient.get(`/api/admin/cards?page=${page}`, pageSchema(cardSchema), { signal, authRequired: true }),
+  cards: (page: number, signal?: AbortSignal, filters = "") => apiClient.get(`/api/admin/cards?page=${page}${filters ? `&${filters}` : ""}`, inventoryPageSchema, { signal, authRequired: true }),
   assignments: (counter: string, page: number, overdue: boolean, signal?: AbortSignal, registrationId?: string) => apiClient.get(`/api/staff/${overdue ? "overdue" : "card-assignments"}?counterId=${encodeURIComponent(counter)}&page=${page}${registrationId ? `&registrationId=${encodeURIComponent(registrationId)}` : ""}`, pageSchema(assignmentSchema), { signal, authRequired: true }),
   assignment: (id: string, signal?: AbortSignal) => apiClient.get(`/api/staff/card-assignments/${id}`, assignmentSchema, { signal, authRequired: true }),
   passes: (filters: PassFilters, cursor?: string, signal?: AbortSignal) => {

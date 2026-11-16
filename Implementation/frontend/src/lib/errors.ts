@@ -4,6 +4,11 @@ import type { RestartDetails } from "./restart-details";
 
 /** UI messages are allowlisted so proxy pages, backend input echoes and secrets stay hidden. */
 const messages: Record<string, string> = {
+  STAFF_EMAIL_PENDING: "An initial email is still being processed. Wait a minute, then refresh the account before requesting a replacement.",
+  STAFF_EMAIL_NOT_CONFIGURED: "Staff email is not configured. No account was created.",
+  PASSWORD_CHANGE_REQUIRED: "Set your own password before accessing the workspace.",
+  PASSWORD_ALREADY_SET: "The initial password has already been replaced. Refresh and sign in again.",
+  PASSWORD_INVALID: "Check the temporary password and choose a different new password.",
   VALIDATION_FAILED: "Please check the highlighted fields.",
   INVALID_CREDENTIALS: "The staff account or password is incorrect.",
   AUTHENTICATION_REQUIRED: "Your session has ended. Sign in again.",
@@ -31,6 +36,11 @@ const messages: Record<string, string> = {
 
 /** Visitor-facing copy stays BM-first; unknown codes still use fixed, non-sensitive wording. */
 const visitorMessages: Record<string, string> = {
+  STAFF_EMAIL_PENDING: "An initial email is still being processed. Wait a minute, then refresh the account before requesting a replacement.",
+  STAFF_EMAIL_NOT_CONFIGURED: "Staff email is not configured. No account was created.",
+  PASSWORD_CHANGE_REQUIRED: "Set your own password before accessing the workspace.",
+  PASSWORD_ALREADY_SET: "The initial password has already been replaced. Refresh and sign in again.",
+  PASSWORD_INVALID: "Check the temporary password and choose a different new password.",
   VALIDATION_FAILED: "Sila semak maklumat yang ditandakan.",
   ACCESS_DENIED: "Anda tidak mempunyai akses kepada halaman ini.",
   CSRF_INVALID: "Semakan keselamatan telah tamat. Sila cuba lagi.",

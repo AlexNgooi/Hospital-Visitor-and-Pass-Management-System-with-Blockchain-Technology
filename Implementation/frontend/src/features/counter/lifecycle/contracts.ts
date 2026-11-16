@@ -34,6 +34,10 @@ export const assignmentSchema = z.object({
 export const pageSchema = <T extends z.ZodType>(item: T) => z.object({
   items: z.array(item).max(25), total: version, page: version, pageSize: z.literal(25), serverNow: utc,
 }).strict();
+export const inventoryPageSchema = pageSchema(cardSchema).extend({
+  summary: z.object({ AVAILABLE: version, ISSUED: version, OVERDUE: version, LOST: version, DISABLED: version }).strict(),
+});
+export type InventoryPage = z.infer<typeof inventoryPageSchema>;
 export const sampleSchema = z.object({ sampleCode: label, categoryCode: category, label }).strict();
 export const counterSchema = z.object({ id: decimal, code: label, name: label }).strict();
 export const jobSchema = z.object({

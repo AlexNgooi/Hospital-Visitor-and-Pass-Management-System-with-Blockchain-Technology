@@ -1,79 +1,93 @@
-import { ToastNotice } from "../../components/ui/toast";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { Download, ImageDown, RefreshCw } from "lucide-react";
+import { z } from "zod";
 import { Button, InputField } from "../../components/ui/primitives";
+import { ToastNotice } from "../../components/ui/toast";
 import { apiClient } from "../../lib/api-client";
 import { ClientError, safeError } from "../../lib/errors";
 import { formatMyt } from "../../lib/time";
 import { exportSchema, referencesSchema, reportSchema, type Report } from "./contracts";
 import { LoadNotice } from "./data";
 import { useRemote } from "./hooks";
+import { CategoryChart, InventoryChart, TrendChart } from "./charts";
+import { metric, series, categoryLabels } from "./chart-data";
+import { chartImage, downloadBlob } from "./chart-export";
 
-/** Calendar dates are formatted in MYT, independently of the workstation's own timezone. */
+const chartReceipt = z.object({ id: z.uuid(), recordedAt: z.iso.datetime() });
 function todayMyt() { return new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Kuala_Lumpur", year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date()); }
 
-/** History shows full calendar dates and seconds in the agreed hospital timezone, including across midnight. */
-function historyTime(value: string) { return new Intl.DateTimeFormat("en-MY", { timeZone: "Asia/Kuala_Lumpur", year: "numeric", month: "short", day: "2-digit", hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: false }).format(new Date(value)); }
-
-/** Filters are applied together so a polling request never mixes a new ward with a previous date range. */
+/** The single administrator overview replaces the old shortcut/report split and applies filters together. */
 export function ReportsPage() {
-  const [today] = useState(todayMyt);
-  const [from, setFrom] = useState(today), [to, setTo] = useState(today), [categoryId, setCategory] = useState(""), [destinationId, setDestination] = useState("");
-  const [query, setQuery] = useState(new URLSearchParams({ from: today, to: today }).toString());
+  const [today] = useState(todayMyt), [period, setPeriod] = useState("month");
+  const [from, setFrom] = useState(`${today.slice(0, 7)}-01`), [to, setTo] = useState(today), [category, setCategory] = useState(""), [destination, setDestination] = useState("");
+  const [query, setQuery] = useState(new URLSearchParams({ from, to }).toString());
   const categories = useRemote("/api/admin/categories", referencesSchema), destinations = useRemote("/api/admin/destinations", referencesSchema);
-  return <div className="admin-page"><header className="admin-heading"><div><span className="eyebrow">SYNTHETIC DEMONSTRATION DATA</span><h1>Reports & overview</h1><p>MYT calendar dates · masked reporting · automatic refresh every 5 seconds</p></div></header>
-    <form className="admin-card admin-filters" onSubmit={(event) => { event.preventDefault(); const next = new URLSearchParams({ from, to }); if (categoryId) next.set("categoryId", categoryId); if (destinationId) next.set("destinationId", destinationId); setQuery(next.toString()); }}>
-      <InputField id="report-from" label="From (MYT, inclusive)" type="date" min="2000-01-01" max={to} required value={from} onChange={(event) => setFrom(event.target.value)} /><InputField id="report-to" label="To (MYT, inclusive)" type="date" min={from} max="2100-12-31" required value={to} onChange={(event) => setTo(event.target.value)} />
-      <label className="admin-field">Category<select value={categoryId} onChange={(event) => setCategory(event.target.value)}><option value="">All categories</option>{categories.data?.map((category) => <option key={category.id} value={category.id}>{category.name}{!category.active && " (inactive)"}</option>)}</select></label><label className="admin-field">Ward / destination<select value={destinationId} onChange={(event) => setDestination(event.target.value)}><option value="">All destinations</option>{destinations.data?.map((destination) => <option key={destination.id} value={destination.id}>{destination.name}{!destination.active && " (inactive)"}</option>)}</select></label><Button type="submit">Apply filters</Button><p className="muted">Maximum date range: 366 calendar days.</p>
-    </form><LoadNotice busy={categories.busy || destinations.busy} error={categories.error || destinations.error} reload={() => { categories.reload(); destinations.reload(); }} /><ReportResults key={query} query={query} />
+  function preset(value: string) { const current = todayMyt(); setPeriod(value); if (value !== "custom") { setFrom(value === "day" ? current : value === "year" ? `${current.slice(0, 4)}-01-01` : `${current.slice(0, 7)}-01`); setTo(current); } }
+  const applied = new URLSearchParams(query);
+  const scope = `${categories.data?.find(item => item.id === applied.get("categoryId"))?.name ?? "All visitor types"} · ${destinations.data?.find(item => item.id === applied.get("destinationId"))?.name ?? "All destinations"}`;
+  return <div className="admin-page admin-overview">
+    <header className="admin-heading"><div><h1>Overview</h1><p>Visitor activity and pass performance.</p></div></header>
+    <form className="admin-card admin-filters admin-overview-filters" onSubmit={event => { event.preventDefault(); const next = new URLSearchParams({ from, to }); if (category) next.set("categoryId", category); if (destination) next.set("destinationId", destination); setQuery(next.toString()); }}>
+      <label className="admin-field">Time period<select value={period} onChange={event => preset(event.target.value)}><option value="day">This day</option><option value="month">This month</option><option value="year">This year</option><option value="custom">Customize</option></select></label>
+      {period === "custom" ? <><InputField id="report-from" label="Start date (MYT)" type="date" min="2000-01-01" max={to} required value={from} onChange={event => setFrom(event.target.value)} /><InputField id="report-to" label="End date (MYT)" type="date" min={from} max="2100-12-31" required value={to} onChange={event => setTo(event.target.value)} /></> : <p className="admin-period-caption">{from} — {to}<small>MYT · inclusive dates</small></p>}
+      <label className="admin-field">Visitor type<select value={category} onChange={event => setCategory(event.target.value)}><option value="">All visitor types</option>{categories.data?.map(item => <option key={item.id} value={item.id}>{item.name}{!item.active && " (inactive)"}</option>)}</select></label>
+      <label className="admin-field">Destination<select value={destination} onChange={event => setDestination(event.target.value)}><option value="">All destinations</option>{destinations.data?.map(item => <option key={item.id} value={item.id}>{item.name}{!item.active && " (inactive)"}</option>)}</select></label><Button type="submit">Apply</Button>
+    </form>
+    <LoadNotice busy={categories.busy || destinations.busy} error={categories.error || destinations.error} reload={() => { categories.reload(); destinations.reload(); }} />
+    <ReportResults key={query} query={query} scope={scope} referencesReady={Boolean(categories.data && destinations.data && !categories.error && !destinations.error)} />
   </div>;
 }
 
-/** The last successful snapshot survives a transient outage with a visible stale label; no fallback metrics are invented. */
-function ReportResults({ query }: { query: string }) {
+/** Failed polling retains a labelled snapshot; exports require fresh authorized data and never retry themselves. */
+function ReportResults({ query, scope, referencesReady }: { query: string; scope: string; referencesReady: boolean }) {
   const remote = useRemote(`/api/admin/reports?${query}`, reportSchema, 5000);
-  const [exporting, setExporting] = useState(false), [exportMessage, setExportMessage] = useState("");
-  const exportLock = useRef(false);
-  const [exportTone, setExportTone] = useState<"success" | "error">("success");
-  /** One deliberate export at a time prevents duplicate audit writes before React renders the disabled button. */
-  async function download(passes = false) {
-    if (exportLock.current) return;
-    exportLock.current = true; setExporting(true); setExportMessage("");
+  const [exporting, setExporting] = useState(false), [message, setMessage] = useState(""), [tone, setTone] = useState<"success" | "error">("success");
+  const lock = useRef(false), alive = useRef(true), charts = useRef<HTMLDivElement>(null);
+  useEffect(() => { alive.current = true; return () => { alive.current = false; }; }, []);
+  async function download(image: boolean) {
+    if (lock.current || !remote.data || remote.stale || !referencesReady) return;
+    const snapshot = remote.data;
+    const svgs = Array.from(charts.current?.querySelectorAll<SVGSVGElement>("svg[data-report-chart]") ?? []).map(svg => {
+      // Explicit intrinsic dimensions keep text sharp when the exported SVG is decoded as an image.
+      const clone = svg.cloneNode(true) as SVGSVGElement;
+      clone.setAttribute("width", "1300"); clone.setAttribute("height", "560");
+      return new XMLSerializer().serializeToString(clone);
+    });
+    lock.current = true; setExporting(true); setMessage("");
     try {
-      const result = await apiClient.post(`/api/admin/reports/${passes ? "pass-exports" : "exports"}?${query}`, {}, exportSchema, { authRequired: true });
-      // Blob URLs are short lived and never written to persistent browser storage.
-      const url = URL.createObjectURL(new Blob([result.csv], { type: "text/csv;charset=utf-8" }));
-      const link = document.createElement("a"); link.href = url; link.download = result.filename; document.body.append(link); link.click(); link.remove(); window.setTimeout(() => URL.revokeObjectURL(url), 1000);
-      setExportTone("success"); setExportMessage(`Exported ${result.rowCount} ${passes ? "pass history rows" : "masked registrations"}. Local audit recorded.`);
-    } catch (error) { setExportTone("error"); setExportMessage(error instanceof ClientError && error.code === "EXPORT_TOO_LARGE" ? "Export exceeds the row or size limit. Narrow the date range or filters." : `${safeError(error)} An uncertain download may still have a local export audit. No automatic retry was sent.`); }
-    finally { exportLock.current = false; setExporting(false); }
+      if (image) {
+        const blob = await chartImage(snapshot, scope, svgs); if (!alive.current) return;
+        await apiClient.post(`/api/admin/reports/chart-exports?${query}`, { snapshotUpdatedAt: snapshot.serverUpdatedAt }, chartReceipt, { authRequired: true });
+        if (alive.current) downloadBlob(blob, `hsaas-charts-${snapshot.from}-${snapshot.to}.png`);
+      } else {
+        const result = await apiClient.post(`/api/admin/reports/compiled-exports?${query}`, {}, exportSchema, { authRequired: true });
+        if (alive.current) downloadBlob(new Blob([result.csv], { type: "text/csv;charset=utf-8" }), result.filename);
+      }
+      if (alive.current) { setTone("success"); setMessage(image ? "Chart image exported. Export audit recorded." : "Compiled CSV exported with all matching report rows and summary metrics. Export audit recorded."); }
+    } catch (error) { if (alive.current) { setTone("error"); setMessage(error instanceof ClientError && error.code === "EXPORT_TOO_LARGE" ? "The complete export exceeds 10,000 rows or the response size limit. Narrow the range; no partial CSV was produced." : `${safeError(error)} An uncertain download may still have an export audit. No automatic retry was sent.`); } }
+    finally { lock.current = false; if (alive.current) setExporting(false); }
   }
   return <><LoadNotice busy={remote.busy && !remote.data} error={remote.error} reload={remote.reload} />
-    {remote.data && <><div className={`admin-notice${remote.stale ? " admin-stale" : ""}`} role="status">{remote.stale ? "STALE · last successful data" : "Current query completed"} · server updated {formatMyt(remote.data.serverUpdatedAt)} · {remote.data.origin}<Button variant="secondary" disabled={remote.busy} onClick={remote.reload}>Refresh now</Button></div>
-      <ReportMetrics report={remote.data} />
-      {exportMessage && <ToastNotice tone={exportTone}>{exportMessage}</ToastNotice>}
-      <section className="admin-card"><div className="admin-heading"><div><h2>Pass issue & return history</h2><p>First 50 passes issued, actually returned or closed lost in the selected MYT period. Each pass appears once, even when several events fall in the period.</p></div><Button busy={exporting} disabled={remote.stale || remote.busy} onClick={() => { void download(true); }}>Export pass history CSV</Button></div>
-        <p>Issue = in; actual return = out. These are staff handover records. Lost closures keep a separate closure date and have no actual return. Exports contain pass metadata and staff IDs with no visitor or patient details. Limit: 10,000 rows and a bounded 1 MiB response.</p><PassHistory report={remote.data} /></section>
-      <section className="admin-card"><div className="admin-heading"><div><h2>Masked registration preview</h2><p>{remote.data.from} to {remote.data.to}, inclusive MYT · first 50 registrations</p></div><Button busy={exporting} disabled={remote.stale || remote.busy} onClick={() => { void download(); }}>Export masked CSV</Button></div><p>Export includes registration metadata only; visitor labels are fully masked. Up to 10,000 rows, within a 1 MiB response limit per export.</p>
-        <div className="admin-table-scroll" role="region" aria-label="Registration report" tabIndex={0}><table><caption>Registration activity in the selected period · requested destinations</caption><thead><tr><th>Reference</th><th>Visitor</th><th>Category</th><th>Ward / destinations</th><th>Status</th><th>Submitted (MYT)</th></tr></thead><tbody>{remote.data.preview.slice(0, 50).map((row) => <tr key={row.reference}><td>{row.reference}</td><td>{row.visitor}</td><td>{row.category}</td><td>{row.destination}</td><td>{row.status}</td><td>{historyTime(row.submittedAt)}</td></tr>)}</tbody></table></div>{remote.data.preview.length > 50 && <p>More registrations match. Use the bounded CSV export or narrow the filters.</p>}{!remote.data.preview.length && <p>No registrations in this period.</p>}
-      </section></>}
+    {remote.data && <>
+      <div className="admin-report-toolbar"><p role="status" className={remote.stale ? "admin-inline-error" : "muted"}>{remote.stale ? "Stale · last successful data" : "Updated"} {formatMyt(remote.data.serverUpdatedAt)} MYT · {remote.data.origin}</p><div className="admin-actions"><Button variant="secondary" disabled={remote.busy || exporting} onClick={remote.reload}><RefreshCw size={17} aria-hidden="true" />Refresh</Button><Button variant="secondary" disabled={remote.stale || exporting || !referencesReady} onClick={() => { void download(false); }}><Download size={17} aria-hidden="true" />Export CSV</Button><Button disabled={remote.stale || exporting || !referencesReady} busy={exporting} onClick={() => { void download(true); }}><ImageDown size={17} aria-hidden="true" />Export charts</Button></div></div>
+      {message && <ToastNotice tone={tone}>{message}</ToastNotice>}
+      <section><h2>Selected period</h2><div className="admin-metrics">{[["visits", "Registrations"], ["issued", "Passes issued"], ["returned", "Passes returned"], ["lost", "Passes closed lost"]].map(([key, label]) => <MetricCard key={key} report={remote.data!} metricKey={key} label={label} />)}</div></section>
+      <section><h2>Current snapshot</h2><div className="admin-metrics admin-current-metrics">{[["inUse", "Unreturned passes"], ["overdue", "Overdue · included in unreturned"], ["noDeadline", "No deadline · included in unreturned"]].map(([key, label]) => <MetricCard key={key} report={remote.data!} metricKey={key} label={label} />)}</div></section>
+      <div ref={charts} className="admin-chart-grid"><section className="admin-card"><h2>Daily registrations</h2><TrendChart report={remote.data} /></section><section className="admin-card"><h2>Registrations by visitor type</h2><CategoryChart report={remote.data} /></section><section className="admin-card"><h2>Pass issues & actual returns</h2><TrendChart report={remote.data} movement /></section><section className="admin-card"><h2>Pass inventory · All destinations</h2><InventoryChart report={remote.data} /></section></div>
+      <p className="admin-report-note">Registrations and passes are counted separately. Current unreturned counts ignore historical dates. Inventory uses the category filter only. Issue = staff handover; actual return = receipt of the pass. Lost closures have no return time.</p>
+      <ReportData report={remote.data} />
+    </>}
   </>;
 }
+function MetricCard({ report, metricKey, label }: { report: Report; metricKey: string; label: string }) { return <div className="admin-card"><span>{label}</span><strong>{metric(report, metricKey)?.toLocaleString() ?? "Unavailable"}</strong></div>; }
 
-/** A separate pass table makes partial returns and no-deadline borrowing visible without multiplying visitor rows. */
-function PassHistory({ report }: { report: Report }) {
-  return <><div className="admin-table-scroll" role="region" aria-label="Pass history report" tabIndex={0}><table><caption>Pass activity · full MYT dates/times · staff actor IDs</caption><thead><tr><th>Registration</th><th>Pass / card</th><th>Category / issued destination</th><th>Status</th><th>Issued / in</th><th>Return deadline</th><th>Actually returned / out</th><th>Closure</th><th>Method / origin</th></tr></thead><tbody>{report.passPreview.slice(0, 50).map((row) => <tr key={row.passReference}><td>{row.reference}</td><td>{row.passReference}<br />{row.cardCode}</td><td>{row.category}<br />{row.destination}</td><td>{row.status}</td><td>{historyTime(row.issuedAt)}<br />Staff ID {row.issuedBy}</td><td>{row.dueAt ? historyTime(row.dueAt) : "No return deadline"}</td><td>{row.returnedAt ? <>{historyTime(row.returnedAt)}<br />Staff ID {row.returnedBy}</> : "Not returned"}</td><td>{row.closedAt ? <>{historyTime(row.closedAt)}<br />Staff ID {row.closedBy ?? "Unavailable"}{row.status === "LOST" && <><br />Closed lost</>}</> : "Open"}</td><td>{row.operationMethod}<br />{row.origin}</td></tr>)}</tbody></table></div>{report.passPreview.length > 50 && <p>More passes match. Use the bounded CSV export or narrow the filters.</p>}{!report.passPreview.length && <p>No issue, actual return or lost-closure activity in this period.</p>}</>;
-}
-
-/** Period counts, current assignment counts and category-only inventory have separate headings and denominator definitions. */
-function ReportMetrics({ report }: { report: Report }) {
-  const metric = (key: string) => report.metrics.find((item) => item.metric === key)?.amount;
-  const period = [["visits", "Registrations submitted"], ["issuedRegistrations", "Distinct registrations issued passes"], ["issued", "Passes issued"], ["returned", "Passes actually returned"], ["lost", "Passes closed lost"]];
-  const current = [["openRegistrations", "Distinct registrations with open passes"], ["inUse", "Open passes (includes overdue)"], ["noDeadline", "Open passes without deadline"], ["overdue", "Open passes with deadline reached"], ["available", "Available cards"], ["inventory", "All enrolled cards"]];
-  const categories = report.metrics.filter((item) => item.metric === "category");
-  const days = report.metrics.filter((item) => item.metric === "day").sort((a, b) => a.label.localeCompare(b.label));
-  const denominator = metric("inventory"), issuedCards = metric("issuedCards");
-  return <><section><h2>Selected period activity</h2><p>Registrations submitted use their requested destinations. Issue, actual return and lost-closure counts use their own timestamps and actual issued destination. One registration with three passes counts as one registration and three passes; registrations do not mean distinct people.</p><div className="admin-metrics">{period.map(([key, label]) => <div className="admin-card" key={key}><span>{label}</span><strong>{metric(key) ?? "Unavailable"}</strong></div>)}</div></section>
-    <section><h2>Current as of {formatMyt(report.serverUpdatedAt)}</h2><p>Current open/overdue counts ignore historical dates. Category and actual issued destination still apply. Passes without a deadline remain open and require return; they are excluded from overdue.</p><div className="admin-metrics">{current.map(([key, label]) => <div className="admin-card" key={key}><span>{label}</span><strong>{metric(key) ?? "Unavailable"}</strong></div>)}</div><p className="admin-notice">Inventory and utilisation apply the category filter only and ignore the selected issued-destination filter. Issued-card fraction = ISSUED/OVERDUE cards ÷ all enrolled cards, including lost/disabled cards: {denominator === undefined || issuedCards === undefined ? "Unavailable" : denominator === 0 ? "No enrolled cards" : `${issuedCards} / ${denominator} (${(100 * issuedCards / denominator).toFixed(1)}%)`}.</p></section>
-    <div className="admin-two-col"><section className="admin-card"><h2>Registrations by category</h2>{categories.length ? categories.map((item) => <div className="admin-bar" key={item.label}><span>{item.label}</span><strong>{item.amount}</strong><meter min={0} max={Math.max(1, metric("visits") ?? 1)} value={item.amount}>{item.amount}</meter></div>) : <p>No registrations in this period.</p>}</section><section className="admin-card"><h2>Daily registration trend (MYT)</h2><p className="muted">Only dates with submissions are listed.</p><div className="admin-trend">{days.map((day) => <div key={day.label}><span>{day.label}</span><strong>{day.amount}</strong></div>)}{!days.length && <p>No registration activity.</p>}</div></section></div>
-  </>;
+/** Accessible numeric alternatives remain available alongside the charts; exports include all matches, not these previews. */
+function ReportData({ report }: { report: Report }) {
+  const issued = series(report, "dayIssued"), returned = series(report, "dayReturned");
+  return <details className="admin-card admin-report-data"><summary>View data tables and report details</summary>
+    <h2>Summary metrics</h2><div className="admin-table-scroll" role="region" aria-label="Summary metrics" tabIndex={0}><table><thead><tr><th>Metric</th><th>Group</th><th>Count</th></tr></thead><tbody>{report.metrics.filter(item => !["day", "dayIssued", "dayReturned"].includes(item.metric)).map(item => <tr key={`${item.metric}:${item.label}`}><td>{item.metric}</td><td>{categoryLabels[item.label] ?? item.label}</td><td>{item.amount}</td></tr>)}</tbody></table></div>
+    <h2>Daily values (MYT)</h2><div className="admin-table-scroll admin-daily-values" role="region" aria-label="Daily chart values" tabIndex={0}><table><thead><tr><th>Date</th><th>Registrations</th><th>Passes issued</th><th>Passes returned</th></tr></thead><tbody>{series(report, "day").map((day, index) => <tr key={day.label}><td>{day.label}</td><td>{day.amount}</td><td>{issued[index]?.amount}</td><td>{returned[index]?.amount}</td></tr>)}</tbody></table></div>
+    <h2>Registration preview</h2><p>First 50 matching registrations · masked. CSV includes the complete matching result or fails explicitly at its limit.</p><div className="admin-table-scroll" role="region" aria-label="Registration preview" tabIndex={0}><table><thead><tr><th>Reference</th><th>Visitor type</th><th>Requested destinations</th><th>Status</th><th>Submitted (MYT)</th></tr></thead><tbody>{report.preview.slice(0, 50).map(row => <tr key={row.reference}><td>{row.reference}</td><td>{categoryLabels[row.category] ?? row.category}</td><td>{row.destination}</td><td>{row.status}</td><td>{formatMyt(row.submittedAt)}</td></tr>)}</tbody></table></div>
+    <h2>Pass activity preview</h2><div className="admin-table-scroll" role="region" aria-label="Pass activity preview" tabIndex={0}><table><thead><tr><th>Pass / registration</th><th>Visitor type / destination</th><th>Status</th><th>Issued / in (MYT)</th><th>Deadline (MYT)</th><th>Returned / out (MYT)</th><th>Closed (MYT)</th></tr></thead><tbody>{report.passPreview.slice(0, 50).map(row => <tr key={row.passReference}><td><strong>{row.cardCode}</strong><small>{row.passReference}</small><small>{row.reference}</small></td><td>{categoryLabels[row.category] ?? row.category}<small>{row.destination}</small></td><td>{row.status}</td><td>{formatMyt(row.issuedAt)}<small>Staff {row.issuedBy}</small></td><td>{row.dueAt ? formatMyt(row.dueAt) : "No return deadline"}</td><td>{row.returnedAt ? formatMyt(row.returnedAt) : "Not returned"}<small>{row.returnedBy && `Staff ${row.returnedBy}`}</small></td><td>{row.closedAt ? formatMyt(row.closedAt) : "Open"}<small>{row.closedBy && `Staff ${row.closedBy}`}</small></td></tr>)}</tbody></table></div>
+  </details>;
 }

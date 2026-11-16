@@ -11,7 +11,9 @@ export function useRemote<T>(path: string, schema: z.ZodType<T>, poll = 0) {
   const [received, setReceived] = useState(0);
   const [revision, setRevision] = useState(0);
   const [now, setNow] = useState(Date.now);
+  const previousPath = useRef(path);
   useEffect(() => {
+    if (previousPath.current !== path) { setData(null); setError(null); setReceived(0); previousPath.current = path; }
     let alive = true, inFlight = false;
     const controller = new AbortController();
     async function load() {
@@ -38,7 +40,7 @@ export function useSave(reload: () => void) {
     if (lock.current) return;
     lock.current = true; setBusy(true); setMessage("");
     try { await action(); setTone("success"); setMessage("Saved. Refreshing current data."); done?.(); reload(); }
-    catch (error) { setTone("error"); setMessage(error instanceof ClientError && error.code === "LAST_ADMIN_REQUIRED" ? "Keep at least one active administrator." : error instanceof ClientError && error.code === "LOGIN_UNAVAILABLE" ? "That login is already in use. Refresh the account list." : error instanceof ClientError && error.kind !== "api" ? `${safeError(error)} Outcome unknown. Inspect refreshed data before submitting another change.` : safeError(error)); reload(); }
+    catch (error) { setTone("error"); setMessage(error instanceof ClientError && error.code === "LAST_ADMIN_REQUIRED" ? "Keep at least one active administrator." : error instanceof ClientError && error.code === "LOGIN_UNAVAILABLE" ? "That login or email is already in use. Refresh the account list." : error instanceof ClientError && error.kind !== "api" ? `${safeError(error)} Outcome unknown. Inspect refreshed data before submitting another change.` : safeError(error)); reload(); }
     finally { lock.current = false; setBusy(false); }
   }
   return { busy, message, tone, run };

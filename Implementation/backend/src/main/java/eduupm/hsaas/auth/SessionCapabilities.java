@@ -138,6 +138,13 @@ public class SessionCapabilities {
 
     /** Checks the current browser without trusting its cached role or counter list. */
     public Accounts.Account requireHuman(String bindingId, String contextId, Long generation, String login) {
+        var actor=requireCredentialSession(bindingId,contextId,generation,login);
+        if(actor.passwordChangeRequired()) throw new ApiFailure(403,"PASSWORD_CHANGE_REQUIRED","Set your own password before accessing this workspace.");
+        return actor;
+    }
+
+    /** Restricted sessions may only inspect identity, change the initial password or sign out. */
+    public Accounts.Account requireCredentialSession(String bindingId,String contextId,Long generation,String login) {
         if (bindingId == null || contextId == null) { throw ApiFailure.unauthenticated(); }
         Context discovered=findContext(contextId, false);
         return tx.execute(status -> {
@@ -146,6 +153,8 @@ public class SessionCapabilities {
             var actual=metadata.byPrimaryId(binding.primary());
             checkActive(binding, context, actor, actual, generation);
             if (!actor.login().equals(login)) { throw ApiFailure.unauthenticated(); }
+            if(actor.passwordChangeRequired() && (actor.temporaryPasswordExpiresAt()==null || !clock.instant().isBefore(actor.temporaryPasswordExpiresAt())))
+                throw new ApiFailure(401,"AUTHENTICATION_REQUIRED","The temporary password has expired. Contact your administrator.");
             return actor;
         });
     }

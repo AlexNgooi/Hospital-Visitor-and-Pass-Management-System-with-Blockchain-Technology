@@ -83,7 +83,7 @@ public class AuthController {
         new CsrfAuthenticationStrategy(csrf).onAuthentication(authenticated,request,response);
         contexts.saveContext(context,request,response);
         sessions.persistCurrent(session.getId());
-        var current=capabilities.requireHuman(binding,capability.id(),capability.generation(),login);
+        var current=capabilities.requireCredentialSession(binding,capability.id(),capability.generation(),login);
         return accounts.view(current);
     }
 
@@ -99,7 +99,7 @@ public class AuthController {
     @GetMapping("/api/auth/me")
     public Accounts.Me me(HttpServletRequest request) {
         var session=request.getSession(false); if(session==null) { throw ApiFailure.unauthenticated(); }
-        var actor=capabilities.requireHuman((String)session.getAttribute(SessionCapabilities.BINDING),
+        var actor=capabilities.requireCredentialSession((String)session.getAttribute(SessionCapabilities.BINDING),
                 (String)session.getAttribute(SessionCapabilities.CONTEXT),(Long)session.getAttribute(SessionCapabilities.GENERATION),
                 SecurityContextHolder.getContext().getAuthentication().getName());
         return accounts.view(actor);

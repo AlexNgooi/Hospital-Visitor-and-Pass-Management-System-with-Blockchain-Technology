@@ -1,0 +1,1126 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "HSAAS administration redesign increment",
+    "version": "2026-11-16",
+    "description": "Current authorized increment for codex/admin-management-redesign. Supplements the frozen foundation mirror; does not claim complete application OpenAPI coverage. ADMIN does not inherit counter staff authority. All writes use same-origin CSRF. Visitor management is excluded."
+  },
+  "servers": [
+    {
+      "url": "/"
+    }
+  ],
+  "paths": {
+    "/api/auth/me": {
+      "get": {
+        "summary": "Current session; passwordChangeRequired restricts all business APIs until the initial password is replaced.",
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Current authorized result; SMTP acceptance is not confirmed inbox delivery.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CurrentMe"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input"
+          },
+          "401": {
+            "description": "Expired, revoked or absent session"
+          },
+          "403": {
+            "description": "Role denied or password change required"
+          },
+          "409": {
+            "description": "Version conflict, duplicate login/email, last ready administrator protection, email configuration missing or pending send"
+          },
+          "422": {
+            "description": "The complete export exceeds the row or byte limit"
+          }
+        }
+      }
+    },
+    "/api/auth/change-password": {
+      "post": {
+        "summary": "Replace an unexpired initial password, revoke old sessions and require a new sign-in. Passwords allow paste and are limited to 72 UTF-8 bytes.",
+        "security": [
+          {
+            "sessionCookie": [],
+            "csrfHeader": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Current authorized result; SMTP acceptance is not confirmed inbox delivery.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Saved"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input"
+          },
+          "401": {
+            "description": "Expired, revoked or absent session"
+          },
+          "403": {
+            "description": "Role denied or password change required"
+          },
+          "409": {
+            "description": "Version conflict, duplicate login/email, last ready administrator protection, email configuration missing or pending send"
+          },
+          "422": {
+            "description": "The complete export exceeds the row or byte limit"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ChangeInitialPassword"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/admin/staff-email": {
+      "get": {
+        "summary": "Read configured/disabled status only, without connecting to SMTP or exposing secrets.",
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Current authorized result; SMTP acceptance is not confirmed inbox delivery.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EmailReadiness"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input"
+          },
+          "401": {
+            "description": "Expired, revoked or absent session"
+          },
+          "403": {
+            "description": "Role denied or password change required"
+          },
+          "409": {
+            "description": "Version conflict, duplicate login/email, last ready administrator protection, email configuration missing or pending send"
+          },
+          "422": {
+            "description": "The complete export exceeds the row or byte limit"
+          }
+        }
+      }
+    },
+    "/api/admin/users": {
+      "get": {
+        "summary": "Read staff directory and explicit counter permissions; never return password material.",
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Current authorized result; SMTP acceptance is not confirmed inbox delivery.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Staff"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input"
+          },
+          "401": {
+            "description": "Expired, revoked or absent session"
+          },
+          "403": {
+            "description": "Role denied or password change required"
+          },
+          "409": {
+            "description": "Version conflict, duplicate login/email, last ready administrator protection, email configuration missing or pending send"
+          },
+          "422": {
+            "description": "The complete export exceeds the row or byte limit"
+          }
+        }
+      },
+      "post": {
+        "summary": "Generate a 24-hour temporary password, commit the staff account and request a single initial email. No manual reason or password is accepted.",
+        "security": [
+          {
+            "sessionCookie": [],
+            "csrfHeader": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Current authorized result; SMTP acceptance is not confirmed inbox delivery.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Delivery"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input"
+          },
+          "401": {
+            "description": "Expired, revoked or absent session"
+          },
+          "403": {
+            "description": "Role denied or password change required"
+          },
+          "409": {
+            "description": "Version conflict, duplicate login/email, last ready administrator protection, email configuration missing or pending send"
+          },
+          "422": {
+            "description": "The complete export exceeds the row or byte limit"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateStaff"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/admin/users/{id}": {
+      "patch": {
+        "summary": "Versioned metadata/type/status change; revoke old sessions. A pending email change invalidates the old temporary password. Reason is recorded automatically.",
+        "security": [
+          {
+            "sessionCookie": [],
+            "csrfHeader": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Current authorized result; SMTP acceptance is not confirmed inbox delivery.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Saved"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input"
+          },
+          "401": {
+            "description": "Expired, revoked or absent session"
+          },
+          "403": {
+            "description": "Role denied or password change required"
+          },
+          "409": {
+            "description": "Version conflict, duplicate login/email, last ready administrator protection, email configuration missing or pending send"
+          },
+          "422": {
+            "description": "The complete export exceeds the row or byte limit"
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[1-9][0-9]{0,18}$"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EditStaff"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/admin/users/{id}/initial-email": {
+      "post": {
+        "summary": "Deliberately rotate and resend the temporary password for an active account awaiting setup. Never retry automatically.",
+        "security": [
+          {
+            "sessionCookie": [],
+            "csrfHeader": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Current authorized result; SMTP acceptance is not confirmed inbox delivery.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Delivery"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input"
+          },
+          "401": {
+            "description": "Expired, revoked or absent session"
+          },
+          "403": {
+            "description": "Role denied or password change required"
+          },
+          "409": {
+            "description": "Version conflict, duplicate login/email, last ready administrator protection, email configuration missing or pending send"
+          },
+          "422": {
+            "description": "The complete export exceeds the row or byte limit"
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[1-9][0-9]{0,18}$"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ResendInitial"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/admin/cards": {
+      "get": {
+        "summary": "Search complete authorized inventory; summary counts ignore the status filter but honor search/category/destination.",
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Current authorized result; SMTP acceptance is not confirmed inbox delivery.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Inventory"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input"
+          },
+          "401": {
+            "description": "Expired, revoked or absent session"
+          },
+          "403": {
+            "description": "Role denied or password change required"
+          },
+          "409": {
+            "description": "Version conflict, duplicate login/email, last ready administrator protection, email configuration missing or pending send"
+          },
+          "422": {
+            "description": "The complete export exceeds the row or byte limit"
+          }
+        },
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 1000
+            }
+          },
+          {
+            "name": "search",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "maxLength": 120
+            }
+          },
+          {
+            "name": "category",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "EXECUTIVE",
+                "PENJAGA",
+                "VENDOR",
+                "CONTRACTOR"
+              ]
+            }
+          },
+          {
+            "name": "destination",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "pattern": "^[1-9][0-9]{0,18}$"
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "AVAILABLE",
+                "ISSUED",
+                "OVERDUE",
+                "LOST",
+                "DISABLED"
+              ]
+            }
+          }
+        ]
+      }
+    },
+    "/api/admin/reports/compiled-exports": {
+      "post": {
+        "summary": "Audit and export all matching registration/pass/metric rows in one formula-safe masked CSV, or reject without a partial download. Maximum 10,000 total rows and bounded 1 MiB JSON. Read-committed queries do not reconstruct historical as-of state.",
+        "security": [
+          {
+            "sessionCookie": [],
+            "csrfHeader": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Current authorized result; SMTP acceptance is not confirmed inbox delivery.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Export"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input"
+          },
+          "401": {
+            "description": "Expired, revoked or absent session"
+          },
+          "403": {
+            "description": "Role denied or password change required"
+          },
+          "409": {
+            "description": "Version conflict, duplicate login/email, last ready administrator protection, email configuration missing or pending send"
+          },
+          "422": {
+            "description": "The complete export exceeds the row or byte limit"
+          }
+        },
+        "parameters": [
+          {
+            "name": "from",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          },
+          {
+            "name": "categoryId",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "pattern": "^[1-9][0-9]{0,18}$"
+            }
+          },
+          {
+            "name": "destinationId",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "pattern": "^[1-9][0-9]{0,18}$"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {},
+                "required": []
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/admin/reports/chart-exports": {
+      "post": {
+        "summary": "Audit filters and the captured snapshot timestamp before a browser-only PNG download; no chart pixels are uploaded.",
+        "security": [
+          {
+            "sessionCookie": [],
+            "csrfHeader": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Current authorized result; SMTP acceptance is not confirmed inbox delivery.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChartReceipt"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input"
+          },
+          "401": {
+            "description": "Expired, revoked or absent session"
+          },
+          "403": {
+            "description": "Role denied or password change required"
+          },
+          "409": {
+            "description": "Version conflict, duplicate login/email, last ready administrator protection, email configuration missing or pending send"
+          },
+          "422": {
+            "description": "The complete export exceeds the row or byte limit"
+          }
+        },
+        "parameters": [
+          {
+            "name": "from",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          },
+          {
+            "name": "categoryId",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "pattern": "^[1-9][0-9]{0,18}$"
+            }
+          },
+          {
+            "name": "destinationId",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "pattern": "^[1-9][0-9]{0,18}$"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ChartRequest"
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "sessionCookie": {
+        "type": "apiKey",
+        "in": "cookie",
+        "name": "HSAAS_SESSION",
+        "description": "HttpOnly host-only SameSite=Lax browser-session cookie; Secure by default. Managed by browser, never used as an explicit caller scope."
+      },
+      "csrfHeader": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-CSRF-TOKEN"
+      }
+    },
+    "schemas": {
+      "Saved": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "saved": {
+            "const": true
+          }
+        },
+        "required": [
+          "saved"
+        ]
+      },
+      "CreateStaff": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "login": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{2,63}$"
+          },
+          "fullName": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 120
+          },
+          "email": {
+            "type": "string",
+            "format": "email",
+            "maxLength": 254
+          },
+          "role": {
+            "type": "string",
+            "enum": [
+              "ADMIN",
+              "COUNTER_STAFF"
+            ]
+          }
+        },
+        "required": [
+          "login",
+          "fullName",
+          "email",
+          "role"
+        ]
+      },
+      "EditStaff": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "version": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740990
+          },
+          "role": {
+            "type": "string",
+            "enum": [
+              "ADMIN",
+              "COUNTER_STAFF"
+            ]
+          },
+          "active": {
+            "type": "boolean"
+          },
+          "fullName": {
+            "type": "string",
+            "maxLength": 120
+          },
+          "email": {
+            "type": "string",
+            "maxLength": 254
+          }
+        },
+        "required": [
+          "version",
+          "role",
+          "active"
+        ]
+      },
+      "Staff": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[1-9][0-9]{0,18}$"
+          },
+          "login": {
+            "type": "string"
+          },
+          "role": {
+            "type": "string",
+            "enum": [
+              "ADMIN",
+              "COUNTER_STAFF"
+            ]
+          },
+          "active": {
+            "type": "boolean"
+          },
+          "version": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740990
+          },
+          "fullName": {
+            "type": "string"
+          },
+          "email": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "passwordChangeRequired": {
+            "type": "boolean"
+          },
+          "onboardingDelivery": {
+            "type": "string",
+            "enum": [
+              "NOT_REQUIRED",
+              "PENDING",
+              "ACCEPTED",
+              "UNKNOWN"
+            ]
+          },
+          "permissions": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "counterId": {
+                  "type": "string",
+                  "pattern": "^[1-9][0-9]{0,18}$"
+                },
+                "active": {
+                  "type": "boolean"
+                },
+                "version": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 9007199254740990
+                }
+              },
+              "required": [
+                "counterId",
+                "active",
+                "version"
+              ]
+            }
+          }
+        },
+        "required": [
+          "id",
+          "login",
+          "role",
+          "active",
+          "version",
+          "fullName",
+          "email",
+          "passwordChangeRequired",
+          "onboardingDelivery",
+          "permissions"
+        ]
+      },
+      "EmailReadiness": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "configured": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "configured"
+        ]
+      },
+      "Delivery": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "saved": {
+            "const": true
+          },
+          "id": {
+            "type": "string",
+            "pattern": "^[1-9][0-9]{0,18}$"
+          },
+          "emailStatus": {
+            "type": "string",
+            "enum": [
+              "ACCEPTED",
+              "UNKNOWN"
+            ]
+          }
+        },
+        "required": [
+          "saved",
+          "id",
+          "emailStatus"
+        ]
+      },
+      "ResendInitial": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "version": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740990
+          }
+        },
+        "required": [
+          "version"
+        ]
+      },
+      "ChangeInitialPassword": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "currentPassword": {
+            "type": "string",
+            "maxLength": 72
+          },
+          "newPassword": {
+            "type": "string",
+            "minLength": 12,
+            "maxLength": 72
+          },
+          "confirmPassword": {
+            "type": "string",
+            "minLength": 12,
+            "maxLength": 72
+          }
+        },
+        "required": [
+          "currentPassword",
+          "newPassword",
+          "confirmPassword"
+        ]
+      },
+      "ChartRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "snapshotUpdatedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "snapshotUpdatedAt"
+        ]
+      },
+      "ChartReceipt": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "recordedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "recordedAt"
+        ]
+      },
+      "Export": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "filename": {
+            "type": "string"
+          },
+          "csv": {
+            "type": "string"
+          },
+          "rowCount": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 10000
+          },
+          "serverUpdatedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "filename",
+          "csv",
+          "rowCount",
+          "serverUpdatedAt"
+        ]
+      },
+      "InventorySummary": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "AVAILABLE": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "ISSUED": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "OVERDUE": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "LOST": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "DISABLED": {
+            "type": "integer",
+            "minimum": 0
+          }
+        },
+        "required": [
+          "AVAILABLE",
+          "ISSUED",
+          "OVERDUE",
+          "LOST",
+          "DISABLED"
+        ]
+      },
+      "CurrentMe": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "login",
+          "role",
+          "counterIds",
+          "passwordChangeRequired"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[0-9]+$",
+            "description": "Server database ID serialized as a decimal string."
+          },
+          "login": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9._-]{2,63}$"
+          },
+          "role": {
+            "type": "string",
+            "enum": [
+              "ADMIN",
+              "COUNTER_STAFF"
+            ]
+          },
+          "counterIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "pattern": "^[0-9]+$",
+              "description": "Server database ID serialized as a decimal string."
+            },
+            "uniqueItems": true,
+            "description": "Current active staff counter grants; ADMIN has an empty list."
+          },
+          "passwordChangeRequired": {
+            "type": "boolean"
+          }
+        },
+        "description": "Minimal current authenticated staff projection."
+      },
+      "InventoryCard": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "cardCode": {
+            "type": "string"
+          },
+          "maskedUid": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "categoryCode": {
+            "type": "string",
+            "enum": [
+              "EXECUTIVE",
+              "PENJAGA",
+              "VENDOR",
+              "CONTRACTOR"
+            ]
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "AVAILABLE",
+              "ISSUED",
+              "OVERDUE",
+              "LOST",
+              "DISABLED"
+            ]
+          },
+          "version": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740990
+          },
+          "source": {
+            "type": "string",
+            "enum": [
+              "SIMULATED",
+              "SYNTHETIC"
+            ]
+          },
+          "environment": {
+            "type": "string",
+            "enum": [
+              "synthetic",
+              "test"
+            ]
+          },
+          "destinationId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "destinationLabel": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "enrollmentMethod": {
+            "type": "string",
+            "enum": [
+              "SCAN",
+              "MANUAL"
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "cardCode",
+          "maskedUid",
+          "categoryCode",
+          "status",
+          "version",
+          "source",
+          "environment",
+          "destinationId",
+          "destinationLabel",
+          "enrollmentMethod"
+        ]
+      },
+      "Inventory": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "page": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740990
+          },
+          "pageSize": {
+            "const": 25
+          },
+          "total": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740990
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/InventoryCard"
+            }
+          },
+          "serverNow": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "summary": {
+            "$ref": "#/components/schemas/InventorySummary"
+          }
+        },
+        "required": [
+          "page",
+          "pageSize",
+          "total",
+          "items",
+          "serverNow",
+          "summary"
+        ]
+      }
+    }
+  }
+}

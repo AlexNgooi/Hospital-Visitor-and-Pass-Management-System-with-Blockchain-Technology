@@ -2,7 +2,6 @@ import { preserveToastInteraction } from "../components/ui/dialog-feedback";
 import { useState, type ReactNode } from "react";
 import {
   ArrowUpRight,
-  ArrowRight,
   ChevronRight,
   LogOut,
   Menu,
@@ -16,6 +15,7 @@ import { useAuth } from "./auth-context";
 import { homeIcon as HomeIcon, type FeatureSlot } from "./features";
 import { CounterContext } from "./counter-context";
 import { RegistrationQrDisplay } from "../features/registration-qr/display";
+import { ReportsPage } from "../features/administration/reports";
 import { RegistrationReview } from "../features/counter/review/page";
 
 /** On-demand navigation supports the combined overview and optional independent staff tabs. */
@@ -39,12 +39,13 @@ export function WorkspaceShell({ slots }: { slots: readonly FeatureSlot[] }) {
   const activeCounter = user.counterIds.includes(counter ?? "")
     ? counter
     : (user.counterIds[0] ?? null);
-  const navigation = slots.filter((slot) => slot.role === user.role);
+  const navigation = slots.filter((slot) => slot.role === user.role && (isStaff || ["/admin/users", "/admin/cards", "/admin/audit"].includes(slot.path)))
+    .sort((a, b) => isStaff ? 0 : ["/admin/users", "/admin/cards", "/admin/audit"].indexOf(a.path) - ["/admin/users", "/admin/cards", "/admin/audit"].indexOf(b.path));
   // Resolve header labels from the same role-filtered routes, including the staff overview and trailing slashes.
   const currentPath = location.pathname.replace(/\/+$/, "");
   const current =
     navigation.find((slot) => slot.path === currentPath)?.label ??
-    (isStaff && currentPath === base ? "Overview" : "Workspace overview");
+    (currentPath === base ? "Overview" : currentPath === "/admin/settings" ? "Pass settings" : currentPath === "/admin/reports" ? "Overview" : "Workspace overview");
   function signOut() {
     // Provider owns pending/UNKNOWN recovery after this protected shell immediately unmounts.
     void logout().catch(() => {});
@@ -101,7 +102,8 @@ export function WorkspaceShell({ slots }: { slots: readonly FeatureSlot[] }) {
   );
   return (
     <CounterContext.Provider value={activeCounter}>
-      <div className={`workspace workspace-drawer-layout${isStaff ? " workspace-staff" : ""}${queueSurface ? ` workspace-viewport ${overview ? "workspace-dashboard" : passes ? "workspace-passes" : "workspace-review"}` : ""}`}>
+      <div className={`workspace workspace-drawer-layout${isStaff ? " workspace-staff" : " workspace-admin"}${queueSurface ? ` workspace-viewport ${overview ? "workspace-dashboard" : passes ? "workspace-passes" : "workspace-review"}` : ""}`}>
+        {!isStaff && <aside className="sidebar admin-sidebar" aria-label="Administration">{nav}</aside>}
         <div className="workspace-body">
           <header className="topbar">
             <Dialog.Root
@@ -174,22 +176,8 @@ export function WorkspaceShell({ slots }: { slots: readonly FeatureSlot[] }) {
   );
 }
 
-/** Route descriptions explain existing tasks without promising metrics or integration health. */
-const areaDescriptions: Readonly<Record<string, string>> = {
-  "/staff/registrations": "Check visitor details and review registrations before handover.",
-  "/staff/registration-qr": "Display the current QR for visitors to start their registration.",
-  "/staff/passes": "Receive returned passes and review assignment history.",
-  "/admin/cards": "Manage manual pass inventory, locations and card availability.",
-  "/admin/users": "Manage staff accounts, roles and authorised counter access.",
-  "/admin/settings": "Maintain locations, visitor categories and return defaults.",
-  "/admin/reports": "Review registration activity, pass movements and masked exports.",
-  "/admin/audit": "Trace recorded staff actions and protected changes.",
-};
-
 /** Prioritise real role-specific work; links always come from the registered feature slots. */
-export function WorkspaceOverview({
-  slots,
-}: {
+export function WorkspaceOverview(_props: {
   slots: readonly FeatureSlot[];
 }) {
   const { state } = useAuth();
@@ -200,98 +188,9 @@ export function WorkspaceOverview({
     <header className="page-heading overview-heading"><div><h1>Overview</h1><p>Visitor registration and pass issuance, in one place.</p></div></header>
     <div className="staff-overview-grid"><RegistrationQrDisplay compact /><RegistrationReview embedded /></div>
   </div>;
-  const choices = slots.filter((slot) => slot.role === state.user.role);
-  const primary = choices.find((slot) => slot.path === (staff ? "/staff/registrations" : "/admin/reports"));
-  const workflow = staff
-    ? [
-        { path: "/staff/registration-qr", title: "Register", detail: "Display the visitor QR" },
-        { path: "/staff/registrations", title: "Review", detail: "Verify visitor details" },
-        { path: "/staff/passes", title: "Manage passes", detail: "Issue and receive returns" },
-      ].filter((step) => choices.some((slot) => slot.path === step.path))
-    : [];
-  return (
-    <div className="workspace-overview">
-      <div className="page-heading overview-heading">
-        <div>
-        <span className="eyebrow">
-          {staff ? "COUNTER WORKSPACE" : "ADMINISTRATION"}
-        </span>
-        <h1>{staff ? "Counter overview" : "Administration overview"}</h1>
-        <p>
-          {staff
-            ? "Welcome back. Keep each visitor moving from registration to return."
-            : "Keep your people, passes and daily operations organised."}
-        </p>
-        </div>
-        {primary && (
-          <Link to={primary.path} className="button button-primary overview-primary">
-            {staff ? "Review registrations" : "View reports"}
-            <ArrowRight size={18} aria-hidden="true" />
-          </Link>
-        )}
-      </div>
-      {workflow.length > 0 && (
-        <section className="workflow-section" aria-labelledby="workflow-title">
-          <div className="section-heading">
-            <h2 id="workflow-title">Your counter workflow</h2>
-            <span className="muted">Registration · review · handover</span>
-          </div>
-          <ol className="workflow-steps">
-            {workflow.map((step, index) => (
-              <li key={step.path}>
-                <Link to={step.path}>
-                  <span className="workflow-number" aria-hidden="true">{String(index + 1).padStart(2, "0")}</span>
-                  <span><strong>{step.title}</strong><small>{step.detail}</small></span>
-                  <ChevronRight size={18} aria-hidden="true" />
-                </Link>
-              </li>
-            ))}
-          </ol>
-        </section>
-      )}
-      <section aria-labelledby="workspace-areas-title">
-      <div className="section-heading">
-        <h2 id="workspace-areas-title">{staff ? "Workspace tools" : "Manage your workspace"}</h2>
-        <span className="muted">{staff ? "Everything you need at the counter" : "Accounts, inventory and operational records"}</span>
-      </div>
-      <div className="area-grid">
-        {choices.map(({ path, label, icon: Icon }) => (
-          <Link key={path} to={path} className="area-card">
-            <span className="area-icon">
-              {Icon && <Icon size={22} aria-hidden="true" />}
-            </span>
-            <div className="area-copy">
-              <h3>{label}</h3>
-              {areaDescriptions[path] && <p>{areaDescriptions[path]}</p>}
-            </div>
-            <ArrowUpRight size={18} aria-hidden="true" />
-          </Link>
-        ))}
-      </div>
-      </section>
-      <section className="capabilities">
-        <h2>Integration availability</h2>
-        <p className="muted">External services are separate from the manual pass workflow.</p>
-        <div className="capability-grid">
-          <Capability title="WhatsApp" state="Not enabled" />
-          <Capability title="Blockchain" state="Not enabled" />
-          <Capability title="Pass handling" state="Manual" />
-          <Capability title="Live patient API" state="Not enabled" />
-        </div>
-      </section>
-    </div>
-  );
+  return <ReportsPage />;
 }
 
-/** Label availability in text; colour alone never carries an operational status. */
-function Capability({ title, state }: { title: string; state: string }) {
-  return (
-    <div>
-      <span>{title}</span>
-      <span className="badge">{state}</span>
-    </div>
-  );
-}
 export function VisitorFrame({ children }: { children: ReactNode }) {
   return (
     <main className="visitor-frame" id="main-content" lang="ms">

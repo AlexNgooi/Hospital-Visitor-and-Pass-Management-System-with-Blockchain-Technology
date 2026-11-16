@@ -107,3 +107,7 @@ Windows 更新后端时，运行中的 Java 可能锁住 JAR，导致 package �
 维护工具只在再次明确要求重排时使用。先在当前源码 worktree 执行 `node Implementation/scripts/rename-native-pass-codes.mjs --runtime-root 'C:/Users/alexy/Documents/FYP Dev/Implementation'`；此步只读库存，打印数量与计划路径，并把原名称 hex、新名称及 version 存入该 runtime 的忽略目录 `tmp/manual-demo-native/pass-naming/`，不复制配置/密钥。核对计划后，加 `--apply '<该次打印的计划完整路径>'` 才会写入。
 
 apply 在一个事务中锁库存、检查计划中的名称/版本/状态与总量、通过临时名字避开唯一键冲突，然后改为目标名字、增加版本并写本地 CARD_RENAMED 审计。未伪造经办管理员，maintenance actor 为 null。若库存已变或失败，停止并核对结果，不盲目重复；旧计划不能再次改写已经更新的版本。内部 ID、assignment、归还时间、来源与创建信息均不修改，不执行迁移或重启服务。对照文件含原库存标签，应留在私有 runtime，不提交 Git。
+
+## Admin redesign branch prerequisite
+
+The `codex/admin-management-redesign` worktree requires the new V10 staff-onboarding migration before use. It was not applied during implementation; starting it with `--no-migrate` against an older schema will not work. Staff onboarding SMTP is separately opt-in and disabled by default. See [MANUAL_ADMIN.md](MANUAL_ADMIN.md) for this branch's exact prerequisites, configuration variables and user-run acceptance; do not automatically replace a running application or migrate the original `hsaas_db`.

@@ -2,6 +2,7 @@ import { Component, useEffect, type ReactNode } from "react";
 import { Navigate, Outlet, Route, Routes, useLocation } from "react-router-dom";
 import { AuthProvider } from "./app/auth-provider";
 import { useAuth } from "./app/auth-context";
+import { InitialPasswordPage } from "./app/initial-password";
 import { LoginPage } from "./app/login-page";
 import { mergeFeatureSlots, type FeatureSlot } from "./app/features";
 import { VisitorFrame, WorkspaceOverview, WorkspaceShell } from "./app/shell";
@@ -100,6 +101,7 @@ function RoleGate({ role }: { role: Role }) {
         </StatusPanel>
       </main>
     );
+  if (state.user.passwordChangeRequired) return <InitialPasswordPage />;
   return <Outlet />;
 }
 

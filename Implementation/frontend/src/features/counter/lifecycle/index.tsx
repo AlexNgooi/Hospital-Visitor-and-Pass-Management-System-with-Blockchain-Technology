@@ -8,5 +8,5 @@ export const counterLifecycleFeatures: readonly FeatureSlot[] = [
   { path: "/staff/passes", label: "Pass returns", role: "COUNTER_STAFF", icon: CreditCard, element: <StaffLifecycle /> },
 ];
 export const adminInventoryFeatures: readonly FeatureSlot[] = [
-  { path: "/admin/cards", label: "Card inventory", role: "ADMIN", icon: Library, element: <AdminInventory /> },
+  { path: "/admin/cards", label: "Pass management", role: "ADMIN", icon: Library, element: <AdminInventory /> },
 ];

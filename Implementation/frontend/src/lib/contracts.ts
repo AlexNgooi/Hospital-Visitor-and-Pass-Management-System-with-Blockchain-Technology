@@ -9,6 +9,8 @@ export const sessionSchema = z.object({
   login: z.string().regex(/^[a-z0-9][a-z0-9._-]{2,63}$/),
   role: roleSchema,
   counterIds: z.array(z.string().min(1).max(64)),
+  // Optional on older wire fixtures; current servers always supply the first-login restriction.
+  passwordChangeRequired: z.boolean().optional(),
 }) satisfies z.ZodType<components["schemas"]["Me"]>;
 export type SessionUser = z.infer<typeof sessionSchema>;
 export const csrfSchema = z.object({

@@ -30,6 +30,8 @@
 		<java.version>21</java.version>
 	</properties>
 	<dependencies>
+        <!-- Staff onboarding email is explicitly configured and remains disabled by default. -->
+        <dependency><groupId>org.springframework.boot</groupId><artifactId>spring-boot-starter-mail</artifactId></dependency>
 		<!-- The QR owner uses this pinned HS256 implementation; human auth still uses JDBC sessions. -->
 		<dependency>
 			<groupId>com.nimbusds</groupId>

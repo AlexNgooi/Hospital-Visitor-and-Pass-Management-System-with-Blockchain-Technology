@@ -25,7 +25,8 @@ public class Accounts implements UserDetailsService {
     public Account find(String login) {
         var rows = jdbc.query("SELECT * FROM users WHERE login=?", (rs, n) -> new Account(
                 rs.getLong("id"), rs.getString("login"), rs.getString("password_hash"),
-                rs.getString("role"), rs.getBoolean("active"), rs.getLong("security_epoch")), login);
+                rs.getString("role"), rs.getBoolean("active"), rs.getLong("security_epoch"), rs.getBoolean("password_change_required"),
+                eduupm.hsaas.common.DatabaseTime.instant(rs.getObject("temporary_password_expires_at",java.time.LocalDateTime.class))), login);
         if (rows.isEmpty()) { throw new UsernameNotFoundException("Invalid credentials"); }
         return rows.getFirst();
     }
@@ -34,7 +35,8 @@ public class Accounts implements UserDetailsService {
     public Account lock(long id) {
         var rows = jdbc.query("SELECT * FROM users WHERE id=? FOR UPDATE", (rs, n) -> new Account(
                 rs.getLong("id"), rs.getString("login"), rs.getString("password_hash"),
-                rs.getString("role"), rs.getBoolean("active"), rs.getLong("security_epoch")), id);
+                rs.getString("role"), rs.getBoolean("active"), rs.getLong("security_epoch"), rs.getBoolean("password_change_required"),
+                eduupm.hsaas.common.DatabaseTime.instant(rs.getObject("temporary_password_expires_at",java.time.LocalDateTime.class))), id);
         if (rows.isEmpty()) { throw ApiFailure.unauthenticated(); }
         return rows.getFirst();
     }
@@ -45,11 +47,13 @@ public class Accounts implements UserDetailsService {
                 "SELECT p.counter_id FROM user_counter_permissions p JOIN counters c ON c.id=p.counter_id "
                         + "WHERE p.user_id=? AND p.active=TRUE AND c.active=TRUE ORDER BY p.counter_id",
                 (rs, n) -> Long.toString(rs.getLong(1)), account.id()) : List.of();
-        return new Me(Long.toString(account.id()), account.login(), account.role(), counters);
+        return new Me(Long.toString(account.id()), account.login(), account.role(), counters, account.passwordChangeRequired());
     }
 
     /** Credential-bearing objects stay internal and are never controller responses. */
-    public record Account(long id, String login, String passwordHash, String role, boolean active, long epoch) {
+    public record Account(long id, String login, String passwordHash, String role, boolean active, long epoch, boolean passwordChangeRequired, java.time.Instant temporaryPasswordExpiresAt) {
+        /** Keeps internal fixtures and bootstrap callers source compatible with established accounts. */
+        public Account(long id,String login,String hash,String role,boolean active,long epoch) { this(id,login,hash,role,active,epoch,false,null); }
         /** Internal credentials are redacted even during accidental diagnostic formatting. */
         @Override public String toString() { return "Account[id="+id+", credentials=REDACTED]"; }
     }
@@ -67,5 +71,7 @@ public class Accounts implements UserDetailsService {
         public long securityEpoch() { return securityEpoch; }
     }
     /** Minimal authenticated projection defined by C01. */
-    public record Me(String id, String login, String role, List<String> counterIds) { }
+    public record Me(String id, String login, String role, List<String> counterIds, boolean passwordChangeRequired) {
+        public Me(String id,String login,String role,List<String> counterIds) { this(id,login,role,counterIds,false); }
+    }
 }

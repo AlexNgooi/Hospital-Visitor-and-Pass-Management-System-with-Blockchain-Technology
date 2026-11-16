@@ -50,16 +50,60 @@ public class ReportingService {
             // Inventory intentionally ignores the selected assignment destination, including destination-bound manual cards.
             String cardScope=" AND environment=? AND ((enrollment_method='SCAN' AND data_origin='SIMULATED') OR (enrollment_method='MANUAL' AND data_origin='SYNTHETIC'))"+(filter.categoryId()==null?"":" AND category_id=?");
             var cardArgs=new ArrayList<Object>();cardArgs.add(environment);if(filter.categoryId()!=null)cardArgs.add(filter.categoryId());
+            add(sql,args,"lostCards","SELECT COUNT(*) FROM cards WHERE status='LOST'"+cardScope,cardArgs);
+            add(sql,args,"disabledCards","SELECT COUNT(*) FROM cards WHERE status='DISABLED'"+cardScope,cardArgs);
             add(sql,args,"available","SELECT COUNT(*) FROM cards WHERE status='AVAILABLE'"+cardScope,cardArgs);
             add(sql,args,"inventory","SELECT COUNT(*) FROM cards WHERE 1=1"+cardScope,cardArgs);
             add(sql,args,"issuedCards","SELECT COUNT(*) FROM cards WHERE status IN ('ISSUED','OVERDUE')"+cardScope,cardArgs);
             sql.add("SELECT 'category' metric,r.category_code label,COUNT(*) amount"+registrations+"r.submitted_at>=? AND r.submitted_at<?"+registrationScope(filter)+" GROUP BY r.category_code");args.addAll(registrationArgs(filter,true));
             // UTC DATETIME plus eight hours avoids relying on MySQL timezone-table installation.
             sql.add("SELECT 'day' metric,DATE_FORMAT(DATE_ADD(r.submitted_at,INTERVAL 8 HOUR),'%Y-%m-%d') label,COUNT(*) amount"+registrations+"r.submitted_at>=? AND r.submitted_at<?"+registrationScope(filter)+" GROUP BY label");args.addAll(registrationArgs(filter,true));
+            sql.add("SELECT 'dayIssued' metric,DATE_FORMAT(DATE_ADD(a.issued_at,INTERVAL 8 HOUR),'%Y-%m-%d') label,COUNT(*) amount"+assignments+"a.issued_at>=? AND a.issued_at<?"+assignmentScope(filter)+" GROUP BY label");args.addAll(assignmentArgs(filter,true));
+            sql.add("SELECT 'dayReturned' metric,DATE_FORMAT(DATE_ADD(a.returned_at,INTERVAL 8 HOUR),'%Y-%m-%d') label,COUNT(*) amount"+assignments+"a.closure_reason='RETURNED' AND a.returned_at>=? AND a.returned_at<?"+assignmentScope(filter)+" GROUP BY label");args.addAll(assignmentArgs(filter,true));
             var values=jdbc.query(String.join(" UNION ALL ",sql),(rs,n)->new Metric(rs.getString(1),rs.getString(2),rs.getLong(3)),args.toArray());
             return new Report(filter.from().toString(),filter.to().toString(),now,"Asia/Kuala_Lumpur","SYNTHETIC / legacy SIMULATED · "+environment,values,rows(filter,51),passRows(filter,51,now));
         });
     }
+
+    /** A single compiled file has explicit row types, preserving registration/pass grain and snapshot scope. */
+    public Export exportCompiled(Proof proof,ReportFilter filter) {
+        return tx.execute(status->{
+            var actor=access.require(proof); validateReferences(filter); Instant now=clock.instant();
+            var registrations=rows(filter,10001);var passes=passRows(filter,10001,now);
+            var snapshot=report(proof,filter);
+            int count=registrations.size()+passes.size()+snapshot.metrics().size();requireExportCount(count);
+            var body=new StringBuilder("\uFEFF");
+            body.append(CsvSafety.row("Row type","Registration reference","Pass reference","Card code","Category","Destination","Status","Submitted (MYT)","Issued / in (MYT)","Issued by staff ID","Deadline (MYT)","Returned / out (MYT)","Returned by staff ID","Closed (MYT)","Closed by staff ID","Method","Origin","Metric","Label","Amount","Period from (MYT)","Period to (MYT)","Snapshot (MYT)","Category filter ID","Destination filter ID"));
+            for(var row:registrations)body.append(CsvSafety.row("REGISTRATION",row.reference(),"","",row.category(),row.destination(),row.status(),myt(row.submittedAt()),"","","","","","","","",snapshot.origin(),"","","",filter.from().toString(),filter.to().toString(),myt(snapshot.serverUpdatedAt()),string(filter.categoryId()),string(filter.destinationId())));
+            for(var row:passes)body.append(CsvSafety.row("PASS",row.reference(),row.passReference(),row.cardCode(),row.category(),row.destination(),row.status(),"",myt(row.issuedAt()),row.issuedBy(),myt(row.dueAt()),myt(row.returnedAt()),row.returnedBy(),myt(row.closedAt()),row.closedBy(),row.operationMethod(),row.origin(),"","","",filter.from().toString(),filter.to().toString(),myt(snapshot.serverUpdatedAt()),string(filter.categoryId()),string(filter.destinationId())));
+            for(var metric:snapshot.metrics())body.append(CsvSafety.row("METRIC","","","","","","","","","","","","","","","",snapshot.origin(),metric.metric(),metric.label(),Long.toString(metric.amount()),filter.from().toString(),filter.to().toString(),myt(snapshot.serverUpdatedAt()),string(filter.categoryId()),string(filter.destinationId())));
+            String id=UUID.randomUUID().toString();
+            var result=new Export(id,"hsaas-compiled-"+filter.from()+"-"+filter.to()+".csv",body.toString(),count,snapshot.serverUpdatedAt());
+            if(json.writeValueAsString(result).getBytes(java.nio.charset.StandardCharsets.UTF_8).length>1047552)throw new ApiFailure(422,"EXPORT_TOO_LARGE","Narrow the report range.");
+            exportAudit(actor.id(),id,filter,"COMPILED",count,now,snapshot.serverUpdatedAt());
+            return result;
+        });
+    }
+    /** Chart pixels stay in the browser; only bounded scope and snapshot metadata enter the audit. */
+    public ChartReceipt chartExport(Proof proof,ReportFilter filter,ChartRequest input) {
+        if(input==null || input.snapshotUpdatedAt()==null)throw new ApiFailure(400,"VALIDATION_FAILED","Select a current report snapshot.");
+        return tx.execute(status->{var actor=access.require(proof);validateReferences(filter);Instant now=clock.instant();
+            if(input.snapshotUpdatedAt().isAfter(now.plusSeconds(5)) || input.snapshotUpdatedAt().isBefore(now.minusSeconds(300)))
+                throw new ApiFailure(409,"VERSION_CONFLICT","Refresh the charts before exporting.");
+            String id=UUID.randomUUID().toString();exportAudit(actor.id(),id,filter,"CHARTS",0,now,input.snapshotUpdatedAt());
+            return new ChartReceipt(id,now);
+        });
+    }
+    private void exportAudit(long actor,String id,ReportFilter filter,String kind,int count,Instant now,Instant snapshotAt) {
+        jdbc.update("INSERT INTO report_exports(id,actor_id,from_date,to_date,category_id,destination_id,created_at,row_count) VALUES(?,?,?,?,?,?,?,?)",id,actor,filter.from(),filter.to(),filter.categoryId(),filter.destinationId(),DatabaseTime.sql(now),count);
+        audit.append(LocalAuditPort.Action.REPORT_EXPORTED,"REPORT_EXPORT",id,actor,new LocalAuditPort.Snapshot(null,"EXPORTED",null,0L,"LOCAL"));
+        var value=new LinkedHashMap<String,Object>();value.put("exportKind",kind);value.put("rowCount",count);value.put("from",filter.from().toString());value.put("to",filter.to().toString());value.put("categoryId",string(filter.categoryId()));value.put("destinationId",string(filter.destinationId()));value.put("snapshotUpdatedAt",snapshotAt.toString());
+        jdbc.update("INSERT INTO administration_history(entity_kind,entity_id,version,current_value,reason_code,actor_id,changed_at) VALUES('EXPORT',?,0,?,'REPORT_EXPORT',?,?)",id,json.writeValueAsString(value),actor,DatabaseTime.sql(now));
+    }
+    private static String string(Object value) { return value==null?"":value.toString(); }
+    private static String myt(Instant value) { return value==null?"":DateTimeFormatter.ISO_OFFSET_DATE_TIME.format(value.atZone(ReportFilter.MYT)); }
+    public record ChartRequest(Instant snapshotUpdatedAt){}
+    public record ChartReceipt(String id,Instant recordedAt){}
 
     /** Retains the original registration export surface; selecting a new pass export is always a deliberate POST. */
     public Export export(Proof proof,ReportFilter filter){return export(proof,filter,false);}

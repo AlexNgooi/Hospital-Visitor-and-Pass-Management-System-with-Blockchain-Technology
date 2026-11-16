@@ -25,3 +25,7 @@ Exact checkpoint/source review and dependency approval are tracked in
 `planning/04_DATA_MODEL_AND_API_PLAN.md`. Consolidating a new generated
 input requires a later reviewed combined specification; the old foundation input
 must not be silently relabelled as complete coverage of the new application.
+
+## 2026-11-16 administrator redesign increment
+
+[admin-management.openapi.json](admin-management.openapi.json) documents the current authorized account/onboarding, current Me, filtered inventory and export increment. It supplements the frozen foundation mirror, which remains byte-for-byte historical and is not relabelled as current complete coverage. Frontend runtime contracts extend the minimal generated foundation projection with the first-login restriction; generated declarations are not hand-edited. Audit module/action behavior and user-run verification are in [MANUAL_ADMIN](../runbooks/MANUAL_ADMIN.md).

@@ -59,7 +59,7 @@ public class SecurityConfig {
             .logout(logout->logout.disable())
             .authorizeHttpRequests(auth->auth.requestMatchers("/api/public/**","/api/auth/login","/api/auth/logout","/api/health").permitAll()
                     .requestMatchers("/api/staff/**").hasRole("COUNTER_STAFF").requestMatchers("/api/admin/**").hasRole("ADMIN")
-                    .requestMatchers("/api/auth/me").authenticated().anyRequest().denyAll())
+                    .requestMatchers("/api/auth/me","/api/auth/change-password").authenticated().anyRequest().denyAll())
             .exceptionHandling(handler->handler.authenticationEntryPoint((request,response,failure)->errors.write(request,response,ApiFailure.unauthenticated()))
                     .accessDeniedHandler((request,response,failure)->errors.write(request,response,new ApiFailure(403,
                             failure instanceof CsrfException?"CSRF_INVALID":"ACCESS_DENIED","Request is not permitted."))));
@@ -79,13 +79,15 @@ public class SecurityConfig {
             @Override protected void doFilterInternal(HttpServletRequest request,HttpServletResponse response,FilterChain chain) throws ServletException,IOException {
                 var auth=SecurityContextHolder.getContext().getAuthentication();
                 String path=request.getServletPath();
-                boolean protectedPath=path.equals("/api/auth/me") || path.startsWith("/api/staff/") || path.startsWith("/api/admin/");
+                boolean protectedPath=path.equals("/api/auth/me") || path.equals("/api/auth/change-password") || path.startsWith("/api/staff/") || path.startsWith("/api/admin/");
                 if(protectedPath && auth!=null && auth.isAuthenticated() && !(auth instanceof AnonymousAuthenticationToken)) {
                     var session=request.getSession(false);
                     try {
                         if(session==null) { throw ApiFailure.unauthenticated(); }
-                        capabilities.requireHuman((String)session.getAttribute(SessionCapabilities.BINDING),
+                        var actor=capabilities.requireCredentialSession((String)session.getAttribute(SessionCapabilities.BINDING),
                                 (String)session.getAttribute(SessionCapabilities.CONTEXT),(Long)session.getAttribute(SessionCapabilities.GENERATION),auth.getName());
+                        if(!path.startsWith("/api/auth/") && actor.passwordChangeRequired())
+                            throw new ApiFailure(403,"PASSWORD_CHANGE_REQUIRED","Set your own password before accessing this workspace.");
                     } catch(ApiFailure failure) { errors.write(request,response,failure); return; }
                 }
                 chain.doFilter(request,response);
