@@ -183,7 +183,7 @@ C11 M00 公共工程契约：
 | COUNTER_STAFF | `POST /api/staff/passes/history-export` | 同范围/姓名/类别条件扫描全部匹配 history；按 MYT returned_at 整天边界；安全 CSV 与导出审计；5000 行/响应体上限超限明确失败，不部分导出；不扩大 ADMIN 权限 |
 | COUNTER_STAFF | `/api/staff/card-assignments` 及 `/{id}`、`/return`、`/history`；`/api/staff/overdue` | 手动原子发放、逐张归还、nullable due、当前版本/柜台/来源 |
 | COUNTER_STAFF | `/api/staff/assignments/{id}/followups`、`/contact-reveal` | 内部跟进与受审计限时reveal，不发消息 |
-| ADMIN | `/api/admin/cards`、`/references`、`/{id}/mark-lost`、`/disable`、`/restore`、`/history` | 手动库存与原因/版本；不能任意PATCH状态 |
+| ADMIN | `/api/admin/cards`、`/references`、`/{id}/mark-lost`、`/disable`、`/restore`、`/history` | 手动库存与原因/版本；新建 cardCode 由类别固定 exec-/penj-/vend-/cont- 与自选 1–9999 组成，服务端校验并去前置零，全局唯一含停用/遗失；保留原 CARD_ENROLL 字段/幂等编码与旧成功重放；不能任意PATCH状态 |
 | ADMIN | accounts/settings/reports/audit的当前controller | 当前权限、CAS、safe history、脱敏和CSV防护；精确路径与payload以对应controller/contracts为准 |
 
 No pass 两条命令沿用当前 staff/session/counter/root 锁、来源/环境、version 与原命令 UNKNOWN 规则。审批、REGISTRATION_VERIFIED/REGISTRATION_NO_PASS 审计和幂等 receipt 同事务提交或回滚；不创建 cards/card_assignments/lifecycle_events、不占库存、不发送消息。issue-context 增加受权限保护的 noPassRecorded 历史布尔标记；后续实体发卡不删除旧无卡审计。Pass returns/history 仍只读实际借用，自动排除此决定，无 migration。Admin 本地 audit 的 All actions 能查看 REGISTRATION_NO_PASS。

@@ -90,3 +90,11 @@ Penjaga仅IC、每登记最多一张活动pass、条款勾选并记录服务器�
 
 - 按用户截图参照 Administration 的样式，所有 staff 页加入 Counter staff > 当前页名称。共享 shell 使用已授权 feature route label，Overview 单独映射，兼容 URL 尾斜杠；面包屑 nav 标记当前页，窄屏保留两级并允许 header 随换行增长。
 - 前端 build/lint、planning/diff 检查 PASS；保留既有 chunk 大小提示。仅前端与说明变更，未重启服务或执行数据库操作；浏览器/响应式视觉验收 NOT_RUN。改动保持在同一隔离分支，未 merge main 或 push。
+
+## 2026-11-16 Pass inventory 命名与既有库存整理
+
+- 用户确认 exec-/penj-/vend-/cont- 加自选 1–9999，并明确要求现有 pass 按各类别从 1 顺序整理，仅此次连续编号。新建 modal 改为固定类别前缀、数字输入和完整 code 预览；去除前置零，可跳号、不自动分配。后端在原 CARD_ENROLL 幂等 replay 之后校验类别/数字并 canonicalize，保留旧成功命令恢复；完整 code 全局唯一，借出/遗失/停用不释放编号，原 ADMIN 权限不变。
+- 明确请求的数据维护已执行：固定 loopback 专用账号/库 hsaas_manual_native、与启动器相同的 test environment，处理 9 张原库存（exec-1 至 exec-6、penj-1、vend-1、cont-1）。按 enrolled_at ASC/id ASC 排序；旧名 hex/新名/version 对照保存在原私有 runtime 的 tmp/manual-demo-native/pass-naming/117344d1-31da-42f4-867c-239f847ed196.json，不含配置/密钥/访客资料且未提交 Git。
+- 单一事务卡锁/完整快照检查、临时名称避免唯一键冲突、目标名与 version+1、CARD_RENAMED 安全审计一并提交，maintenance actor=null，不伪造管理员。初次受 MySQL 临时表重复引用限制而在更新前失败，确认原快照未变后修正，最终 COMMITTED。独立只读复核确认 9 个目标名、原 ID/状态/类别/来源/创建时间保留且 version 各增一次；SQL 未更新任何 assignment 或借还关联。
+- 实际检查：前端 build/lint PASS；后端 skip-tests test-compile PASS（源码/测试源码编译，无测试执行）；新维护脚本 node syntax、planning/diff PASS。保留既有 chunk/deprecated API 提示。该次明确维护及读回完成，不代表浏览器创建、重复编号、权限/并发、UNKNOWN 或 SQL 测试套件验收，这些仍 NOT_RUN。
+- 未触碰 hsaas_db，未执行 migration、seed、schema 创建/删除或复制私有配置/密钥，未重启应用或 MySQL。已有名字刷新可见；后端新建校验需用户更新/重启应用才生效。仍在同一隔离分支，未 merge main 或 push。

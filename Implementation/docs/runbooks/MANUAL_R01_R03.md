@@ -27,6 +27,8 @@
 
 ## 用户手动检查清单（全部 NOT_RUN）
 
+库存 naming 补充：新建时 Category 自动决定 exec-/penj-/vend-/cont-，前缀不可编辑；只填 1–9999，001 预览/保存为 1。相同类别编号重复（含借出/遗失/停用）拒绝，不同类别同号允许；以后可跳号，不自动顺序分配。篡改前缀、0/负数/字母/超范围应拒绝；旧成功 enrollment 的原 key/body 仍可恢复原 receipt。界面、创建/冲突、权限与 UNKNOWN 业务验收仍 NOT_RUN；2026-11-16 既有 9 张改名及只读快照复核属于单独明确请求的数据维护，不能当作上述业务测试 PASS。
+
 No pass 补充：四类别在发卡下拉选择 No pass 后应清除已选实体卡、隐藏地点/归还期限，并显示 Approve without pass（已批准时 Record no pass）。无兼容库存也可选；取消不写记录。成功保留登记与本地无卡审计，Approved 筛选再开详情应看到历史 No pass 提示；Pass returns 与归还 history 均不出现该决定。已有活动借用不能记录 No pass；重复点击/原 key 重试不重复写审计，UNKNOWN 只重试原命令；批准或审计失败全部回滚。后续如需实体 pass 仍可按原规则发卡。上述业务、权限、并发和数据库场景全部 NOT_RUN。
 
 Pass returns 补充：记录数超过一批时，滚动到底自动继续加载，不应有 Previous/Next，桌面主页面标题/筛选/底部信息保持可见。已归还行只在 View pass history 内出现；Time period 下拉支持 This day/month/year，Customize 才显示 Start/End date 和 Apply。验证 MYT 跨日/跨月/跨年边界、长姓名/Pass ID、单张部分归还与 UNKNOWN。CSV 应包含全部筛选结果（超出已加载的行），不包含电话/证件/患者资料，超量应明确要求缩小范围；公式开头标签和 Unicode 应安全。上述滚动、业务和导出验收均仍 NOT_RUN。

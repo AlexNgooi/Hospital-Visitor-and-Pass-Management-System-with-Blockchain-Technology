@@ -1,5 +1,9 @@
 # 2026-11-16 combined review and issue
 
+## Inventory naming
+
+New manual inventory uses a fixed category prefix (exec-/penj-/vend-/cont-) and an operator-selected integer from 1 to 9999. The enrollment modal shows Category, a noneditable prefix beside Pass number, a canonical Pass ID preview and destination. Leading zeros normalize away; future numbers may skip or arrive out of order. The existing ADMIN permission remains unchanged. Global card-code uniqueness includes unavailable/lost stock; return never frees the code. Existing inventory was renamed separately through explicit native maintenance, never through this UI or startup. Build/lint pass; browser enrollment/duplicate/UNKNOWN acceptance remains user-run / NOT_RUN.
+
 ## Explicit No pass choice
 
 ManualIssue adds No pass to the pass dropdown, mutually exclusive with selected cards for every category. It hides physical destination/deadline requirements, explains the saved disposition and uses Approve without pass (SUBMITTED) or Record no pass (VERIFIED). No handover confirmation is sent. Existing active assignments or an already recorded decision disable No pass, while later eligible physical issue remains possible. The protected issue-context displays the historical no-pass marker; older responses default this additive marker to false. Distinct immutable commands validate the VERIFIED receipt before closing and announcing success. UNKNOWN still permits only original-command recovery. No-pass records never enter assignment-based return/history lists. Browser/business/SQL acceptance remains user-run / NOT_RUN.

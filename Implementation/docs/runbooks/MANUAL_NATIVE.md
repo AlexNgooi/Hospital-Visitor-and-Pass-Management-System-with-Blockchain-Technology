@@ -97,3 +97,11 @@ node Implementation/scripts/manual-demo.mjs stop --runtime-root 'C:/Users/alexy/
 运行中不要再次 start。`--runtime-root` 指向已核对的 Implementation 目录，数据库与账号的固定限制仍有效。`--no-migrate` 不能与 initialize/restore 同用。入口仍为 `http://127.0.0.1:15417/login`。仅启动健康和页面源码检查通过，浏览器/扫码/审批发卡/并发等业务验收仍 NOT_RUN。
 
 Windows 更新后端时，运行中的 Java 可能锁住 JAR，导致 package 的重命名步骤失败。本轮已经实际遇到并处理：使用原控制端点停止已授权的这套应用后再打包，成功后以同一 runtime-root 和 --no-migrate 启动；不要通过删除密钥、改库或结束 MySQL 处理文件锁。
+
+## 明确请求时的一次性库存改名
+
+用户 2026-11-16 明确要求采用 exec-/penj-/vend-/cont-，并将原有 pass 各类别从 1 顺序整理。此次已在专用 hsaas_manual_native 中完成 9 张（exec-1 至 exec-6，其余各 1），原 card ID 与借还关联保留。这不是每次启动或新增时重新编号；以后操作员自选未使用的 1–9999，编号无需连续。既有 ADMIN 库存权限不变。
+
+维护工具只在再次明确要求重排时使用。先在当前源码 worktree 执行 `node Implementation/scripts/rename-native-pass-codes.mjs --runtime-root 'C:/Users/alexy/Documents/FYP Dev/Implementation'`；此步只读库存，打印数量与计划路径，并把原名称 hex、新名称及 version 存入该 runtime 的忽略目录 `tmp/manual-demo-native/pass-naming/`，不复制配置/密钥。核对计划后，加 `--apply '<该次打印的计划完整路径>'` 才会写入。
+
+apply 在一个事务中锁库存、检查计划中的名称/版本/状态与总量、通过临时名字避开唯一键冲突，然后改为目标名字、增加版本并写本地 CARD_RENAMED 审计。未伪造经办管理员，maintenance actor 为 null。若库存已变或失败，停止并核对结果，不盲目重复；旧计划不能再次改写已经更新的版本。内部 ID、assignment、归还时间、来源与创建信息均不修改，不执行迁移或重启服务。对照文件含原库存标签，应留在私有 runtime，不提交 Git。

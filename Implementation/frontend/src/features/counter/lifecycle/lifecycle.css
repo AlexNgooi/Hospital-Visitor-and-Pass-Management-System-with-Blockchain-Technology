@@ -27,6 +27,10 @@
 .lc-card-facts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px 24px; margin: 0 0 24px; }
 .lc-card-facts dt { font-size: 13px; color: var(--muted); margin-bottom: 5px; }
 .lc-card-facts dd { margin: 0; font-weight: 550; overflow-wrap: anywhere; }
+/* Keep the system prefix visibly separate from the operator's editable numeric suffix. */
+.lc-pass-number { display:flex; align-items:stretch; min-width:0; }
+.lc-pass-number > span { display:flex; align-items:center; padding:0 12px; border:1px solid var(--control-border); border-right:0; border-radius:8px 0 0 8px; background:var(--soft); color:var(--ink); }
+.lc-pass-number > input { flex:1; min-width:0; border-radius:0 8px 8px 0; }
 .lc-card-actions { display: grid; gap: 16px; padding-top: 20px; border-top: 1px solid var(--border); }
 .lc-card-dialog .lc-panel { margin-top: 24px; padding: 16px; }
 .lc-card-dialog > [role="status"] { margin-top: 24px; }

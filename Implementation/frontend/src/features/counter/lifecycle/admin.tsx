@@ -10,6 +10,7 @@ import { lifecycleApi } from "./client";
 import { lifecycleAccessLost, lifecycleError, useLifecycleCommands } from "./commands";
 import type { Card, CardPage, InventoryReferences, History } from "./contracts";
 import { LifecycleHistory, Pager, SimulationNotice } from "./shared";
+import { namedPass, passPrefixes } from "./pass-naming";
 import "./lifecycle.css";
 
 /** ADMIN inventory is a distinct slot and never inherits Counter Staff issue/return authority. */
@@ -23,7 +24,7 @@ export function AdminInventory() {
 function InventoryWorkspace({ recheck }: { recheck: () => void }) {
   const [data, setData] = useState<CardPage | null>(null);
   const [references, setReferences] = useState<InventoryReferences | null>(null);
-  const [cardCode, setCardCode] = useState("");
+  const [passNumber, setPassNumber] = useState("");
   const [categoryCode, setCategoryCode] = useState("");
   const [destinationId, setDestinationId] = useState("");
   const [page, setPage] = useState(0);
@@ -47,7 +48,7 @@ function InventoryWorkspace({ recheck }: { recheck: () => void }) {
   const inventoryHeading = useRef<HTMLHeadingElement>(null);
   const restoreCardFocus = useRef(false);
   const alive = useRef(true); const generation = useRef(0); const historyGeneration = useRef(0);
-  const deny = useCallback(() => { historyGeneration.current++; setDenied(true); setEnrolling(false); setCardCode(""); setData(null); setSelected(null); setHistory(null); setHistoryBusy(false); setHistoryError(""); setReferences(null); }, []);
+  const deny = useCallback(() => { historyGeneration.current++; setDenied(true); setEnrolling(false); setPassNumber(""); setData(null); setSelected(null); setHistory(null); setHistoryBusy(false); setHistoryError(""); setReferences(null); }, []);
   const commands = useLifecycleCommands(deny);
   const blocked = denied || commands.locked || busy;
   useEffect(() => {
@@ -97,39 +98,41 @@ function InventoryWorkspace({ recheck }: { recheck: () => void }) {
     event.preventDefault();
     if (blocked) return;
     setEnrollAttempt(value => value + 1);
-    if (!/^[A-Za-z0-9_-]{1,64}$/.test(cardCode)) {
-      setEnrollError("Enter a unique pass code using 1–64 letters, digits, hyphens or underscores.");
+    const cardCode = namedPass(categoryCode, passNumber);
+    if (!cardCode) {
+      setEnrollError("Enter a pass number from 1 to 9999. The category prefix is set automatically.");
       codeInput.current?.focus(); return;
     }
     if (!references?.categories.some(item => item.code === categoryCode) || !references.destinations.some(item => item.id === destinationId)) {
       setEnrollError("Select an available category and compatible destination."); return;
     }
     setEnrollError("");
-    commands.submit(lifecycleApi.enroll(cardCode, categoryCode, destinationId), "Card enrollment", () => { setCardCode(""); done(); });
+    commands.submit(lifecycleApi.enroll(cardCode, categoryCode, destinationId), "Card enrollment", () => { setPassNumber(""); done(); });
   }
   return <div className="lc-workspace">
     <header className="lc-header"><div><p className="lc-eyebrow">ADMINISTRATION</p><h1 ref={inventoryHeading} tabIndex={-1}>Card inventory</h1><p className="muted">Enroll visible pass codes and manage local inventory using synthetic demonstration data.</p></div><Button variant="secondary" busy={busy} disabled={commands.locked || denied} onClick={() => void refresh()}>Refresh inventory</Button></header>
     <SimulationNotice />{commands.notice}{!enrolling && !selected && commands.recovery}
     {denied && <StatusPanel kind="error" title="Current access must be rechecked" action={<Button onClick={recheck}>Recheck session</Button>}>Inventory and selections have been cleared.</StatusPanel>}
     {error && <ToastNotice>{error}</ToastNotice>}
-    <section className="lc-panel"><div className="lc-header"><h2>Card stock</h2><Button ref={enrollTrigger} disabled={blocked || !references} onClick={() => { reset(); setCardCode(""); setEnrollError(""); setEnrolling(true); }}>Enroll a card</Button></div>
+    <section className="lc-panel"><div className="lc-header"><h2>Card stock</h2><Button ref={enrollTrigger} disabled={blocked || !references} onClick={() => { reset(); setPassNumber(""); setEnrollError(""); setEnrolling(true); }}>Enroll a card</Button></div>
       {data && <><p className="lc-caption">Updated {formatMyt(data.serverNow)} MYT · UID is masked</p><div className="lc-table"><table><thead><tr><th>Card</th><th>Destination / method</th><th>Category</th><th>Status</th><th>Action</th></tr></thead><tbody>
         {data.items.map(card => <tr key={card.id}><td>{card.cardCode}</td><td>{card.destinationLabel ?? "Legacy stock"} · {card.enrollmentMethod} / {card.source}</td><td>{card.categoryCode}</td><td><span className={`lc-badge lc-${card.status.toLowerCase()}`}>{card.status}</span></td><td><Button variant="secondary" className="lc-icon-button" disabled={blocked} aria-label={`Open card ${card.cardCode}`} aria-haspopup="dialog" title="Open card" onClick={event => open(card, event.currentTarget)}><Eye size={20} aria-hidden="true" /></Button></td></tr>)}
-      </tbody></table></div>{data.items.length === 0 && <p>No cards enrolled. Enter a unique visible pass code to create inventory.</p>}<Pager page={page} total={data.total} disabled={blocked} change={setPage} /></>}
+      </tbody></table></div>{data.items.length === 0 && <p>No cards enrolled. Choose a category and an unused pass number to create inventory.</p>}<Pager page={page} total={data.total} disabled={blocked} change={setPage} /></>}
     </section>
-    <Dialog.Root open={enrolling} onOpenChange={next => { if (!next && !commands.locked) { setEnrolling(false); setCardCode(""); setEnrollError(""); } }}>
+    <Dialog.Root open={enrolling} onOpenChange={next => { if (!next && !commands.locked) { setEnrolling(false); setPassNumber(""); setEnrollError(""); } }}>
       <Dialog.Portal><Dialog.Overlay className="dialog-overlay" />
         <Dialog.Content onInteractOutside={preserveToastInteraction} className="dialog-content lc-enroll-dialog" onOpenAutoFocus={event => { event.preventDefault(); codeInput.current?.focus(); }}
           onCloseAutoFocus={event => { event.preventDefault(); restoreEnrollFocus.current = true; if (!enrollTrigger.current?.disabled) { enrollTrigger.current?.focus(); restoreEnrollFocus.current = false; } }}
           onEscapeKeyDown={event => { if (commands.locked) event.preventDefault(); }}
           onPointerDownOutside={event => { if (commands.locked) event.preventDefault(); }}>
           <div className="lc-header"><Dialog.Title>Enroll a card</Dialog.Title><Dialog.Close asChild><Button variant="ghost" disabled={commands.locked} aria-label="Close enrollment"><X size={20} aria-hidden="true" /></Button></Dialog.Close></div>
-          <Dialog.Description>Add the printed pass code, category and destination to card inventory.</Dialog.Description>
+          <Dialog.Description>Choose a category, enter your pass number and select its destination.</Dialog.Description>
           {enrollError && <ToastNotice revision={enrollAttempt}>{enrollError}</ToastNotice>}
           <form className="lc-enroll-form" onSubmit={enroll} noValidate aria-busy={commands.pending}>
-        <label className="lc-field">Visible pass code<input ref={codeInput} value={cardCode} maxLength={64} disabled={blocked} required autoComplete="off" spellCheck={false} aria-invalid={Boolean(enrollError)} onChange={event => { setCardCode(event.target.value); setEnrollError(""); }} aria-describedby="pass-code-help" /></label>
-        <p id="pass-code-help" className="muted">Use a unique code printed on the card: letters, digits, hyphen or underscore. No UID/profile or enrollment scan is required.</p>
-        <label className="lc-field">Category<select value={categoryCode} disabled={blocked} onChange={event => setCategoryCode(event.target.value)}>{references?.categories.map(category => <option key={category.id} value={category.code}>{category.label}</option>)}</select></label>
+        <label className="lc-field">Category<select value={categoryCode} disabled={blocked} onChange={event => { setCategoryCode(event.target.value); setEnrollError(""); }}>{references?.categories.map(category => <option key={category.id} value={category.code}>{category.label}</option>)}</select></label>
+        <label className="lc-field">Pass number<span className="lc-pass-number"><span aria-hidden="true">{passPrefixes[categoryCode] ?? ""}</span><input ref={codeInput} value={passNumber} maxLength={4} inputMode="numeric" pattern="[0-9]{1,4}" disabled={blocked} required autoComplete="off" spellCheck={false} aria-invalid={Boolean(enrollError)} onChange={event => { setPassNumber(event.target.value); setEnrollError(""); }} aria-describedby="pass-code-help pass-code-preview" /></span></label>
+        <p id="pass-code-help" className="muted">Choose any unused number from 1 to 9999. Numbers do not need to be consecutive; leading zeros are removed.</p>
+        <p id="pass-code-preview" className="pass-summary">Pass ID: <strong>{namedPass(categoryCode, passNumber) ?? `${passPrefixes[categoryCode] ?? ""}…`}</strong></p>
         <label className="lc-field">Compatible destination<select value={destinationId} disabled={blocked} onChange={event => setDestinationId(event.target.value)}>{references?.destinations.map(destination => <option key={destination.id} value={destination.id}>{destination.label}</option>)}</select></label>
         {commands.recovery}
         <div className="dialog-actions"><Dialog.Close asChild><Button variant="secondary" disabled={commands.locked}>Cancel</Button></Dialog.Close><Button type="submit" busy={commands.pending} disabled={blocked}>Register manual card</Button></div>

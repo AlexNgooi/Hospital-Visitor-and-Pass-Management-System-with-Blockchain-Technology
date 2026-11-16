@@ -1,5 +1,9 @@
 # 2026-11-16 atomic approval and issue
 
+## Inventory naming
+
+Manual CARD_ENROLL now calls card.PassNaming after idempotent replay lookup: EXECUTIVE exec-, PENJAGA penj-, VENDOR vend-, CONTRACTOR cont-, followed by an operator-chosen integer 1..9999. Leading zeros canonicalize; mismatched prefixes and invalid numbers fail. The existing request fields and encoding remain unchanged, preserving historical successful replay even for old labels. Duplicate checks and the global unique card_code constraint retain names across all statuses; no automatic number allocation is introduced. Explicit native maintenance renames existing labels in place and increments card versions without changing IDs, assignments, states, provenance or enrollment metadata. CARD_RENAMED is local audit only, not an issue/return lifecycle event.
+
 ## Explicit no-pass disposition
 
 POST /api/staff/card-assignments/approve-without-pass uses APPROVE_NO_PASS to atomically approve SUBMITTED and append REGISTRATION_NO_PASS. POST /api/staff/card-assignments/no-pass uses NO_PASS for an already VERIFIED registration. Strict bodies carry registrationId/expectedVersion/noPassConfirmed, with reviewConfirmed required only for approval. Their distinct canonical namespaces preserve legacy ISSUE replay. Both require current staff/session/counter/root authority, VERIFIED eligibility and zero active assignments, and reject a second recorded disposition under the root lock. Same-command replay returns its original VERIFIED receipt. No inventory, assignment, handover, return deadline or lifecycle card event is created; audit and idempotency roll back with approval. No migration is required.

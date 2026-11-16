@@ -25,6 +25,7 @@
 | Reader | 不再需要读卡器读取 pass；counter staff 在系统手动选择库存 pass 并确认 issue，发还流程不依赖真实或模拟扫描 |
 | 职员核实 | Counter staff 在同一 modal 人工核对完整资料、选择 pass/期限或 No pass；实体 pass 用 Approve & issue pass，无卡用 Approve without pass；批准与对应记录同事务，MRN lookup 不替代职员核实 |
 | Admin | 权限基本不变，继续管理账号、配置、库存、审计和报告；不因此自动取得 counter staff 操作权 |
+| Pass naming | 系统固定前缀 Executive `exec-`、Penjaga `penj-`、Vendor `vend-`、Contractor `cont-`；操作员自填 1–9999 整数，去除前置零，完整 code 全局唯一。归还不释放编号，遗失/停用不复用；No pass 无编号。现有库存按创建时间/ID、各类别从 1 一次重排，以后新增不要求连续或自动编号 |
 | 多张 pass | Vendor / Contractor 同一登记可借多张 pass，支持去多个 location；Executive 同一登记最多一张活动 pass |
 | 归还期限 | 可选择设定归还日期/时间，或不设期限；不设期限仍需实际归还并保留记录 |
 | 进出时间 | 用户明确选择 **发 pass 时间=进；还 pass 时间=出**，不新增独立门禁或 Check-in / Check-out 事件 |

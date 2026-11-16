@@ -7,6 +7,7 @@ import org.springframework.dao.DuplicateKeyException;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 import tools.jackson.databind.json.JsonMapper;
 import eduupm.hsaas.card.CardRules;
+import eduupm.hsaas.card.PassNaming;
 import eduupm.hsaas.common.*;
 import eduupm.hsaas.common.IdempotencyPort.SafeResult;
 import eduupm.hsaas.registration.RegistrationLifecyclePort;
@@ -132,13 +133,16 @@ final class ManualLifecycle {
 
     /** Enrollment locks reference rows in stable category/destination order; ADMIN never acquires staff capabilities. */
     private SafeResult enroll(ManualInput input,long actor,Instant now) {
-        String code=input.text("cardCode"),category=input.text("categoryCode");
-        if(!Set.of("EXECUTIVE","PENJAGA","VENDOR","CONTRACTOR").contains(category)) throw LifecycleInput.invalid();
+        String category=input.text("categoryCode");
+        String code=PassNaming.canonical(category,input.text("cardCode"));
         var categories=store.jdbc.query("SELECT id FROM visitor_categories WHERE code=? AND active=TRUE FOR SHARE",(rs,n)->rs.getLong(1),category);
         CardRules.require(!categories.isEmpty(),"CARD_CATEGORY_UNAVAILABLE");
         long destination=LifecycleInput.decimal(input.text("destinationId"));
         var destinations=store.jdbc.query("SELECT id FROM destinations WHERE id=? AND active=TRUE FOR SHARE",(rs,n)->rs.getLong(1),destination);
         CardRules.require(!destinations.isEmpty(),"CARD_DESTINATION_MISMATCH");
+        // The global unique key remains the concurrent fence; this read supplies a clear ordinary duplicate error.
+        Long duplicate=store.jdbc.queryForObject("SELECT COUNT(*) FROM cards WHERE card_code=?",Long.class,code);
+        CardRules.require(duplicate!=null && duplicate==0,"CARD_ALREADY_ENROLLED");
         String id=uuid();
         store.jdbc.update("INSERT INTO cards(id,card_code,category_id,category_code,status,enrolled_by,enrolled_at,data_origin,environment,enrollment_method,destination_id) VALUES(?,?,?,?,'AVAILABLE',?,?,'SYNTHETIC',?,'MANUAL',?)",
                 id,code,categories.getFirst(),category,actor,DatabaseTime.sql(now),environment,destination);
