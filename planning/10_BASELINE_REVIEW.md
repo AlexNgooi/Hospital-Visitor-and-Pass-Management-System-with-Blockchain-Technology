@@ -85,3 +85,8 @@ Penjaga仅IC、每登记最多一张活动pass、条款勾选并记录服务器�
 - 不创建卡、assignment、交付时间、期限或实体生命周期事件；现有 Pass returns/history 仅读实际借用，自然排除该决定。无 migration、数据库操作或外部集成。
 - 实际检查：前端 build/lint PASS；后端 `mvnw.cmd -B -DskipTests test-compile` PASS（含源码/测试源码编译，未运行测试）；planning/diff 检查 PASS。保留既有 chunk 大小/deprecated API 提示。浏览器、业务、权限/并发、回滚、UNKNOWN 和 SQL 验收全部 NOT_RUN，由用户手测。
 - 本轮未启动或重启应用/数据库；后端新增接口需由用户重启其应用后使用。未 merge main 或 push。
+
+## 2026-11-16 Staff header 当前位置
+
+- 按用户截图参照 Administration 的样式，所有 staff 页加入 Counter staff > 当前页名称。共享 shell 使用已授权 feature route label，Overview 单独映射，兼容 URL 尾斜杠；面包屑 nav 标记当前页，窄屏保留两级并允许 header 随换行增长。
+- 前端 build/lint、planning/diff 检查 PASS；保留既有 chunk 大小提示。仅前端与说明变更，未重启服务或执行数据库操作；浏览器/响应式视觉验收 NOT_RUN。改动保持在同一隔离分支，未 merge main 或 push。

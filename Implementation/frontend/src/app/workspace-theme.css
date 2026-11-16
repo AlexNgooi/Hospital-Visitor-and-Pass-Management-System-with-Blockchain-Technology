@@ -162,9 +162,19 @@ textarea:focus-visible, summary:focus-visible {
 .staff-overview-grid > * { width:100%; min-width:0; }
 @media (max-width:1180px) { .staff-overview-grid { grid-template-columns:minmax(240px,280px) minmax(0,1fr); } }
 @media (max-width:900px) { .staff-overview-grid { grid-template-columns:minmax(0,1fr); } }
-/* Staff navigation and counter selection live in the drawer; the header keeps only essential account tools. */
-.workspace-staff .topbar { min-height:56px; flex:0 0 56px; }
+/* Staff headers show the current location while navigation and counter selection stay in the drawer. */
+.workspace-staff .topbar { min-height:56px; flex:0 0 auto; }
+.workspace-staff .breadcrumb { flex:1; }
+.workspace-staff .breadcrumb > span { white-space:nowrap; }
+.workspace-staff .breadcrumb > svg { flex-shrink:0; }
 .workspace-staff .account-tools { margin-left:auto; }
+/* Keep both location levels visible on small screens and let the header grow when text wraps. */
+@media (max-width:800px) {
+  .workspace-staff .topbar { padding:8px 16px; }
+  .workspace-staff .breadcrumb { gap:4px 6px; }
+  .workspace-staff .breadcrumb > span { display:inline; }
+  .workspace-staff .breadcrumb > svg { display:block; }
+}
 .drawer-counter { display:grid; gap:6px; margin:0 0 20px; font-size:14px; }
 .drawer-counter select { width:100%; min-height:44px; padding:8px; border:1px solid var(--control-border); border-radius:8px; background:var(--surface); color:var(--ink); }
 /* At desktop sizes the queue receives the remaining height, instead of growing the document. */

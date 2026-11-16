@@ -2,6 +2,8 @@
 
 ## 2026-11-16 dashboard space and scrolling
 
+All staff headers now include the shared location breadcrumb: Counter staff > current route label (Overview, Registration review, Pass returns or Registration QR). Labels come from role-filtered feature slots and handle trailing slashes. The current page is marked with aria-current; both location levels remain visible on narrow screens, where the header can grow to accommodate wrapping. Branding and inline route tabs remain omitted. Browser visual acceptance is user-run / NOT_RUN.
+
 Pass returns now also uses the desktop viewport frame. Its active table and explicitly opened history dialog scroll and automatically load further batches, with no Previous/Next controls. Shared toast cards retain their existing duration/hover/focus handling and now use a 250ms exit fade (reduced-motion supported). The return confirmation modal holds its exact unresolved command and keeps recovery inside its focus boundary.
 
 Staff headers retain the menu/account/sign-out controls and omit branding and inline route tabs. Counter and parallel-tab tools are removed from the main page; authorized multi-counter selection remains in the drawer. Desktop Overview and standalone Registration review use the available viewport height (at least 1024px wide and 560px high); their queues scroll internally with sticky headers, visible pagination and keyboard access. Smaller or highly zoomed windows retain natural page reflow instead of clipping controls. Compact QR help and manual-copy fallback use dialogs to avoid enlarging the dashboard. Browser visual/business acceptance remains user-run / NOT_RUN.

@@ -40,9 +40,11 @@ export function WorkspaceShell({ slots }: { slots: readonly FeatureSlot[] }) {
     ? counter
     : (user.counterIds[0] ?? null);
   const navigation = slots.filter((slot) => slot.role === user.role);
+  // Resolve header labels from the same role-filtered routes, including the staff overview and trailing slashes.
+  const currentPath = location.pathname.replace(/\/+$/, "");
   const current =
-    navigation.find((slot) => slot.path === location.pathname)?.label ??
-    "Workspace overview";
+    navigation.find((slot) => slot.path === currentPath)?.label ??
+    (isStaff && currentPath === base ? "Overview" : "Workspace overview");
   function signOut() {
     // Provider owns pending/UNKNOWN recovery after this protected shell immediately unmounts.
     void logout().catch(() => {});
@@ -139,11 +141,12 @@ export function WorkspaceShell({ slots }: { slots: readonly FeatureSlot[] }) {
                 </Dialog.Content>
               </Dialog.Portal>
             </Dialog.Root>
-            {!isStaff && <div className="breadcrumb">
-              <span>Administration</span>
+            {/* A persistent location marker shares the administrator header pattern across all staff pages. */}
+            <nav className="breadcrumb" aria-label="Breadcrumb">
+              <span>{isStaff ? "Counter staff" : "Administration"}</span>
               <ChevronRight size={14} aria-hidden="true" />
-              <strong>{current}</strong>
-            </div>}
+              <strong aria-current="page">{current}</strong>
+            </nav>
             <div className="account-tools">
               <div className="account-avatar" aria-hidden="true">
                 {user.login.slice(0, 2).toUpperCase()}
