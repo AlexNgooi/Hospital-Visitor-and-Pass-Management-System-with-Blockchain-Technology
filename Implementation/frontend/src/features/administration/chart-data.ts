@@ -13,4 +13,3 @@ export function series(report: Report, key: string) {
   }
   return points;
 }
-
