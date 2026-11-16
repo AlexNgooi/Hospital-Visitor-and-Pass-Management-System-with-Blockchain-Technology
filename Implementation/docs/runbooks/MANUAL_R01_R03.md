@@ -8,7 +8,7 @@
 
 ## 启动前提
 
-- main已合入本轮UI、本机启动和planning清理源码，但当前运行demo不会自动更新；启动时机仍由用户决定。本轮助手没有停止/重启旧服务、连接数据库或更新 schema。
+- main已纳入当前用户要求的源码发布，但运行demo不会自动更新；启动时机仍由用户决定。本次 Git 发布不重启服务、连接数据库或更新 schema；先前明确请求的启动/库存维护见 planning/10 的对应记录。
 - 新版含新增 V8/V9，V1–V7 不改写。后续从旧库升级前，先由用户按既有 owner/backup 流程保护数据和匹配的私有 keys。备份/恢复和真实迁移尚未验证，不执行 repair/baseline/clean 或直接修改 native3306。
 - 本机启动端口固定，不能与旧服务抢占；新worktree不自动认领旧库或复制私有control/keys/.env。环境准备以MANUAL_NATIVE.md为准。
 - 这里只使用合成姓名、IC、地址、患者和电话。MRN API 是假的，WhatsApp/blockchain 仍 disabled。当前账户、counter grant、动态 QR 入口与 ADMIN/COUNTER_STAFF 角色分离继续有效。
@@ -35,7 +35,7 @@ Pass returns 补充：记录数超过一批时，滚动到底自动继续加载�
 
 姓名/连续扫码补充：短姓名应正常显示，长姓名显示前 12 字符加省略号且不撑宽表格；两个独立访客浏览器应可用同一当前 QR 分别登记。相同浏览器提交确认后重新扫码当前 QR 应进入新表单；旧 UNKNOWN 不得因新扫码被丢弃。上述场景仍由用户手测，助手未执行业务提交。
 
-本轮 `codex/visitor-review-issue-dashboard` 尚未合并 main。还需检查 Overview/独立 QR 自动展示、过期/断线隐藏、切柜台、只有队列的 review 页面、modal 自动资料/拒绝/单卡与多卡/期限、冲突整体回滚、UNKNOWN 原命令恢复，以及键盘关闭焦点返回、375px 窄屏和浏览器放大。助手未启动任何服务或执行业务验收。
+本轮 `codex/visitor-review-issue-dashboard` 至 `1866a6c` 纳入用户明确要求的 main 发布。还需检查 Overview/独立 QR 自动展示、过期/断线隐藏、切柜台、只有队列的 review 页面、modal 自动资料/拒绝/单卡与多卡/期限、冲突整体回滚、UNKNOWN 原命令恢复，以及键盘关闭焦点返回、375px 窄屏和浏览器放大。此 Git 发布没有启动服务或执行业务验收；先前健康检查和指定库存改名不替代本清单。
 
 | 检查 | 预期 |
 |---|---|

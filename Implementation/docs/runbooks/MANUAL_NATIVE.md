@@ -42,7 +42,7 @@ node Implementation/scripts/manual-demo.mjs start --initialize
 
 1. 登录 Counter Staff，Overview 默认同屏展示 QR 和 Registration queue；顶部仅保留菜单与账号工具。
 2. 如需独立页面，从左上角菜单的 QR 或 Registration review 入口右侧箭头另开标签；新页继承当前柜台并由服务器校验权限。多柜台账号在菜单内切换柜台。
-3. 本轮隔离分支的 Overview 和独立 QR 页自动展示二维码。可以把两页拖成并排窗口，无需重复登录。
+3. Overview 和独立 QR 页自动展示二维码；本轮源码已纳入用户明确要求的 main 发布。可以把两页拖成并排窗口，无需重复登录。
 4. 导航菜单各入口右侧箭头可另开页面，包括审核、QR 和 ADMIN 工具；不再使用独立柜台工具栏。
 5. 侧边栏默认隐藏，左上角菜单打开；点击关闭/遮罩或按 Escape 收起，焦点返回菜单按钮。
 
@@ -82,6 +82,8 @@ node Implementation/scripts/manual-demo.mjs start
 本次仅做必要静态/构建检查：前端 build/lint、launcher syntax、后端 skip-tests package 和 seed 编译。真实启动、迁移、并排浏览器、剪贴板、业务与备份恢复均为用户手测（NOT_RUN）。业务检查沿用 MANUAL_R01_R03.md，不沿用旧 M00–M07 扫描发卡步骤。
 
 ## 2026-11-16：运行合并审核发卡的隔离分支
+
+当前发布说明：用户后续已要求本机与 GitHub main 同步，来源分支至 `1866a6c` 纳入 main。以下记录的是先前经授权使用 worktree 启动的运行方式；Git 发布不会切换运行进程的工作目录或替换其 JAR。若更新运行版，仍需按用户安排构建并重启这组应用，不重启 MySQL、不复制私有运行文件。
 
 用户本轮明确要求启动后，`codex/visitor-review-issue-dashboard` 已使用原主项目专用演示运行目录启动。应用源码/JAR/Vite 取自该 worktree，配置、密钥、日志与 control 留在原目录；没有复制私有文件，没有合并 main。此普通启动显式关闭 Flyway，未初始化、迁移或重新 seed 数据，也未重启 MySQL。
 

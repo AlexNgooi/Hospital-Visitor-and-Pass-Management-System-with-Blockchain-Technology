@@ -1,6 +1,6 @@
 # 当前需求与验收
 
-更新：2026-11-16。Overview、默认显示 QR、队列 modal 和审核/发卡合并按用户本轮确认执行；当前实现位于 `codex/visitor-review-issue-dashboard`，尚未合并 main。四类表单、manual pass、MRN mock、条款/日期规则按用户2026-10-26/27确认执行；本机运行和多页面/Copy link 按2026-11-10要求。R01–R03 源码已合并 main；当前手测状态见 [10](10_BASELINE_REVIEW.md)。
+更新：2026-11-16。Overview、默认显示 QR、队列 modal、审核/发卡合并、归还历史/CSV、No pass、staff 面包屑和库存命名按用户确认执行；`codex/visitor-review-issue-dashboard` 至 `1866a6c` 纳入用户明确要求的本机/GitHub main 发布。四类表单、manual pass、MRN mock、条款/日期规则按用户2026-10-26/27确认执行；本机运行和多页面/Copy link 按2026-11-10要求。R01–R03 源码已合并 main；当前手测状态见 [10](10_BASELINE_REVIEW.md)。
 
 业务字段来源：用户说明及 `CamScanner 26-10-2026 20.27.pdf` 第1页（BORANG SERAH DAN PEMULANGAN KAD AKSES PENJAGA，22/08/2025）。PDF 的罚款、收费、固定柜台及转 ward 重办背景不自动成为新增功能。演示只用合成资料，真实 IC/MRN 采集与保留待医院批准。
 

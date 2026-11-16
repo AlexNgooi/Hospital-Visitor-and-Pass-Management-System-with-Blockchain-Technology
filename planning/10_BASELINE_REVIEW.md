@@ -10,12 +10,14 @@
 | 本机启动/并行页面/Copy link | 本地提交 `c82c3eb`，已纳入本次main合并 | 未启动应用、数据库、迁移或浏览器 |
 | 当前清理 | `5fea768`：planning合并、旧资产删除、依赖移除及本机测试隔离，已纳入main | 静态/构建结果记本轮handoff；新native测试未执行 |
 | 库存 modal / Toast / 账号查看 | 来源分支 `codex/card-enrollment-toast`，实现提交 `1e09a6a` / `90c1e40`：登记与Open card详情modal、查看图标按钮、共享轻提示、账号下拉选择，默认当前登录账号及权限；纳入本次main发布 | 实现版本build/lint通过；测试源码类型检查FAIL（未修改的registration旧fixture）；浏览器/业务/数据库NOT_RUN，运行版未重启 |
-| Overview / 合并审核发卡 | 2026-11-16 用户确认预览并授权实施；分支 `codex/visitor-review-issue-dashboard`：默认动态 QR＋队列、queue-only review、自动审计资料 modal、原子 APPROVE_ISSUE、多卡/地点/期限及 Pass returns；尚未合并 main | 前端 build/lint、后端 skip-tests package、planning 检查通过；typecheck:test 仍 FAIL（未改动的 registration fixture 旧 schema/缺 patient）；应用/浏览器/数据库/并发/业务全部 NOT_RUN |
+| Overview / 审核发卡 / 归还 / 库存命名 | 2026-11-16 来源分支 `codex/visitor-review-issue-dashboard` 至 `1866a6c` 纳入本次本机/GitHub main 发布：默认 QR＋队列、资料 modal、原子审批发卡、归还/历史/CSV、No pass、面包屑、固定命名前缀与自填尾号 | 当前源码 frontend build/lint、backend skip-tests test-compile、planning PASS；typecheck:test 的未改 registration fixture 仍 FAIL；浏览器/业务/并发验收 NOT_RUN；先前只执行明确请求的启动健康检查和 9 张库存维护，非完整验收 |
 | Sui/通知 | 默认disabled；无真实调用、合约发布或历史补发 | Sui worker/Move、provider接口与真实验收均未实施 |
 
 2026-11-10用户明确要求“github push main”，授权将独立分支 `codex/no-docker-multi-page`（交付head `5fea768`）合并并推送main。旧文档冲突按当前规范解决，当前运行指南改为主项目checkout。没有部署、启动/重启应用、执行数据库迁移或删除旧数据；Git发布不代表业务验收。
 
 2026-11-16用户再次明确要求“github push main”，授权将 `codex/card-enrollment-toast` 的库存modal、共享toast和账号查看改动纳入main并推送GitHub。本次发布保留既有静态检查结论和未通过的旧测试类型检查记录；未启动或重启应用、数据库，未执行迁移或浏览器/业务验收。
+
+2026-11-16 用户进一步明确要求“github push main, local 也是”，授权将 `codex/visitor-review-issue-dashboard` 至 `1866a6c` 及当前发布说明快进到主项目 main 并推送 origin/main。发布前已 fetch，原本机/远端 main 同为 `828fa75`，工作分支领先 9 个实现提交、无分叉；主项目原有两个未跟踪 output 目录保留且不提交。此 Git 发布不重启运行版、不执行迁移或再次改名、不上传 runtime/私有配置/密钥/数据库。下方各阶段“未合并/未推送”描述的是当时状态，以本节当前发布为准；实际运行版和业务验收仍独立。
 
 ## 待确认事项
 
