@@ -31,6 +31,9 @@ export function WorkspaceShell({ slots }: { slots: readonly FeatureSlot[] }) {
   if (state.kind !== "authenticated") return null;
   const { user } = state;
   const isStaff = user.role === "COUNTER_STAFF";
+  // Both queue surfaces share the desktop viewport frame; other workspaces keep their natural document flow.
+  const queueSurface = isStaff && /^\/staff(?:\/registrations)?\/?$/.test(location.pathname);
+  const overview = isStaff && /^\/staff\/?$/.test(location.pathname);
   const base = isStaff ? "/staff" : "/admin";
   const activeCounter = user.counterIds.includes(counter ?? "")
     ? counter
@@ -95,7 +98,7 @@ export function WorkspaceShell({ slots }: { slots: readonly FeatureSlot[] }) {
   );
   return (
     <CounterContext.Provider value={activeCounter}>
-      <div className={`workspace workspace-drawer-layout${isStaff ? " workspace-staff" : ""}${isStaff && /^\/staff\/?$/.test(location.pathname) ? " workspace-dashboard" : ""}`}>
+      <div className={`workspace workspace-drawer-layout${isStaff ? " workspace-staff" : ""}${queueSurface ? ` workspace-viewport ${overview ? "workspace-dashboard" : "workspace-review"}` : ""}`}>
         <div className="workspace-body">
           <header className="topbar">
             <Dialog.Root

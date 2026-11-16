@@ -62,3 +62,8 @@ Penjaga仅IC、每登记最多一张活动pass、条款勾选并记录服务器�
 - 源码确认当前 QR challenge 支持独立匿名会话交换各自 grant；消费的是各访客单次 grant，未消费共享 QR。相同浏览器只有一份未提交表单。修复 RegistrationPage 完成后未订阅新扫码、一直显示旧 receipt 的路径：完成页继续订阅临时 entry vault，新扫码才进入新 exchange，pending/UNKNOWN 不丢弃原命令；不增加无 QR 入口。
 - 实际检查：前端 build/lint PASS；后端编译通过，首次 package 因运行中的 Windows JAR 无法重命名而 FAIL。经原私有控制端点停止这套应用后，skip-tests package PASS，再以 --no-migrate 与原 runtime-root 启动，launcher READY、backend health 和 frontend login HTTP 200。没有重启 MySQL、迁移、seed、恢复或复制私有文件。
 - 多访客扫码、相同浏览器连续提交、长姓名和 UNKNOWN 场景仍由用户手测（NOT_RUN）；未执行浏览器、业务提交或测试套件。实现仍在同一隔离分支，未合并 main 或 push。
+
+## 2026-11-16 独立 Registration review 页面高度
+
+- 用户批注指出 /staff/registrations 仍发生整页滚动。现将该路由与 Overview 共用桌面视口框架：标题、筛选、分页及页脚保留，表格获得剩余高度并单独滚动；不通过隐藏页面 overflow 裁切内容。较小窗口和高倍缩放保持自然重排。
+- 前端 build/lint 与文档/diff 检查通过；仅修改共享 shell/CSS 和说明，未重启服务、执行数据库操作或浏览器验收。实际 1480×667 视觉效果与多行队列仍由用户检查（NOT_RUN）。

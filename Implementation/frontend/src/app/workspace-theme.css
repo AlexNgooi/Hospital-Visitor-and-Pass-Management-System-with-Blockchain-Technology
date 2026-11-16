@@ -169,27 +169,34 @@ textarea:focus-visible, summary:focus-visible {
 .drawer-counter select { width:100%; min-height:44px; padding:8px; border:1px solid var(--control-border); border-radius:8px; background:var(--surface); color:var(--ink); }
 /* At desktop sizes the queue receives the remaining height, instead of growing the document. */
 @media (min-width:1024px) and (min-height:560px) {
-  .workspace-dashboard { height:100dvh; min-height:0; }
-  .workspace-dashboard .workspace-body { height:100%; min-height:0; }
-  .workspace-dashboard .workspace-main { min-height:0; padding:12px 24px; display:flex; flex-direction:column; }
-  .workspace-dashboard .workspace-footer { flex:0 0 28px; padding:4px 24px; line-height:19px; }
+  .workspace-viewport { height:100dvh; min-height:0; }
+  .workspace-viewport .workspace-body { height:100%; min-height:0; }
+  .workspace-viewport .workspace-main { min-height:0; padding:12px 24px; display:flex; flex-direction:column; }
+  .workspace-viewport .workspace-footer { flex:0 0 28px; padding:4px 24px; line-height:19px; }
   .workspace-dashboard .staff-overview { flex:1; min-height:0; grid-template-rows:auto minmax(0,1fr); gap:12px; }
   .workspace-dashboard .overview-heading h1 { font-size:28px; line-height:34px; margin:0 0 4px; }
   .workspace-dashboard .overview-heading p { line-height:20px; }
   .workspace-dashboard .staff-overview-grid { min-height:0; grid-template-rows:minmax(0,1fr); align-items:stretch; }
   .workspace-dashboard .review-embedded { min-height:0; display:flex; }
-  .workspace-dashboard .review-embedded .review-queue { flex:1; min-height:0; display:flex; flex-direction:column; padding:16px; }
-  .workspace-dashboard .review-queue > :not(.review-table-wrap) { flex-shrink:0; }
-  .workspace-dashboard .review-section-heading { margin-bottom:12px; }
-  .workspace-dashboard .review-filters { margin-bottom:12px; }
-  .workspace-dashboard .review-table-wrap { flex:1; min-height:0; max-height:none; }
-  .workspace-dashboard .review-pagination { gap:8px; padding-top:12px; margin-top:0; font-size:13px; }
-  .workspace-dashboard .review-pagination > small { padding-top:8px; line-height:18px; }
+  .workspace-viewport .review-queue { flex:1; min-height:0; display:flex; flex-direction:column; padding:16px; }
+  .workspace-viewport .review-queue > :not(.review-table-wrap) { flex-shrink:0; }
+  .workspace-viewport .review-section-heading { margin-bottom:12px; }
+  .workspace-viewport .review-filters { margin-bottom:12px; }
+  .workspace-viewport .review-table-wrap { flex:1; min-height:0; max-height:none; }
+  .workspace-viewport .review-pagination { gap:8px; padding-top:12px; margin-top:0; font-size:13px; }
+  .workspace-viewport .review-pagination > small { padding-top:8px; line-height:18px; }
+  /* Standalone review gives only the table the remaining height, keeping its heading and pagination visible. */
+  .workspace-review .workspace-main > .review-page { flex:1; min-height:0; grid-template-rows:auto minmax(0,1fr); gap:12px; }
+  .workspace-review .review-header h1 { font-size:28px; line-height:34px; margin:0 0 4px; }
+  .workspace-review .review-header p { line-height:20px; }
 }
 /* Short desktop windows reduce spacing while preserving readable type and touch-sized actions. */
 @media (min-width:1024px) and (min-height:560px) and (max-height:650px) {
-  .workspace-dashboard .workspace-main { padding:8px 20px; }
+  .workspace-viewport .workspace-main { padding:8px 20px; }
   .workspace-dashboard .staff-overview { gap:8px; }
   .workspace-dashboard .overview-heading h1 { font-size:26px; line-height:30px; margin-bottom:2px; }
   .workspace-dashboard .overview-heading p { line-height:18px; }
+  .workspace-review .workspace-main > .review-page { gap:8px; }
+  .workspace-review .review-header h1 { font-size:26px; line-height:30px; margin-bottom:2px; }
+  .workspace-review .review-header p { line-height:18px; }
 }
