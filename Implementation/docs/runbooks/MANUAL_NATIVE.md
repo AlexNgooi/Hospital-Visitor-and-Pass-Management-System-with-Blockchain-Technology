@@ -42,7 +42,7 @@ node Implementation/scripts/manual-demo.mjs start --initialize
 
 1. 登录 Counter Staff，进入 Registration review。
 2. 点击柜台栏 **Open QR in new tab**，审核页保留；新页继承当前柜台并由服务器校验权限。
-3. 新页点 **Display registration QR**。可以把两页拖成并排窗口，无需重复登录。
+3. 本轮隔离分支的 Overview 和独立 QR 页自动展示二维码。可以把两页拖成并排窗口，无需重复登录。
 4. QR 页的 **Open review in new tab** 可反向打开审核。导航菜单各入口右侧箭头也可另开页面，包括 ADMIN 工具。
 5. 侧边栏默认隐藏，左上角菜单打开；点击关闭/遮罩或按 Escape 收起，焦点返回菜单按钮。
 
@@ -80,3 +80,18 @@ node Implementation/scripts/manual-demo.mjs start
 ## 验证范围
 
 本次仅做必要静态/构建检查：前端 build/lint、launcher syntax、后端 skip-tests package 和 seed 编译。真实启动、迁移、并排浏览器、剪贴板、业务与备份恢复均为用户手测（NOT_RUN）。业务检查沿用 MANUAL_R01_R03.md，不沿用旧 M00–M07 扫描发卡步骤。
+
+## 2026-11-16：运行合并审核发卡的隔离分支
+
+用户本轮明确要求启动后，`codex/visitor-review-issue-dashboard` 已使用原主项目专用演示运行目录启动。应用源码/JAR/Vite 取自该 worktree，配置、密钥、日志与 control 留在原目录；没有复制私有文件，没有合并 main。此普通启动显式关闭 Flyway，未初始化、迁移或重新 seed 数据，也未重启 MySQL。
+
+运行目录：`C:/Users/alexy/.codex/worktrees/visitor-review-issue-dashboard/FYP Dev`。
+
+```powershell
+# Use the existing dedicated runtime in place; never copy its private files.
+node Implementation/scripts/manual-demo.mjs start --no-migrate --runtime-root 'C:/Users/alexy/Documents/FYP Dev/Implementation'
+# Stop only owned application children; retain MySQL and persisted state.
+node Implementation/scripts/manual-demo.mjs stop --runtime-root 'C:/Users/alexy/Documents/FYP Dev/Implementation'
+```
+
+运行中不要再次 start。`--runtime-root` 指向已核对的 Implementation 目录，数据库与账号的固定限制仍有效。`--no-migrate` 不能与 initialize/restore 同用。入口仍为 `http://127.0.0.1:15417/login`。仅启动健康和页面源码检查通过，浏览器/扫码/审批发卡/并发等业务验收仍 NOT_RUN。

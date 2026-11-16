@@ -13,7 +13,14 @@ import { createChildEnvironment } from './child-environment.mjs';
 /** Native MySQL launcher: manages its child applications, never the database service or schema lifecycle. */
 const implementation = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const backend = resolve(implementation, 'backend'), frontend = resolve(implementation, 'frontend');
-const output = resolve(implementation, 'tmp/manual-demo-native'), backups = resolve(output, 'backups');
+// Worktree artifacts may use an explicitly selected existing runtime without copying its private files.
+const args = process.argv.slice(2), runtimeOption = args.indexOf('--runtime-root');
+const runtimeArgument = runtimeOption < 0 ? undefined : args[runtimeOption + 1];
+if (runtimeOption >= 0) args.splice(runtimeOption, 2);
+const noMigrateOption = args.indexOf('--no-migrate'), noMigrate = noMigrateOption >= 0;
+if (noMigrate) args.splice(noMigrateOption, 1);
+const runtimeRoot = runtimeArgument ? resolve(runtimeArgument) : implementation;
+const output = resolve(runtimeRoot, 'tmp/manual-demo-native'), backups = resolve(output, 'backups');
 const statePath = resolve(output, 'control.json'), keysPath = resolve(output, 'runtime-keys.json');
 const lockPath = resolve(output, 'launcher.lock');
 const database = 'hsaas_manual_native', owner = 'hsaas-manual-native-v1';
@@ -30,7 +37,7 @@ function exec(command, args, options = {}) {
 /** Native access is limited to a fixed, separately provisioned schema/account on loopback TCP. */
 async function configure() {
   environment = createChildEnvironment(process.env);
-  config = JSON.parse(await readFile(resolve(implementation, 'infra/.env.native.json'), 'utf8'));
+  config = JSON.parse(await readFile(resolve(runtimeRoot, 'infra/.env.native.json'), 'utf8'));
   if (!Number.isInteger(config.port) || config.port < 1 || config.port > 65535
       || config.user !== 'hsaas_manual_native' || typeof config.password !== 'string' || !config.password || config.password.startsWith('REPLACE_')
       || ![config.mysql, config.mysqldump].every(value => typeof value === 'string' && value.length)) throw new Error('Invalid configuration');
@@ -172,6 +179,7 @@ async function start(initialize, restorePath) {
     SPRING_APPLICATION_JSON: JSON.stringify({ hsaas: { qr: { keys: { [keys.version]: keys.signing } } } }) };
   stage = 'backend readiness: Implementation/tmp/manual-demo-native/backend.log';
   const server = launch('java', ['-jar', 'target/hsaas-backend-0.0.1-SNAPSHOT.jar',
+    ...(noMigrate ? ['--spring.flyway.enabled=false'] : []),
     '--spring.config.location=classpath:/application.yaml', '--spring.config.additional-location=', '--spring.config.import=',
     '--server.address=127.0.0.1', '--hsaas.environment=test', '--hsaas.secure-cookie=false', '--hsaas.reader-mode=mock', '--hsaas.mrn-mode=mock',
     '--hsaas.notification-mode=disabled', '--hsaas.blockchain-mode=disabled', '--hsaas.bootstrap.enabled=false',
@@ -210,7 +218,10 @@ async function start(initialize, restorePath) {
 }
 
 try {
-  const args = process.argv.slice(2);
+  // Reject malformed switches before reading private control or creating any runtime resources.
+  if (runtimeOption >= 0 && (!runtimeArgument || runtimeArgument.startsWith('--'))
+      || noMigrate && !['start', 'resume', 'check'].includes(args[0])
+      || noMigrate && args.some(value => ['--initialize', '--restore'].includes(value))) throw new Error('Invalid launch options');
   if (args.length === 1 && ['stop', 'backup'].includes(args[0])) { stage = 'private control'; await command(args[0]); }
   else {
     await configure();

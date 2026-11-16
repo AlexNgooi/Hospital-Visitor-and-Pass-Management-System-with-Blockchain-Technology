@@ -41,3 +41,11 @@ Penjaga仅IC、每登记最多一张活动pass、条款勾选并记录服务器�
 - 实际静态检查：`pnpm run build` PASS；`pnpm run lint` PASS（无警告）；`.\mvnw.cmd -B -DskipTests package` PASS（编译测试源码但不执行测试）；`python planning/verify_planning.py` PASS；`git diff --check` PASS。Vite 仍提示单 chunk 超过 500 kB，后端仍提示 RegistrationStore 的 deprecated API。
 - `pnpm run typecheck:test` FAIL：`tests/registration.test.tsx` 的 22/184 行旧 schema literal 和 34 行缺 patient projection，和既有基线同类，测试文件本轮未修改。不能写为通过。
 - 未启动或重启应用/数据库/浏览器，未执行任何测试套件、迁移、SQL、业务/并发或恢复验收；相关结果全部 NOT_RUN。用户手测步骤已更新在 [MANUAL_R01_R03](../Implementation/docs/runbooks/MANUAL_R01_R03.md)，环境边界仍依 [MANUAL_NATIVE](../Implementation/docs/runbooks/MANUAL_NATIVE.md)。
+
+## 2026-11-16 用户明确要求启动后的运行记录
+
+- 上述实现阶段的应用 NOT_RUN 已由本次显式启动授权更新；浏览器/数据库业务/并发验收仍 NOT_RUN。
+- 通过原私有控制端点停止旧的这一组应用子进程，再以 worktree 新版源码/JAR 启动；MySQL 进程与专用演示数据保留。启动器 --runtime-root 参数就地复用原配置/keys/control，没有复制私有文件；--no-migrate 明确禁用 Flyway，没有 initialize/seed/restore/迁移。
+- 当前访问 `http://127.0.0.1:15417/login`；backend18407/control15418。源码仍在 `codex/visitor-review-issue-dashboard`，main 未合并/推送。
+- 实际结果：launcher READY；backend `/api/health` HTTP 200；frontend `/login` HTTP 200；Vite 提供新版 Review & issue pass modal 源码；Java 命令含 --spring.flyway.enabled=false。这仅证明启动与源码提供，不等于浏览器/业务验收。
+- 启动器 node --check 与 backend dependency:build-classpath 通过。浏览器视觉/手机 QR/审批与发卡/并发/恢复测试仍 NOT_RUN。停止与下次启动方式见 MANUAL_NATIVE 的隔离分支段落。
