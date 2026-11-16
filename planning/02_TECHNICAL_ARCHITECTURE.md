@@ -30,7 +30,7 @@ display 绑定 staff owner/counter；多个 display session 可独立存在。�
 
 JpaTransactionManager 与 JdbcTemplate 共享同一 DataSource/READ_COMMITTED；业务、本地审计、幂等和 grant 消费同一外层事务。按完整 authority/counter、reference/root、sorted card、assignment 顺序锁定和重读，具体图见04。不能在持锁时调用外部 provider、保存 framework session 或用 savepoint 冒充完整领域回滚。
 
-审核与发放分开。手动 issue 的多选批次原子提交，每张库存卡最多一条活动借用；Executive/Penjaga 同登记活动单卡，Vendor/Contractor 可多卡/多地点。实际归还逐张关闭，不影响其他卡。due_at 可为 null；无期限仍需归还，不产生逾期；LOST关闭不能伪造 returned_at。UNKNOWN 保留原 body/key/version/context，先核对事实，再显式重试原命令。
+默认 UI 将审核与发放放进同一 modal；APPROVE_ISSUE 在当前权限前缀 → 类别/地点 → 登记 → 排序卡片锁顺序下，原子记录审批、所选卡片发放、审计和幂等结果。旧独立 verify/issue API 保留兼容。手动 issue 的多选批次原子提交，每张库存卡最多一条活动借用；Executive/Penjaga 同登记活动单卡，Vendor/Contractor 可多卡/多地点。实际归还逐张关闭，不影响其他卡。due_at 可为 null；无期限仍需归还，不产生逾期；LOST关闭不能伪造 returned_at。UNKNOWN 保留原 body/key/version/context，先核对事实，再显式重试原命令。
 
 ## 本机运行、隔离与后续集成
 

@@ -16,16 +16,18 @@
 ## 正常办理顺序
 
 1. **Admin 建库存**：Card inventory → Enroll a card，输入印在 pass 上的唯一可见 code，选择类别和地点，然后登记。无需 reader、UID/profile 或扫描。为 Vendor/Contractor 准备同类别、不同地点的至少两张卡；Executive/Penjaga 准备各自类别的卡。旧扫描库存保留其历史来源。
-2. **Staff 开登记入口**：登录当前授权 counter，使用 Registration QR。Visitor 用独立匿名会话扫描有效入口；直接访问注册页不能绕过 grant。保留动态 QR，取消的是 pass reader。
+2. **Staff 开登记入口**：登录当前授权 counter，Overview 默认同时展示 QR 和 queue；Registration QR 独立页也自动准备 QR，不需点击 Display。Visitor 用独立匿名会话扫描有效入口；直接访问注册页不能绕过 grant。保留动态 QR，取消的是 pass reader。
 3. **Penjaga 填表**：姓名、仅 IC、电话、现住址和合成 MRN。语法示例 IC `000000000001`、电话 `+999123456789`，均不是正式证件/电话。输入 `DEMO-MRN-4821` 或 `DEMO-MRN-MATCH` 后离开输入框，应自动出现 MOCK/SYNTHETIC 患者姓名与 ward/bed；按钮用于明确重试。现有 seed 的 `DEMO_WARD` 不可缺失或停用，系统不会把患者移到其他地点凑成功。
 4. **其他表单**：Executive 填姓名、IC 或 Lesen（二选一）与号码、电话、Wad、Nama Pesakit；Vendor/Contractor 填姓名、IC、电话、Company 和多个 Location。旧 organisation/contact/purpose/relationship 不再作为新表单额外必填。全部患者例子使用虚构资料。
 5. **条款与提交**：Penjaga 勾选 pass 条款，另行确认演示隐私告知；没有电子签名或 WhatsApp 同意。提交只产生待审核登记及 reference，不自动发 pass。
-6. **Staff 人工审核**：Registration review 默认掩码；明确点击审核资料查看后，按当前登记/version 核对必需字段。Penjaga 仍需身份、MRN、ward 人工确认，mock MATCH 不会勾选或替代这些核实。批准后才可发放。
-7. **手动 issue**：Pass lifecycle → Prepare issue，选择可用兼容 pass 和本次地点。Vendor/Contractor 可选多张；Executive/Penjaga 每份登记最多一张活动 pass。每张可设具体归还日期时间或勾选无期限；确认实际交付后一次提交。多选发生任一卡冲突应整批失败，不能显示整批成功而只发一部分。
-8. **部分归还**：可用 View this registration's passes 查找该登记的 pass。只打开并确认实际收到的那一张，点 Return this pass only。归还后只有该 assignment 结束，其他 pass 仍借出。归还暂限原 issue counter，不能替其他 counter 办理。
+6. **Staff 人工审核**：Overview 或 Registration review 点击 Review & issue，modal 自动展示完整资料；队列仍脱敏，打开和刷新完整资料保留权限/version/审计。无需 Reveal 或 checklist。Penjaga 仍需人工核对身份、MRN、patient 和 ward，mock MATCH 不替代核实。拒绝在同一 modal 选择理由。
+7. **审核与发卡一次办理**：在同一 modal 选择可用兼容 pass 和地点；Vendor/Contractor 可多卡，Executive/Penjaga 单卡。每张选择具体 MYT 日期时间或 No deadline。人工核对且交付后点 Approve & issue pass，完成后关闭 modal 并刷新 queue。任一卡冲突应连审批一起回滚；刷新资料/库存后重选。旧 Approved 登记用状态筛选打开同一 modal 后 Issue pass。UNKNOWN 时保留 modal，只点 Retry original command，不新建命令。
+8. **部分归还**：Pass returns 中用 View this registration's passes 查找该登记的 pass。只打开并确认实际收到的那一张，点 Return this pass only。归还后只有该 assignment 结束，其他 pass 仍借出。归还暂限原 issue counter，不能替其他 counter 办理。
 9. **记录与报表**：每张 issued_at=进、实际 returned_at=出，显示完整 MYT 日期时间和经办 staff ID；due_at 只是预计期限。Admin Reports 分别统计登记数和 pass 数，提供独立 pass history CSV。一般报表/CSV 不含患者、IC、MRN、电话或地址。
 
 ## 用户手动检查清单（全部 NOT_RUN）
+
+本轮 `codex/visitor-review-issue-dashboard` 尚未合并 main。还需检查 Overview/独立 QR 自动展示、过期/断线隐藏、切柜台、只有队列的 review 页面、modal 自动资料/拒绝/单卡与多卡/期限、冲突整体回滚、UNKNOWN 原命令恢复，以及键盘关闭焦点返回、375px 窄屏和浏览器放大。助手未启动任何服务或执行业务验收。
 
 | 检查 | 预期 |
 |---|---|

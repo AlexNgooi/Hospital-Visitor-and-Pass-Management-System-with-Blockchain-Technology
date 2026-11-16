@@ -1,3 +1,7 @@
+# 2026-11-16 combined frontend flow
+
+The review-fields API remains independently authorized, versioned and audited, and is called automatically when a staff modal opens. Existing verify/reject endpoints remain compatible; the default frontend submits combined approval/issue through the lifecycle-owned APPROVE_ISSUE transaction and the same RegistrationReviewPort.
+
 # R01 review extension — 2026-10-27
 
 - Current planning/16 authorization supersedes historical M04 ownership/test directions below for this change.

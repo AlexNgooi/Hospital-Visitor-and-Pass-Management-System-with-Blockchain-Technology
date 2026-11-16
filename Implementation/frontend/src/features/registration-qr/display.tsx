@@ -1,5 +1,5 @@
 import { ToastNotice } from "../../components/ui/toast";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import QRCode from "qrcode";
 import { Copy, QrCode, ShieldCheck, WifiOff } from "lucide-react";
 import { useCounterScope } from "../../app/counter-context";
@@ -13,7 +13,7 @@ interface DisplayValue { current: CurrentQr; anchor: ServerAnchor; image: string
 interface DisplayReference { id: string; counter: string }
 
 /** Staff display fences stale async results and hides authority before any offline/resume recovery begins. */
-export function RegistrationQrDisplay({ port = qrPort }: { port?: QrPort }) {
+export function RegistrationQrDisplay({ port = qrPort, compact = false }: { port?: QrPort; compact?: boolean }) {
   const counter = useCounterScope();
   const [enabled, setEnabled] = useState<boolean | null>(null);
   const [display, setDisplay] = useState<DisplayReference | null>(null);
@@ -27,6 +27,7 @@ export function RegistrationQrDisplay({ port = qrPort }: { port?: QrPort }) {
   const [manualLink, setManualLink] = useState<DisplayValue | null>(null);
   const generation = useRef(0);
   const panel = useRef<HTMLDivElement>(null);
+  const autoStarted = useRef(new Set<string>());
 
   useEffect(() => {
     const controller = new AbortController();
@@ -88,8 +89,8 @@ export function RegistrationQrDisplay({ port = qrPort }: { port?: QrPort }) {
     };
   }, [display, counter, port]);
 
-  /** Creating and revoking are explicit commands; failed/unknown mutations never claim success or restore a code. */
-  const create = async () => {
+  /** Setup runs once automatically; failed/unknown mutations require an explicit retry. */
+  const create = useCallback(async () => {
     if (!counter || busy || display || revocation) return;
     const sequence = ++generation.current; setBusy(true); setValue(null); setMessage("");
     try {
@@ -97,7 +98,17 @@ export function RegistrationQrDisplay({ port = qrPort }: { port?: QrPort }) {
       if (sequence === generation.current) setDisplay({ id: result.displaySessionId, counter });
     } catch (error) { if (sequence === generation.current) setMessage(safeError(error)); }
     finally { if (sequence === generation.current) setBusy(false); }
-  };
+  }, [counter, busy, display, revocation, port]);
+  useEffect(() => {
+    let active = true;
+    // Deferral prevents StrictMode's discarded effect from creating a second display session.
+    queueMicrotask(() => {
+      if (active && enabled && counter && !display && !revocation && !autoStarted.current.has(counter)) {
+        autoStarted.current.add(counter); void create();
+      }
+    });
+    return () => { active = false; };
+  }, [enabled, counter, display, revocation, create]);
   const revoke = async () => {
     const old = revocation ?? display;
     if (!old || busy) return;
@@ -138,11 +149,11 @@ export function RegistrationQrDisplay({ port = qrPort }: { port?: QrPort }) {
     }
   };
 
-  return <div className="qr-feature qr-display-feature">
-    <header className="qr-intro"><h1>Visitor registration QR</h1><p className="muted">No visitor account is required.</p></header>
+  return <div className={`qr-feature qr-display-feature${compact ? " qr-display-compact" : ""}`}>
+    <header className="qr-intro">{compact ? <h2>Visitor registration QR</h2> : <h1>Visitor registration QR</h1>}<p className="muted">Scan to register · No account required</p></header>
     {enabled === false ? <StatusPanel kind="empty" title="Registration QR is not enabled">Contact the administrator to enable the controlled registration entry.</StatusPanel> : <>
       <div className="qr-toolbar"><span className="qr-counter">Counter {counter ?? "not selected"}</span><span className="qr-category">All categories</span>
-        {!display && !revocation && <Button busy={busy} disabled={!enabled || !counter} onClick={() => void create()}>Display registration QR</Button>}
+        {!display && !revocation && message && enabled && <Button busy={busy} disabled={!counter} onClick={() => void create()}>Retry QR setup</Button>}
       </div>
       {display && display.counter !== counter && <ToastNotice tone="info">The live display belongs to counter {display.counter}. Revoke it before starting a display for the selected counter.</ToastNotice>}
       <div className="qr-display-layout">

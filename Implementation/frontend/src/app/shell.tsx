@@ -15,8 +15,10 @@ import { Button } from "../components/ui/primitives";
 import { useAuth } from "./auth-context";
 import { homeIcon as HomeIcon, type FeatureSlot } from "./features";
 import { CounterContext } from "./counter-context";
+import { RegistrationQrDisplay } from "../features/registration-qr/display";
+import { RegistrationReview } from "../features/counter/review/page";
 
-/** On-demand navigation keeps review and a separately opened QR display independently mounted. */
+/** On-demand navigation supports the combined overview and optional independent staff tabs. */
 export function WorkspaceShell({ slots }: { slots: readonly FeatureSlot[] }) {
   const { state, logout } = useAuth();
   const location = useLocation();
@@ -127,11 +129,17 @@ export function WorkspaceShell({ slots }: { slots: readonly FeatureSlot[] }) {
                 </Dialog.Content>
               </Dialog.Portal>
             </Dialog.Root>
+            {isStaff && <Link to="/staff" className="staff-topbar-brand" aria-label="HSAAS overview"><span className="brand-symbol" aria-hidden="true">H</span><strong>HSAAS</strong></Link>}
             <div className="breadcrumb">
               <span>{isStaff ? "Counter" : "Administration"}</span>
               <ChevronRight size={14} aria-hidden="true" />
               <strong>{current}</strong>
             </div>
+            {isStaff && <nav className="staff-primary-nav" aria-label="Staff workspace">
+              <NavLink to="/staff" end>Overview</NavLink>
+              <NavLink to="/staff/registrations">Registration review</NavLink>
+              <NavLink to="/staff/passes">Pass returns</NavLink>
+            </nav>}
             <div className="account-tools">
               <div className="account-avatar" aria-hidden="true">
                 {user.login.slice(0, 2).toUpperCase()}
@@ -195,7 +203,7 @@ export function WorkspaceShell({ slots }: { slots: readonly FeatureSlot[] }) {
 const areaDescriptions: Readonly<Record<string, string>> = {
   "/staff/registrations": "Check visitor details and review registrations before handover.",
   "/staff/registration-qr": "Display the current QR for visitors to start their registration.",
-  "/staff/passes": "Choose available passes, confirm handover and record returns.",
+  "/staff/passes": "Receive returned passes and review assignment history.",
   "/admin/cards": "Manage manual pass inventory, locations and card availability.",
   "/admin/users": "Manage staff accounts, roles and authorised counter access.",
   "/admin/settings": "Maintain locations, visitor categories and return defaults.",
@@ -212,6 +220,11 @@ export function WorkspaceOverview({
   const { state } = useAuth();
   if (state.kind !== "authenticated") return null;
   const staff = state.user.role === "COUNTER_STAFF";
+  // Staff work is live on the overview; administrator shortcuts retain their existing role-specific layout.
+  if (staff) return <div className="workspace-overview staff-overview">
+    <header className="page-heading overview-heading"><div><h1>Overview</h1><p>Visitor registration and pass issuance, in one place.</p></div></header>
+    <div className="staff-overview-grid"><RegistrationQrDisplay compact /><RegistrationReview embedded /></div>
+  </div>;
   const choices = slots.filter((slot) => slot.role === state.user.role);
   const primary = choices.find((slot) => slot.path === (staff ? "/staff/registrations" : "/admin/reports"));
   const workflow = staff

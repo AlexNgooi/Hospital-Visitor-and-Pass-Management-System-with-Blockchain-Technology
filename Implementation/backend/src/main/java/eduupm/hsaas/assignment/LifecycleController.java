@@ -88,6 +88,11 @@ public class LifecycleController {
     public SafeResult issue(@RequestBody String body,@RequestHeader(name="Idempotency-Key",required=false) String key,HttpServletRequest request,HttpServletResponse response) {
         return write(request,response,"ISSUE","REGISTER",key,body);
     }
+    /** One staff confirmation atomically records registration approval and the selected physical handover. */
+    @PostMapping(value="/api/staff/card-assignments/approve-and-issue",consumes="application/json")
+    public SafeResult approveAndIssue(@RequestBody String body,@RequestHeader(name="Idempotency-Key",required=false) String key,HttpServletRequest request,HttpServletResponse response) {
+        return write(request,response,"APPROVE_ISSUE","REGISTER",key,body);
+    }
     @PostMapping(value="/api/staff/card-assignments/{id}/return",consumes="application/json")
     public SafeResult returned(@PathVariable String id,@RequestBody String body,@RequestHeader(name="Idempotency-Key",required=false) String key,HttpServletRequest request,HttpServletResponse response) {
         return write(request,response,"RETURN",id,key,body);

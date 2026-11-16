@@ -10,6 +10,7 @@
 | 本机启动/并行页面/Copy link | 本地提交 `c82c3eb`，已纳入本次main合并 | 未启动应用、数据库、迁移或浏览器 |
 | 当前清理 | `5fea768`：planning合并、旧资产删除、依赖移除及本机测试隔离，已纳入main | 静态/构建结果记本轮handoff；新native测试未执行 |
 | 库存 modal / Toast / 账号查看 | 来源分支 `codex/card-enrollment-toast`，实现提交 `1e09a6a` / `90c1e40`：登记与Open card详情modal、查看图标按钮、共享轻提示、账号下拉选择，默认当前登录账号及权限；纳入本次main发布 | 实现版本build/lint通过；测试源码类型检查FAIL（未修改的registration旧fixture）；浏览器/业务/数据库NOT_RUN，运行版未重启 |
+| Overview / 合并审核发卡 | 2026-11-16 用户确认预览并授权实施；分支 `codex/visitor-review-issue-dashboard`：默认动态 QR＋队列、queue-only review、自动审计资料 modal、原子 APPROVE_ISSUE、多卡/地点/期限及 Pass returns；尚未合并 main | 前端 build/lint、后端 skip-tests package、planning 检查通过；typecheck:test 仍 FAIL（未改动的 registration fixture 旧 schema/缺 patient）；应用/浏览器/数据库/并发/业务全部 NOT_RUN |
 | Sui/通知 | 默认disabled；无真实调用、合约发布或历史补发 | Sui worker/Move、provider接口与真实验收均未实施 |
 
 2026-11-10用户明确要求“github push main”，授权将独立分支 `codex/no-docker-multi-page`（交付head `5fea768`）合并并推送main。旧文档冲突按当前规范解决，当前运行指南改为主项目checkout。没有部署、启动/重启应用、执行数据库迁移或删除旧数据；Git发布不代表业务验收。
@@ -30,3 +31,13 @@
 | O10 | Sui package/network/钱包与gas、provider限额 | 本机worker接远程Testnet，具体实施见SUI_TESTNET.md；当前不发布交易 |
 
 Penjaga仅IC、每登记最多一张活动pass、条款勾选并记录服务器时间、发还时间即“进/出”均已确认，不再列为未决。真实reader已经退出当前流程，不将硬件准备当作本版前置。
+
+## 2026-11-16 Overview 与一站办理分支交接
+
+- 隔离 worktree：`C:/Users/alexy/.codex/worktrees/visitor-review-issue-dashboard/FYP Dev`；分支 `codex/visitor-review-issue-dashboard`，基于 main `828fa75`。主项目源码未替换，未自动 merge/push/部署。
+- Overview 直接组合动态 QR 与同一套 Registration queue；独立 QR 页自动准备入口。Registration review 只列队列；modal 打开自动调用原受权/version/审计的 review-fields POST，关闭及权限/版本/冲突变化清除敏感内存。搜索明确限定当前队列页。
+- modal 同屏核对资料、选择卡片/地点/逐卡期限；最终按钮明确确认人工比对和实体交付，无 Reveal/Display 或核对 checklist。拒绝仍需理由；旧 Approved 登记继续在同一 modal 发卡。Pass returns 保留查询、归还和历史。
+- `POST /api/staff/card-assignments/approve-and-issue` 在既有 READ_COMMITTED lifecycle 事务中通过登记 port 完成审批、发放、库存、审计和幂等提交；任一卡失败全部回滚。原 verify/issue API 及旧 ISSUE 编码保持兼容，无新增或执行 migration。UNKNOWN 保留原 body/key/version，仅显式重试原命令；pending/UNKNOWN 禁止关闭 modal。
+- 实际静态检查：`pnpm run build` PASS；`pnpm run lint` PASS（无警告）；`.\mvnw.cmd -B -DskipTests package` PASS（编译测试源码但不执行测试）；`python planning/verify_planning.py` PASS；`git diff --check` PASS。Vite 仍提示单 chunk 超过 500 kB，后端仍提示 RegistrationStore 的 deprecated API。
+- `pnpm run typecheck:test` FAIL：`tests/registration.test.tsx` 的 22/184 行旧 schema literal 和 34 行缺 patient projection，和既有基线同类，测试文件本轮未修改。不能写为通过。
+- 未启动或重启应用/数据库/浏览器，未执行任何测试套件、迁移、SQL、业务/并发或恢复验收；相关结果全部 NOT_RUN。用户手测步骤已更新在 [MANUAL_R01_R03](../Implementation/docs/runbooks/MANUAL_R01_R03.md)，环境边界仍依 [MANUAL_NATIVE](../Implementation/docs/runbooks/MANUAL_NATIVE.md)。

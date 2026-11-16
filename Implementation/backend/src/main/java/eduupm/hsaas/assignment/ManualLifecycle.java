@@ -10,6 +10,8 @@ import eduupm.hsaas.card.CardRules;
 import eduupm.hsaas.common.*;
 import eduupm.hsaas.common.IdempotencyPort.SafeResult;
 import eduupm.hsaas.registration.RegistrationLifecyclePort;
+import eduupm.hsaas.registration.RegistrationReviewPort;
+import eduupm.hsaas.registration.ManualEvidence;
 import static eduupm.hsaas.assignment.LifecycleStore.*;
 
 /** Manual operations share the existing authority, root, audit and replay transaction boundaries. */
@@ -18,14 +20,15 @@ final class ManualLifecycle {
     private final LifecycleStore store;
     private final LifecycleSecurity security;
     private final RegistrationLifecyclePort roots;
+    private final RegistrationReviewPort reviews;
     private final IdempotencyPort idem;
     private final LocalAuditPort audit;
     private final JsonMapper json;
     private final Clock clock;
     private final String environment;
-    ManualLifecycle(LifecycleService service,LifecycleStore store,LifecycleSecurity security,RegistrationLifecyclePort roots,
+    ManualLifecycle(LifecycleService service,LifecycleStore store,LifecycleSecurity security,RegistrationLifecyclePort roots,RegistrationReviewPort reviews,
             IdempotencyPort idem,LocalAuditPort audit,JsonMapper json,Clock clock,String environment) {
-        this.service=service; this.store=store; this.security=security; this.roots=roots; this.idem=idem;
+        this.service=service; this.store=store; this.security=security; this.roots=roots; this.reviews=reviews; this.idem=idem;
         this.audit=audit; this.json=json; this.clock=clock; this.environment=environment;
     }
 
@@ -49,6 +52,25 @@ final class ManualLifecycle {
                     // Root/reference locks always precede card locks. No registration SQL exists in this module.
                     var root=plan.registration()==null?null:roots.lockLifecycle(roots.discover(plan.registration()),context.owner());
                     if(root!=null) requireRoot(root);
+                    // A waiting duplicate must see its winner before attempting a new approval transition.
+                    replay=idem.replay(namespace,encoding);
+                    if(replay.isPresent()) return replay.get().result();
+                    if(operation.equals("APPROVE_ISSUE")) {
+                        CardRules.require(input.bool("reviewConfirmed"),"REVIEW_CONFIRMATION_REQUIRED");
+                        var receipt=reviews.lock(reviews.discover(plan.registration()));
+                        boolean penjaga=root.categoryCode().equals("PENJAGA");
+                        var basis=penjaga?List.of("IDENTITY_MATCH_CONFIRMED","MRN_MATCH_CONFIRMED","WARD_MATCH_CONFIRMED"):List.of("IDENTITY_MATCH_CONFIRMED");
+                        // The final staff action attests comparison and handover; a mock lookup never triggers approval.
+                        var decision=new RegistrationReviewPort.Verified(true,penjaga?true:null,penjaga?true:null,
+                                new ManualEvidence("SYNTHETIC_RECORD_COMPARISON",basis));
+                        var approved=reviews.recordDecision(receipt,input.version(),context.owner(),decision);
+                        if(!approved.id().equals(plan.registration()) || !approved.status().equals("VERIFIED") || approved.version()!=input.version()+1)
+                            throw new IllegalStateException("Registration approval violated its decision contract");
+                        audit.append(LocalAuditPort.Action.REGISTRATION_VERIFIED,"REGISTRATION",plan.registration(),current.id(),
+                                new LocalAuditPort.Snapshot(receipt.status(),approved.status(),receipt.version(),approved.version(),"SYNTHETIC_MANUAL"));
+                        // Reference locks were already acquired above; reread the updated root before sorted card locks.
+                        root=roots.lockLifecycle(roots.discover(plan.registration()),context.owner());
+                    }
                     var cards=new TreeMap<String,Card>();
                     for(String id:plan.cards().stream().distinct().sorted().toList()) {
                         var card=store.card(id,true); requireCard(card); cards.put(id,card);
@@ -60,7 +82,7 @@ final class ManualLifecycle {
                     Instant now=clock.instant().truncatedTo(ChronoUnit.MICROS);
                     SafeResult result=switch(operation) {
                         case "CARD_ENROLL" -> enroll(input,current.id(),now);
-                        case "ISSUE" -> issue(input,root,cards,current.id(),now);
+                        case "ISSUE","APPROVE_ISSUE" -> issue(input,root,cards,current.id(),now,operation.equals("APPROVE_ISSUE"));
                         case "RETURN","RETURN_BATCH" -> returned(operation,input,plan,assignments,cards,current.id(),now);
                         case "RESTORE" -> restore(input,cards.get(plan.cards().getFirst()),current.id(),now);
                         default -> throw new IllegalStateException("Unknown manual operation");
@@ -79,7 +101,7 @@ final class ManualLifecycle {
         if(operation.equals("CARD_ENROLL")) return new Plan("REGISTER",null,null,List.of(),List.of());
         if(operation.equals("RESTORE")) return new Plan(LifecycleInput.uuid(target),null,null,List.of(target),List.of());
         String registration; var cards=new ArrayList<String>(); var assignments=new ArrayList<String>();
-        if(operation.equals("ISSUE")) {
+        if(operation.equals("ISSUE") || operation.equals("APPROVE_ISSUE")) {
             registration=Long.toString(LifecycleInput.decimal(input.text("registrationId")));
             for(var selection:input.passes(true)) cards.add(selection.id());
         } else {
@@ -122,8 +144,9 @@ final class ManualLifecycle {
     }
 
     /** A registration lock serializes its category cardinality; database unique indexes are an additional fence. */
-    private SafeResult issue(ManualInput input,RegistrationLifecyclePort.Access root,Map<String,Card> cards,long actor,Instant now) {
-        CardRules.version(root.version(),input.version());
+    private SafeResult issue(ManualInput input,RegistrationLifecyclePort.Access root,Map<String,Card> cards,long actor,Instant now,boolean approvedNow) {
+        // Review, inventory, assignments, audit and replay commit together; any failed card rolls everything back.
+        CardRules.version(root.version(),input.version()+(approvedNow?1:0));
         CardRules.require(root.status().equals("VERIFIED"),"REGISTRATION_STATE_CONFLICT");
         CardRules.require(input.bool("handoverConfirmed"),"HANDOVER_CONFIRMATION_REQUIRED");
         var selections=input.passes(true); long registration=LifecycleInput.decimal(root.coordinates().id());

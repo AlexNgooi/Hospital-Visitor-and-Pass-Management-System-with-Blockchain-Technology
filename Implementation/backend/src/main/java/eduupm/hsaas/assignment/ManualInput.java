@@ -21,6 +21,7 @@ final class ManualInput {
             var fields=switch(operation) {
                 case "CARD_ENROLL" -> Set.of("cardCode","categoryCode","destinationId");
                 case "ISSUE" -> Set.of("registrationId","expectedVersion","handoverConfirmed","passes");
+                case "APPROVE_ISSUE" -> Set.of("registrationId","expectedVersion","reviewConfirmed","handoverConfirmed","passes");
                 case "RETURN" -> Set.of("expectedVersion","physicalReceived");
                 case "RETURN_BATCH" -> Set.of("registrationId","physicalReceived","passes");
                 case "RESTORE" -> Set.of("expectedVersion","physicalFoundConfirmed","inventoryCheckedConfirmed","reasonCode");
@@ -29,7 +30,7 @@ final class ManualInput {
             exact(node,fields);
             var result=new ManualInput(node);
             for(String field:fields) {
-                if(field.equals("passes")) result.passes(operation.equals("ISSUE"));
+                if(field.equals("passes")) result.passes(isIssue(operation));
                 else if(field.equals("expectedVersion")) version(node);
                 else if(field.endsWith("Confirmed") || field.equals("physicalReceived")) result.bool(field);
                 else result.text(field);
@@ -42,6 +43,8 @@ final class ManualInput {
         if(node==null || !node.isObject() || node.size()!=fields.size()) throw LifecycleInput.invalid();
         for(String name:node.propertyNames()) if(!fields.contains(name)) throw LifecycleInput.invalid();
     }
+    /** Combined approval preserves the existing pass-selection encoding without changing legacy ISSUE commands. */
+    private static boolean isIssue(String operation) { return operation.equals("ISSUE") || operation.equals("APPROVE_ISSUE"); }
     String text(String name) { return text(node,name); }
     private static String text(JsonNode object,String name) {
         var value=object.path(name);
@@ -86,11 +89,11 @@ final class ManualInput {
             var value=node.path(name);
             if(name.equals("passes")) {
                 var nested=new ArrayList<RequestEncoding.Field>(); int index=0;
-                for(var selection:passes(operation.equals("ISSUE"))) {
+                for(var selection:passes(isIssue(operation))) {
                     var row=new ArrayList<RequestEncoding.Field>();
                     row.add(RequestEncoding.Field.text("id",selection.id()));
                     row.add(RequestEncoding.Field.integer("expectedVersion",selection.version()));
-                    if(operation.equals("ISSUE")) {
+                    if(isIssue(operation)) {
                         row.add(RequestEncoding.Field.text("destinationId",selection.destination()));
                         row.add(selection.due()==null?RequestEncoding.Field.nil("dueAt"):RequestEncoding.Field.instant("dueAt",selection.due()));
                     }

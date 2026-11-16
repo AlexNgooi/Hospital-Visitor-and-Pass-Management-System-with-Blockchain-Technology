@@ -157,3 +157,16 @@ textarea:focus-visible, summary:focus-visible {
 @media (prefers-reduced-motion: reduce) {
   .nav-link, .workflow-steps a { transition: none; }
 }
+/* The live overview keeps the QR beside the actionable registration queue. */
+.staff-overview-grid { display:grid; grid-template-columns:minmax(280px,340px) minmax(0,1fr); gap:20px; align-items:start; }
+.staff-overview-grid > * { width:100%; min-width:0; }
+.staff-primary-nav { display:flex; align-items:stretch; align-self:stretch; gap:24px; margin-right:auto; }
+.staff-primary-nav a { display:flex; align-items:center; border-bottom:3px solid transparent; min-height:44px; font-size:14px; color:var(--muted); }
+.staff-primary-nav a.active { color:var(--ink); border-color:var(--primary); font-weight:600; }
+.topbar:has(.staff-primary-nav) .breadcrumb { display:none; }
+@media (max-width:1180px) { .staff-overview-grid { grid-template-columns:minmax(240px,280px) minmax(0,1fr); } .staff-primary-nav { gap:14px; } }
+@media (max-width:900px) { .staff-overview-grid { grid-template-columns:minmax(0,1fr); } .staff-primary-nav { display:none; } .topbar:has(.staff-primary-nav) .breadcrumb { display:flex; } }
+.staff-topbar-brand { display:flex; align-items:center; gap:10px; margin-right:20px; font-size:20px; flex-shrink:0; }
+.staff-topbar-brand .brand-symbol { width:32px; height:32px; font-size:23px; }
+@media (max-width:1050px) { .staff-topbar-brand { margin-right:4px; } .staff-topbar-brand strong { display:none; } }
+@media (max-width:600px) { .staff-topbar-brand { display:none; } }

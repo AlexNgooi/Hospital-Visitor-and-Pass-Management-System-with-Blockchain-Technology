@@ -1,3 +1,7 @@
+# 2026-11-16 combined review and issue
+
+ManualIssue now renders dropdown pass selection, per-pass destination and deadline segments inside the review modal. SUBMITTED uses the atomic approve-and-issue endpoint; VERIFIED uses the existing issue endpoint. Final action confirms handover without a separate checklist. Vendor/Contractor multi-card rules remain. Pass returns owns assignment lookup/return/history; it no longer requires a separate Prepare issue flow. UNKNOWN handles remain immutable in the parent workspace.
+
 # M05 lifecycle and inventory UI
 
 ## 2026-11-11 inventory modals

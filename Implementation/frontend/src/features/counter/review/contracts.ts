@@ -36,7 +36,7 @@ export const queueSchema = z.object({
 }).strict();
 const maskedIdSchema = z.string().min(3).max(80).regex(/^[A-Za-z0-9* -]+$/).refine(masking);
 
-/** Explicit staff reveal is parsed independently so default detail/queue can never acquire raw fields. */
+/** Audited modal fields are parsed independently so the ordinary queue/detail stays masked. */
 export const reviewFieldsSchema = z.object({
   id: idSchema, version: versionSchema,
   fieldSchemaVersion: z.enum(["synthetic-registration-v1", "manual-registration-v2"]),
@@ -102,7 +102,7 @@ export interface QueueQuery { counterId: string; category: Category | "ALL"; sta
 export interface ReviewPort {
   list(query: QueueQuery, signal?: AbortSignal): Promise<Queue>;
   detail(id: string, signal?: AbortSignal): Promise<Detail>;
-  /** Optional only for older injected read ports; production exposes the explicit audited POST. */
+  /** Optional only for older injected read ports; production automatically uses this audited POST on modal open. */
   reviewFields?(id: string, expectedVersion: number, signal?: AbortSignal): Promise<ReviewFields>;
   verify(id: string, input: Verify): Command<ReviewResult>;
   reject(id: string, input: Reject): Command<ReviewResult>;

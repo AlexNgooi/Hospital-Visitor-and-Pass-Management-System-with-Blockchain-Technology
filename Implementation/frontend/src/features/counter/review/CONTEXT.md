@@ -1,3 +1,7 @@
+# 2026-11-16 combined modal flow
+
+The user approved a queue-only review page and a live Overview with QR plus the same queue. Opening a record automatically calls the existing audited/versioned review-fields POST. No Reveal/Hide control or verification checklist remains. The final Approve & issue pass action explicitly attests comparison and handover through one APPROVE_ISSUE command. Fields clear on close, access/version changes and conflicts; pending/UNKNOWN commands guard dismissal and expose original-handle retry inside the modal. This section supersedes the older presentation/approval-only instructions below. Browser/business/database acceptance is user-run / NOT_RUN.
+
 # R01 authorized staff comparison — 2026-10-27
 
 - Existing masked queue/detail and explicit manual evidence remain the default. Production ReviewPort adds reviewFields POST with expected version/current authority/CSRF; raw fields are parsed independently and never included in normal detail.

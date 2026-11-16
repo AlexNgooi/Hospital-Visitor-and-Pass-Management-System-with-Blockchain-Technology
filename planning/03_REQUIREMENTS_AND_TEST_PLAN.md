@@ -1,12 +1,12 @@
 # 当前需求与验收
 
-更新：2026-11-10。四类表单、manual pass、MRN mock、条款/日期规则按用户2026-10-26/27确认执行；本机运行和多页面/Copy link 按2026-11-10要求。R01–R03 源码已合并 main；当前手测状态见 [10](10_BASELINE_REVIEW.md)。
+更新：2026-11-16。Overview、默认显示 QR、队列 modal 和审核/发卡合并按用户本轮确认执行；当前实现位于 `codex/visitor-review-issue-dashboard`，尚未合并 main。四类表单、manual pass、MRN mock、条款/日期规则按用户2026-10-26/27确认执行；本机运行和多页面/Copy link 按2026-11-10要求。R01–R03 源码已合并 main；当前手测状态见 [10](10_BASELINE_REVIEW.md)。
 
 业务字段来源：用户说明及 `CamScanner 26-10-2026 20.27.pdf` 第1页（BORANG SERAH DAN PEMULANGAN KAD AKSES PENJAGA，22/08/2025）。PDF 的罚款、收费、固定柜台及转 ward 重办背景不自动成为新增功能。演示只用合成资料，真实 IC/MRN 采集与保留待医院批准。
 
 ## 当前使用体验
 
-- QR 与审核可通过明确的新标签入口同时保持打开，继承当前授权柜台；同 profile 共享登录，不能据此切换成其他角色。
+- Staff Overview 直接展示动态 QR 与 registration queue；QR 开页自动准备，不再点击 Display。Registration review 只展示队列，打开记录后在 modal 自动读取完整资料（保留服务端权限/version/审计），不再 Reveal 或核实 checklist。QR 与审核仍可通过新标签入口独立打开，继承当前授权柜台和登录。
 - 导航默认隐藏，菜单打开，Escape/遮罩/关闭按钮收起，键盘焦点可返回。
 - Copy link 复制当前有效动态登记地址；与扫码共用过期/撤销/grant 规则，无永久入口。剪贴板被限制时允许手动复制当前只读链接。
 - 本机 loopback 链接仅适合同电脑；手机访问需可达 HTTPS 地址和实际真机验收。
@@ -16,7 +16,7 @@
 | 决定 | 新需求 |
 |---|---|
 | Reader | 不再需要读卡器读取 pass；counter staff 在系统手动选择库存 pass 并确认 issue，发还流程不依赖真实或模拟扫描 |
-| 职员核实 | Counter staff 仍人工核实 visitor 资料，批准和 issue 分开；MRN lookup 不替代职员核实 |
+| 职员核实 | Counter staff 在同一 modal 人工核对完整资料、选择 pass/期限，点击 Approve & issue pass 一次提交；批准与发卡同事务，MRN lookup 不替代职员核实 |
 | Admin | 权限基本不变，继续管理账号、配置、库存、审计和报告；不因此自动取得 counter staff 操作权 |
 | 多张 pass | Vendor / Contractor 同一登记可借多张 pass，支持去多个 location；Executive 同一登记最多一张活动 pass |
 | 归还期限 | 可选择设定归还日期/时间，或不设期限；不设期限仍需实际归还并保留记录 |
@@ -46,9 +46,9 @@ Penjaga 的纸本证件栏马来文为 **No. Kad Pengenalan**，英文为 **Pass
 1. Visitor 经现有动态 QR/grant 进入所属类别表单。
 2. Penjaga 输入 MRN 后触发 lookup；显示“查询中 / 找到 / 未找到 / 暂时不可用”，成功自动回填最少患者姓名和 ward/bed。改变 MRN 时立即清除旧患者显示和旧验证凭据；晚到响应不得覆盖较新的 MRN 结果。
 3. Visitor 填完本类别字段并提交；Penjaga 勾选访问卡条款，服务器记录版本与时间。登记进入待审核状态。
-4. Counter staff 人工核对资料并批准/拒绝，保留 actor、时间和结构化依据；假的 API 命中不自动批准。
-5. 对 VERIFIED 登记，staff 手动选择 AVAILABLE、类别/地点兼容且在当前权限范围内的 pass。Vendor / Contractor 可选择多张，逐张关联 location；Executive 保持一张活动 pass。确认实体交付后才写入 issue 成功。
-6. 每张 pass 可选择“无归还期限”或具体到期日期/时间。每张生成独立 assignment、Pass ID、issued_at 和审计事件；同一次多选 issue 建议采用单个原子命令，任一卡冲突则整批不发放，防止 UI 显示整批成功而实际仅部分成功。
+4. Counter staff 从 Overview 或 Registration review 队列打开 modal，直接读取并人工核对资料。拒绝仍需理由；不显示核实 checklist，假的 API 命中不自动批准。
+5. 在同一 modal 选择 AVAILABLE、类别/地点兼容且在当前权限范围内的 pass。Vendor / Contractor 可多卡、多地点；Executive/Penjaga 同登记最多一张活动 pass。每张可选无期限或具体 MYT 日期时间。
+6. 比对资料并实际交付后，点击 Approve & issue pass 明确确认核实与交付；一次命令在同一事务写入 VERIFIED、独立 assignment/Pass ID/issued_at、库存、审计和幂等结果。任一卡冲突连同审批整体回滚。已 VERIFIED 的旧登记仍可在同一 modal 选卡 Issue pass；旧独立 verify/issue API 保留兼容。
 7. 归还时 staff 查找该 visitor/登记下未归还的 pass，手动选择实际收到的一张或多张并确认。只关闭被选 assignment，其余保持借出。每张记录 returned_at、returned_by 和本地审计；不伪造 RETURN scan。
 8. 对有期限且仍活动的 pass，`now >= due_at` 才成为逾期；无期限显示“未设归还期限”，不自动逾期，仍能归还、标记遗失和查看借出时长。
 
@@ -83,7 +83,7 @@ Must 是当前目标版要求；Conditional/Deferred 是外部条件满足并由
 | R04 | Must / user 2026-10-26 + PDF | Penjaga 自填 MRN 后 lookup 自动显示最少患者姓名、ward/bed；改变 MRN 清空旧结果，失败保留输入并转人工核实；staff actor/时间/依据独立记录，不保存病历 | T-R04：回填、改变 MRN/晚到响应、timeout、人工核实、未核实禁止批准 |
 | R05 | Must mock / Conditional live | 用户确认先设计假的 MRN API，明确 MOCK/SYNTHETIC；live 仍需医院 endpoint/auth/response/test account，不能把假数据当医院验证 | T-R05：受 grant 保护的假查询及来源标记；live 获批 sandbox，当前 NOT_RUN |
 | R06 | Must / user 2026-10-08 | QR challenge 服务端过期/撤销/范围校验；成功扫描换取绑定匿名会话的限时单次提交 grant，QR 换码不影响已有效进入的表单；公共二维码允许多访客扫描 | T-R06：过期边界、撤销、篡改 counter/category、跨会话、grant 过期/重复提交/并发、扫码后换码继续填、断网/休眠恢复 |
-| S01 | Must / proposal + UI v4 | 职员登录后查看授权队列；批准/拒绝写审计，拒绝理由必填；批准不自动发卡或发消息 | T-S01：401/403、审核冲突、拒绝、批准无借用 |
+| S01 | Must / proposal + UI v4 | 职员登录后查看授权队列；批准/拒绝写审计，拒绝理由必填；合并按钮批准并发卡同事务；拒绝不发卡，均不发消息；旧 verify API 仍只批准 | T-S01：401/403、审核冲突、拒绝、批准无借用 |
 | C01 | Must / user 2026-10-26 | 库存按可辨识 pass code、类别/地点和状态管理，staff 手动选择 AVAILABLE pass；新办理流程不要求 UID/profile/reader 扫描，旧库存和扫描历史保留 | T-C01：无 reader 仍可维护/选库存，重复 pass code 和无效库存拒绝 |
 | C02 | Superseded / user 2026-10-26 | reader ScanJob 不再是发还前置；旧 job/result 仅保留历史，不为 manual 操作伪造扫描证据；staff 权限、counter scope、版本和幂等仍须校验 | T-C02：无设备/scan result 可办理；越权/跨柜台/重复命令仍安全拒绝 |
 | P01 | Must / user 2026-10-26 | VERIFIED + AVAILABLE + 类别/地点兼容 + staff 手动选卡和确认实体交付；每张独立 assignment/Pass ID/发放时间/可选期限，业务与本地审计原子完成 | T-P01：手动发卡、库存冲突/回滚、来源/actor/time |

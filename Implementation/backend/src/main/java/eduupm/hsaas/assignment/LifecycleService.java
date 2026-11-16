@@ -44,13 +44,13 @@ public final class LifecycleService {
         this.store=store; this.security=new LifecycleSecurity(accounts,capabilities,store.jdbc); this.roots=roots; this.reviewRoots=reviewRoots;
         this.reader=reader; this.idem=idem; this.audit=audit; this.json=json; this.clock=clock; this.properties=properties;
         tx=new TransactionTemplate(manager); tx.setIsolationLevel(TransactionDefinition.ISOLATION_READ_COMMITTED);
-        manual=new ManualLifecycle(this,store,security,roots,idem,audit,json,clock,properties.environment());
+        manual=new ManualLifecycle(this,store,security,roots,reviewRoots,idem,audit,json,clock,properties.environment());
     }
 
     /** A uniqueness loser only queries a winner under fresh authority; it never silently reapplies the command. */
     SafeResult command(LifecycleSecurity.Context context,boolean admin,String operation,String target,String key,String body) {
         // Manual writes never discover or consume a scan, including recovery of historical stock.
-        if(Set.of("CARD_ENROLL","ISSUE","RETURN","RETURN_BATCH","RESTORE").contains(operation))
+        if(Set.of("CARD_ENROLL","ISSUE","APPROVE_ISSUE","RETURN","RETURN_BATCH","RESTORE").contains(operation))
             return manual.command(context,admin,operation,target,key,body);
         // Legacy reader actions remain explicitly gated; manual operations above bypass this dependency.
         if(operation.startsWith("SCAN_") && !properties.readerMode().equals("mock")) throw new ApiFailure(503,"SERVICE_UNAVAILABLE","The legacy reader is disabled.");
@@ -362,7 +362,8 @@ public final class LifecycleService {
             security.lock(context,false,List.of(LifecycleInput.decimal(coordinates.counterId())));
             var root=roots.lockLifecycle(coordinates,context.owner());
             if(!root.environment().equals(properties.environment()) || !root.origin().equals("SYNTHETIC")) throw CardRules.unavailable();
-            CardRules.require(root.status().equals("VERIFIED"),"REGISTRATION_STATE_CONFLICT");
+            // Submitted records may preview stock; only the atomic command can approve and issue it.
+            CardRules.require(Set.of("SUBMITTED","VERIFIED").contains(root.status()),"REGISTRATION_STATE_CONFLICT");
             var eligible=root.destinations();
             var rules=store.jdbc.query("SELECT setting_key,value_int,version FROM system_settings WHERE setting_key=?",
                     (rs,n)->new ManualLifecycle.ReturnDefault(rs.getString(1),(Integer)rs.getObject(2),rs.getLong(3)),"return_hours_"+root.categoryCode());

@@ -9,7 +9,6 @@ import type { Queue, QueueItem } from "../review/contracts";
 import { lifecycleApi } from "./client";
 import { lifecycleAccessLost, lifecycleError, useLifecycleCommands } from "./commands";
 import type { Assignment, AssignmentPage, History, Reveal } from "./contracts";
-import { ManualIssue } from "./manual-issue";
 import { LifecycleHistory, Pager, SimulationNotice } from "./shared";
 import "./lifecycle.css";
 
@@ -22,7 +21,7 @@ export function StaffLifecycle() {
   return <StaffWorkspace key={`${state.user.id}:${counter}`} counterId={counter} recheck={refresh} />;
 }
 
-/** Verified issue queue and assignment history remain distinct; a Pass ID is created only by confirmed issue. */
+/** Issue is handled in the review modal; this page finds assignments and records physical returns. */
 function StaffWorkspace({ counterId, recheck }: { counterId: string; recheck: () => void }) {
   const [denied, setDenied] = useState(false);
   const [queue, setQueue] = useState<Queue | null>(null);
@@ -33,14 +32,13 @@ function StaffWorkspace({ counterId, recheck }: { counterId: string; recheck: ()
   const [registrationFilter, setRegistrationFilter] = useState<QueueItem | null>(null);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
-  const [selected, setSelected] = useState<QueueItem | null>(null);
   const [assignment, setAssignment] = useState<Assignment | null>(null);
   const [confirmed, setConfirmed] = useState(false);
   const [history, setHistory] = useState<History | null>(null);
   const [contact, setContact] = useState<Reveal | null>(null);
   const [followup, setFollowup] = useState("CONTACT_ATTEMPTED");
   const alive = useRef(true); const generation = useRef(0); const historyGeneration = useRef(0);
-  const deny = useCallback(() => { setDenied(true); setQueue(null); setList(null); setSelected(null); setAssignment(null); setRegistrationFilter(null); setContact(null); setHistory(null); }, []);
+  const deny = useCallback(() => { setDenied(true); setQueue(null); setList(null); setAssignment(null); setRegistrationFilter(null); setContact(null); setHistory(null); }, []);
   const commands = useLifecycleCommands(deny);
   const blocked = denied || commands.locked || busy;
 
@@ -69,7 +67,7 @@ function StaffWorkspace({ counterId, recheck }: { counterId: string; recheck: ()
     // Phone stays in component memory for at most 30 seconds and is never placed in storage, links or clipboard.
     const timer = window.setTimeout(() => setContact(null), Math.max(0, Math.min(30000, Date.parse(contact.expiresAt) - Date.now()))); return () => window.clearTimeout(timer);
   }, [contact]);
-  const reset = () => { historyGeneration.current++; setSelected(null); setAssignment(null); setConfirmed(false); setHistory(null); setContact(null); };
+  const reset = () => { historyGeneration.current++; setAssignment(null); setConfirmed(false); setHistory(null); setContact(null); };
   const done = () => { reset(); void refresh(); };
   async function showHistory(value: Assignment) {
     setContact(null); setHistory(null); const seq = ++historyGeneration.current;
@@ -78,17 +76,16 @@ function StaffWorkspace({ counterId, recheck }: { counterId: string; recheck: ()
   }
 
   return <div className="lc-workspace">
-    <header className="lc-header"><div><p className="lc-eyebrow">COUNTER {counterId}</p><h1>Pass lifecycle</h1><p className="muted">Manually issue, receive and follow up on visitor cards using synthetic demonstration data.</p></div><Button variant="secondary" disabled={commands.locked || denied} busy={busy} onClick={() => void refresh()}>Refresh lists</Button></header>
+    <header className="lc-header"><div><p className="lc-eyebrow">COUNTER {counterId}</p><h1>Pass returns</h1><p className="muted">Receive returned passes and review assignment history. Approve and issue new passes from Overview or Registration review.</p></div><Button variant="secondary" disabled={commands.locked || denied} busy={busy} onClick={() => void refresh()}>Refresh lists</Button></header>
     <SimulationNotice />{commands.notice}{commands.recovery}
     {denied && <StatusPanel kind="error" title="Current access must be rechecked" action={<Button onClick={recheck}>Recheck session</Button>}>Visible records and contacts have been cleared. Keep an unknown original command until its result is confirmed.</StatusPanel>}
     {error && <ToastNotice>{error}</ToastNotice>}
-    <section className="lc-panel"><h2>Approved registrations</h2><p className="muted">Select a VERIFIED registration, choose available compatible cards and confirm handover.</p>
+    <section className="lc-panel"><h2>Find registration passes</h2><p className="muted">Select a registration to find its issued passes and record a return.</p>
       {queue ? <><div className="lc-table"><table><thead><tr><th>Registration</th><th>Visitor</th><th>Category</th><th>Destination</th><th>Action</th></tr></thead><tbody>
-        {queue.items.map(item => <tr key={item.id}><td>{item.publicReference}</td><td>{item.maskedVisitorName}</td><td>{item.categoryCode}</td><td>{item.destinationLabel}</td><td><div className="lc-row"><Button variant="secondary" disabled={blocked} onClick={() => { reset(); setRegistrationFilter(item); setOverdue(false); setPage(0); setSelected(item); }}>Prepare issue</Button><Button variant="secondary" disabled={blocked} onClick={() => { reset(); setOverdue(false); setPage(0); setRegistrationFilter(item); }}>View this registration's passes</Button></div></td></tr>)}
+        {queue.items.map(item => <tr key={item.id}><td>{item.publicReference}</td><td>{item.maskedVisitorName}</td><td>{item.categoryCode}</td><td>{item.destinationLabel}</td><td><Button variant="secondary" disabled={blocked} onClick={() => { reset(); setOverdue(false); setPage(0); setRegistrationFilter(item); }}>View this registration's passes</Button></td></tr>)}
       </tbody></table></div>{queue.items.length === 0 && <p>No approved registrations on this page.</p>}
         <div className="lc-row"><Button variant="secondary" disabled={blocked || queuePage === 0} onClick={() => setQueuePage(v => v - 1)}>Previous registrations</Button><span>Page {queuePage + 1} · {queue.total} approved</span><Button variant="secondary" disabled={blocked || (queuePage + 1) * 10 >= queue.total} onClick={() => setQueuePage(v => v + 1)}>Next registrations</Button></div></> : !busy && <p>Approved queue unavailable. Refresh to retry.</p>}
     </section>
-    {selected && <ManualIssue key={selected.id} registrationId={selected.id} commands={commands} disabled={blocked} onDone={done} onAccessLost={deny} />}
     <section className="lc-panel"><div className="lc-header"><h2>Assignments &amp; internal alerts</h2><label className="lc-check"><input type="checkbox" checked={overdue} disabled={blocked} onChange={event => { reset(); setPage(0); setOverdue(event.target.checked); }} />Only active overdue</label></div>
       {registrationFilter && <p>Passes for {registrationFilter.publicReference} <Button variant="secondary" disabled={blocked} onClick={() => { reset(); setPage(0); setRegistrationFilter(null); }}>Show all registrations</Button></p>}
       <p className="muted">Returns are restricted to the original issue counter in this demonstration. An overdue item is based on the server deadline even before its alert is materialized.</p>

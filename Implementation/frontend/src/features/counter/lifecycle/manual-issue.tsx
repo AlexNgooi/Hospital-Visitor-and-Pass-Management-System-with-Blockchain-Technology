@@ -1,88 +1,110 @@
-import { ToastNotice } from "../../../components/ui/toast";
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { Button } from "../../../components/ui/primitives";
+import { ToastNotice } from "../../../components/ui/toast";
 import { formatMyt } from "../../../lib/time";
+import { ClientError } from "../../../lib/errors";
 import { lifecycleApi } from "./client";
 import { lifecycleAccessLost, lifecycleError, type useLifecycleCommands } from "./commands";
 import type { Card, IssueContext, PassSelection } from "./contracts";
 import { Pager } from "./shared";
+import "./lifecycle.css";
 
 type Choice = { card: Card; destinationId: string; deadline: string; noDeadline: boolean };
-
-/** UTC instants are edited as explicit MYT wall times, independent of the browser's local timezone. */
+/** Edit explicit MYT wall time regardless of the browser timezone. */
 function wallTime(instant: string, hours: number): string {
   return new Date(Date.parse(instant) + (hours + 8) * 3600000).toISOString().slice(0, 16);
 }
-
-/** The server rechecks every version and submits the bounded selection atomically; no scan capability is created. */
-export function ManualIssue({ registrationId, commands, disabled, onDone, onAccessLost }: {
-  registrationId: string; commands: ReturnType<typeof useLifecycleCommands>; disabled: boolean; onDone: () => void; onAccessLost: () => void;
+/** Shared selection form for combined approval and existing approved registrations. */
+export function ManualIssue({ registrationId, commands, disabled, onDone, onAccessLost, reviewVersion, footer }: {
+  registrationId: string; commands: ReturnType<typeof useLifecycleCommands>; disabled: boolean;
+  onDone: () => void; onAccessLost: () => void; reviewVersion?: number; footer?: ReactNode;
 }) {
   const [context, setContext] = useState<IssueContext | null>(null);
-  const [page, setPage] = useState(0);
+  const [page, setPage] = useState(0), [attempt, setAttempt] = useState(0);
   const [choices, setChoices] = useState<Record<string, Choice>>({});
-  const [confirmed, setConfirmed] = useState(false);
-  const [error, setError] = useState("");
-  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(""), [loading, setLoading] = useState(true);
   useEffect(() => {
     const controller = new AbortController(); let active = true;
     void lifecycleApi.issueContext(registrationId, page, controller.signal).then(value => {
-      if (active) { setContext(value); setError(""); setLoading(false); }
+      if (!active) return;
+      if (value.registrationId !== registrationId) throw new Error("Scope mismatch");
+      setContext(value); setError(""); setLoading(false);
     }).catch(error => {
-      if (active) { setContext(null); setError(lifecycleError(error)); setLoading(false); if (lifecycleAccessLost(error)) { setChoices({}); onAccessLost(); } }
+      if (active) {
+        setContext(null); setError(lifecycleError(error)); setLoading(false);
+        if (lifecycleAccessLost(error)) { setChoices({}); onAccessLost(); }
+      }
     });
     return () => { active = false; controller.abort(); };
-  }, [registrationId, page, onAccessLost]);
+  }, [registrationId, page, attempt, onAccessLost]);
   const selected = Object.values(choices);
-  const blocked = disabled || loading || !context || (!context.multipleActivePassesAllowed && context.activePassCount > 0);
-
-  /** Any changed selection invalidates custody confirmation; stale versions remain visible until explicitly reloaded. */
-  function toggle(card: Card) {
-    if (!context) return;
-    setConfirmed(false);
-    setChoices(current => {
-      if (current[card.id]) { const next = { ...current }; delete next[card.id]; return next; }
-      if (Object.keys(current).length >= 50 || (!context.multipleActivePassesAllowed && Object.keys(current).length > 0)) return current;
-      return { ...current, [card.id]: { card, destinationId: card.destinationId ?? context.destinations[0]?.id ?? "",
-        noDeadline: context.defaultReturnHours === null, deadline: wallTime(context.cards.serverNow, context.defaultReturnHours ?? 1) } };
-    });
+  const changed = context !== null && reviewVersion !== undefined && context.version !== reviewVersion;
+  const blocked = disabled || loading || !context || changed || (!context.multipleActivePassesAllowed && context.activePassCount > 0);
+  /** A single-category selection replaces its predecessor; multi-category selection preserves individual deadlines. */
+  function choose(id: string) {
+    const card = context?.cards.items.find(value => value.id === id);
+    if (!context || !card) return;
+    const choice: Choice = { card, destinationId: card.destinationId ?? context.destinations[0]?.id ?? "",
+      noDeadline: context.defaultReturnHours === null, deadline: wallTime(context.cards.serverNow, context.defaultReturnHours ?? 1) };
+    setChoices(current => context.multipleActivePassesAllowed ? { ...current, [id]: choice } : { [id]: choice });
   }
-  function update(id: string, patch: Partial<Choice>) {
-    setConfirmed(false); setChoices(current => ({ ...current, [id]: { ...current[id], ...patch } }));
-  }
+  function update(id: string, patch: Partial<Choice>) { setChoices(current => ({ ...current, [id]: { ...current[id], ...patch } })); }
+  function reload() { setChoices({}); setLoading(true); setAttempt(value => value + 1); }
   function submit() {
-    if (!context) return;
+    if (blocked || !context || selected.length === 0 || commands.locked) return;
     try {
-      const passes: PassSelection[] = selected.map(choice => ({ cardId: choice.card.id, expectedVersion: choice.card.version, destinationId: choice.destinationId,
-        dueAt: choice.noDeadline ? null : new Date(`${choice.deadline}:00+08:00`).toISOString() }));
+      const passes: PassSelection[] = selected.map(choice => ({ cardId: choice.card.id, expectedVersion: choice.card.version,
+        destinationId: choice.destinationId, dueAt: choice.noDeadline ? null : new Date(`${choice.deadline}:00+08:00`).toISOString() }));
       if (passes.some(pass => !pass.destinationId || (pass.dueAt !== null && Date.parse(pass.dueAt) <= Date.now()))) {
-        setError("Choose an eligible destination and a future deadline, or explicitly select no deadline."); return;
+        setError("Choose an eligible destination and a future deadline, or select no deadline."); return;
       }
-      commands.submit(lifecycleApi.issue(registrationId, context.version, passes), "Manual issue batch", onDone);
+      // Clicking this action attests staff comparison and physical handover, without a separate checklist.
+      const original = reviewVersion === undefined ? lifecycleApi.issue(registrationId, context.version, passes)
+        : lifecycleApi.approveAndIssue(registrationId, reviewVersion, passes);
+      // Validate the receipt before the shared hook announces success; retry retains this exact original handle.
+      const command = { key: original.key, execute: async (signal?: AbortSignal) => {
+        const result = await original.execute(signal);
+        if (result.id !== registrationId || result.status !== "ISSUED" || result.version !== (reviewVersion === undefined ? context.version : reviewVersion + 1)) throw new ClientError("invalid-response");
+        return result;
+      } };
+      commands.submit(command, reviewVersion === undefined ? "Pass issuance" : "Registration approval and pass issuance", onDone);
     } catch { setError("Enter a valid return date and time, or select no deadline."); }
   }
-  return <section className="lc-panel"><h2>Choose available cards</h2>
+  return <section className="pass-issue-form" aria-label="Pass issuance">
+    <h2>Pass issuance</h2><p className="muted">Choose an available pass to complete this registration.</p>
     {error && <ToastNotice>{error}</ToastNotice>}
-    {loading && <p role="status">Loading eligible inventory…</p>}
+    {loading && <p role="status">Loading eligible passes…</p>}
+    {!loading && !context && <Button variant="secondary" disabled={disabled} onClick={reload}>Retry inventory</Button>}
+    {changed && <p role="alert">This registration changed. Refresh its details before issuing a pass.</p>}
     {context && <>
-      <p>{context.multipleActivePassesAllowed ? "Multiple cards and destinations are allowed." : "One active pass per registration."} Currently active: {context.activePassCount}.</p>
-      <p className="muted">Select each card and its destination. The category default is {context.defaultReturnHours === null ? "no deadline" : `${context.defaultReturnHours} hours`}; you may change it per pass. All selected cards issue together, or none do.</p>
-      <div className="lc-table"><table><thead><tr><th>Select</th><th>Card</th><th>Inventory destination</th></tr></thead><tbody>
-        {context.cards.items.map(card => <tr key={card.id}><td><input type="checkbox" aria-label={`Select ${card.cardCode}`} checked={!!choices[card.id]} disabled={blocked || (!choices[card.id] && (selected.length >= 50 || (!context.multipleActivePassesAllowed && selected.length > 0)))} onChange={() => toggle(card)} /></td><td>{card.cardCode}</td><td>{card.destinationLabel ?? "Legacy stock · choose eligible destination"}</td></tr>)}
-      </tbody></table></div>
-      {context.cards.items.length === 0 && <p>No compatible available cards on this page.</p>}
-      <Pager page={page} total={context.cards.total} disabled={disabled || loading} change={value => { setLoading(true); setPage(value); }} />
-      {selected.map(choice => <fieldset className="lc-panel" key={choice.card.id} disabled={blocked}><legend>{choice.card.cardCode}</legend>
-        <label className="lc-field">Issued destination<select value={choice.destinationId} onChange={event => update(choice.card.id, { destinationId: event.target.value })}>
+      {context.activePassCount > 0 && <p>{context.activePassCount} active pass(es). {context.multipleActivePassesAllowed ? "Additional passes are allowed for this category." : "Return the active pass before issuing another."}</p>}
+      <label className="lc-field">{context.multipleActivePassesAllowed ? "Add available pass" : "Available pass"}
+        <select value={context.multipleActivePassesAllowed ? "" : selected[0]?.card.id ?? ""} disabled={blocked || selected.length >= 50} onChange={event => choose(event.target.value)}>
+          <option value="">Choose a pass</option>
+          {!context.multipleActivePassesAllowed && selected[0] && !context.cards.items.some(card => card.id === selected[0].card.id) && <option value={selected[0].card.id}>{selected[0].card.cardCode}</option>}
+          {context.cards.items.filter(card => !context.multipleActivePassesAllowed || !choices[card.id]).map(card => <option key={card.id} value={card.id}>{card.cardCode} · {card.destinationLabel ?? "Choose destination"}</option>)}
+        </select>
+      </label>
+      {context.cards.total === 0 && <p role="status">No compatible passes are available. Refresh inventory or try again when a pass is returned.</p>}
+      {context.cards.total > 25 && <Pager page={page} total={context.cards.total} disabled={disabled || loading} change={value => { setLoading(true); setPage(value); }} />}
+      {selected.map(choice => <fieldset className="pass-choice" key={choice.card.id} disabled={blocked}>
+        <legend>{choice.card.cardCode} <span className="badge">Available</span></legend>
+        <label className="lc-field">Destination<select value={choice.destinationId} onChange={event => update(choice.card.id, { destinationId: event.target.value })}>
           {context.destinations.filter(destination => choice.card.destinationId === null || destination.id === choice.card.destinationId).map(destination => <option key={destination.id} value={destination.id}>{destination.label}</option>)}
         </select></label>
-        <label className="lc-check"><input type="checkbox" checked={choice.noDeadline} onChange={event => update(choice.card.id, { noDeadline: event.target.checked })} />No return deadline · this card still requires an actual return</label>
-        {!choice.noDeadline && <label className="lc-field">Return deadline (MYT, UTC+08:00)<input type="datetime-local" value={choice.deadline} onChange={event => update(choice.card.id, { deadline: event.target.value })} /></label>}
-        <Button variant="secondary" onClick={() => toggle(choice.card)}>Remove card</Button>
+        <div className="deadline-choice" role="group" aria-label={`Return deadline for ${choice.card.cardCode}`}>
+          <span>Return deadline</span><div className="deadline-options">
+            <Button variant="secondary" aria-pressed={choice.noDeadline} onClick={() => update(choice.card.id, { noDeadline: true })}>No deadline</Button>
+            <Button variant="secondary" aria-pressed={!choice.noDeadline} onClick={() => update(choice.card.id, { noDeadline: false })}>Set date &amp; time</Button>
+          </div>
+        </div>
+        {!choice.noDeadline && <label className="lc-field">Return deadline (MYT)<input type="datetime-local" required value={choice.deadline} onChange={event => update(choice.card.id, { deadline: event.target.value })} /></label>}
+        <p className="pass-summary">{choice.card.cardCode} → {context.destinations.find(value => value.id === choice.destinationId)?.label}<br /><small>{choice.noDeadline ? "No return deadline · Return is still required" : `Return by ${choice.deadline.replace("T", " ")} MYT`}</small></p>
+        {context.multipleActivePassesAllowed && <Button variant="ghost" onClick={() => setChoices(current => { const next = { ...current }; delete next[choice.card.id]; return next; })}>Remove {choice.card.cardCode}</Button>}
       </fieldset>)}
-      <p className="lc-caption">Inventory checked {formatMyt(context.cards.serverNow)} MYT. Selection limit: 50 per command.</p>
-      <label className="lc-check"><input type="checkbox" disabled={blocked || selected.length === 0} checked={confirmed} onChange={event => setConfirmed(event.target.checked)} />I confirm that all {selected.length} selected cards have been handed over.</label>
-      <Button disabled={blocked || !confirmed || selected.length === 0} onClick={submit}>Confirm manual issue ({selected.length})</Button>
+      <div className="pass-stock-meta"><small className="muted">Inventory checked {formatMyt(context.cards.serverNow)} MYT</small><Button variant="ghost" disabled={disabled || loading} onClick={reload}>Refresh inventory</Button></div>
+      <p className="pass-attestation">{reviewVersion === undefined ? "Select Issue pass" : "Compare the visitor’s identity, registration and destination details, then select Approve & issue pass"} after handing over the physical {selected.length > 1 ? "passes" : "pass"}.</p>
     </>}
+    <div className="review-modal-footer">{footer}<Button busy={commands.pending} disabled={blocked || selected.length === 0} onClick={submit}>{reviewVersion === undefined ? "Issue pass" : "Approve & issue pass"}{selected.length > 1 ? ` (${selected.length})` : ""}</Button></div>
   </section>;
 }

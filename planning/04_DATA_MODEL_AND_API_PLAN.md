@@ -175,7 +175,8 @@ C11 M00 公共工程契约：
 | Public | `POST /api/public/registration-schema`、`/mrn-validations`、`/registrations` | 以RegistrationController为准；schema/lookup需有效formContext，提交带幂等key |
 | Human session | `/api/auth/login`、`/logout`、`/me` | 服务端当前角色/柜台、session/CSRF，无public signup |
 | COUNTER_STAFF | `/api/staff/registration-qr-sessions` 及 `/{id}/current`、`/{id}/revoke` | owner/counter权限，动态期限与撤销 |
-| COUNTER_STAFF | `/api/staff/registrations` 及 `/{id}`、`/review-fields`、`/verify`、`/reject`、`/issue-context` | 掩码读取；授权审阅字段需单独审计；批准不发卡 |
+| COUNTER_STAFF | `/api/staff/registrations` 及 `/{id}`、`/review-fields`、`/verify`、`/reject`、`/issue-context` | 队列/普通详情掩码读取；modal 打开自动 POST 审阅字段并审计，version/权限仍校验；issue-context 支持 SUBMITTED/VERIFIED 预览库存；旧 verify 只批准 |
+| COUNTER_STAFF | `POST /api/staff/card-assignments/approve-and-issue` | 原子审批与多卡发放；严格 registrationId/expectedVersion/reviewConfirmed/handoverConfirmed/passes，独立 APPROVE_ISSUE 幂等 namespace；失败全部回滚，无新增 migration |
 | COUNTER_STAFF | `/api/staff/card-assignments` 及 `/{id}`、`/return`、`/history`；`/api/staff/overdue` | 手动原子发放、逐张归还、nullable due、当前版本/柜台/来源 |
 | COUNTER_STAFF | `/api/staff/assignments/{id}/followups`、`/contact-reveal` | 内部跟进与受审计限时reveal，不发消息 |
 | ADMIN | `/api/admin/cards`、`/references`、`/{id}/mark-lost`、`/disable`、`/restore`、`/history` | 手动库存与原因/版本；不能任意PATCH状态 |

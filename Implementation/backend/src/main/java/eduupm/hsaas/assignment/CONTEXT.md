@@ -1,3 +1,7 @@
+# 2026-11-16 atomic approval and issue
+
+POST /api/staff/card-assignments/approve-and-issue uses strict APPROVE_ISSUE input/encoding and its own idempotency namespace. ManualLifecycle uses the existing RegistrationReviewPort to record the staff decision inside the existing lifecycle transaction, after current authority and reference/root locks and before sorted card locks. Approval, all assignments/inventory changes, audit and replay commit together or all roll back. issue-context accepts SUBMITTED/VERIFIED for advisory stock preview. Legacy ISSUE/verify behavior stays compatible; no migration. This supersedes the older statement that lifecycle never changes review status.
+
 # M05 assignment simulation
 
 ## R02 current manual lifecycle (2026-10-27)

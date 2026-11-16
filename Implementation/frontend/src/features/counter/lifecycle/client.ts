@@ -18,6 +18,8 @@ export const lifecycleApi = {
   issueContext: (id: string, page: number, signal?: AbortSignal) => apiClient.get(`/api/staff/registrations/${id}/issue-context?page=${page}`, issueContextSchema, { signal, authRequired: true }),
   enroll: (cardCode: string, categoryCode: string, destinationId: string) => apiClient.command("/api/admin/cards", { cardCode, categoryCode, destinationId }, safeResultSchema, { authRequired: true }),
   issue: (registrationId: string, expectedVersion: number, passes: PassSelection[]) => apiClient.command("/api/staff/card-assignments", { registrationId, expectedVersion, passes, handoverConfirmed: true }, safeResultSchema, { authRequired: true }),
+  // The final modal action confirms both staff comparison and physical handover in one atomic command.
+  approveAndIssue: (registrationId: string, expectedVersion: number, passes: PassSelection[]) => apiClient.command("/api/staff/card-assignments/approve-and-issue", { registrationId, expectedVersion, passes, reviewConfirmed: true, handoverConfirmed: true }, safeResultSchema, { authRequired: true }),
   returned: (id: string, expectedVersion: number) => apiClient.command(`/api/staff/card-assignments/${id}/return`, { expectedVersion, physicalReceived: true }, safeResultSchema, { authRequired: true }),
   inventoryAction: (id: string, action: "mark-lost" | "disable" | "restore", body: unknown) => apiClient.command(`/api/admin/cards/${id}/${action}`, body, safeResultSchema, { authRequired: true }),
   followup: (id: string, reasonCode: string) => apiClient.command(`/api/staff/assignments/${id}/followups`, { reasonCode }, safeResultSchema, { authRequired: true }),

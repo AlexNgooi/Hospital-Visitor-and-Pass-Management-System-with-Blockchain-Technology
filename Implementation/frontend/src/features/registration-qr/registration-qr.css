@@ -79,3 +79,15 @@
   .qr-display-feature .qr-display-layout { grid-template-columns: minmax(0, 1fr); gap: 8px; }
   .qr-display-feature .qr-scan-area { width: min(100%, 260px); }
 }
+/* Compact presentation preserves the rotating capability and expiry guards. */
+.qr-display-compact { margin:0; border:1px solid var(--border); border-radius:12px; padding:20px; background:var(--surface); }
+.qr-display-compact .qr-intro h2 { font-size:20px; margin:0 0 6px; }
+.qr-display-compact .qr-toolbar { margin:12px 0; }
+.qr-display-feature.qr-display-compact .qr-display-layout { grid-template-columns:minmax(0,1fr); gap:12px; }
+.qr-display-compact .qr-display-card { border:0; border-radius:0; padding:0; }
+.qr-display-compact .qr-display-heading { display:none; }
+.qr-display-compact .qr-display-card:fullscreen .qr-display-heading { display:flex; }
+.qr-display-compact .qr-controls .button { padding:8px 10px; font-size:13px; }
+.qr-display-compact .qr-guidance > .qr-safety, .qr-display-compact .qr-guidance > .qr-limits { display:none; }
+.qr-display-compact .qr-hidden { min-height:220px; }
+.qr-display-compact .qr-scan-area { width:min(100%,280px); }

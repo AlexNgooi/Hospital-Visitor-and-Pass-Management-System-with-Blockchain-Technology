@@ -16,7 +16,7 @@ export function createReviewPort(client: ApiClient = apiClient): ReviewPort {
       return client.get(`/api/staff/registrations/${safeId(id)}`, detailSchema, { signal, authRequired: true });
     },
     reviewFields(id, expectedVersion, signal) {
-      // PII is never retained in an idempotency command; each explicit reveal has a current-authority local audit.
+      // PII is never retained in an idempotency command; each modal read has a current-authority local audit.
       return client.post(`/api/staff/registrations/${safeId(id)}/review-fields`, { expectedVersion }, reviewFieldsSchema,
         { signal, authRequired: true });
     },
