@@ -1,6 +1,6 @@
 # 当前状态与外部未决项
 
-更新：2026-11-11。此文件是交付状态的唯一规划入口；历史聊天/阶段计划不再覆盖它。
+更新：2026-11-16。此文件是交付状态的唯一规划入口；历史聊天/阶段计划不再覆盖它。
 
 | 范围 | 已知事实 | 尚未完成的验证 |
 |---|---|---|
@@ -9,10 +9,12 @@
 | UI polish | `ccfca27`，角色工作台与共享视觉，已纳入main | 浏览器视觉/窄屏/键盘验收待执行 |
 | 本机启动/并行页面/Copy link | 本地提交 `c82c3eb`，已纳入本次main合并 | 未启动应用、数据库、迁移或浏览器 |
 | 当前清理 | `5fea768`：planning合并、旧资产删除、依赖移除及本机测试隔离，已纳入main | 静态/构建结果记本轮handoff；新native测试未执行 |
-| 库存 modal / Toast / 账号查看 | 独立分支 `codex/card-enrollment-toast`：登记与Open card详情modal、查看图标按钮、共享轻提示、账号下拉选择，默认当前登录账号及权限；尚未合并main | build/lint通过；测试源码类型检查FAIL（未修改的registration旧fixture）；浏览器/业务/数据库NOT_RUN，运行版未重启 |
+| 库存 modal / Toast / 账号查看 | 来源分支 `codex/card-enrollment-toast`，实现提交 `1e09a6a` / `90c1e40`：登记与Open card详情modal、查看图标按钮、共享轻提示、账号下拉选择，默认当前登录账号及权限；纳入本次main发布 | 实现版本build/lint通过；测试源码类型检查FAIL（未修改的registration旧fixture）；浏览器/业务/数据库NOT_RUN，运行版未重启 |
 | Sui/通知 | 默认disabled；无真实调用、合约发布或历史补发 | Sui worker/Move、provider接口与真实验收均未实施 |
 
 2026-11-10用户明确要求“github push main”，授权将独立分支 `codex/no-docker-multi-page`（交付head `5fea768`）合并并推送main。旧文档冲突按当前规范解决，当前运行指南改为主项目checkout。没有部署、启动/重启应用、执行数据库迁移或删除旧数据；Git发布不代表业务验收。
+
+2026-11-16用户再次明确要求“github push main”，授权将 `codex/card-enrollment-toast` 的库存modal、共享toast和账号查看改动纳入main并推送GitHub。本次发布保留既有静态检查结论和未通过的旧测试类型检查记录；未启动或重启应用、数据库，未执行迁移或浏览器/业务验收。
 
 ## 待确认事项
 
