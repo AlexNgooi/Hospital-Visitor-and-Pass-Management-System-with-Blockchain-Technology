@@ -2,6 +2,8 @@
 
 QR setup runs once automatically for the selected authorized counter after capabilities load, including a compact Overview presentation. StrictMode discarded effects do not create another display; setup failures require explicit retry. Rotation, expiry, offline/visibility hiding, revocation and copy-link rules remain unchanged. No static QR fallback or token persistence is added.
 
+The compact card scales its QR to desktop height and keeps controls in one row. Entry help and clipboard fallback open in focus-managed dialogs; fallback closes when its exact rotating source stops being current. This prevents these optional contents from extending the dashboard page. The standalone QR page retains its larger display and inline guidance.
+
 # Dynamic registration QR
 
 2026-11-10 explicit user request adds Copy link for the current validated QR entryUrl, including a readonly manual-copy fallback when Clipboard API access fails. Copy uses the same rotation/expiry/revocation boundary, checks freshness/online/visibility at click time, keeps URL data in component memory only, and hides feedback/fallback when their exact source is no longer current. No logging or persistence is introduced. Shared shell adds explicit new-tab links so review and QR can remain mounted in separate tabs/windows; no backend authorization is weakened. Browser/manual acceptance remains user-run.

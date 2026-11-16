@@ -56,6 +56,12 @@ export function WorkspaceShell({ slots }: { slots: readonly FeatureSlot[] }) {
       <span className="nav-caption">
         {isStaff ? "COUNTER WORKSPACE" : "ADMINISTRATION"}
       </span>
+      {/* Counter choice stays available in the drawer without taking space from the dashboard. */}
+      {isStaff && user.counterIds.length > 1 && <label className="drawer-counter">Counter
+        <select value={activeCounter ?? ""} onChange={event => setCounter(event.target.value)}>
+          {user.counterIds.map(id => <option key={id} value={id}>Counter {id}</option>)}
+        </select>
+      </label>}
       <nav
         aria-label={isStaff ? "Counter navigation" : "Administrator navigation"}
       >
@@ -89,7 +95,7 @@ export function WorkspaceShell({ slots }: { slots: readonly FeatureSlot[] }) {
   );
   return (
     <CounterContext.Provider value={activeCounter}>
-      <div className="workspace workspace-drawer-layout">
+      <div className={`workspace workspace-drawer-layout${isStaff ? " workspace-staff" : ""}${isStaff && /^\/staff\/?$/.test(location.pathname) ? " workspace-dashboard" : ""}`}>
         <div className="workspace-body">
           <header className="topbar">
             <Dialog.Root
@@ -129,17 +135,11 @@ export function WorkspaceShell({ slots }: { slots: readonly FeatureSlot[] }) {
                 </Dialog.Content>
               </Dialog.Portal>
             </Dialog.Root>
-            {isStaff && <Link to="/staff" className="staff-topbar-brand" aria-label="HSAAS overview"><span className="brand-symbol" aria-hidden="true">H</span><strong>HSAAS</strong></Link>}
-            <div className="breadcrumb">
-              <span>{isStaff ? "Counter" : "Administration"}</span>
+            {!isStaff && <div className="breadcrumb">
+              <span>Administration</span>
               <ChevronRight size={14} aria-hidden="true" />
               <strong>{current}</strong>
-            </div>
-            {isStaff && <nav className="staff-primary-nav" aria-label="Staff workspace">
-              <NavLink to="/staff" end>Overview</NavLink>
-              <NavLink to="/staff/registrations">Registration review</NavLink>
-              <NavLink to="/staff/passes">Pass returns</NavLink>
-            </nav>}
+            </div>}
             <div className="account-tools">
               <div className="account-avatar" aria-hidden="true">
                 {user.login.slice(0, 2).toUpperCase()}
@@ -155,38 +155,6 @@ export function WorkspaceShell({ slots }: { slots: readonly FeatureSlot[] }) {
             </div>
           </header>
           <main id="main-content" className="workspace-main">
-            {isStaff && (
-              <div className="counter-bar">
-                <label htmlFor="active-counter">Counter access</label>
-                {user.counterIds.length ? (
-                  <select
-                    id="active-counter"
-                    value={activeCounter ?? ""}
-                    onChange={(event) => setCounter(event.target.value)}
-                  >
-                    {user.counterIds.map((id) => (
-                      <option key={id} value={id}>
-                        Counter {id}
-                      </option>
-                    ))}
-                  </select>
-                ) : (
-                  <span className="badge">No counters assigned</span>
-                )}
-                <span className="muted">Authorised counters only</span>
-                {/* Native links preserve the current review/form and reuse the existing staff session. */}
-                <div className="workspace-tab-tools" aria-label="Open a parallel workspace">
-                  {navigation.filter(slot => ["/staff/registration-qr", "/staff/registrations"].includes(slot.path)).map(slot => (
-                    <Link key={slot.path} className="button button-secondary"
-                      to={`${slot.path}${activeCounter ? `?counter=${encodeURIComponent(activeCounter)}` : ""}`}
-                      target="_blank" rel="noopener noreferrer">
-                      {slot.path.endsWith("registration-qr") ? "Open QR in new tab" : "Open review in new tab"}
-                      <ArrowUpRight size={16} aria-hidden="true" />
-                    </Link>
-                  ))}
-                </div>
-              </div>
-            )}
             <Outlet />
           </main>
           <footer className="workspace-footer">

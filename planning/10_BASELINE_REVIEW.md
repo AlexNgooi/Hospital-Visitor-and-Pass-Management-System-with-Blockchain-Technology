@@ -49,3 +49,9 @@ Penjaga仅IC、每登记最多一张活动pass、条款勾选并记录服务器�
 - 当前访问 `http://127.0.0.1:15417/login`；backend18407/control15418。源码仍在 `codex/visitor-review-issue-dashboard`，main 未合并/推送。
 - 实际结果：launcher READY；backend `/api/health` HTTP 200；frontend `/login` HTTP 200；Vite 提供新版 Review & issue pass modal 源码；Java 命令含 --spring.flyway.enabled=false。这仅证明启动与源码提供，不等于浏览器/业务验收。
 - 启动器 node --check 与 backend dependency:build-classpath 通过。浏览器视觉/手机 QR/审批与发卡/并发/恢复测试仍 NOT_RUN。停止与下次启动方式见 MANUAL_NATIVE 的隔离分支段落。
+
+## 2026-11-16 浏览器批注后的布局调整
+
+- 用户要求移除 staff header 品牌/医院名称与 Overview、Registration review、Pass returns 横向链接，删除柜台/新标签工具栏；现保留菜单、账号和退出，多柜台选择移入菜单。
+- 桌面 Overview（至少 1024×560）按视口分配高度，压缩标题/QR/页脚间距；多条登记只在队列表格内滚动，表头固定、分页保留、滚动区可键盘聚焦。小屏/高倍缩放继续自然重排，避免裁切。QR 帮助和手动复制备用内容使用弹窗，避免撑高主页面。
+- 本轮仅前端源码/CSS改动，运行中的 Vite 使用当前 worktree；未重启应用/数据库、未迁移。前端 build/lint、文档检查和 diff 检查通过；未进行浏览器、业务或数据库验收，不能将布局实现写为视觉验收通过。

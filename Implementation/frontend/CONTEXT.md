@@ -1,5 +1,9 @@
 # frontend 契约
 
+## 2026-11-16 dashboard space and scrolling
+
+Staff headers retain the menu/account/sign-out controls and omit branding and inline route tabs. Counter and parallel-tab tools are removed from the main page; authorized multi-counter selection remains in the drawer. Desktop Overview uses the available viewport height (at least 1024px wide and 560px high); its queue scrolls internally with sticky headers, visible pagination and keyboard access. Smaller or highly zoomed windows retain natural page reflow instead of clipping controls. Compact QR help and manual-copy fallback use dialogs to avoid enlarging the dashboard. Browser visual/business acceptance remains user-run / NOT_RUN.
+
 - **输入规范**：[需求与验收](../../planning/03_REQUIREMENTS_AND_TEST_PLAN.md)、[数据/API](../../planning/04_DATA_MODEL_AND_API_PLAN.md)、[UI v4](../../output/ui-redesign-v4/README.md)；目录边界见 [目录计划](../../planning/09_FOLDER_STRUCTURE.md)。
 - **单一职责**：React + TypeScript + Vite Web 公共框架、角色导航、登录与 typed API/CSRF client。M01 独立 UI/client 检查已有证据；真实 M00 session/CSRF 联调和业务页面尚未验收。授权与业务规则以服务端为准。
 - **输出**：src/ 内界面与客户端代码、public/ 内公开资源、package.json 与 pnpm-lock.yaml；dist/ 为构建产物，不提交。后续验证证据保存到 ../docs/evidence/。

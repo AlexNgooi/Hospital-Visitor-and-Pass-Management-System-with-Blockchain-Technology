@@ -1,9 +1,11 @@
 import { ToastNotice } from "../../components/ui/toast";
 import { useCallback, useEffect, useRef, useState } from "react";
 import QRCode from "qrcode";
-import { Copy, QrCode, ShieldCheck, WifiOff } from "lucide-react";
+import { Copy, QrCode, ShieldCheck, WifiOff, X } from "lucide-react";
+import * as Dialog from "@radix-ui/react-dialog";
 import { useCounterScope } from "../../app/counter-context";
 import { Button, StatusPanel } from "../../components/ui/primitives";
+import { preserveToastInteraction } from "../../components/ui/dialog-feedback";
 import { safeError } from "../../lib/errors";
 import { qrPort, type CurrentQr, type QrPort } from "./contracts";
 import { anchor, displayFresh, safeEntryUrl, serverTime, type ServerAnchor } from "./time";
@@ -27,6 +29,7 @@ export function RegistrationQrDisplay({ port = qrPort, compact = false }: { port
   const [manualLink, setManualLink] = useState<DisplayValue | null>(null);
   const generation = useRef(0);
   const panel = useRef<HTMLDivElement>(null);
+  const copyButton = useRef<HTMLButtonElement>(null);
   const autoStarted = useRef(new Set<string>());
 
   useEffect(() => {
@@ -149,6 +152,15 @@ export function RegistrationQrDisplay({ port = qrPort, compact = false }: { port
     }
   };
 
+  // Compact help opens over the workspace instead of increasing the dashboard's height.
+  const guidance = <div className="qr-guidance-body">
+    <p>The server changes this QR every 30 seconds. Each code expires after 45 seconds.</p>
+    <p>Copy link opens the same registration form without scanning. Paste the whole link immediately, including the part after #. A copied link has the same expiry and revocation rules as the QR.</p>
+    <p>For a visitor on this computer, use a separate browser profile or private window. Staff pages can share tabs in the signed-in profile. A localhost link works only on this computer.</p>
+    <p>Visitors who already opened a valid form have 20 minutes to submit it. Several visitors can scan the same current code.</p>
+    <p>Keep this display connected. After a connection loss or sleep, the code stays hidden until revalidated.</p>
+    <p className="muted">QR entry does not verify identity or physical presence. Staff verification remains required.</p>
+  </div>;
   return <div className={`qr-feature qr-display-feature${compact ? " qr-display-compact" : ""}`}>
     <header className="qr-intro">{compact ? <h2>Visitor registration QR</h2> : <h1>Visitor registration QR</h1>}<p className="muted">Scan to register · No account required</p></header>
     {enabled === false ? <StatusPanel kind="empty" title="Registration QR is not enabled">Contact the administrator to enable the controlled registration entry.</StatusPanel> : <>
@@ -169,14 +181,21 @@ export function RegistrationQrDisplay({ port = qrPort, compact = false }: { port
           </div>
           {visible && <div className="qr-display-meta"><span className="qr-live">Live · changes in {remaining} seconds</span></div>}
           {display && <div className="qr-controls">
-            <Button variant="secondary" disabled={!visible} onClick={() => void copyLink()}><Copy size={16} aria-hidden="true" />Copy link</Button>
+            <Button ref={copyButton} variant="secondary" disabled={!visible} onClick={() => void copyLink()}><Copy size={16} aria-hidden="true" />Copy link</Button>
             {visible && <Button variant="ghost" onClick={() => void panel.current?.requestFullscreen?.()}>Full screen</Button>}
-            <Button variant="secondary" busy={busy} onClick={() => void revoke()}>Revoke display</Button>
+            <Button variant="secondary" busy={busy} onClick={() => void revoke()}>{compact ? "Revoke" : "Revoke display"}</Button>
           </div>}
           {visible && copyResult?.source === value && <ToastNotice tone="info">{copyResult.message}</ToastNotice>}
-          {visible && manualLink === value && <label className="qr-manual-link">Current registration link
+          {visible && manualLink === value && (compact ? <Dialog.Root open onOpenChange={open => { if (!open) setManualLink(null); }}>
+            <Dialog.Portal><Dialog.Overlay className="dialog-overlay" /><Dialog.Content className="dialog-content qr-help-dialog" onInteractOutside={preserveToastInteraction}
+              onCloseAutoFocus={event => { event.preventDefault(); copyButton.current?.focus(); }}>
+              <div className="qr-help-heading"><Dialog.Title>Copy registration link</Dialog.Title><Dialog.Close asChild><Button variant="ghost" aria-label="Close registration link"><X size={20} aria-hidden="true" /></Button></Dialog.Close></div>
+              <Dialog.Description>Select and copy this link immediately. It expires with the current QR.</Dialog.Description>
+              <label className="qr-manual-link">Current registration link<input readOnly value={value.current.entryUrl} onFocus={event => event.target.select()} /></label>
+            </Dialog.Content></Dialog.Portal>
+          </Dialog.Root> : <label className="qr-manual-link">Current registration link
             <input readOnly value={value.current.entryUrl} onFocus={event => event.target.select()} />
-          </label>}
+          </label>)}
           {message && !revocation && <ToastNotice>{message}</ToastNotice>}
           {enabled === null && message && <Button variant="secondary" onClick={() => {
             // Retry only the read-only availability probe; never replay an uncertain create or revoke command.
@@ -186,15 +205,13 @@ export function RegistrationQrDisplay({ port = qrPort, compact = false }: { port
         <aside className="qr-guidance" aria-label="Registration entry guidance">
           <p className="qr-limits">30s rotation · 45s expiry · 20min form</p>
           <p className="qr-safety">QR does not prove identity or presence. Staff checks still apply.</p>
-          {/* Native details keeps complete guidance keyboard-accessible without displacing the current code/actions. */}
-          <details><summary><ShieldCheck size={18} aria-hidden="true" />Entry limits and connection help</summary><div className="qr-guidance-body">
-          <p>The server changes this QR every 30 seconds. Each code expires after 45 seconds.</p>
-          <p>Copy link opens the same registration form without scanning. Paste the whole link immediately, including the part after #. A copied link has the same expiry and revocation rules as the QR.</p>
-          <p>For a visitor on this computer, use a separate browser profile or private window. Staff pages can share tabs in the signed-in profile. A localhost link works only on this computer.</p>
-          <p>Visitors who already opened a valid form have 20 minutes to submit it. Several visitors can scan the same current code.</p>
-          <p>Keep this display connected. After a connection loss or sleep, the code stays hidden until revalidated.</p>
-          <p className="muted">QR entry does not verify identity or physical presence. Staff verification remains required.</p>
-          </div></details>
+          {compact ? <Dialog.Root>
+            <Dialog.Trigger asChild><Button variant="ghost"><ShieldCheck size={18} aria-hidden="true" />Entry limits and help</Button></Dialog.Trigger>
+            <Dialog.Portal><Dialog.Overlay className="dialog-overlay" /><Dialog.Content className="dialog-content qr-help-dialog" onInteractOutside={preserveToastInteraction}>
+              <div className="qr-help-heading"><Dialog.Title>Registration entry help</Dialog.Title><Dialog.Close asChild><Button variant="ghost" aria-label="Close entry help"><X size={20} aria-hidden="true" /></Button></Dialog.Close></div>
+              <Dialog.Description>Entry limits and connection guidance for this counter.</Dialog.Description>{guidance}
+            </Dialog.Content></Dialog.Portal>
+          </Dialog.Root> : <details><summary><ShieldCheck size={18} aria-hidden="true" />Entry limits and connection help</summary>{guidance}</details>}
         </aside>
       </div>
     </>}

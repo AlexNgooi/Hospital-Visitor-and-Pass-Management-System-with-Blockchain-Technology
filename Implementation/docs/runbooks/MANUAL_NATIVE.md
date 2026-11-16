@@ -40,10 +40,10 @@ node Implementation/scripts/manual-demo.mjs start --initialize
 
 ## 同时打开审核与二维码
 
-1. 登录 Counter Staff，进入 Registration review。
-2. 点击柜台栏 **Open QR in new tab**，审核页保留；新页继承当前柜台并由服务器校验权限。
+1. 登录 Counter Staff，Overview 默认同屏展示 QR 和 Registration queue；顶部仅保留菜单与账号工具。
+2. 如需独立页面，从左上角菜单的 QR 或 Registration review 入口右侧箭头另开标签；新页继承当前柜台并由服务器校验权限。多柜台账号在菜单内切换柜台。
 3. 本轮隔离分支的 Overview 和独立 QR 页自动展示二维码。可以把两页拖成并排窗口，无需重复登录。
-4. QR 页的 **Open review in new tab** 可反向打开审核。导航菜单各入口右侧箭头也可另开页面，包括 ADMIN 工具。
+4. 导航菜单各入口右侧箭头可另开页面，包括审核、QR 和 ADMIN 工具；不再使用独立柜台工具栏。
 5. 侧边栏默认隐藏，左上角菜单打开；点击关闭/遮罩或按 Escape 收起，焦点返回菜单按钮。
 
 同一浏览器 profile 共享 staff session，退出会影响其他标签。不同角色和访客测试使用独立 profile 或私密窗口。普通同标签导航仍切换工具；使用新标签入口保留当前页面。隐藏后台 QR 标签时旧码会隐藏，恢复可见后重新验证；并排窗口可保持两页挂载。

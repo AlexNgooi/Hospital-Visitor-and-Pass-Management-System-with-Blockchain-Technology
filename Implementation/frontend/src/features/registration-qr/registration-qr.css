@@ -91,3 +91,25 @@
 .qr-display-compact .qr-guidance > .qr-safety, .qr-display-compact .qr-guidance > .qr-limits { display:none; }
 .qr-display-compact .qr-hidden { min-height:220px; }
 .qr-display-compact .qr-scan-area { width:min(100%,280px); }
+/* Compact controls keep the live QR and its actions inside the desktop dashboard. */
+.qr-display-compact { padding:16px; }
+.qr-display-compact .qr-intro h2 { font-size:18px; line-height:24px; margin-bottom:4px; }
+.qr-display-compact .qr-intro p { font-size:13px; line-height:18px; }
+.qr-display-feature.qr-display-compact .qr-toolbar { margin:6px 0; line-height:20px; }
+.qr-display-compact .qr-controls { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:6px; }
+.qr-display-compact .qr-controls .button { min-width:0; padding:6px; font-size:12px; white-space:normal; }
+.qr-display-compact .qr-controls svg { display:none; }
+.qr-display-feature.qr-display-compact .qr-display-layout { gap:8px; }
+.qr-display-compact .qr-guidance > .button { width:100%; font-size:13px; }
+.qr-help-heading { display:flex; justify-content:space-between; align-items:flex-start; gap:12px; }
+.qr-help-dialog .qr-guidance-body p { margin-top:12px; line-height:1.6; }
+@media (min-width:1024px) and (min-height:560px) {
+  .qr-display-feature.qr-display-compact .qr-scan-area { width:min(100%,clamp(160px,calc(100dvh - 450px),248px)); }
+  .qr-display-feature.qr-display-compact .qr-hidden { min-height:clamp(160px,calc(100dvh - 450px),248px); }
+}
+@media (min-width:1024px) and (min-height:560px) and (max-height:650px) {
+  .qr-display-compact { padding:12px; }
+  .qr-display-compact .qr-intro h2 { line-height:22px; margin-bottom:2px; }
+  .qr-display-compact .qr-intro p { line-height:16px; }
+  .qr-display-feature.qr-display-compact .qr-toolbar { margin:4px 0; line-height:18px; }
+}
