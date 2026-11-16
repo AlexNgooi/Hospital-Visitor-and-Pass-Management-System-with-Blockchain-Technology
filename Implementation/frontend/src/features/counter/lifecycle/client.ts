@@ -27,6 +27,9 @@ export const lifecycleApi = {
   issue: (registrationId: string, expectedVersion: number, passes: PassSelection[]) => apiClient.command("/api/staff/card-assignments", { registrationId, expectedVersion, passes, handoverConfirmed: true }, safeResultSchema, { authRequired: true }),
   // The final modal action confirms both staff comparison and physical handover in one atomic command.
   approveAndIssue: (registrationId: string, expectedVersion: number, passes: PassSelection[]) => apiClient.command("/api/staff/card-assignments/approve-and-issue", { registrationId, expectedVersion, passes, reviewConfirmed: true, handoverConfirmed: true }, safeResultSchema, { authRequired: true }),
+  // No-pass commands attest only the explicit disposition and review, never a physical handover.
+  noPass: (registrationId: string, expectedVersion: number) => apiClient.command("/api/staff/card-assignments/no-pass", { registrationId, expectedVersion, noPassConfirmed: true }, safeResultSchema, { authRequired: true }),
+  approveWithoutPass: (registrationId: string, expectedVersion: number) => apiClient.command("/api/staff/card-assignments/approve-without-pass", { registrationId, expectedVersion, reviewConfirmed: true, noPassConfirmed: true }, safeResultSchema, { authRequired: true }),
   returned: (id: string, expectedVersion: number) => apiClient.command(`/api/staff/card-assignments/${id}/return`, { expectedVersion, physicalReceived: true }, safeResultSchema, { authRequired: true }),
   inventoryAction: (id: string, action: "mark-lost" | "disable" | "restore", body: unknown) => apiClient.command(`/api/admin/cards/${id}/${action}`, body, safeResultSchema, { authRequired: true }),
   followup: (id: string, reasonCode: string) => apiClient.command(`/api/staff/assignments/${id}/followups`, { reasonCode }, safeResultSchema, { authRequired: true }),

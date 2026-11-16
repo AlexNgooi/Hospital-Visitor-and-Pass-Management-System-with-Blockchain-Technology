@@ -22,6 +22,8 @@ final class ManualInput {
                 case "CARD_ENROLL" -> Set.of("cardCode","categoryCode","destinationId");
                 case "ISSUE" -> Set.of("registrationId","expectedVersion","handoverConfirmed","passes");
                 case "APPROVE_ISSUE" -> Set.of("registrationId","expectedVersion","reviewConfirmed","handoverConfirmed","passes");
+                case "NO_PASS" -> Set.of("registrationId","expectedVersion","noPassConfirmed");
+                case "APPROVE_NO_PASS" -> Set.of("registrationId","expectedVersion","reviewConfirmed","noPassConfirmed");
                 case "RETURN" -> Set.of("expectedVersion","physicalReceived");
                 case "RETURN_BATCH" -> Set.of("registrationId","physicalReceived","passes");
                 case "RESTORE" -> Set.of("expectedVersion","physicalFoundConfirmed","inventoryCheckedConfirmed","reasonCode");

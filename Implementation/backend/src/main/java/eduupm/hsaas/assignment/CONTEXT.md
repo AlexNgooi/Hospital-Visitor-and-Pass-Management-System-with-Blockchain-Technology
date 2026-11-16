@@ -1,5 +1,11 @@
 # 2026-11-16 atomic approval and issue
 
+## Explicit no-pass disposition
+
+POST /api/staff/card-assignments/approve-without-pass uses APPROVE_NO_PASS to atomically approve SUBMITTED and append REGISTRATION_NO_PASS. POST /api/staff/card-assignments/no-pass uses NO_PASS for an already VERIFIED registration. Strict bodies carry registrationId/expectedVersion/noPassConfirmed, with reviewConfirmed required only for approval. Their distinct canonical namespaces preserve legacy ISSUE replay. Both require current staff/session/counter/root authority, VERIFIED eligibility and zero active assignments, and reject a second recorded disposition under the root lock. Same-command replay returns its original VERIFIED receipt. No inventory, assignment, handover, return deadline or lifecycle card event is created; audit and idempotency roll back with approval. No migration is required.
+
+The protected issue-context includes noPassRecorded, derived from the permanent local audit under the same authorized root lock. This is a historical marker, not a claim that no pass has ever subsequently been issued. Later physical issue remains allowed under existing eligibility rules. Pass return/history feeds remain assignment-only and therefore exclude no-pass decisions.
+
 ## Staff return list/history reads
 
 StaffPassReadService owns POST /api/staff/passes/search and POST /api/staff/passes/history-export. Current staff/counter/session authority is locked before reads; search values remain in strict CSRF-protected JSON bodies, never URLs/cursors or diagnostics. Assignment/card source/environment guards remain. Bounded keyset batches support scrolling without visible page buttons; root-owned passVisitors returns only bounded name/category labels and an internal full-name search boolean. Lifecycle does not parse registration JSON or duplicate root SQL.

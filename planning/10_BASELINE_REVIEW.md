@@ -77,3 +77,11 @@ Penjaga仅IC、每登记最多一张活动pass、条款勾选并记录服务器�
 - 实际检查：前端 build/lint PASS（无 lint 警告）；后端 compile/test-compile、skip-tests package PASS；planning 与 diff 检查 PASS。测试套件未执行。typecheck:test 仍 FAIL 于未修改的 registration fixture 22/34/184 行（旧 schema 与缺 patient），没有将其记为 PASS。构建仍有既有单 chunk 大小/deprecated API 提示。
 - 已经原私有 control 停止并重新启动这组演示应用，沿用原 runtime-root、--no-migrate；没有重启 MySQL、迁移、seed、恢复或复制私有配置。launcher READY，backend /api/health 与 frontend /staff/passes HTTP 200，仅证明进程/页面入口可用。归还、CSV、滚动/视觉、并发、权限竞争与数据库验收全部 NOT_RUN，由用户手测。
 - 当前改动未合并 main 或 push；主项目源码保持原分支。手测步骤见 MANUAL_R01_R03.md。
+
+## 2026-11-16 No pass 发放选项
+
+- 同一隔离分支新增互斥 No pass 下拉选项：SUBMITTED 用 Approve without pass 原子审批并记录，VERIFIED 用 Record no pass。无需实体地点/期限/交付；无库存也可选择。登记详情重新打开时通过受权限保护的 issue-context 显示历史 No pass 标记。
+- 独立 APPROVE_NO_PASS / NO_PASS 严格输入与幂等 namespace；在当前 staff/session/counter/root/version 检查和注册锁内写 REGISTRATION_NO_PASS 本地审计，保存关联登记、经办人/时间和安全版本快照。已有活动借用、重复决定拒绝；原 key/body 重试返回原结果。后续仍可按原规则实体发卡，不删除旧审计。
+- 不创建卡、assignment、交付时间、期限或实体生命周期事件；现有 Pass returns/history 仅读实际借用，自然排除该决定。无 migration、数据库操作或外部集成。
+- 实际检查：前端 build/lint PASS；后端 `mvnw.cmd -B -DskipTests test-compile` PASS（含源码/测试源码编译，未运行测试）；planning/diff 检查 PASS。保留既有 chunk 大小/deprecated API 提示。浏览器、业务、权限/并发、回滚、UNKNOWN 和 SQL 验收全部 NOT_RUN，由用户手测。
+- 本轮未启动或重启应用/数据库；后端新增接口需由用户重启其应用后使用。未 merge main 或 push。

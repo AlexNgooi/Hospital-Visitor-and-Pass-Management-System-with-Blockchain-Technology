@@ -55,12 +55,13 @@ final class ManualLifecycle {
                     // A waiting duplicate must see its winner before attempting a new approval transition.
                     replay=idem.replay(namespace,encoding);
                     if(replay.isPresent()) return replay.get().result();
-                    if(operation.equals("APPROVE_ISSUE")) {
+                    boolean approvedNow=Set.of("APPROVE_ISSUE","APPROVE_NO_PASS").contains(operation);
+                    if(approvedNow) {
                         CardRules.require(input.bool("reviewConfirmed"),"REVIEW_CONFIRMATION_REQUIRED");
                         var receipt=reviews.lock(reviews.discover(plan.registration()));
                         boolean penjaga=root.categoryCode().equals("PENJAGA");
                         var basis=penjaga?List.of("IDENTITY_MATCH_CONFIRMED","MRN_MATCH_CONFIRMED","WARD_MATCH_CONFIRMED"):List.of("IDENTITY_MATCH_CONFIRMED");
-                        // The final staff action attests comparison and handover; a mock lookup never triggers approval.
+                        // The final staff action attests comparison; only physical issue also attests handover.
                         var decision=new RegistrationReviewPort.Verified(true,penjaga?true:null,penjaga?true:null,
                                 new ManualEvidence("SYNTHETIC_RECORD_COMPARISON",basis));
                         var approved=reviews.recordDecision(receipt,input.version(),context.owner(),decision);
@@ -82,7 +83,8 @@ final class ManualLifecycle {
                     Instant now=clock.instant().truncatedTo(ChronoUnit.MICROS);
                     SafeResult result=switch(operation) {
                         case "CARD_ENROLL" -> enroll(input,current.id(),now);
-                        case "ISSUE","APPROVE_ISSUE" -> issue(input,root,cards,current.id(),now,operation.equals("APPROVE_ISSUE"));
+                        case "ISSUE","APPROVE_ISSUE" -> issue(input,root,cards,current.id(),now,approvedNow);
+                        case "NO_PASS","APPROVE_NO_PASS" -> noPass(input,root,current.id(),approvedNow);
                         case "RETURN","RETURN_BATCH" -> returned(operation,input,plan,assignments,cards,current.id(),now);
                         case "RESTORE" -> restore(input,cards.get(plan.cards().getFirst()),current.id(),now);
                         default -> throw new IllegalStateException("Unknown manual operation");
@@ -101,9 +103,10 @@ final class ManualLifecycle {
         if(operation.equals("CARD_ENROLL")) return new Plan("REGISTER",null,null,List.of(),List.of());
         if(operation.equals("RESTORE")) return new Plan(LifecycleInput.uuid(target),null,null,List.of(target),List.of());
         String registration; var cards=new ArrayList<String>(); var assignments=new ArrayList<String>();
-        if(operation.equals("ISSUE") || operation.equals("APPROVE_ISSUE")) {
+        if(Set.of("ISSUE","APPROVE_ISSUE","NO_PASS","APPROVE_NO_PASS").contains(operation)) {
             registration=Long.toString(LifecycleInput.decimal(input.text("registrationId")));
-            for(var selection:input.passes(true)) cards.add(selection.id());
+            if(operation.equals("ISSUE") || operation.equals("APPROVE_ISSUE"))
+                for(var selection:input.passes(true)) cards.add(selection.id());
         } else {
             var ids=operation.equals("RETURN")?List.of(LifecycleInput.uuid(target)):input.passes(false).stream().map(ManualInput.Selection::id).toList();
             registration=operation.equals("RETURN_BATCH")?Long.toString(LifecycleInput.decimal(input.text("registrationId"))):null;
@@ -175,6 +178,28 @@ final class ManualLifecycle {
             event("ISSUED",card.id(),id,registration,actor,card.status(),"ISSUED",card.version(),card.version()+1,null,now);
         }
         return new SafeResult(Long.toString(registration),null,"ISSUED",root.version());
+    }
+
+    /** Record the explicit disposition without inventing a card, assignment, handover or return obligation. */
+    private SafeResult noPass(ManualInput input,RegistrationLifecyclePort.Access root,long actor,boolean approvedNow) {
+        CardRules.version(root.version(),input.version()+(approvedNow?1:0));
+        CardRules.require(root.status().equals("VERIFIED"),"REGISTRATION_STATE_CONFLICT");
+        CardRules.require(input.bool("noPassConfirmed"),"NO_PASS_CONFIRMATION_REQUIRED");
+        Long active=store.jdbc.queryForObject("SELECT COUNT(*) FROM card_assignments WHERE active_registration_id=?",Long.class,
+                LifecycleInput.decimal(root.coordinates().id()));
+        CardRules.require(active!=null && active==0,"ASSIGNMENT_ALREADY_ACTIVE");
+        CardRules.require(!noPassRecorded(root.coordinates().id()),"NO_PASS_ALREADY_RECORDED");
+        // Root locking serializes this decision with issuing; audit and replay share the approval transaction.
+        audit.append(LocalAuditPort.Action.REGISTRATION_NO_PASS,"REGISTRATION",root.coordinates().id(),actor,
+                new LocalAuditPort.Snapshot(root.status(),root.status(),root.version(),root.version(),"SYNTHETIC_MANUAL"));
+        return new SafeResult(root.coordinates().id(),null,"VERIFIED",root.version());
+    }
+
+    /** Called only after current authority and registration locking, never as a public audit lookup. */
+    boolean noPassRecorded(String registration) {
+        return Boolean.TRUE.equals(store.jdbc.queryForObject(
+                "SELECT EXISTS(SELECT 1 FROM audit_events WHERE target_ref=? AND action='REGISTRATION_NO_PASS')",Boolean.class,
+                "REGISTRATION:"+registration));
     }
 
     /** Only selected, physically received active loans close; unselected loans retain their exact state. */

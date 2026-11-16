@@ -52,7 +52,7 @@ public final class LifecycleService {
     /** A uniqueness loser only queries a winner under fresh authority; it never silently reapplies the command. */
     SafeResult command(LifecycleSecurity.Context context,boolean admin,String operation,String target,String key,String body) {
         // Manual writes never discover or consume a scan, including recovery of historical stock.
-        if(Set.of("CARD_ENROLL","ISSUE","APPROVE_ISSUE","RETURN","RETURN_BATCH","RESTORE").contains(operation))
+        if(Set.of("CARD_ENROLL","ISSUE","APPROVE_ISSUE","NO_PASS","APPROVE_NO_PASS","RETURN","RETURN_BATCH","RESTORE").contains(operation))
             return manual.command(context,admin,operation,target,key,body);
         // Legacy reader actions remain explicitly gated; manual operations above bypass this dependency.
         if(operation.startsWith("SCAN_") && !properties.readerMode().equals("mock")) throw new ApiFailure(503,"SERVICE_UNAVAILABLE","The legacy reader is disabled.");
@@ -380,7 +380,7 @@ public final class LifecycleService {
             var cards=store.jdbc.query("SELECT c.*,d.name AS destination_label"+filter+" ORDER BY c.card_code,c.id LIMIT 25 OFFSET ?",(rs,n)->store.cardView(rs),args.toArray());
             long active=Objects.requireNonNull(store.jdbc.queryForObject("SELECT COUNT(*) FROM card_assignments WHERE active_registration_id=?",Long.class,LifecycleInput.decimal(id)));
             return new IssueContext(id,root.reference(),root.categoryCode(),root.version(),root.multipleActivePassesAllowed(),active,eligible,
-                    rule.hours(),rule.version(),new Page<>(page,25,total,cards,now));
+                    rule.hours(),rule.version(),new Page<>(page,25,total,cards,now),manual.noPassRecorded(id));
         });
     }
 
@@ -463,5 +463,6 @@ public final class LifecycleService {
     public record Reference(String id,String code,String label) { }
     public record InventoryReferences(List<Reference> categories,List<Reference> destinations) { }
     public record IssueContext(String registrationId,String publicReference,String categoryCode,long version,boolean multipleActivePassesAllowed,
-            long activePassCount,List<RegistrationLifecyclePort.Destination> destinations,Integer defaultReturnHours,long returnRuleVersion,Page<CardView> cards) { }
+            long activePassCount,List<RegistrationLifecyclePort.Destination> destinations,Integer defaultReturnHours,long returnRuleVersion,Page<CardView> cards,
+            boolean noPassRecorded) { }
 }

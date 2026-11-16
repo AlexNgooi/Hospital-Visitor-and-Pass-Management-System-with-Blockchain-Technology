@@ -44,7 +44,7 @@ public class LocalAuditPort {
     }
     /** These local actions never enqueue notification or blockchain work while those integrations are disabled. */
     public enum Action {
-        REGISTRATION_SUBMITTED,REGISTRATION_VERIFIED,REGISTRATION_REJECTED,ADMIN_CHANGED,ADMIN_BOOTSTRAPPED,
+        REGISTRATION_SUBMITTED,REGISTRATION_VERIFIED,REGISTRATION_REJECTED,REGISTRATION_NO_PASS,ADMIN_CHANGED,ADMIN_BOOTSTRAPPED,
         CARD_REGISTERED,ISSUED,RETURNED,OVERDUE,MARKED_LOST,DISABLED,RESTORED,
         CONTACT_REVEALED,FOLLOWUP_RECORDED,REPORT_EXPORTED
         // R01 explicit staff comparison is audited without storing any revealed field in this event.

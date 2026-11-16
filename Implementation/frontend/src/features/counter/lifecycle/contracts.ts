@@ -11,7 +11,7 @@ const environment = z.enum(["synthetic", "test"]);
 const label = z.string().min(1).max(120).refine(value => !/[\p{C}]/u.test(value));
 export const safeResultSchema = z.object({
   id: z.union([uuid, decimal]), reference: z.string().regex(/^[A-Za-z0-9_-]{1,128}$/).nullable(),
-  status: z.enum(["AVAILABLE", "CLAIMED", "SUCCEEDED", "CONSUMED", "CANCELLED", "EXPIRED", "ISSUED", "RETURNED", "LOST", "DISABLED", "RESTORED", "OVERDUE", "FOLLOWUP_RECORDED"]), version,
+  status: z.enum(["AVAILABLE", "CLAIMED", "SUCCEEDED", "CONSUMED", "CANCELLED", "EXPIRED", "VERIFIED", "ISSUED", "RETURNED", "LOST", "DISABLED", "RESTORED", "OVERDUE", "FOLLOWUP_RECORDED"]), version,
 }).strict();
 export const cardSchema = z.object({
   id: uuid, cardCode: label, maskedUid: z.string().regex(/^\*{3}[0-9A-F]{4}$/).nullable(), categoryCode: category,
@@ -64,7 +64,7 @@ export const inventoryReferencesSchema = z.object({ categories: z.array(referenc
 export const issueContextSchema = z.object({
   registrationId: decimal, publicReference: label, categoryCode: category, version, multipleActivePassesAllowed: z.boolean(), activePassCount: version,
   destinations: z.array(referenceSchema), defaultReturnHours: z.number().int().min(1).max(720).nullable(), returnRuleVersion: version,
-  cards: pageSchema(cardSchema),
+  cards: pageSchema(cardSchema), noPassRecorded: z.boolean().default(false),
 }).strict();
 export type IssueContext = z.infer<typeof issueContextSchema>;
 export type InventoryReferences = z.infer<typeof inventoryReferencesSchema>;

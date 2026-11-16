@@ -1,5 +1,9 @@
 # 2026-11-16 combined review and issue
 
+## Explicit No pass choice
+
+ManualIssue adds No pass to the pass dropdown, mutually exclusive with selected cards for every category. It hides physical destination/deadline requirements, explains the saved disposition and uses Approve without pass (SUBMITTED) or Record no pass (VERIFIED). No handover confirmation is sent. Existing active assignments or an already recorded decision disable No pass, while later eligible physical issue remains possible. The protected issue-context displays the historical no-pass marker; older responses default this additive marker to false. Distinct immutable commands validate the VERIFIED receipt before closing and announcing success. UNKNOWN still permits only original-command recovery. No-pass records never enter assignment-based return/history lists. Browser/business/SQL acceptance remains user-run / NOT_RUN.
+
 ## Current pass returns and history
 
 StaffLifecycle now shows only outstanding issued/overdue pass rows with bounded visitor names, category, Pass ID, destination, status and Return pass. No counter label, registration list/ID, checklist or Previous/Next controls appear. PassTable and usePassFeed consume keyset batches automatically inside a keyboard-accessible scroll region; filters cancel/fence stale reads. Completed returns appear only in the explicitly opened history modal. Time period is a dropdown (This day/month/year/Customize); only Customize shows start/end dates and Apply. MYT return dates define the inclusive day range. CSV is a CSRF-protected, audited server export across all filtered batches, never just loaded rows; limits fail explicitly rather than truncate.

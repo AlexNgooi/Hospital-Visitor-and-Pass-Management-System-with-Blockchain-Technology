@@ -64,6 +64,8 @@ export function lifecycleError(error: unknown): string {
       CARD_CATEGORY_MISMATCH: "The card must be available and match the verified registration category.",
       CARD_DESTINATION_MISMATCH: "Choose a destination approved for this registration and compatible with the selected card.",
       DEADLINE_INVALID: "Choose a future return deadline, or explicitly select no deadline.",
+      NO_PASS_ALREADY_RECORDED: "No pass has already been recorded for this registration. Refresh its details.",
+      NO_PASS_CONFIRMATION_REQUIRED: "Select No pass and confirm this decision before continuing.",
       REGISTRATION_STATE_CONFLICT: "This registration changed. Refresh its details before continuing.",
       CARD_STATE_CONFLICT: "The card state does not allow this action. Refresh the inventory.",
       CARD_ALREADY_ENROLLED: "This pass code is already in inventory. Enter a different unique code.",

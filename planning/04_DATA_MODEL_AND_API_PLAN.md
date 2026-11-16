@@ -177,12 +177,16 @@ C11 M00 公共工程契约：
 | COUNTER_STAFF | `/api/staff/registration-qr-sessions` 及 `/{id}/current`、`/{id}/revoke` | owner/counter权限，动态期限与撤销 |
 | COUNTER_STAFF | `/api/staff/registrations` 及 `/{id}`、`/review-fields`、`/verify`、`/reject`、`/issue-context` | 队列/普通详情掩码读取；modal 打开自动 POST 审阅字段并审计，version/权限仍校验；issue-context 支持 SUBMITTED/VERIFIED 预览库存；旧 verify 只批准 |
 | COUNTER_STAFF | `POST /api/staff/card-assignments/approve-and-issue` | 原子审批与多卡发放；严格 registrationId/expectedVersion/reviewConfirmed/handoverConfirmed/passes，独立 APPROVE_ISSUE 幂等 namespace；失败全部回滚，无新增 migration |
+| COUNTER_STAFF | `POST /api/staff/card-assignments/approve-without-pass` | APPROVE_NO_PASS：严格 registrationId/expectedVersion/reviewConfirmed/noPassConfirmed；原子审批 SUBMITTED 与 REGISTRATION_NO_PASS 本地审计，无实体交付/assignment/期限 |
+| COUNTER_STAFF | `POST /api/staff/card-assignments/no-pass` | NO_PASS：严格 registrationId/expectedVersion/noPassConfirmed；已 VERIFIED 且无活动借用时记录无卡决定；独立幂等 namespace，重复决定拒绝，原 key/body 返回原 VERIFIED/version receipt |
 | COUNTER_STAFF | `POST /api/staff/passes/search` | 只读、CSRF/current-counter；严格 counterId/history/category/status/search/from/to/cursor JSON；50 条匹配记录与 keyset continuation；active 与实际 returned history 分开，搜索值不进 URL |
 | COUNTER_STAFF | `POST /api/staff/passes/history-export` | 同范围/姓名/类别条件扫描全部匹配 history；按 MYT returned_at 整天边界；安全 CSV 与导出审计；5000 行/响应体上限超限明确失败，不部分导出；不扩大 ADMIN 权限 |
 | COUNTER_STAFF | `/api/staff/card-assignments` 及 `/{id}`、`/return`、`/history`；`/api/staff/overdue` | 手动原子发放、逐张归还、nullable due、当前版本/柜台/来源 |
 | COUNTER_STAFF | `/api/staff/assignments/{id}/followups`、`/contact-reveal` | 内部跟进与受审计限时reveal，不发消息 |
 | ADMIN | `/api/admin/cards`、`/references`、`/{id}/mark-lost`、`/disable`、`/restore`、`/history` | 手动库存与原因/版本；不能任意PATCH状态 |
 | ADMIN | accounts/settings/reports/audit的当前controller | 当前权限、CAS、safe history、脱敏和CSV防护；精确路径与payload以对应controller/contracts为准 |
+
+No pass 两条命令沿用当前 staff/session/counter/root 锁、来源/环境、version 与原命令 UNKNOWN 规则。审批、REGISTRATION_VERIFIED/REGISTRATION_NO_PASS 审计和幂等 receipt 同事务提交或回滚；不创建 cards/card_assignments/lifecycle_events、不占库存、不发送消息。issue-context 增加受权限保护的 noPassRecorded 历史布尔标记；后续实体发卡不删除旧无卡审计。Pass returns/history 仍只读实际借用，自动排除此决定，无 migration。Admin 本地 audit 的 All actions 能查看 REGISTRATION_NO_PASS。
 
 旧scan API仅保留兼容能力，不是manual发还的前置。未实现的通知/区块链endpoint不在当前API清单中；后续启用另行定义，不将设计状态机当可调用接口。
 

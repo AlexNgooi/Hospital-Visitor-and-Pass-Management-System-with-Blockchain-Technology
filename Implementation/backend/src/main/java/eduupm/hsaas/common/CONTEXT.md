@@ -1,5 +1,7 @@
 # common contract
 
+- **2026-11-16 No pass**: finite local action REGISTRATION_NO_PASS records only the generated registration target, actor/time and VERIFIED/version snapshot. It joins the outer approval/disposition transaction and does not create a card event, notification or external work.
+
 - **Inputs**: planning/04 C02/C06/C10/C11 and M00 API_BASELINE.md; new DTO schemas require coordinator agreement.
 - **Responsibility**: safe error envelopes, versioned explicit request encoding, local audit, successful-command retention and minimal readiness/capabilities.
 - **Outputs**: typed safe ports joined to the caller's transaction. No PII payload extension, external audit jobs or provider calls.

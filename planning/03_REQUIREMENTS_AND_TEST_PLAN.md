@@ -23,7 +23,7 @@
 | 决定 | 新需求 |
 |---|---|
 | Reader | 不再需要读卡器读取 pass；counter staff 在系统手动选择库存 pass 并确认 issue，发还流程不依赖真实或模拟扫描 |
-| 职员核实 | Counter staff 在同一 modal 人工核对完整资料、选择 pass/期限，点击 Approve & issue pass 一次提交；批准与发卡同事务，MRN lookup 不替代职员核实 |
+| 职员核实 | Counter staff 在同一 modal 人工核对完整资料、选择 pass/期限或 No pass；实体 pass 用 Approve & issue pass，无卡用 Approve without pass；批准与对应记录同事务，MRN lookup 不替代职员核实 |
 | Admin | 权限基本不变，继续管理账号、配置、库存、审计和报告；不因此自动取得 counter staff 操作权 |
 | 多张 pass | Vendor / Contractor 同一登记可借多张 pass，支持去多个 location；Executive 同一登记最多一张活动 pass |
 | 归还期限 | 可选择设定归还日期/时间，或不设期限；不设期限仍需实际归还并保留记录 |
@@ -94,6 +94,7 @@ Must 是当前目标版要求；Conditional/Deferred 是外部条件满足并由
 | C01 | Must / user 2026-10-26 | 库存按可辨识 pass code、类别/地点和状态管理，staff 手动选择 AVAILABLE pass；新办理流程不要求 UID/profile/reader 扫描，旧库存和扫描历史保留 | T-C01：无 reader 仍可维护/选库存，重复 pass code 和无效库存拒绝 |
 | C02 | Superseded / user 2026-10-26 | reader ScanJob 不再是发还前置；旧 job/result 仅保留历史，不为 manual 操作伪造扫描证据；staff 权限、counter scope、版本和幂等仍须校验 | T-C02：无设备/scan result 可办理；越权/跨柜台/重复命令仍安全拒绝 |
 | P01 | Must / user 2026-10-26 | VERIFIED + AVAILABLE + 类别/地点兼容 + staff 手动选卡和确认实体交付；每张独立 assignment/Pass ID/发放时间/可选期限，业务与本地审计原子完成 | T-P01：手动发卡、库存冲突/回滚、来源/actor/time |
+| P01-N | Must / user 2026-11-16 | 发卡下拉提供互斥 No pass：审批和明确无卡决定原子保存；已批准登记也能记录。保留登记关联、经办人/时间/审计，不创建实体 pass/借用/归还期限，不参与 Pass returns 或归还 history；已有活动 pass 或重复决定拒绝，原 key/body 可重放；后续按原规则仍可实际发卡 | T-P01-N：四类别 No pass、无库存、取消切换、审批回滚、重复/UNKNOWN、活动 pass 拒绝、记录可见、归还列表排除（NOT_RUN） |
 | P02 | Must / user 2026-10-26 | 每张库存卡最多一条活动借用；Vendor/Contractor 同登记可多张/多地点，Executive 最多一张活动 pass；Penjaga 每份登记最多一张活动 pass；相同 key/body 重放原结果，不同 body 为409 | T-P02：多卡/多地点、Executive 第二张拒绝、并发同卡仅一赢家、幂等重放 |
 | P03 | Must / user 2026-10-26 | staff 手动选择实际收到的 pass 并确认，正常/逾期借用可归还，无需 RETURN scan；多 pass 支持部分归还，其余不关闭；库存/returned_at/actor/审计原子完成，LOST 仍走遗失流程 | T-P03：还一张不关闭其他借用、重复归还/回滚、LOST 拒绝正常归还 |
 | P04 | Must / user 2026-10-26 | 仅 due_at 非空、仍活动且 ISSUED，并且 UTC now >= due_at 才逾期；无期限不产生逾期；每借用一条逾期事件/告警，配置不回写既有 due_at | T-P04：null 期限、截止边界、scheduler replay、归还竞争 |

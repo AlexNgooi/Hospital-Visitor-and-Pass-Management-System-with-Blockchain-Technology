@@ -103,6 +103,16 @@ public class LifecycleController {
     public SafeResult approveAndIssue(@RequestBody String body,@RequestHeader(name="Idempotency-Key",required=false) String key,HttpServletRequest request,HttpServletResponse response) {
         return write(request,response,"APPROVE_ISSUE","REGISTER",key,body);
     }
+    /** Explicit no-pass decisions persist locally and never create a physical assignment. */
+    @PostMapping(value="/api/staff/card-assignments/no-pass",consumes="application/json")
+    public SafeResult noPass(@RequestBody String body,@RequestHeader(name="Idempotency-Key",required=false) String key,HttpServletRequest request,HttpServletResponse response) {
+        return write(request,response,"NO_PASS","REGISTER",key,body);
+    }
+    /** Submitted registrations approve and record no pass atomically under the same authority and replay rules. */
+    @PostMapping(value="/api/staff/card-assignments/approve-without-pass",consumes="application/json")
+    public SafeResult approveWithoutPass(@RequestBody String body,@RequestHeader(name="Idempotency-Key",required=false) String key,HttpServletRequest request,HttpServletResponse response) {
+        return write(request,response,"APPROVE_NO_PASS","REGISTER",key,body);
+    }
     @PostMapping(value="/api/staff/card-assignments/{id}/return",consumes="application/json")
     public SafeResult returned(@PathVariable String id,@RequestBody String body,@RequestHeader(name="Idempotency-Key",required=false) String key,HttpServletRequest request,HttpServletResponse response) {
         return write(request,response,"RETURN",id,key,body);

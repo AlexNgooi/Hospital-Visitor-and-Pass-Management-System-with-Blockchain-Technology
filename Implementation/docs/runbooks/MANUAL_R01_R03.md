@@ -27,6 +27,8 @@
 
 ## 用户手动检查清单（全部 NOT_RUN）
 
+No pass 补充：四类别在发卡下拉选择 No pass 后应清除已选实体卡、隐藏地点/归还期限，并显示 Approve without pass（已批准时 Record no pass）。无兼容库存也可选；取消不写记录。成功保留登记与本地无卡审计，Approved 筛选再开详情应看到历史 No pass 提示；Pass returns 与归还 history 均不出现该决定。已有活动借用不能记录 No pass；重复点击/原 key 重试不重复写审计，UNKNOWN 只重试原命令；批准或审计失败全部回滚。后续如需实体 pass 仍可按原规则发卡。上述业务、权限、并发和数据库场景全部 NOT_RUN。
+
 Pass returns 补充：记录数超过一批时，滚动到底自动继续加载，不应有 Previous/Next，桌面主页面标题/筛选/底部信息保持可见。已归还行只在 View pass history 内出现；Time period 下拉支持 This day/month/year，Customize 才显示 Start/End date 和 Apply。验证 MYT 跨日/跨月/跨年边界、长姓名/Pass ID、单张部分归还与 UNKNOWN。CSV 应包含全部筛选结果（超出已加载的行），不包含电话/证件/患者资料，超量应明确要求缩小范围；公式开头标签和 Unicode 应安全。上述滚动、业务和导出验收均仍 NOT_RUN。
 
 姓名/连续扫码补充：短姓名应正常显示，长姓名显示前 12 字符加省略号且不撑宽表格；两个独立访客浏览器应可用同一当前 QR 分别登记。相同浏览器提交确认后重新扫码当前 QR 应进入新表单；旧 UNKNOWN 不得因新扫码被丢弃。上述场景仍由用户手测，助手未执行业务提交。
