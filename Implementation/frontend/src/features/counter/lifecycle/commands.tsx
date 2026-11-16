@@ -4,7 +4,7 @@ import { ClientError, safeError } from "../../../lib/errors";
 import { Button } from "../../../components/ui/primitives";
 import { ToastNotice } from "../../../components/ui/toast";
 
-type Pending = { execute: () => Promise<unknown>; success: (value: unknown) => void; label: string; unknown: boolean };
+type Pending = { execute: () => Promise<unknown>; success: (value: unknown) => void; label: string; unknown: boolean; successMessage?: string };
 
 /** UNKNOWN is sticky: even a later 4xx cannot establish that the first attempt failed to commit. */
 export function useLifecycleCommands(deny: () => void, onConflict?: () => void) {
@@ -22,7 +22,7 @@ export function useLifecycleCommands(deny: () => void, onConflict?: () => void) 
     try {
       const result = await value.execute();
       if (!alive.current) return;
-      pending.current = null; setState("idle"); setNoticeTone("success"); setMessage(`${value.label} confirmed.`); value.success(result);
+      pending.current = null; setState("idle"); setNoticeTone("success"); setMessage(value.successMessage ?? `${value.label} confirmed.`); value.success(result);
     } catch (error) {
       if (!alive.current) return;
       const uncertain = value.unknown || !(error instanceof ClientError) || error.kind !== "api" || (error.status ?? 0) >= 500;
@@ -35,9 +35,9 @@ export function useLifecycleCommands(deny: () => void, onConflict?: () => void) 
       if (accessLost) deny();
     } finally { inFlight.current = false; }
   }
-  function submit<T>(command: Command<T>, label: string, success: (value: T) => void) {
+  function submit<T>(command: Command<T>, label: string, success: (value: T) => void, successMessage?: string) {
     if (pending.current || inFlight.current) return;
-    const value: Pending = { execute: () => command.execute(), success: result => success(result as T), label, unknown: false };
+    const value: Pending = { execute: () => command.execute(), success: result => success(result as T), label, unknown: false, successMessage };
     pending.current = value; void execute(value);
   }
   // Keep recovery separate so a modal can expose it inside its focus boundary.
@@ -55,6 +55,7 @@ export function lifecycleAccessLost(error: unknown): boolean {
 export function lifecycleError(error: unknown): string {
   if (error instanceof ClientError) {
     const messages: Record<string, string> = {
+      EXPORT_TOO_LARGE: "Too many matching records to export. Choose a shorter date range or narrow the filters.",
       SCAN_DEVICE_BUSY: "This counter reader has an active scan. Cancel or finish it before starting another.",
       SCAN_EXPIRED: "The scan expired. Cancel it, then start a new scan.",
       SCAN_BINDING_INVALID: "The scan does not match this actor, counter, purpose or record. Scan again.",

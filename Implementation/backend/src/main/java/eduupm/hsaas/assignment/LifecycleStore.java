@@ -59,7 +59,7 @@ final class LifecycleStore {
         var rows=jdbc.query("SELECT * FROM card_assignments WHERE active_card_id=?",(rs,n)->assignmentRow(rs),card);
         return rows.isEmpty()?null:rows.getFirst();
     }
-    private Assignment assignmentRow(ResultSet rs) throws SQLException {
+    Assignment assignmentRow(ResultSet rs) throws SQLException {
         String method=rs.getString("operation_origin"),origin=rs.getString("data_origin");
         if(!(("SIMULATED".equals(method) && "SIMULATED".equals(origin)) || ("MANUAL".equals(method) && "SYNTHETIC".equals(origin)))) throw CardRules.unavailable();
         return new Assignment(rs.getString("id"),rs.getString("pass_reference"),rs.getString("card_id"),rs.getLong("registration_id"),

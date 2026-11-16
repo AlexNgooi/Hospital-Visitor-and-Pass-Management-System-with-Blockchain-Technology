@@ -69,3 +69,14 @@ export const issueContextSchema = z.object({
 export type IssueContext = z.infer<typeof issueContextSchema>;
 export type InventoryReferences = z.infer<typeof inventoryReferencesSchema>;
 export type PassSelection = { cardId: string; expectedVersion: number; destinationId: string; dueAt: string | null };
+
+/** Staff scrolling rows add only a bounded visitor label and category to the existing safe assignment projection. */
+export const passRowSchema = z.object({ assignment: assignmentSchema, visitorName: label.refine(value => Array.from(value).length <= 13), categoryCode: category }).strict();
+export const passFeedSchema = z.object({ items: z.array(passRowSchema).max(50), nextCursor: z.string().regex(/^[A-Za-z0-9_-]{1,160}$/).nullable(), serverNow: utc }).strict();
+export const passExportSchema = z.object({ filename: z.string().regex(/^pass-history-\d{4}-\d{2}-\d{2}-\d{4}-\d{2}-\d{2}\.csv$/), csv: z.string().max(650000), rowCount: z.number().int().min(0).max(5000) }).strict();
+export type PassRow = z.infer<typeof passRowSchema>;
+export type PassFeed = z.infer<typeof passFeedSchema>;
+export interface PassFilters {
+  counterId: string; history: boolean; category: "ALL" | z.infer<typeof category>;
+  status: "ALL" | "ISSUED" | "OVERDUE"; search: string; from?: string; to?: string;
+}

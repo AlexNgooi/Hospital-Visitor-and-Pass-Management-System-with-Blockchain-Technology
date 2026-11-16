@@ -37,6 +37,7 @@ public final class LifecycleService {
     private final FoundationProperties properties;
     final TransactionTemplate tx;
     private final ManualLifecycle manual;
+    private final StaffPassReadService staffPassReads;
 
     LifecycleService(LifecycleStore store,Accounts accounts,SessionCapabilities capabilities,RegistrationLifecyclePort roots,
             RegistrationReviewPort reviewRoots,ReaderPort reader,IdempotencyPort idem,LocalAuditPort audit,JsonMapper json,
@@ -45,6 +46,7 @@ public final class LifecycleService {
         this.reader=reader; this.idem=idem; this.audit=audit; this.json=json; this.clock=clock; this.properties=properties;
         tx=new TransactionTemplate(manager); tx.setIsolationLevel(TransactionDefinition.ISOLATION_READ_COMMITTED);
         manual=new ManualLifecycle(this,store,security,roots,reviewRoots,idem,audit,json,clock,properties.environment());
+        staffPassReads=new StaffPassReadService(store,security,roots,audit,tx,json,clock,properties.environment());
     }
 
     /** A uniqueness loser only queries a winner under fresh authority; it never silently reapplies the command. */
@@ -409,6 +411,13 @@ public final class LifecycleService {
             if(overdue) { filter+=" AND a.closed_at IS NULL AND a.due_at<=?"; args.add(DatabaseTime.sql(now)); }
             Long total=store.jdbc.queryForObject("SELECT COUNT(*)"+filter,Long.class,args.toArray());
             return new Page<>(page,25,total==null?0:total,store.assignments(counter,page,overdue,now,properties.environment(),registration),now); });
+    }
+    /** Scrolling staff views keep completed returns separate from active loans. */
+    StaffPassReadService.PassPage staffPasses(LifecycleSecurity.Context context,String body) {
+        return staffPassReads.list(context,body);
+    }
+    StaffPassReadService.Export exportStaffPasses(LifecycleSecurity.Context context,String body) {
+        return staffPassReads.export(context,body);
     }
     AssignmentView assignment(LifecycleSecurity.Context context,String id) {
         security.preflight(context,false); var a=store.assignment(LifecycleInput.uuid(id),false);

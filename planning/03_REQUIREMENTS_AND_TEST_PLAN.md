@@ -6,6 +6,10 @@
 
 ## 当前使用体验
 
+- Pass returns 不展示 Counter 标签或 Registration ID；主列表仅列未归还 Issued/Overdue pass，字段为 Visitor name、Category、Pass ID、Destination、Status 和 Return pass。医院当前仅一个柜台的使用体验不取消服务端既有权限校验。
+- Return pass 打开基本资料确认 modal，实际收到该卡后点击 Confirm return；成功后该行移入 history，toast 约 5 秒后以 250ms 渐隐。同访客的其他 pass 不受影响，UNKNOWN 保留原命令且阻止关闭。
+- View pass history 才读取已完成发放/实际归还记录。时间筛选用下拉列表 This day / This month / This year / Customize；仅 Customize 展示 Start date、End date、Apply。按归还日期的 MYT 整天范围筛选，CSV 导出所有匹配记录而非当前已加载行。主列表及 history 均以内部滚动自动加载，不显示 Previous/Next。
+
 - Staff 队列姓名正常显示前 12 个 Unicode 字符，超出用省略号；证件/电话等仍按原规则脱敏。短姓名不加星号，完整资料仍由受审计 modal 展示。
 - 同一个当前有效 QR 支持不同访客/独立浏览器会话同时进入，各自获得单次提交 grant；不需要刷新柜台 QR。相同浏览器仅保留一份未提交表单；提交确认后重新扫码当前 QR，可继续下一份登记，不需重载柜台页面。
 
@@ -52,7 +56,7 @@ Penjaga 的纸本证件栏马来文为 **No. Kad Pengenalan**，英文为 **Pass
 4. Counter staff 从 Overview 或 Registration review 队列打开 modal，直接读取并人工核对资料。拒绝仍需理由；不显示核实 checklist，假的 API 命中不自动批准。
 5. 在同一 modal 选择 AVAILABLE、类别/地点兼容且在当前权限范围内的 pass。Vendor / Contractor 可多卡、多地点；Executive/Penjaga 同登记最多一张活动 pass。每张可选无期限或具体 MYT 日期时间。
 6. 比对资料并实际交付后，点击 Approve & issue pass 明确确认核实与交付；一次命令在同一事务写入 VERIFIED、独立 assignment/Pass ID/issued_at、库存、审计和幂等结果。任一卡冲突连同审批整体回滚。已 VERIFIED 的旧登记仍可在同一 modal 选卡 Issue pass；旧独立 verify/issue API 保留兼容。
-7. 归还时 staff 查找该 visitor/登记下未归还的 pass，手动选择实际收到的一张或多张并确认。只关闭被选 assignment，其余保持借出。每张记录 returned_at、returned_by 和本地审计；不伪造 RETURN scan。
+7. 归还时 staff 在 Pass returns 未归还列表点选实际收到的那张 pass 的 Return pass，经 modal 核对访客基本资料后 Confirm return。只关闭被选 assignment，其余保持借出。每张记录 returned_at、returned_by 和本地审计；不伪造 RETURN scan。完成记录从主列表移至需主动打开的 history。
 8. 对有期限且仍活动的 pass，`now >= due_at` 才成为逾期；无期限显示“未设归还期限”，不自动逾期，仍能归还、标记遗失和查看借出时长。
 
 “整批原子 issue、逐 pass 期限与 location、支持部分归还”已落实到 R01–R03 源码，仍需用户业务验收。多张数量上限没有用户指定，不任意新增固定业务上限；实施时仍需有限请求大小和库存约束。

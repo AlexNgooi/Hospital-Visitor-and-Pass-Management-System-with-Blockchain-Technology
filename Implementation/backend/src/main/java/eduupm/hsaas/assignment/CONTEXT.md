@@ -1,5 +1,11 @@
 # 2026-11-16 atomic approval and issue
 
+## Staff return list/history reads
+
+StaffPassReadService owns POST /api/staff/passes/search and POST /api/staff/passes/history-export. Current staff/counter/session authority is locked before reads; search values remain in strict CSRF-protected JSON bodies, never URLs/cursors or diagnostics. Assignment/card source/environment guards remain. Bounded keyset batches support scrolling without visible page buttons; root-owned passVisitors returns only bounded name/category labels and an internal full-name search boolean. Lifecycle does not parse registration JSON or duplicate root SQL.
+
+Active reads exclude closed loans and compute overdue from non-null server deadlines. History selects only actual RETURNED closures with returned_at in the requested MYT days, including both endpoints via a next-day exclusive bound. Export traverses every matching batch, escapes formulas through CsvSafety, audits REPORT_EXPORTED before returning, and refuses over 5000 rows / bounded response size without partial download. Existing return/issue commands and schema remain unchanged; no migration is needed.
+
 POST /api/staff/card-assignments/approve-and-issue uses strict APPROVE_ISSUE input/encoding and its own idempotency namespace. ManualLifecycle uses the existing RegistrationReviewPort to record the staff decision inside the existing lifecycle transaction, after current authority and reference/root locks and before sorted card locks. Approval, all assignments/inventory changes, audit and replay commit together or all roll back. issue-context accepts SUBMITTED/VERIFIED for advisory stock preview. Legacy ISSUE/verify behavior stays compatible; no migration. This supersedes the older statement that lifecycle never changes review status.
 
 # M05 assignment simulation

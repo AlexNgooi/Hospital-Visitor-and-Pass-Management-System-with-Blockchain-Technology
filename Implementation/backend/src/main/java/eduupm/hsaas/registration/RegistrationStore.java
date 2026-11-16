@@ -69,6 +69,25 @@ public final class RegistrationStore implements RegistrationReviewPort, Registra
                 locked.version(),RegistrationMasking.name(form.path("fullName").asText()),RegistrationMasking.phone(form.path("phone").asText()),staff,row[4],eligible);
     }
 
+    /** Visitor names remain root-owned and only bounded labels/search booleans leave this read facet. */
+    @Override public Map<String, RegistrationLifecyclePort.PassVisitor> passVisitors(String owner, String counterId,
+            List<String> registrationIds, String search) {
+        var scope = captureReadScope(owner, counterId); scope.consume();
+        if (registrationIds.isEmpty()) return Map.of();
+        if (registrationIds.size() > 200) throw new IllegalArgumentException("Visitor projection batch is too large");
+        var args = new ArrayList<Object>(List.of(scope.actorId(), id(counterId)));
+        registrationIds.forEach(value -> args.add(id(value)));
+        var rows = jdbc.query(SCOPED + " AND r.id IN (" + String.join(",", Collections.nCopies(registrationIds.size(), "?")) + ")",
+                this::row, args.toArray());
+        var values = new HashMap<String, RegistrationLifecyclePort.PassVisitor>();
+        for (var row : rows) {
+            String name = text(row.form(), "fullName");
+            values.put(Long.toString(row.id()), new RegistrationLifecyclePort.PassVisitor(RegistrationMasking.displayName(name),
+                    allowed(row.category(), RegistrationFields.CATEGORIES), name.toLowerCase(Locale.ROOT).contains(search)));
+        }
+        return Map.copyOf(values);
+    }
+
     /** Normalized destination discovery is internal, never an authorization check or another root writer. */
     private LifecycleReferences lifecycleReferences(String registrationId) {
         var rows = jdbc.query("SELECT category_id,destination_id,field_schema_version FROM visitor_registrations WHERE id=?",

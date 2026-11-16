@@ -1,0 +1,71 @@
+/* Staff pass workspaces keep the main page bounded while table rows scroll independently. */
+.staff-pass-page { display:grid; gap:20px; min-width:0; }
+.pass-page-heading { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:16px; }
+.pass-page-heading h1 { font-size:28px; line-height:34px; margin-bottom:4px; }
+.pass-page-heading p { font-size:14px; line-height:20px; }
+.staff-pass-panel { display:flex; flex-direction:column; min-width:0; gap:16px; padding:20px; background:var(--surface); border:1px solid var(--border); border-radius:12px; }
+.pass-panel-heading { display:flex; align-items:center; flex-wrap:wrap; gap:12px; }
+.pass-panel-heading h2 { margin:0; font-size:20px; }
+.pass-panel-heading > .button { margin-left:auto; }
+.pass-count { border-radius:999px; padding:5px 10px; font-size:13px; color:var(--primary-hover); background:var(--soft); }
+.pass-filters { display:flex; align-items:flex-end; flex-wrap:wrap; gap:12px; }
+.pass-filters label, .pass-custom-range label { display:grid; gap:5px; font-size:14px; }
+.pass-filters label { flex:1 1 160px; min-width:0; }
+.pass-filters .pass-search { flex:2 1 220px; }
+.staff-pass-page input, .staff-pass-page select, .pass-history-dialog input, .pass-history-dialog select { width:100%; min-width:0; min-height:44px; padding:8px 12px; border:1px solid var(--control-border,var(--border)); border-radius:8px; color:var(--ink); background:var(--surface); font:inherit; }
+.pass-table-scroll { overflow:auto; max-height:50dvh; min-height:160px; min-width:0; overscroll-behavior:contain; scrollbar-gutter:stable; scroll-padding-top:52px; }
+.pass-table-scroll:focus-visible { outline:3px solid var(--focus); outline-offset:2px; }
+.pass-table { border-collapse:collapse; width:100%; text-align:left; font-size:14px; }
+.pass-table th { position:sticky; top:0; z-index:1; background:var(--surface); color:var(--muted); padding:12px 10px; white-space:nowrap; font-weight:600; }
+.pass-table td { padding:16px 10px; border-top:1px solid var(--border); vertical-align:middle; max-width:240px; overflow-wrap:anywhere; }
+.pass-table .button { white-space:nowrap; font-size:14px; }
+.pass-table tbody tr:hover { background:var(--soft); }
+.pass-visitor-name { display:block; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:16em; }
+.pass-reference { font-family:ui-monospace,monospace; font-size:13px; white-space:nowrap; }
+.pass-table td.pass-empty { text-align:center; padding:32px 12px; color:var(--muted); }
+.pass-scroll-sentinel { height:1px; }
+.pass-read-status { text-align:center; font-size:13px; padding:10px; color:var(--muted); }
+.pass-read-error { padding:12px; border-radius:8px; background:#fff8e8; color:#744900; display:grid; gap:10px; font-size:14px; }
+.pass-list-footer { display:flex; align-items:center; flex-wrap:wrap; justify-content:space-between; gap:12px; padding-top:12px; border-top:1px solid var(--border); font-size:13px; }
+.pass-list-footer > .button { margin-left:auto; }
+.pass-dialog-header { display:flex; align-items:flex-start; gap:12px; }
+.pass-dialog-header > div { flex:1; min-width:0; }
+.dialog-content .pass-dialog-header h2 { font-size:26px; line-height:32px; margin:0 0 4px; }
+.pass-dialog-header p { line-height:20px; margin:0; }
+.dialog-content.pass-history-dialog { display:flex; flex-direction:column; gap:12px; width:min(1360px,calc(100% - 32px)); height:min(780px,calc(100dvh - 32px)); padding:20px; }
+.pass-history-dialog > :not(.pass-table-scroll) { flex-shrink:0; }
+.pass-history-dialog .pass-table-scroll { flex:1; min-height:0; max-height:none; }
+.pass-period-bar { display:flex; align-items:center; flex-wrap:wrap; gap:12px; }
+.pass-period-bar label { display:flex; align-items:center; gap:12px; font-size:14px; font-weight:600; }
+.pass-period-bar select { width:200px; font-weight:400; }
+.pass-period-bar p { font-size:13px; }
+.pass-custom-range { display:flex; align-items:flex-end; flex-wrap:wrap; gap:12px; }
+.pass-custom-range label { flex:0 1 230px; }
+.pass-custom-range .pass-range-note { flex-basis:100%; margin:0; color:var(--muted); font-size:13px; }
+.dialog-content.pass-return-dialog { width:min(780px,calc(100% - 32px)); padding:20px; display:grid; gap:12px; }
+.pass-return-dialog > .button { justify-self:start; }
+.pass-return-dialog h3 { font-size:18px; margin:0; }
+.pass-return-summary { display:flex; flex-wrap:wrap; align-items:center; gap:8px 16px; background:var(--canvas); border-radius:8px; padding:12px; font-size:14px; }
+.pass-return-summary strong { overflow-wrap:anywhere; }
+.pass-return-facts { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:12px; margin:0; }
+.pass-return-facts dt { color:var(--muted); font-size:13px; }
+.pass-return-facts dd { margin:3px 0 0; font-size:14px; overflow-wrap:anywhere; }
+.pass-receipt-note { padding:12px; background:var(--soft); border-radius:8px; }
+@media (min-width:1024px) and (min-height:560px) {
+  .workspace-passes .staff-pass-page { flex:1; min-height:0; grid-template-rows:auto minmax(0,1fr); gap:12px; }
+  .workspace-passes .staff-pass-panel { min-height:0; padding:16px; gap:12px; }
+  .workspace-passes .staff-pass-panel > :not(.pass-table-scroll) { flex-shrink:0; }
+  .workspace-passes .pass-table-scroll { flex:1; min-height:0; max-height:none; }
+}
+@media (max-width:640px) {
+  .pass-page-heading > .button { width:100%; }
+  .staff-pass-panel { padding:14px; }
+  .pass-dialog-header { flex-wrap:wrap; }
+  .pass-dialog-header > div { flex-basis:calc(100% - 56px); }
+  .dialog-content .pass-dialog-header h2 { font-size:22px; }
+  .pass-period-bar label { width:100%; }
+  .pass-period-bar select { flex:1; }
+  .pass-return-facts { grid-template-columns:repeat(2,minmax(0,1fr)); }
+  .pass-custom-range label { flex:1 1 160px; }
+  .pass-history-dialog .pass-table-scroll { flex-basis:150px; flex-shrink:0; }
+}

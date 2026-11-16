@@ -67,3 +67,13 @@ Penjaga仅IC、每登记最多一张活动pass、条款勾选并记录服务器�
 
 - 用户批注指出 /staff/registrations 仍发生整页滚动。现将该路由与 Overview 共用桌面视口框架：标题、筛选、分页及页脚保留，表格获得剩余高度并单独滚动；不通过隐藏页面 overflow 裁切内容。较小窗口和高倍缩放保持自然重排。
 - 前端 build/lint 与文档/diff 检查通过；仅修改共享 shell/CSS 和说明，未重启服务、执行数据库操作或浏览器验收。实际 1480×667 视觉效果与多行队列仍由用户检查（NOT_RUN）。
+
+## 2026-11-16 Pass returns / history 实施
+
+- 依用户确认的设计在同一 `codex/visitor-review-issue-dashboard` 实施：移除 Counter/登记列表/Registration ID；主页面只列未归还 Issued/Overdue pass，显示姓名前 12 字符、类别、Pass ID、地点、状态和 Return pass。Return pass 打开受审计基本资料 modal，Confirm return 明确确认收到该实体卡，单卡成功才移除该行并显示约 5 秒、250ms 渐隐 toast。
+- View pass history 主动打开已实际归还记录；Time period 下拉 This day/month/year/Customize，只有 Customize 显示 Start date/End date/Apply。按 MYT returned_at 整天范围筛选；CSV 遍历全部匹配批次、使用完整 Pass ID 与安全姓名预览、转义公式并提交导出审计。超出 5000 行/响应体上限明确失败，不能部分导出或只导出当前已加载行。
+- Pass returns 与 history 的 Previous/Next 已全部移除，使用有界 keyset 查询与表格内部滚动自动加载。桌面主页面保持标题/筛选/底部信息可见；小屏/缩放自然重排。搜索取消并隔离旧响应；新搜索值置于 CSRF POST body，不写入 URL、日志或持久浏览器状态。权限变化清除数据；归还冲突/UNKNOWN 保留原命令并在 modal 内恢复。
+- 新 API：POST /api/staff/passes/search、POST /api/staff/passes/history-export；当前柜台/会话/角色和来源环境约束保留。登记 root 批量提供姓名/类别与搜索结果布尔值，不复制其 SQL/JSON 到生命周期模块。原发放/归还接口保留，无 migration。
+- 实际检查：前端 build/lint PASS（无 lint 警告）；后端 compile/test-compile、skip-tests package PASS；planning 与 diff 检查 PASS。测试套件未执行。typecheck:test 仍 FAIL 于未修改的 registration fixture 22/34/184 行（旧 schema 与缺 patient），没有将其记为 PASS。构建仍有既有单 chunk 大小/deprecated API 提示。
+- 已经原私有 control 停止并重新启动这组演示应用，沿用原 runtime-root、--no-migrate；没有重启 MySQL、迁移、seed、恢复或复制私有配置。launcher READY，backend /api/health 与 frontend /staff/passes HTTP 200，仅证明进程/页面入口可用。归还、CSV、滚动/视觉、并发、权限竞争与数据库验收全部 NOT_RUN，由用户手测。
+- 当前改动未合并 main 或 push；主项目源码保持原分支。手测步骤见 MANUAL_R01_R03.md。

@@ -60,6 +60,7 @@ export function ToastNotice({ children, tone = "error", title, action, revision 
 /** Pause dismissal while reading, hovering, focusing, or returning from a background tab. */
 function ToastCard({ children, tone, title }: { children?: ReactNode; tone: Tone; title?: string }) {
   const [visible, setVisible] = useState(true);
+  const [closing, setClosing] = useState(false);
   const [hovered, setHovered] = useState(false);
   const [focused, setFocused] = useState(false);
   const [background, setBackground] = useState(() => document.hidden);
@@ -69,17 +70,23 @@ function ToastCard({ children, tone, title }: { children?: ReactNode; tone: Tone
     return () => document.removeEventListener("visibilitychange", update);
   }, []);
   useEffect(() => {
-    if (!visible || hovered || focused || background) return;
-    const timer = window.setTimeout(() => setVisible(false), tone === "success" ? 5000 : 9000);
+    if (!visible || closing || hovered || focused || background) return;
+    const timer = window.setTimeout(() => setClosing(true), tone === "success" ? 5000 : 9000);
     return () => window.clearTimeout(timer);
-  }, [visible, hovered, focused, background, tone]);
+  }, [visible, closing, hovered, focused, background, tone]);
+  // Keep the toast mounted through its exit transition instead of removing it abruptly.
+  useEffect(() => {
+    if (!closing) return;
+    const timer = window.setTimeout(() => setVisible(false), 250);
+    return () => window.clearTimeout(timer);
+  }, [closing]);
   if (!visible) return null;
   const Icon = tone === "success" ? CheckCircle2 : tone === "error" ? AlertCircle : Info;
-  return <section className={`toast toast-${tone}`} role={tone === "error" ? "alert" : "status"}
+  return <section className={`toast toast-${tone}${closing ? " toast-closing" : ""}`} role={tone === "error" ? "alert" : "status"}
     onMouseEnter={() => setHovered(true)} onMouseLeave={() => setHovered(false)}
     onFocusCapture={() => setFocused(true)} onBlurCapture={event => { if (!event.currentTarget.contains(event.relatedTarget)) setFocused(false); }}>
     <Icon className="toast-icon" size={21} aria-hidden="true" />
     <div className="toast-copy">{title && <strong>{title}</strong>}{children && <div>{children}</div>}</div>
-    <button type="button" className="toast-close" aria-label="Dismiss notification" onClick={() => setVisible(false)}><X size={18} aria-hidden="true" /></button>
+    <button type="button" className="toast-close" aria-label="Dismiss notification" onClick={() => setClosing(true)}><X size={18} aria-hidden="true" /></button>
   </section>;
 }

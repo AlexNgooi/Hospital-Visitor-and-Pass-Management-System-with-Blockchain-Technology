@@ -17,6 +17,15 @@ public interface RegistrationLifecyclePort {
     /** Only current Counter Staff may reveal the minimal phone after an assignment-scoped audited command. */
     Contact lifecycleContact(Access access);
 
+    /** Bounded read-only visitor labels/search results for currently authorized staff pass lists. */
+    default java.util.Map<String, PassVisitor> passVisitors(String owner, String counterId,
+            java.util.List<String> registrationIds, String search) {
+        throw new IllegalStateException("Staff pass visitor projection is unavailable");
+    }
+    record PassVisitor(String displayName, String categoryCode, boolean nameMatches) {
+        @Override public String toString() { return "PassVisitor[REDACTED]"; }
+    }
+
     /** Internal transaction receipt carries safe eligibility fields, never a raw form-data object. */
     final class Access {
         private final RegistrationReviewPort.ReviewCoordinates coordinates;

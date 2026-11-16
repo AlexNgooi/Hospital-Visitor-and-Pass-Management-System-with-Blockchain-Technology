@@ -2,6 +2,8 @@
 
 ## 2026-11-16 dashboard space and scrolling
 
+Pass returns now also uses the desktop viewport frame. Its active table and explicitly opened history dialog scroll and automatically load further batches, with no Previous/Next controls. Shared toast cards retain their existing duration/hover/focus handling and now use a 250ms exit fade (reduced-motion supported). The return confirmation modal holds its exact unresolved command and keeps recovery inside its focus boundary.
+
 Staff headers retain the menu/account/sign-out controls and omit branding and inline route tabs. Counter and parallel-tab tools are removed from the main page; authorized multi-counter selection remains in the drawer. Desktop Overview and standalone Registration review use the available viewport height (at least 1024px wide and 560px high); their queues scroll internally with sticky headers, visible pagination and keyboard access. Smaller or highly zoomed windows retain natural page reflow instead of clipping controls. Compact QR help and manual-copy fallback use dialogs to avoid enlarging the dashboard. Browser visual/business acceptance remains user-run / NOT_RUN.
 
 - **输入规范**：[需求与验收](../../planning/03_REQUIREMENTS_AND_TEST_PLAN.md)、[数据/API](../../planning/04_DATA_MODEL_AND_API_PLAN.md)、[UI v4](../../output/ui-redesign-v4/README.md)；目录边界见 [目录计划](../../planning/09_FOLDER_STRUCTURE.md)。

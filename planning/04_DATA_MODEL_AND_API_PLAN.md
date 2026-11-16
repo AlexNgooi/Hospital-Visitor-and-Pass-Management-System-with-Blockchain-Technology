@@ -177,6 +177,8 @@ C11 M00 公共工程契约：
 | COUNTER_STAFF | `/api/staff/registration-qr-sessions` 及 `/{id}/current`、`/{id}/revoke` | owner/counter权限，动态期限与撤销 |
 | COUNTER_STAFF | `/api/staff/registrations` 及 `/{id}`、`/review-fields`、`/verify`、`/reject`、`/issue-context` | 队列/普通详情掩码读取；modal 打开自动 POST 审阅字段并审计，version/权限仍校验；issue-context 支持 SUBMITTED/VERIFIED 预览库存；旧 verify 只批准 |
 | COUNTER_STAFF | `POST /api/staff/card-assignments/approve-and-issue` | 原子审批与多卡发放；严格 registrationId/expectedVersion/reviewConfirmed/handoverConfirmed/passes，独立 APPROVE_ISSUE 幂等 namespace；失败全部回滚，无新增 migration |
+| COUNTER_STAFF | `POST /api/staff/passes/search` | 只读、CSRF/current-counter；严格 counterId/history/category/status/search/from/to/cursor JSON；50 条匹配记录与 keyset continuation；active 与实际 returned history 分开，搜索值不进 URL |
+| COUNTER_STAFF | `POST /api/staff/passes/history-export` | 同范围/姓名/类别条件扫描全部匹配 history；按 MYT returned_at 整天边界；安全 CSV 与导出审计；5000 行/响应体上限超限明确失败，不部分导出；不扩大 ADMIN 权限 |
 | COUNTER_STAFF | `/api/staff/card-assignments` 及 `/{id}`、`/return`、`/history`；`/api/staff/overdue` | 手动原子发放、逐张归还、nullable due、当前版本/柜台/来源 |
 | COUNTER_STAFF | `/api/staff/assignments/{id}/followups`、`/contact-reveal` | 内部跟进与受审计限时reveal，不发消息 |
 | ADMIN | `/api/admin/cards`、`/references`、`/{id}/mark-lost`、`/disable`、`/restore`、`/history` | 手动库存与原因/版本；不能任意PATCH状态 |

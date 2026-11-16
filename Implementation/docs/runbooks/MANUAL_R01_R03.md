@@ -22,10 +22,12 @@
 5. **条款与提交**：Penjaga 勾选 pass 条款，另行确认演示隐私告知；没有电子签名或 WhatsApp 同意。提交只产生待审核登记及 reference，不自动发 pass。
 6. **Staff 人工审核**：Overview 或 Registration review 点击 Review & issue，modal 自动展示完整资料；队列仍脱敏，打开和刷新完整资料保留权限/version/审计。无需 Reveal 或 checklist。Penjaga 仍需人工核对身份、MRN、patient 和 ward，mock MATCH 不替代核实。拒绝在同一 modal 选择理由。
 7. **审核与发卡一次办理**：在同一 modal 选择可用兼容 pass 和地点；Vendor/Contractor 可多卡，Executive/Penjaga 单卡。每张选择具体 MYT 日期时间或 No deadline。人工核对且交付后点 Approve & issue pass，完成后关闭 modal 并刷新 queue。任一卡冲突应连审批一起回滚；刷新资料/库存后重选。旧 Approved 登记用状态筛选打开同一 modal 后 Issue pass。UNKNOWN 时保留 modal，只点 Retry original command，不新建命令。
-8. **部分归还**：Pass returns 中用 View this registration's passes 查找该登记的 pass。只打开并确认实际收到的那一张，点 Return this pass only。归还后只有该 assignment 结束，其他 pass 仍借出。归还暂限原 issue counter，不能替其他 counter 办理。
+8. **部分归还**：Pass returns 只列未归还/逾期的 pass，姓名、类别、Pass ID、地点、状态一行对应一张卡，不展示 Counter 或 Registration ID。点 Return pass 打开基本资料 modal，收到实体卡后点 Confirm return，无额外 checklist。成功后仅该 assignment 从列表移除并显示渐隐 toast，其他 pass 仍借出。pending/UNKNOWN 不能关 modal，只重试原命令。服务端原权限范围仍有效。
 9. **记录与报表**：每张 issued_at=进、实际 returned_at=出，显示完整 MYT 日期时间和经办 staff ID；due_at 只是预计期限。Admin Reports 分别统计登记数和 pass 数，提供独立 pass history CSV。一般报表/CSV 不含患者、IC、MRN、电话或地址。
 
 ## 用户手动检查清单（全部 NOT_RUN）
+
+Pass returns 补充：记录数超过一批时，滚动到底自动继续加载，不应有 Previous/Next，桌面主页面标题/筛选/底部信息保持可见。已归还行只在 View pass history 内出现；Time period 下拉支持 This day/month/year，Customize 才显示 Start/End date 和 Apply。验证 MYT 跨日/跨月/跨年边界、长姓名/Pass ID、单张部分归还与 UNKNOWN。CSV 应包含全部筛选结果（超出已加载的行），不包含电话/证件/患者资料，超量应明确要求缩小范围；公式开头标签和 Unicode 应安全。上述滚动、业务和导出验收均仍 NOT_RUN。
 
 姓名/连续扫码补充：短姓名应正常显示，长姓名显示前 12 字符加省略号且不撑宽表格；两个独立访客浏览器应可用同一当前 QR 分别登记。相同浏览器提交确认后重新扫码当前 QR 应进入新表单；旧 UNKNOWN 不得因新扫码被丢弃。上述场景仍由用户手测，助手未执行业务提交。
 

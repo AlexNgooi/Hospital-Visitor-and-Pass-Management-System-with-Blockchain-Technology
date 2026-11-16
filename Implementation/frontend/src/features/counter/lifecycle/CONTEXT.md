@@ -1,5 +1,11 @@
 # 2026-11-16 combined review and issue
 
+## Current pass returns and history
+
+StaffLifecycle now shows only outstanding issued/overdue pass rows with bounded visitor names, category, Pass ID, destination, status and Return pass. No counter label, registration list/ID, checklist or Previous/Next controls appear. PassTable and usePassFeed consume keyset batches automatically inside a keyboard-accessible scroll region; filters cancel/fence stale reads. Completed returns appear only in the explicitly opened history modal. Time period is a dropdown (This day/month/year/Customize); only Customize shows start/end dates and Apply. MYT return dates define the inclusive day range. CSV is a CSRF-protected, audited server export across all filtered batches, never just loaded rows; limits fail explicitly rather than truncate.
+
+Return details use the existing audited registration field read, render only basic visitor fields, and clear on close/scope/conflict. Pending/UNKNOWN guards prevent dismissal and retain only original-command recovery. A validated RETURN receipt removes the row, closes the modal and shows the shared success toast; shared toasts now fade for 250ms after their normal timeout. Browser, business, scrolling, CSV and SQL acceptance remain user-run / NOT_RUN.
+
 ManualIssue now renders dropdown pass selection, per-pass destination and deadline segments inside the review modal. SUBMITTED uses the atomic approve-and-issue endpoint; VERIFIED uses the existing issue endpoint. Final action confirms handover without a separate checklist. Vendor/Contractor multi-card rules remain. Pass returns owns assignment lookup/return/history; it no longer requires a separate Prepare issue flow. UNKNOWN handles remain immutable in the parent workspace.
 
 # M05 lifecycle and inventory UI

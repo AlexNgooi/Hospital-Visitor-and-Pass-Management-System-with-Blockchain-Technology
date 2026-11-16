@@ -80,6 +80,16 @@ public class LifecycleController {
         noStore(response); return service.assignments(context(request),LifecycleInput.decimal(counterId),page(page),request.getServletPath().equals("/api/staff/overdue"),
                 registrationId==null?null:LifecycleInput.decimal(registrationId));
     }
+    /** Keyset continuation is consumed by scrolling, without a user-facing page-number workflow. */
+    @PostMapping(value="/api/staff/passes/search",consumes="application/json")
+    public StaffPassReadService.PassPage staffPasses(@RequestBody String body,HttpServletRequest request,HttpServletResponse response) {
+        noStore(response); return service.staffPasses(context(request),body);
+    }
+    /** Export uses the same scoped filters, all matching batches and a committed local audit. */
+    @PostMapping(value="/api/staff/passes/history-export",consumes="application/json")
+    public StaffPassReadService.Export exportStaffPasses(@RequestBody String body,HttpServletRequest request,HttpServletResponse response) {
+        noStore(response); return service.exportStaffPasses(context(request),body);
+    }
     @GetMapping("/api/staff/card-assignments/{id}")
     public AssignmentView assignment(@PathVariable String id,HttpServletRequest request,HttpServletResponse response) {
         noStore(response); return service.assignment(context(request),id);
