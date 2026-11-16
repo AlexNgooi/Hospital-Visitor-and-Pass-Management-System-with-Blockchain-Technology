@@ -1,5 +1,5 @@
 import { ToastNotice } from "../../components/ui/toast";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { CheckCircle2, ShieldCheck } from "lucide-react";
 import { Button, InputField, StatusPanel } from "../../components/ui/primitives";
 import { ClientError, safeError } from "../../lib/errors";
@@ -7,6 +7,7 @@ import type { Command } from "../../lib/api-client";
 import { RegistrationEntry } from "../registration-qr/entry";
 import type { EntryGrant, QrPort } from "../registration-qr/contracts";
 import type { EntryVault } from "../../app/entry-token";
+import { entryVault } from "../../app/entry";
 import { registrationPort, type RegistrationPort, type RegistrationSchema, type FieldName, type FieldSpec,
   type Feedback, type Receipt, type Submission } from "./contracts";
 import "./registration.css";
@@ -30,8 +31,20 @@ export function RegistrationPage({ port = registrationPort, entryPort, vault }: 
   const [draft, setDraft] = useState<Draft | null>(null), [pending, setPending] = useState<Pending | null>(null);
   const [receipt, setReceipt] = useState<{ value: Receipt; counter: string } | null>(null);
   const [busy, setBusy] = useState(false), [unknown, setUnknown] = useState(false), [message, setMessage] = useState("");
+  const activeVault = vault ?? entryVault;
+  const incomingEntry = useSyncExternalStore(activeVault.subscribe, activeVault.read);
   const dispatching = useRef(false), heading = useRef<HTMLHeadingElement>(null);
   useEffect(() => { if (pending || receipt) heading.current?.focus(); }, [pending, receipt]);
+  useEffect(() => {
+    // A new scan may only change the hash after completion; no page reload or reused consumed grant is needed.
+    // Pending/UNKNOWN commands keep their original handle; only a confirmed receipt can yield to the new scan.
+    if (!receipt || !incomingEntry) return;
+    let current = true;
+    queueMicrotask(() => {
+      if (current && activeVault.read() === incomingEntry) { setReceipt(null); setDraft(null); setMessage(""); }
+    });
+    return () => { current = false; };
+  }, [receipt, incomingEntry, activeVault]);
   /** Later errors never discard an uncertain command or adopt another tab's new form/body/key. */
   const execute = async (operation: Pending, recovery: boolean) => {
     if (dispatching.current) return;
@@ -63,6 +76,7 @@ export function RegistrationPage({ port = registrationPort, entryPort, vault }: 
       <p>Tunjukkan rujukan ini di kaunter {receipt.counter} untuk pengesahan.</p>
       <p className="registration-reference">{receipt.value.publicReference}</p>
       <p className="muted">Pengesahan kakitangan masih diperlukan. WhatsApp belum diaktifkan.</p>
+      <p className="muted">Untuk pendaftaran seterusnya, imbas QR semasa di kaunter. Halaman kaunter tidak perlu dimuat semula.</p>
     </section> : pending ? <section className="registration-result" aria-live="polite">
       <span className="eyebrow">HSAAS · PENDAFTARAN</span>
       <h1 ref={heading} tabIndex={-1}>{unknown ? "Hasil belum disahkan" : "Menghantar pendaftaran"}</h1>
@@ -72,7 +86,7 @@ export function RegistrationPage({ port = registrationPort, entryPort, vault }: 
       {busy && <p role="status">Sedang menyemak hasil…</p>}
     </section> : <>
       {message && <ToastNotice>{message}</ToastNotice>}
-      <RegistrationEntry compact port={entryPort} vault={vault}>{entry => <RegistrationForm key={contextKey(entry)} entry={entry} port={port}
+      <RegistrationEntry compact port={entryPort} vault={activeVault}>{entry => <RegistrationForm key={contextKey(entry)} entry={entry} port={port}
         initial={draft?.context === contextKey(entry) ? draft : null} onDraft={setDraft} onSubmit={submit} />}</RegistrationEntry>
     </>}
   </div>;

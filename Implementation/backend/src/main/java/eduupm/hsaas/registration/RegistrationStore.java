@@ -314,7 +314,8 @@ public final class RegistrationStore implements RegistrationReviewPort, Registra
     private QueueItem item(RootRow value) {
         return new QueueItem(Long.toString(value.id()), value.reference(), Long.toString(value.counter()), allowed(value.category(), RegistrationFields.CATEGORIES),
                 RegistrationMasking.name(text(value.form(), "fullName")), RegistrationMasking.destination(value.destination()),
-                allowed(value.status(), Set.of("SUBMITTED", "VERIFIED", "REJECTED", "CANCELLED")), RegistrationVersions.checked(value.version()), TIME.format(value.submitted()));
+                allowed(value.status(), Set.of("SUBMITTED", "VERIFIED", "REJECTED", "CANCELLED")), RegistrationVersions.checked(value.version()), TIME.format(value.submitted()),
+                RegistrationMasking.displayName(text(value.form(), "fullName")));
     }
     private ReviewMetadata metadata(RootRow value) {
         if (value.reviewer() == null) { return null; }

@@ -54,9 +54,16 @@ public interface RegistrationReadPort {
         }
     }
 
-    /** Only a masked identity label, controlled location and non-sensitive operational fields cross the root boundary. */
+    /** Authorized queues include a bounded staff name preview, never the complete form or identifiers. */
     record QueueItem(String id, String publicReference, String counterId, String categoryCode,
-            String maskedVisitorName, String destinationLabel, String status, long version, String submittedAt) { }
+            String maskedVisitorName, String destinationLabel, String status, long version, String submittedAt, String visitorDisplayName) {
+        /** Older injected read adapters keep their masked fallback while the current root supplies the preview. */
+        public QueueItem(String id, String publicReference, String counterId, String categoryCode,
+                String maskedVisitorName, String destinationLabel, String status, long version, String submittedAt) {
+            this(id, publicReference, counterId, categoryCode, maskedVisitorName, destinationLabel, status, version, submittedAt, maskedVisitorName);
+        }
+        @Override public String toString() { return "QueueItem[REDACTED]"; }
+    }
 
     /** Required nullable MRN/review properties stay explicit null, without raw form JSON or a reveal path. */
     record Detail(String id, String publicReference, String counterId, String categoryCode,

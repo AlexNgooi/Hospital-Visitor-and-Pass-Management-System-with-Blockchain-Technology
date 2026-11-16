@@ -1,5 +1,7 @@
 # R01 current contract — 2026-10-27
 
+2026-11-16 user name-display decision supersedes the masked-name presentation below: the authorized staff queue adds visitorDisplayName containing at most twelve Unicode characters plus an ellipsis. Existing maskedVisitorName and masked identifiers/detail, lifecycle and report projections retain their prior behavior. QueueItem diagnostics are redacted; no schema migration or public name endpoint is added.
+
 - planning/16 and coordinator C-R02 authorize manual-registration-v2, V8, four current forms and separate Penjaga pass terms. Legacy synthetic-registration-v1 history and its retained successful request encoding remain readable; fresh submissions require v2.
 - Sole registration persistence/port owner. Normalized registration_destinations is immutable after creation; lifecycle locks current authority -> category -> ascending numeric destination SHARE locks -> root/recheck -> caller cards/assignments. Only known legacy records may fall back to primary destination. Unknown schema or missing v2 relation fails safely.
 - Lifecycle Access exposes active allowed catalogue choices and category cardinality without patient/form JSON. Inactive references never block existing return/lost operations by active filtering alone.

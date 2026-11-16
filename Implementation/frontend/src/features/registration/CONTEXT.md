@@ -1,5 +1,7 @@
 # R01 manual form UI — 2026-10-27
 
+2026-11-16: RegistrationPage subscribes to the existing ephemeral entry vault even while displaying its confirmed receipt. A newly captured scan clears only that completed receipt and mounts RegistrationEntry for the new exchange; it never reuses a consumed grant. Pending/UNKNOWN submissions keep their immutable original command until confirmed. This fixes same-document rescans without refreshing the staff QR or resetting another visitor's form.
+
 - Current manual-registration-v2 metadata renders IC-only Penjaga/Vendor/Contractor, IC-or-LESEN Executive, Penjaga address/MRN, Executive ward/patient and company/multiple locations for Vendor/Contractor. No legacy extra mandatory fields.
 - Penjaga mock response fills read-only patient name/ward/bed. MRN/context/category changes clear old proof/display; request generation rejects late responses. Failure retains inputs and offers a catalogue ward for manual staff review.
 - A valid completed Penjaga MRN automatically looks up on input blur in visit details. Same-context/MRN in-flight requests are deduplicated; repeat blur never retries a completed failure. The button remains an explicit retry. Edits/category/context/unmount abort and fence pending requests; lookup never approves staff review.

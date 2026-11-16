@@ -77,7 +77,7 @@ V8/V9已包含新表单/consent/location、nullable due_at、分类活动借用�
 | system_settings / setting_history | key、typed value、version、actor、timestamp、safe old/new；配置修改不回写旧 due_at |
 | Spring Session JDBC tables | 使用所选 Spring Session 官方兼容 schema，由 Flyway 管理，含 expiration cleanup |
 
-访客信息按一次登记存储，起步不做以姓名/IC/手机号跨登记自动合并的“人员主档”。完整 IC 是否必要、加密字段和搜索 token 设计在医院批准后确定；浏览器和报表 DTO 默认掩码。保存临床数据不在允许字段中。
+访客信息按一次登记存储，起步不做以姓名/IC/手机号跨登记自动合并的“人员主档”。完整 IC 是否必要、加密字段和搜索 token 设计在医院批准后确定；浏览器和报表 DTO 默认掩码。2026-11-16 用户明确要求的例外仅为当前授权 staff queue 的 visitorDisplayName：前 12 个 Unicode 字符，超长加省略号；旧 maskedVisitorName、证件/电话/患者/报表边界不变。保存临床数据不在允许字段中。
 
 ## 2. MySQL 一致性约束
 

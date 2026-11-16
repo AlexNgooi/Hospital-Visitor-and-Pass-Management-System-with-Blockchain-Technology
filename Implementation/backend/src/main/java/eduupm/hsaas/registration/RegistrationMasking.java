@@ -11,6 +11,17 @@ public final class RegistrationMasking {
                 .stream().mapToObj(character -> new String(Character.toChars(character)) + "***").findFirst().orElse("***");
     }
 
+    /** Authorized staff queues show twelve Unicode characters; other projections retain their existing masking. */
+    public static String displayName(String value) {
+        if (value == null || value.isBlank()) return "—";
+        String safe = value.codePoints().filter(character -> !Character.isISOControl(character)
+                && Character.getType(character) != Character.FORMAT)
+                .collect(StringBuilder::new, StringBuilder::appendCodePoint, StringBuilder::append).toString().strip();
+        if (safe.isEmpty()) return "—";
+        int count = safe.codePointCount(0, safe.length());
+        return count <= 12 ? safe : safe.substring(0, safe.offsetByCodePoints(0, 12)) + "…";
+    }
+
     /** Only a safe ASCII suffix of a sufficiently long identifier is visible, never its clinical/demo prefix. */
     public static String identification(String value) { return suffix(value, false); }
 

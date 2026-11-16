@@ -1,5 +1,7 @@
 # 2026-11-16 combined modal flow
 
+The staff queue now displays the server's visitorDisplayName preview: twelve Unicode characters, with an ellipsis only when longer. CSS keeps this one line inside the table. The legacy maskedVisitorName remains a compatibility fallback; identifiers and reports retain their masking. Full names remain available through the audited modal comparison fields.
+
 The user approved a queue-only review page and a live Overview with QR plus the same queue. Opening a record automatically calls the existing audited/versioned review-fields POST. No Reveal/Hide control or verification checklist remains. The final Approve & issue pass action explicitly attests comparison and handover through one APPROVE_ISSUE command. Fields clear on close, access/version changes and conflicts; pending/UNKNOWN commands guard dismissal and expose original-handle retry inside the modal. This section supersedes the older presentation/approval-only instructions below. Browser/business/database acceptance is user-run / NOT_RUN.
 
 # R01 authorized staff comparison — 2026-10-27

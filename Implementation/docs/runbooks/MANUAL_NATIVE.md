@@ -95,3 +95,5 @@ node Implementation/scripts/manual-demo.mjs stop --runtime-root 'C:/Users/alexy/
 ```
 
 运行中不要再次 start。`--runtime-root` 指向已核对的 Implementation 目录，数据库与账号的固定限制仍有效。`--no-migrate` 不能与 initialize/restore 同用。入口仍为 `http://127.0.0.1:15417/login`。仅启动健康和页面源码检查通过，浏览器/扫码/审批发卡/并发等业务验收仍 NOT_RUN。
+
+Windows 更新后端时，运行中的 Java 可能锁住 JAR，导致 package 的重命名步骤失败。本轮已经实际遇到并处理：使用原控制端点停止已授权的这套应用后再打包，成功后以同一 runtime-root 和 --no-migrate 启动；不要通过删除密钥、改库或结束 MySQL 处理文件锁。

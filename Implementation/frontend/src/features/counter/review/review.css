@@ -20,6 +20,7 @@
 .review-table tbody tr:hover { background:var(--soft); }
 .review-table td:first-child { min-width:160px; }
 .review-table td:first-child strong { display:block; font-size:15px; }
+.review-table .review-visitor-name { white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:16em; }
 .review-table td small { display:block; color:var(--muted); overflow-wrap:anywhere; max-width:230px; margin-top:4px; }
 .review-table td:last-child { text-align:right; }
 .review-table .button { white-space:nowrap; font-size:14px; }

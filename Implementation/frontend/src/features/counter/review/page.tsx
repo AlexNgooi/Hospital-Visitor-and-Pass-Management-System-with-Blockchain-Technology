@@ -23,7 +23,7 @@ export function RegistrationReview({ port = reviewPort, embedded = false }: { po
   return <ReviewWorkspace key={`${state.user.id}:${counter}`} authority={state.user} counterId={counter} port={port} embedded={embedded} recheckSession={refresh} />;
 }
 
-/** Poll only the masked queue; audited full fields are fetched when the staff member opens a modal. */
+/** Poll bounded queue metadata; audited full fields are fetched when the staff member opens a modal. */
 function ReviewWorkspace({ authority, counterId, port, embedded, recheckSession }: {
   authority: SessionUser; counterId: string; port: ReviewPort; embedded: boolean; recheckSession: () => void;
 }) {
@@ -126,7 +126,7 @@ function ReviewWorkspace({ authority, counterId, port, embedded, recheckSession 
       done();
     });
   }
-  const visible = queue?.items.filter(item => `${item.publicReference} ${item.maskedVisitorName} ${item.destinationLabel}`.toLocaleLowerCase().includes(search.toLocaleLowerCase())) ?? [];
+  const visible = queue?.items.filter(item => `${item.publicReference} ${item.visitorDisplayName ?? item.maskedVisitorName} ${item.destinationLabel}`.toLocaleLowerCase().includes(search.toLocaleLowerCase())) ?? [];
   const cancel = <Button variant="secondary" disabled={locked} onClick={clearSelection}>Cancel</Button>;
   const rejection = <Button variant="ghost" className="review-reject-action" disabled={!editable || detail?.status !== "SUBMITTED"} onClick={() => setRejectOpen(true)}>Reject registration</Button>;
   if (denied) return <StatusPanel kind="error" title="Current access must be rechecked" action={<><Button onClick={recheckSession}>Refresh staff session</Button>{commands.recovery}</>}>Cached details have been cleared.{commands.notice}</StatusPanel>;
@@ -142,7 +142,7 @@ function ReviewWorkspace({ authority, counterId, port, embedded, recheckSession 
       {queueError && <p className="review-notice" role="alert">{queueError} Review actions are paused until a fresh read succeeds.</p>}
       {!queue ? <StatusPanel kind={queueBusy ? "loading" : "empty"} title={queueBusy ? "Loading registrations" : "Queue unavailable"}>Use Refresh to retry.</StatusPanel> : <>
         <div className="review-table-wrap" role="region" aria-label="Scrollable registration queue" tabIndex={0}><table className="review-table"><thead><tr><th>Visitor / registration</th><th>Category</th><th>Destination</th><th>Status</th><th>Submitted (MYT)</th><th><span className="feedback-sr-only">Action</span></th></tr></thead><tbody>
-          {visible.map(item => <tr key={item.id}><td><strong>{item.maskedVisitorName}</strong><small>{item.publicReference}</small></td><td>{categoryLabels[item.categoryCode]}</td><td>{item.destinationLabel}</td><td><span className={`review-status review-status-${item.status.toLowerCase()}`}>{statusLabels[item.status]}</span></td><td>{formatMyt(item.submittedAt)}</td><td><Button variant="secondary" disabled={locked} aria-label={`${item.status === "SUBMITTED" ? "Review and issue" : "Open"} ${item.publicReference}`} onClick={() => select(item.id)}>{item.status === "SUBMITTED" ? "Review & issue" : "Open"}<ArrowRight size={16} aria-hidden="true" /></Button></td></tr>)}
+          {visible.map(item => <tr key={item.id}><td><strong className="review-visitor-name">{visitorName(item.visitorDisplayName ?? item.maskedVisitorName)}</strong><small>{item.publicReference}</small></td><td>{categoryLabels[item.categoryCode]}</td><td>{item.destinationLabel}</td><td><span className={`review-status review-status-${item.status.toLowerCase()}`}>{statusLabels[item.status]}</span></td><td>{formatMyt(item.submittedAt)}</td><td><Button variant="secondary" disabled={locked} aria-label={`${item.status === "SUBMITTED" ? "Review and issue" : "Open"} ${item.publicReference}`} onClick={() => select(item.id)}>{item.status === "SUBMITTED" ? "Review & issue" : "Open"}<ArrowRight size={16} aria-hidden="true" /></Button></td></tr>)}
           {visible.length === 0 && <tr><td colSpan={6} className="review-empty">{queue.items.length ? "No registrations match the search on this page." : "No registrations in this view."}</td></tr>}
         </tbody></table></div>
         <footer className="review-pagination"><span>{queue.total} registrations</span><div className="review-actions"><Button variant="secondary" disabled={locked || queueBusy || page === 0} onClick={() => { clearSelection(); setPage(page - 1); }}>Previous</Button><span>Page {page + 1} of {Math.max(1, Math.ceil(queue.total / 10))}</span><Button variant="secondary" disabled={locked || queueBusy || (page + 1) * 10 >= queue.total} onClick={() => { clearSelection(); setPage(page + 1); }}>Next</Button></div><small className="muted">Updated {formatMyt(queue.serverNow)} MYT · Auto-refresh every 5s</small></footer>
@@ -177,6 +177,11 @@ function ReviewWorkspace({ authority, counterId, port, embedded, recheckSession 
       </Dialog.Content></Dialog.Portal>
     </Dialog.Root>
   </section>;
+}
+/** Count Unicode characters so the twelve-character preview never splits a surrogate pair. */
+function visitorName(value: string): string {
+  const characters = Array.from(value);
+  return characters.length <= 12 ? value : `${characters.slice(0, 12).join("")}…`;
 }
 /** Fixed local copy prevents provider errors from appearing in the registration record. */
 function feedbackLabel(value: Detail["mrnFeedback"]): string {

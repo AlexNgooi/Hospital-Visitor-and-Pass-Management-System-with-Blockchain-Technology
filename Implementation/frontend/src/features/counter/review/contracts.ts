@@ -22,6 +22,8 @@ export const queueItemSchema = z.object({
   counterId: idSchema,
   categoryCode: categorySchema,
   maskedVisitorName: z.string().min(3).max(120).regex(/^[\p{L}\p{M}* .'-]+$/u).refine(masking),
+  // Optional during backend rollout; the staff preview is bounded by Unicode characters, not UTF-16 units.
+  visitorDisplayName: z.string().min(1).max(25).refine(value => Array.from(value).length <= 13 && !/[\p{C}]/u.test(value)).optional(),
   destinationLabel: labelSchema,
   status: statusSchema,
   version: versionSchema,
@@ -36,7 +38,7 @@ export const queueSchema = z.object({
 }).strict();
 const maskedIdSchema = z.string().min(3).max(80).regex(/^[A-Za-z0-9* -]+$/).refine(masking);
 
-/** Audited modal fields are parsed independently so the ordinary queue/detail stays masked. */
+/** Audited modal fields stay separate from bounded queue-name previews and masked identifier metadata. */
 export const reviewFieldsSchema = z.object({
   id: idSchema, version: versionSchema,
   fieldSchemaVersion: z.enum(["synthetic-registration-v1", "manual-registration-v2"]),
@@ -51,7 +53,7 @@ export const reviewFieldsSchema = z.object({
 export type ReviewFields = z.infer<typeof reviewFieldsSchema>;
 
 /** MRN feedback never becomes staff confirmation; only review metadata can represent completed review. */
-export const detailSchema = queueItemSchema.extend({
+export const detailSchema = queueItemSchema.omit({ visitorDisplayName: true }).extend({
   maskedIdentification: maskedIdSchema,
   maskedPhone: z.string().min(3).max(40).regex(/^[+0-9* ()-]+$/).refine(masking),
   maskedMrn: maskedIdSchema.nullable(),

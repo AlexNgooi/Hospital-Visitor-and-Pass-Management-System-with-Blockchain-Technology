@@ -162,7 +162,7 @@ export function RegistrationQrDisplay({ port = qrPort, compact = false }: { port
     <p className="muted">QR entry does not verify identity or physical presence. Staff verification remains required.</p>
   </div>;
   return <div className={`qr-feature qr-display-feature${compact ? " qr-display-compact" : ""}`}>
-    <header className="qr-intro">{compact ? <h2>Visitor registration QR</h2> : <h1>Visitor registration QR</h1>}<p className="muted">Scan to register · No account required</p></header>
+    <header className="qr-intro">{compact ? <h2>Visitor registration QR</h2> : <h1>Visitor registration QR</h1>}<p className="muted">{compact ? "Multiple visitors · No account required" : "Scan to register · No account required"}</p></header>
     {enabled === false ? <StatusPanel kind="empty" title="Registration QR is not enabled">Contact the administrator to enable the controlled registration entry.</StatusPanel> : <>
       <div className="qr-toolbar"><span className="qr-counter">Counter {counter ?? "not selected"}</span><span className="qr-category">All categories</span>
         {!display && !revocation && message && enabled && <Button busy={busy} disabled={!counter} onClick={() => void create()}>Retry QR setup</Button>}

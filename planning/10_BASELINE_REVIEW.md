@@ -55,3 +55,10 @@ Penjaga仅IC、每登记最多一张活动pass、条款勾选并记录服务器�
 - 用户要求移除 staff header 品牌/医院名称与 Overview、Registration review、Pass returns 横向链接，删除柜台/新标签工具栏；现保留菜单、账号和退出，多柜台选择移入菜单。
 - 桌面 Overview（至少 1024×560）按视口分配高度，压缩标题/QR/页脚间距；多条登记只在队列表格内滚动，表头固定、分页保留、滚动区可键盘聚焦。小屏/高倍缩放继续自然重排，避免裁切。QR 帮助和手动复制备用内容使用弹窗，避免撑高主页面。
 - 本轮仅前端源码/CSS改动，运行中的 Vite 使用当前 worktree；未重启应用/数据库、未迁移。前端 build/lint、文档检查和 diff 检查通过；未进行浏览器、业务或数据库验收，不能将布局实现写为视觉验收通过。
+
+## 2026-11-16 姓名预览和连续扫码
+
+- 用户要求 staff queue 正常展示姓名前 12 字符，超长省略。当前新增受当前柜台权限保护的 visitorDisplayName 预览字段；服务端按 Unicode 字符截断，前端单行防溢出；旧 maskedVisitorName/证件/电话/报表边界保留，无 migration。
+- 源码确认当前 QR challenge 支持独立匿名会话交换各自 grant；消费的是各访客单次 grant，未消费共享 QR。相同浏览器只有一份未提交表单。修复 RegistrationPage 完成后未订阅新扫码、一直显示旧 receipt 的路径：完成页继续订阅临时 entry vault，新扫码才进入新 exchange，pending/UNKNOWN 不丢弃原命令；不增加无 QR 入口。
+- 实际检查：前端 build/lint PASS；后端编译通过，首次 package 因运行中的 Windows JAR 无法重命名而 FAIL。经原私有控制端点停止这套应用后，skip-tests package PASS，再以 --no-migrate 与原 runtime-root 启动，launcher READY、backend health 和 frontend login HTTP 200。没有重启 MySQL、迁移、seed、恢复或复制私有文件。
+- 多访客扫码、相同浏览器连续提交、长姓名和 UNKNOWN 场景仍由用户手测（NOT_RUN）；未执行浏览器、业务提交或测试套件。实现仍在同一隔离分支，未合并 main 或 push。
