@@ -61,3 +61,25 @@ If the HTTP result is uncertain, refresh the directory and inspect the account f
 - Browser, business, SMTP delivery, SQL/migration, concurrency and recovery acceptance: NOT_RUN. No test suite executed.
 
 Current incremental wire descriptions: [admin-management.openapi.json](../api/admin-management.openapi.json). The foundation OpenAPI mirror and old evidence stay unchanged.
+
+## 2026-11-16 user-authorized runtime switch
+
+The user explicitly requested stopping the old version and starting this branch, then explicitly approved applying V10 to `hsaas_manual_native`. Read-only preflight found successful V1–V9 and no onboarding columns. The original private control stopped only its owned applications; the new launcher uses this worktree's JAR/Vite and the original runtime root in place. Private configuration/keys were not copied, MySQL was not restarted, `hsaas_db` was not accessed, and no initialize/seed/restore or email send was performed.
+
+Startup at approximately 23:39 MYT used normal Flyway startup under this explicit migration approval. Read-only verification confirmed successful V10 plus all five onboarding columns. Launcher PID 19860 reached READY; backend `/api/health` and frontend `/login` returned HTTP 200. Served frontend source contains the current Staff modal, compiled/chart export paths and four-task admin shell. This proves migration/startup/source readiness, not browser or business acceptance. SMTP remains disabled/unconfigured. Previous implementation-stage NOT_RUN statements remain historical; browser/business/email/SQL test-suite/concurrency/recovery acceptance remains NOT_RUN.
+
+Current entry: `http://127.0.0.1:15417/login` (backend18407/control15418).
+
+From this worktree, stop this exact owned application group with:
+
+```powershell
+node Implementation/scripts/manual-demo.mjs stop --runtime-root 'C:/Users/alexy/Documents/FYP Dev/Implementation'
+```
+
+After stopping, this now-V10-compatible version can be resumed without further migrations:
+
+```powershell
+node Implementation/scripts/manual-demo.mjs start --no-migrate --runtime-root 'C:/Users/alexy/Documents/FYP Dev/Implementation'
+```
+
+Do not run start while the launcher is active. Existing sessions may need normal re-login. No main merge, push or deployment occurred.
