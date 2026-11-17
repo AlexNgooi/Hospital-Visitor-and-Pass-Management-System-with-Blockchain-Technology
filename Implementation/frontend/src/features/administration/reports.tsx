@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
-import { Download, ImageDown, RefreshCw } from "lucide-react";
+import { ArrowUpRight, Download, ImageDown, RefreshCw } from "lucide-react";
 import { z } from "zod";
+import { Link, useSearchParams } from "react-router-dom";
 import { Button, InputField } from "../../components/ui/primitives";
 import { ToastNotice } from "../../components/ui/toast";
 import { apiClient } from "../../lib/api-client";
@@ -10,7 +11,8 @@ import { exportSchema, referencesSchema, reportSchema, type Report } from "./con
 import { LoadNotice } from "./data";
 import { useRemote } from "./hooks";
 import { CategoryChart, InventoryChart, TrendChart } from "./charts";
-import { metric, series, categoryLabels } from "./chart-data";
+import { metric } from "./chart-data";
+import { reportQuery } from "./report-query";
 import { chartImage, downloadBlob } from "./chart-export";
 
 const chartReceipt = z.object({ id: z.uuid(), recordedAt: z.iso.datetime() });
@@ -18,19 +20,31 @@ function todayMyt() { return new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/
 
 /** The single administrator overview replaces the old shortcut/report split and applies filters together. */
 export function ReportsPage() {
-  const [today] = useState(todayMyt), [period, setPeriod] = useState("month");
-  const [from, setFrom] = useState(`${today.slice(0, 7)}-01`), [to, setTo] = useState(today), [category, setCategory] = useState(""), [destination, setDestination] = useState("");
-  const [query, setQuery] = useState(new URLSearchParams({ from, to }).toString());
+  const [params, setParams] = useSearchParams();
+  const [initialQuery] = useState(() => { const today = todayMyt(); return reportQuery(params) ?? new URLSearchParams({ from: `${today.slice(0, 7)}-01`, to: today }).toString(); });
+  const initial = new URLSearchParams(initialQuery);
+  // Returning from details preserves the matching preset instead of expanding custom-date controls unnecessarily.
+  const [period, setPeriod] = useState(() => {
+    const today = todayMyt();
+    if (!params.size) return "month";
+    if (initial.get("to") !== today) return "custom";
+    if (initial.get("from") === today) return "day";
+    if (initial.get("from") === `${today.slice(0, 7)}-01`) return "month";
+    if (initial.get("from") === `${today.slice(0, 4)}-01-01`) return "year";
+    return "custom";
+  });
+  const [from, setFrom] = useState(initial.get("from")!), [to, setTo] = useState(initial.get("to")!), [category, setCategory] = useState(initial.get("categoryId") ?? ""), [destination, setDestination] = useState(initial.get("destinationId") ?? "");
+  const [query, setQuery] = useState(initialQuery);
   const categories = useRemote("/api/admin/categories", referencesSchema), destinations = useRemote("/api/admin/destinations", referencesSchema);
   function preset(value: string) { const current = todayMyt(); setPeriod(value); if (value !== "custom") { setFrom(value === "day" ? current : value === "year" ? `${current.slice(0, 4)}-01-01` : `${current.slice(0, 7)}-01`); setTo(current); } }
   const applied = new URLSearchParams(query);
   const scope = `${categories.data?.find(item => item.id === applied.get("categoryId"))?.name ?? "All visitor types"} · ${destinations.data?.find(item => item.id === applied.get("destinationId"))?.name ?? "All destinations"}`;
   return <div className="admin-page admin-overview">
-    <header className="admin-heading"><div><h1>Overview</h1><p>Visitor activity and pass performance.</p></div></header>
-    <form className="admin-card admin-filters admin-overview-filters" onSubmit={event => { event.preventDefault(); const next = new URLSearchParams({ from, to }); if (category) next.set("categoryId", category); if (destination) next.set("destinationId", destination); setQuery(next.toString()); }}>
+    <header className="admin-heading"><div><h1>Overview</h1><p>Visitor activity and pass performance.</p></div><Link className="button button-secondary admin-details-button" to={`/admin/report-details?${query}`} target="_blank" rel="noopener noreferrer" aria-label="View report details (opens in a new tab)">View details<ArrowUpRight size={17} aria-hidden="true" /></Link></header>
+    <form className={`admin-card admin-filters admin-overview-filters${period === "custom" ? " has-custom-dates" : ""}`} onSubmit={event => { event.preventDefault(); const next = new URLSearchParams({ from, to }); if (category) next.set("categoryId", category); if (destination) next.set("destinationId", destination); setQuery(next.toString()); setParams(next, { replace: true }); }}>
       <label className="admin-field">Time period<select value={period} onChange={event => preset(event.target.value)}><option value="day">This day</option><option value="month">This month</option><option value="year">This year</option><option value="custom">Customize</option></select></label>
       {period === "custom" ? <><InputField id="report-from" label="Start date (MYT)" type="date" min="2000-01-01" max={to} required value={from} onChange={event => setFrom(event.target.value)} /><InputField id="report-to" label="End date (MYT)" type="date" min={from} max="2100-12-31" required value={to} onChange={event => setTo(event.target.value)} /></> : <p className="admin-period-caption">{from} — {to}<small>MYT · inclusive dates</small></p>}
-      <label className="admin-field">Visitor type<select value={category} onChange={event => setCategory(event.target.value)}><option value="">All visitor types</option>{categories.data?.map(item => <option key={item.id} value={item.id}>{item.name}{!item.active && " (inactive)"}</option>)}</select></label>
+      <label className="admin-field">Visitor type<select value={category} onChange={event => setCategory(event.target.value)}><option value="">All types</option>{categories.data?.map(item => <option key={item.id} value={item.id}>{item.name}{!item.active && " (inactive)"}</option>)}</select></label>
       <label className="admin-field">Destination<select value={destination} onChange={event => setDestination(event.target.value)}><option value="">All destinations</option>{destinations.data?.map(item => <option key={item.id} value={item.id}>{item.name}{!item.active && " (inactive)"}</option>)}</select></label><Button type="submit">Apply</Button>
     </form>
     <LoadNotice busy={categories.busy || destinations.busy} error={categories.error || destinations.error} reload={() => { categories.reload(); destinations.reload(); }} />
@@ -69,25 +83,14 @@ function ReportResults({ query, scope, referencesReady }: { query: string; scope
   }
   return <><LoadNotice busy={remote.busy && !remote.data} error={remote.error} reload={remote.reload} />
     {remote.data && <>
-      <div className="admin-report-toolbar"><p role="status" className={remote.stale ? "admin-inline-error" : "muted"}>{remote.stale ? "Stale · last successful data" : "Updated"} {formatMyt(remote.data.serverUpdatedAt)} MYT · {remote.data.origin}</p><div className="admin-actions"><Button variant="secondary" disabled={remote.busy || exporting} onClick={remote.reload}><RefreshCw size={17} aria-hidden="true" />Refresh</Button><Button variant="secondary" disabled={remote.stale || exporting || !referencesReady} onClick={() => { void download(false); }}><Download size={17} aria-hidden="true" />Export CSV</Button><Button disabled={remote.stale || exporting || !referencesReady} busy={exporting} onClick={() => { void download(true); }}><ImageDown size={17} aria-hidden="true" />Export charts</Button></div></div>
+      <div className="admin-report-toolbar"><p role="status" className={remote.stale ? "admin-inline-error" : "muted"}>{remote.stale ? "Stale · last successful data" : "Updated"} {formatMyt(remote.data.serverUpdatedAt)} MYT</p><div className="admin-actions"><Button variant="secondary" disabled={remote.busy || exporting} onClick={remote.reload}><RefreshCw size={17} aria-hidden="true" />Refresh</Button><Button variant="secondary" disabled={remote.stale || exporting || !referencesReady} onClick={() => { void download(false); }}><Download size={17} aria-hidden="true" />Export CSV</Button><Button disabled={remote.stale || exporting || !referencesReady} busy={exporting} onClick={() => { void download(true); }}><ImageDown size={17} aria-hidden="true" />Export charts</Button></div></div>
       {message && <ToastNotice tone={tone}>{message}</ToastNotice>}
-      <section><h2>Selected period</h2><div className="admin-metrics">{[["visits", "Registrations"], ["issued", "Passes issued"], ["returned", "Passes returned"], ["lost", "Passes closed lost"]].map(([key, label]) => <MetricCard key={key} report={remote.data!} metricKey={key} label={label} />)}</div></section>
-      <section><h2>Current snapshot</h2><div className="admin-metrics admin-current-metrics">{[["inUse", "Unreturned passes"], ["overdue", "Overdue · included in unreturned"], ["noDeadline", "No deadline · included in unreturned"]].map(([key, label]) => <MetricCard key={key} report={remote.data!} metricKey={key} label={label} />)}</div></section>
-      <div ref={charts} className="admin-chart-grid"><section className="admin-card"><h2>Daily registrations</h2><TrendChart report={remote.data} /></section><section className="admin-card"><h2>Registrations by visitor type</h2><CategoryChart report={remote.data} /></section><section className="admin-card"><h2>Pass issues & actual returns</h2><TrendChart report={remote.data} movement /></section><section className="admin-card"><h2>Pass inventory · All destinations</h2><InventoryChart report={remote.data} /></section></div>
-      <p className="admin-report-note">Registrations and passes are counted separately. Current unreturned counts ignore historical dates. Inventory uses the category filter only. Issue = staff handover; actual return = receipt of the pass. Lost closures have no return time.</p>
-      <ReportData report={remote.data} />
+      <div className="admin-overview-metric-groups"><section><h2>Selected period</h2><div className="admin-metrics">{[["visits", "Registrations"], ["issued", "Passes issued"], ["returned", "Passes returned"], ["lost", "Passes closed lost"]].map(([key, label]) => <MetricCard key={key} report={remote.data!} metricKey={key} label={label} />)}</div></section>
+      <section><h2>Current snapshot</h2><div className="admin-metrics admin-current-metrics">{[["inUse", "Unreturned passes"], ["overdue", "Overdue"], ["noDeadline", "No deadline"]].map(([key, label]) => <MetricCard key={key} report={remote.data!} metricKey={key} label={label} />)}</div></section>
+      </div>
+      <div ref={charts} className="admin-chart-grid" role="region" aria-label="Overview charts" tabIndex={0}><section className="admin-card"><h2>Daily registrations</h2><TrendChart report={remote.data} compact /></section><section className="admin-card"><h2>Registrations by visitor type</h2><CategoryChart report={remote.data} compact /></section><section className="admin-card"><h2>Pass issues & actual returns</h2><TrendChart report={remote.data} movement compact /></section><section className="admin-card"><h2>Pass inventory · All destinations</h2><InventoryChart report={remote.data} compact /></section></div>
+      <p className="admin-report-note">{remote.data.origin} · Registrations ≠ passes. Overdue / no deadline are included in unreturned. Current counts ignore dates; inventory ignores destination. Issue / return = staff handover / receipt; lost ≠ returned.</p>
     </>}
   </>;
 }
 function MetricCard({ report, metricKey, label }: { report: Report; metricKey: string; label: string }) { return <div className="admin-card"><span>{label}</span><strong>{metric(report, metricKey)?.toLocaleString() ?? "Unavailable"}</strong></div>; }
-
-/** Accessible numeric alternatives remain available alongside the charts; exports include all matches, not these previews. */
-function ReportData({ report }: { report: Report }) {
-  const issued = series(report, "dayIssued"), returned = series(report, "dayReturned");
-  return <details className="admin-card admin-report-data"><summary>View data tables and report details</summary>
-    <h2>Summary metrics</h2><div className="admin-table-scroll" role="region" aria-label="Summary metrics" tabIndex={0}><table><thead><tr><th>Metric</th><th>Group</th><th>Count</th></tr></thead><tbody>{report.metrics.filter(item => !["day", "dayIssued", "dayReturned"].includes(item.metric)).map(item => <tr key={`${item.metric}:${item.label}`}><td>{item.metric}</td><td>{categoryLabels[item.label] ?? item.label}</td><td>{item.amount}</td></tr>)}</tbody></table></div>
-    <h2>Daily values (MYT)</h2><div className="admin-table-scroll admin-daily-values" role="region" aria-label="Daily chart values" tabIndex={0}><table><thead><tr><th>Date</th><th>Registrations</th><th>Passes issued</th><th>Passes returned</th></tr></thead><tbody>{series(report, "day").map((day, index) => <tr key={day.label}><td>{day.label}</td><td>{day.amount}</td><td>{issued[index]?.amount}</td><td>{returned[index]?.amount}</td></tr>)}</tbody></table></div>
-    <h2>Registration preview</h2><p>First 50 matching registrations · masked. CSV includes the complete matching result or fails explicitly at its limit.</p><div className="admin-table-scroll" role="region" aria-label="Registration preview" tabIndex={0}><table><thead><tr><th>Reference</th><th>Visitor type</th><th>Requested destinations</th><th>Status</th><th>Submitted (MYT)</th></tr></thead><tbody>{report.preview.slice(0, 50).map(row => <tr key={row.reference}><td>{row.reference}</td><td>{categoryLabels[row.category] ?? row.category}</td><td>{row.destination}</td><td>{row.status}</td><td>{formatMyt(row.submittedAt)}</td></tr>)}</tbody></table></div>
-    <h2>Pass activity preview</h2><div className="admin-table-scroll" role="region" aria-label="Pass activity preview" tabIndex={0}><table><thead><tr><th>Pass / registration</th><th>Visitor type / destination</th><th>Status</th><th>Issued / in (MYT)</th><th>Deadline (MYT)</th><th>Returned / out (MYT)</th><th>Closed (MYT)</th></tr></thead><tbody>{report.passPreview.slice(0, 50).map(row => <tr key={row.passReference}><td><strong>{row.cardCode}</strong><small>{row.passReference}</small><small>{row.reference}</small></td><td>{categoryLabels[row.category] ?? row.category}<small>{row.destination}</small></td><td>{row.status}</td><td>{formatMyt(row.issuedAt)}<small>Staff {row.issuedBy}</small></td><td>{row.dueAt ? formatMyt(row.dueAt) : "No return deadline"}</td><td>{row.returnedAt ? formatMyt(row.returnedAt) : "Not returned"}<small>{row.returnedBy && `Staff ${row.returnedBy}`}</small></td><td>{row.closedAt ? formatMyt(row.closedAt) : "Open"}<small>{row.closedBy && `Staff ${row.closedBy}`}</small></td></tr>)}</tbody></table></div>
-  </details>;
-}

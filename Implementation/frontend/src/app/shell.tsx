@@ -34,6 +34,7 @@ export function WorkspaceShell({ slots }: { slots: readonly FeatureSlot[] }) {
   // Both queue surfaces share the desktop viewport frame; other workspaces keep their natural document flow.
   const queueSurface = isStaff && /^\/staff(?:\/(?:registrations|passes))?\/?$/.test(location.pathname);
   const overview = isStaff && /^\/staff\/?$/.test(location.pathname);
+  const adminOverview = !isStaff && /^\/admin\/?$/.test(location.pathname);
   const passes = isStaff && /^\/staff\/passes\/?$/.test(location.pathname);
   const base = isStaff ? "/staff" : "/admin";
   const activeCounter = user.counterIds.includes(counter ?? "")
@@ -45,7 +46,7 @@ export function WorkspaceShell({ slots }: { slots: readonly FeatureSlot[] }) {
   const currentPath = location.pathname.replace(/\/+$/, "");
   const current =
     navigation.find((slot) => slot.path === currentPath)?.label ??
-    (currentPath === base ? "Overview" : currentPath === "/admin/settings" ? "Pass settings" : currentPath === "/admin/reports" ? "Overview" : "Workspace overview");
+    (currentPath === base ? "Overview" : currentPath === "/admin/settings" ? "Pass settings" : currentPath === "/admin/reports" ? "Overview" : currentPath === "/admin/report-details" ? "Report details" : "Workspace overview");
   function signOut() {
     // Provider owns pending/UNKNOWN recovery after this protected shell immediately unmounts.
     void logout().catch(() => {});
@@ -72,7 +73,7 @@ export function WorkspaceShell({ slots }: { slots: readonly FeatureSlot[] }) {
       <nav
         aria-label={isStaff ? "Counter navigation" : "Administrator navigation"}
       >
-        <NavLink to={base} end className="nav-link" onClick={() => setDrawer({ path: location.pathname, open: false })}>
+        <NavLink to={base} end className={({ isActive }) => `nav-link${isActive || !isStaff && currentPath === "/admin/report-details" ? " active" : ""}`} onClick={() => setDrawer({ path: location.pathname, open: false })}>
           <HomeIcon size={19} aria-hidden="true" />
           Overview
         </NavLink>
@@ -102,7 +103,7 @@ export function WorkspaceShell({ slots }: { slots: readonly FeatureSlot[] }) {
   );
   return (
     <CounterContext.Provider value={activeCounter}>
-      <div className={`workspace workspace-drawer-layout${isStaff ? " workspace-staff" : " workspace-admin"}${queueSurface ? ` workspace-viewport ${overview ? "workspace-dashboard" : passes ? "workspace-passes" : "workspace-review"}` : ""}`}>
+      <div className={`workspace workspace-drawer-layout${isStaff ? " workspace-staff" : " workspace-admin"}${adminOverview ? " workspace-admin-overview" : ""}${queueSurface ? ` workspace-viewport ${overview ? "workspace-dashboard" : passes ? "workspace-passes" : "workspace-review"}` : ""}`}>
         {!isStaff && <aside className="sidebar admin-sidebar" aria-label="Administration">{nav}</aside>}
         <div className="workspace-body">
           <header className="topbar">

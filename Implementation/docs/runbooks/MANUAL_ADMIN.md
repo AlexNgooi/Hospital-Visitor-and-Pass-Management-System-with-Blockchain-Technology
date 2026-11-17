@@ -83,3 +83,11 @@ node Implementation/scripts/manual-demo.mjs start --no-migrate --runtime-root 'C
 ```
 
 Do not run start while the launcher is active. Existing sessions may need normal re-login. No main merge, push or deployment occurred.
+
+## 2026-11-17 Overview layout feedback
+
+The user requested smaller Overview elements at 1480×667 and 920×667, retaining the red/white design. The main dashboard now uses compact spacing, a single-line standard filter strip, side-by-side metric groups and four shorter charts. Desktop/tablet windows >=800×620 use the available viewport; the chart region is focusable and can scroll internally when custom dates or messages need extra room. Smaller/shorter/heavily zoomed viewports reflow naturally. No page content is hidden with a document-level overflow rule.
+
+The previous bottom details disclosure is removed. Top-right **View details** opens `/admin/report-details?from=...&to=...` in a new tab, carrying only applied dates/category/destination IDs. It retains the ADMIN gate and rechecks authorization through the existing report API; independent refresh times are displayed. Invalid/duplicate/unknown query parameters and ranges >366 days are rejected before fetching. **Back to Overview** preserves filters and the matching preset. No extra sidebar task is added. The page contains summary metrics, exact daily values, masked registration previews and pass activity previews; existing full CSV/PNG exports remain on Overview.
+
+Validation: frontend build/lint PASS; planning and diff checks PASS. The existing Vite chunk-size notice remains. No backend/database changes, migration, service restart, browser automation or business actions were performed. Browser/viewport/click/export acceptance is NOT_RUN. User checks: refresh Overview at both reported viewport sizes, inspect all four charts and focusable overflow, toggle custom dates, open View details after applying category/destination filters, inspect the new tab and Back link, and verify CSV/PNG exports and reduced-width/zoom behavior.

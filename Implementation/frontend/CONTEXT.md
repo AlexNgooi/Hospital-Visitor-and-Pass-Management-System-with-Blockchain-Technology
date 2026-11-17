@@ -25,3 +25,7 @@ Staff headers retain the menu/account/sign-out controls and omit branding and in
 ## 2026-11-16 admin branch
 
 The ADMIN shell now exposes exactly Overview, Staff management, Pass management and System audit, with a desktop sidebar and responsive drawer. `/admin` renders the real overview; `/admin/reports` remains compatible. Existing settings remain reachable from Pass management without a fifth nav task. RoleGate renders the initial-password page for restricted new staff; business APIs independently enforce this restriction. Staff UI changes and first-login metadata are documented in docs/runbooks/MANUAL_ADMIN.md from Implementation. Staff QR/review/return workflows and No pass semantics are unchanged.
+
+## 2026-11-17 Overview density
+
+Only `/admin` receives the compact viewport shell at >=800px wide and >=620px high. Header/footer/filter/metric spacing is reduced; charts retain a keyboard-focusable internal overflow fallback. Other routes and smaller/zoomed viewports keep natural scrolling. `/admin/report-details` is a hidden ADMIN-only route associated with Overview; current filters travel as bounded date/reference parameters to a new tab. No backend, role, database or process changes were made. Browser visual acceptance is NOT_RUN.

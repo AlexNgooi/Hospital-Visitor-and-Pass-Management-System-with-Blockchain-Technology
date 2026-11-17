@@ -113,3 +113,61 @@
   .admin-report-toolbar .admin-actions { width: 100%; }
   .admin-account-dialog { padding: 20px; }
 }
+
+/* Overview density keeps the existing visual hierarchy; details live on their own authorized route. */
+.admin-overview .admin-heading { align-items: center; }
+.admin-overview .admin-details-button { flex-shrink: 0; white-space: nowrap; }
+.admin-overview-metric-groups { display: grid; grid-template-columns: 4fr 3fr; gap: 12px; min-width: 0; }
+.admin-overview-metric-groups > section { min-width: 0; }
+.admin-overview .admin-chart-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.admin-overview .admin-chart-grid svg { margin-top: 6px; }
+.admin-report-details-page .admin-heading .admin-actions { margin: 0; }
+.admin-report-details-page .admin-report-data > h2:first-child { margin-top: 0; }
+.admin-report-details-page .admin-notice p { margin: 6px 0 0; }
+
+/* Shallow desktop/tablet windows get a viewport frame, with an accessible chart-region overflow fallback. */
+@media (min-width: 800px) and (min-height: 620px) {
+  .workspace-admin-overview { height: 100dvh; min-height: 0; }
+  .workspace-admin-overview .workspace-body { height: 100%; min-height: 0; }
+  .workspace-admin-overview .topbar { min-height: 56px; flex: 0 0 auto; padding: 6px 20px; }
+  .workspace-admin-overview .workspace-footer { flex: 0 0 26px; padding: 3px 16px; line-height: 19px; }
+  .workspace-admin-overview .workspace-main { min-height: 0; display: flex; flex-direction: column; padding: 10px 14px; }
+  .workspace-admin-overview .admin-overview { display: flex; flex-direction: column; flex: 1; min-height: 0; gap: 8px; }
+  .admin-overview > :not(.admin-chart-grid) { flex-shrink: 0; }
+  .admin-overview .admin-heading { gap: 12px; flex-wrap: nowrap; }
+  .admin-overview .admin-heading h1 { font-size: 26px; line-height: 28px; margin: 0; }
+  .admin-overview .admin-heading p { font-size: 12px; line-height: 16px; margin: 0; }
+  .admin-overview .button { min-height: 44px; font-size: 12px; padding: 8px 10px; }
+  .admin-overview .admin-overview-filters { grid-template-columns: minmax(0, 1fr) 166px minmax(0, 1fr) minmax(0, 1fr) 64px; gap: 8px; padding: 8px; }
+  .admin-overview-filters .admin-field { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: 6px; margin: 0; font-size: 12px; line-height: 16px; white-space: nowrap; }
+  .admin-overview .admin-overview-filters select { min-height: 44px; padding: 6px; font-size: 12px; }
+  .admin-overview .admin-period-caption { font-size: 12px; line-height: 16px; padding: 0; }
+  .admin-overview .admin-period-caption small { font-size: 11px; line-height: 14px; }
+  .admin-overview .has-custom-dates { grid-template-columns: repeat(3, minmax(0, 1fr)) 64px; }
+  .admin-overview-filters.has-custom-dates > .button { grid-column: 4; grid-row: 1 / span 2; align-self: stretch; }
+  .admin-overview-filters.has-custom-dates > .admin-field:nth-child(4) { grid-column: 1; }
+  .admin-overview-filters.has-custom-dates > .admin-field:nth-child(5) { grid-column: 2 / span 2; }
+  .admin-overview-filters.has-custom-dates .field { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 6px; align-items: center; font-size: 12px; min-width: 0; }
+  .admin-overview-filters.has-custom-dates input { min-width: 0; min-height: 44px; padding: 6px; font-size: 12px; }
+  .admin-overview .admin-report-toolbar { gap: 8px; flex-wrap: nowrap; }
+  .admin-overview .admin-report-toolbar > p { flex: 1; min-width: 0; font-size: 12px; line-height: 16px; }
+  .admin-overview .admin-report-toolbar .admin-actions { flex-wrap: nowrap; gap: 6px; flex-shrink: 0; }
+  .admin-overview .admin-overview-metric-groups { gap: 12px; }
+  .admin-overview-metric-groups h2 { font-size: 13px; line-height: 16px; margin: 0 0 4px; }
+  .admin-overview-metric-groups .admin-metrics { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; margin: 0; }
+  .admin-overview-metric-groups .admin-current-metrics { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .admin-overview-metric-groups .admin-metrics .admin-card { padding: 6px 8px; border-radius: 9px; }
+  .admin-overview-metric-groups .admin-metrics span { font-size: 12px; line-height: 14px; display: block; }
+  .admin-overview-metric-groups .admin-metrics strong { font-size: 24px; line-height: 26px; margin: 2px 0 0; }
+  .admin-overview .admin-chart-grid { flex: 1 1 0; min-height: 0; gap: 8px; grid-auto-rows: minmax(min-content, 1fr); overflow: auto; scrollbar-gutter: stable; align-content: start; }
+  .admin-overview .admin-chart-grid > .admin-card { padding: 6px 10px; min-height: 0; }
+  .admin-overview .admin-chart-grid h2 { font-size: 14px; line-height: 18px; margin: 0; }
+  .admin-overview .admin-chart-grid svg { display: block; width: 100%; height: clamp(94px, calc((100dvh - 480px) / 2), 160px); margin-top: 4px; }
+  .admin-overview .admin-report-note { font-size: 11px; line-height: 14px; margin: 0; }
+}
+
+/* Narrow or heavily zoomed windows reflow naturally rather than clipping filters or shrinking controls. */
+@media (max-width: 799px) {
+  .admin-overview-metric-groups { grid-template-columns: minmax(0, 1fr); }
+  .admin-overview .admin-chart-grid { grid-template-columns: minmax(0, 1fr); }
+}
