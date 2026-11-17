@@ -22,13 +22,12 @@ export function AdminInventory() {
   return <InventoryWorkspace key={state.user.id} recheck={refresh} />;
 }
 
-/** Administrator actions use visible card codes, reference destinations, expected versions and explicit custody checks. */
+/** Administrator actions use visible pass codes, categories, expected versions and explicit custody checks. */
 function InventoryWorkspace({ recheck }: { recheck: () => void }) {
   const [data, setData] = useState<InventoryPage | null>(null);
   const [references, setReferences] = useState<InventoryReferences | null>(null);
   const [passNumber, setPassNumber] = useState("");
   const [categoryCode, setCategoryCode] = useState("");
-  const [destinationId, setDestinationId] = useState("");
   const [page, setPage] = useState(0);
   const [filters, setFilters] = useState("");
   const [selected, setSelected] = useState<Card | null>(null);
@@ -74,7 +73,6 @@ function InventoryWorkspace({ recheck }: { recheck: () => void }) {
       if (!alive.current || generation.current !== seq) return;
       setData(inventory); setReferences(metadata);
       setCategoryCode(value => metadata.categories.some(item => item.code === value) ? value : metadata.categories[0]?.code ?? "");
-      setDestinationId(value => metadata.destinations.some(item => item.id === value) ? value : metadata.destinations[0]?.id ?? "");
     } catch (error) { if (alive.current && generation.current === seq) { setData(null); setError(lifecycleError(error)); if (lifecycleAccessLost(error)) deny(); } }
     finally { if (alive.current && generation.current === seq) setBusy(false); }
   }, [page, filters, deny]);
@@ -98,7 +96,6 @@ function InventoryWorkspace({ recheck }: { recheck: () => void }) {
   const applied = new URLSearchParams(filters);
   const filterSummary = [applied.get("search") ? `Search: ${applied.get("search")}` : "",
     references?.categories.find(item => item.code === applied.get("category"))?.label ?? applied.get("category") ?? "All visitor types",
-    references?.destinations.find(item => item.id === applied.get("destination"))?.label ?? (applied.get("destination") ? `Destination ID ${applied.get("destination")}` : "All destinations"),
     applied.get("status") || "All statuses"].filter(Boolean).join(" · ");
   const restore = selected && ["LOST", "DISABLED"].includes(selected.status);
   /** Validate locally and retain the exact submitted command when its outcome is unknown. */
@@ -111,15 +108,15 @@ function InventoryWorkspace({ recheck }: { recheck: () => void }) {
       setEnrollError("Enter a pass number from 1 to 9999. The category prefix is set automatically.");
       codeInput.current?.focus(); return;
     }
-    if (!references?.categories.some(item => item.code === categoryCode) || !references.destinations.some(item => item.id === destinationId)) {
-      setEnrollError("Select an available category and compatible destination."); return;
+    if (!references?.categories.some(item => item.code === categoryCode)) {
+      setEnrollError("Select an available category."); return;
     }
     setEnrollError("");
-    commands.submit(lifecycleApi.enroll(cardCode, categoryCode, destinationId), "Card enrollment", () => { setPassNumber(""); done(); });
+    commands.submit(lifecycleApi.enroll(cardCode, categoryCode), "Card enrollment", () => { setPassNumber(""); done(); });
   }
   return <div className="lc-workspace admin-page admin-pass-management admin-task-page">
     <header className="lc-header"><div><h1 ref={inventoryHeading} tabIndex={-1}>Pass management</h1><p className="muted">Manage physical pass inventory and availability.</p></div><div className="admin-actions">
-      <AdminFilterDialog title="Filter passes" description="Search the complete authorized inventory and choose visitor type, destination and status." disabled={blocked || !references}>
+      <AdminFilterDialog title="Filter passes" description="Search the complete authorized inventory and choose visitor type and status." disabled={blocked || !references}>
         {close => <InventoryFilters query={filters} references={references} disabled={blocked || !references} onCancel={close} onApply={next => { setPage(0); setFilters(next); close(); }} />}
       </AdminFilterDialog>
       <Link to="/admin/settings" className="button button-secondary" aria-label="Return defaults and existing settings">Settings</Link>
@@ -128,11 +125,11 @@ function InventoryWorkspace({ recheck }: { recheck: () => void }) {
     {denied && <StatusPanel kind="error" title="Current access must be rechecked" action={<Button onClick={recheck}>Recheck session</Button>}>Inventory and selections have been cleared.</StatusPanel>}
     {error && <ToastNotice>{error}</ToastNotice>}
     <p className="admin-applied-summary">{filterSummary}</p>
-    {data && <section aria-label="Inventory summary"><p className="muted">All statuses matching the applied search, visitor type and destination.</p><div className="admin-metrics">{[["Available", data.summary.AVAILABLE], ["Issued / overdue", data.summary.ISSUED + data.summary.OVERDUE], ["Lost", data.summary.LOST], ["Disabled", data.summary.DISABLED]].map(([label, value]) => <div className="admin-card" key={label}><span>{label}</span><strong>{value.toLocaleString()}</strong></div>)}</div></section>}
+    {data && <section aria-label="Inventory summary"><p className="muted">All statuses matching the applied search, visitor type.</p><div className="admin-metrics">{[["Available", data.summary.AVAILABLE], ["Issued / overdue", data.summary.ISSUED + data.summary.OVERDUE], ["Lost", data.summary.LOST], ["Disabled", data.summary.DISABLED]].map(([label, value]) => <div className="admin-card" key={label}><span>{label}</span><strong>{value.toLocaleString()}</strong></div>)}</div></section>}
 
     <section className="lc-panel admin-inventory-panel admin-task-fill"><div className="lc-header"><h2>Pass inventory</h2></div>
-      {data && <><p className="lc-caption">Updated {formatMyt(data.serverNow)} MYT · All matching inventory, 25 passes per page</p><div className="lc-table" role="region" aria-label="Pass inventory" tabIndex={0}><table><thead><tr><th>Pass ID</th><th>Compatible destination</th><th>Visitor type</th><th>Status</th><th>Action</th></tr></thead><tbody>
-        {data.items.map(card => <tr key={card.id}><td>{card.cardCode}</td><td>{card.destinationLabel ?? "Legacy stock"}</td><td>{card.categoryCode}</td><td><span className={`lc-badge lc-${card.status.toLowerCase()}`}>{card.status}</span></td><td><Button variant="secondary" disabled={blocked} aria-label={`Open card ${card.cardCode}`} aria-haspopup="dialog" title="Open card" onClick={event => open(card, event.currentTarget)}><Eye size={18} aria-hidden="true" />View details</Button></td></tr>)}
+      {data && <><p className="lc-caption">Updated {formatMyt(data.serverNow)} MYT · All matching inventory, 25 passes per page</p><div className="lc-table" role="region" aria-label="Pass inventory" tabIndex={0}><table><thead><tr><th>Pass ID</th><th>Visitor type</th><th>Status</th><th>Action</th></tr></thead><tbody>
+        {data.items.map(card => <tr key={card.id}><td>{card.cardCode}</td><td>{card.categoryCode}</td><td><span className={`lc-badge lc-${card.status.toLowerCase()}`}>{card.status}</span></td><td><Button variant="secondary" disabled={blocked} aria-label={`Open card ${card.cardCode}`} aria-haspopup="dialog" title="Open card" onClick={event => open(card, event.currentTarget)}><Eye size={18} aria-hidden="true" />View details</Button></td></tr>)}
       </tbody></table></div>{data.items.length === 0 && <p>No passes match these filters. Change the filters or add a pass.</p>}<Pager page={page} total={data.total} disabled={blocked} change={setPage} /></>}
     </section>
     <Dialog.Root open={enrolling} onOpenChange={next => { if (!next && !commands.locked) { setEnrolling(false); setPassNumber(""); setEnrollError(""); } }}>
@@ -142,14 +139,13 @@ function InventoryWorkspace({ recheck }: { recheck: () => void }) {
           onEscapeKeyDown={event => { if (commands.locked) event.preventDefault(); }}
           onPointerDownOutside={event => { if (commands.locked) event.preventDefault(); }}>
           <div className="lc-header"><Dialog.Title>Add pass</Dialog.Title><Dialog.Close asChild><Button variant="ghost" disabled={commands.locked} aria-label="Close enrollment"><X size={20} aria-hidden="true" /></Button></Dialog.Close></div>
-          <Dialog.Description>Choose a category, enter your pass number and select its destination.</Dialog.Description>
+          <Dialog.Description>Choose a visitor type and enter your pass number. Destinations are selected during visitor registration.</Dialog.Description>
           {enrollError && <ToastNotice revision={enrollAttempt}>{enrollError}</ToastNotice>}
           <form className="lc-enroll-form" onSubmit={enroll} noValidate aria-busy={commands.pending}>
         <label className="lc-field">Category<select value={categoryCode} disabled={blocked} onChange={event => { setCategoryCode(event.target.value); setEnrollError(""); }}>{references?.categories.map(category => <option key={category.id} value={category.code}>{category.label}</option>)}</select></label>
         <label className="lc-field">Pass number<span className="lc-pass-number"><span aria-hidden="true">{passPrefixes[categoryCode] ?? ""}</span><input ref={codeInput} value={passNumber} maxLength={4} inputMode="numeric" pattern="[0-9]{1,4}" disabled={blocked} required autoComplete="off" spellCheck={false} aria-invalid={Boolean(enrollError)} onChange={event => { setPassNumber(event.target.value); setEnrollError(""); }} aria-describedby="pass-code-help pass-code-preview" /></span></label>
         <p id="pass-code-help" className="muted">Choose any unused number from 1 to 9999. Numbers do not need to be consecutive; leading zeros are removed.</p>
         <p id="pass-code-preview" className="pass-summary">Pass ID: <strong>{namedPass(categoryCode, passNumber) ?? `${passPrefixes[categoryCode] ?? ""}…`}</strong></p>
-        <label className="lc-field">Compatible destination<select value={destinationId} disabled={blocked} onChange={event => setDestinationId(event.target.value)}>{references?.destinations.map(destination => <option key={destination.id} value={destination.id}>{destination.label}</option>)}</select></label>
         {commands.recovery}
         <div className="dialog-actions"><Dialog.Close asChild><Button variant="secondary" disabled={commands.locked}>Cancel</Button></Dialog.Close><Button type="submit" busy={commands.pending} disabled={blocked}>Add pass</Button></div>
           </form>
@@ -170,7 +166,7 @@ function InventoryWorkspace({ recheck }: { recheck: () => void }) {
           <div className="lc-header"><Dialog.Title>Pass details</Dialog.Title><Dialog.Close asChild><Button variant="ghost" className="lc-icon-button" disabled={commands.locked} aria-label="Close card details"><X size={20} aria-hidden="true" /></Button></Dialog.Close></div>
           <Dialog.Description>View this card's details, manage its inventory status and inspect local history.</Dialog.Description>
           {selected && <>
-            <dl className="lc-card-facts"><div><dt>Visible pass code</dt><dd>{selected.cardCode}</dd></div><div><dt>Status</dt><dd><span className={`lc-badge lc-${selected.status.toLowerCase()}`}>{selected.status}</span></dd></div><div><dt>Category</dt><dd>{selected.categoryCode}</dd></div><div><dt>Destination</dt><dd>{selected.destinationLabel ?? "Legacy stock"}</dd></div><div><dt>Enrollment method</dt><dd>{selected.enrollmentMethod}</dd></div><div><dt>Data source</dt><dd>{selected.source}</dd></div></dl>
+            <dl className="lc-card-facts"><div><dt>Visible pass code</dt><dd>{selected.cardCode}</dd></div><div><dt>Status</dt><dd><span className={`lc-badge lc-${selected.status.toLowerCase()}`}>{selected.status}</span></dd></div><div><dt>Category</dt><dd>{selected.categoryCode}</dd></div><div><dt>Enrollment method</dt><dd>{selected.enrollmentMethod}</dd></div><div><dt>Data source</dt><dd>{selected.source}</dd></div></dl>
     {restore && <section className="lc-card-actions"><h3>Manual recovery</h3>
         <p className="lc-mode">Demonstration recovery policy: confirm the same visible card is in custody and safe for inventory reuse. Its old lost assignment stays closed and has no actual return time.</p>
         <label className="lc-check"><input type="checkbox" disabled={blocked} checked={recovered} onChange={event => setRecovered(event.target.checked)} />I confirm this card was physically recovered.</label>
@@ -197,14 +193,13 @@ function InventoryWorkspace({ recheck }: { recheck: () => void }) {
 /** Applying filters resets pagination; draft edits never affect pending lifecycle commands or the visible query. */
 function InventoryFilters({ query, references, disabled, onApply, onCancel }: { query: string; references: InventoryReferences | null; disabled: boolean; onApply: (query: string) => void; onCancel: () => void }) {
   const applied = new URLSearchParams(query);
-  const [search, setSearch] = useState(applied.get("search") ?? ""), [category, setCategory] = useState(applied.get("category") ?? ""), [destination, setDestination] = useState(applied.get("destination") ?? ""), [status, setStatus] = useState(applied.get("status") ?? "");
+  const [search, setSearch] = useState(applied.get("search") ?? ""), [category, setCategory] = useState(applied.get("category") ?? ""), [status, setStatus] = useState(applied.get("status") ?? "");
   return <form className="admin-filter-form" onSubmit={event => {
     event.preventDefault(); if (disabled) return;
-    const next = new URLSearchParams(); if (search.trim()) next.set("search", search.trim()); if (category) next.set("category", category); if (destination) next.set("destination", destination); if (status) next.set("status", status); onApply(next.toString());
+    const next = new URLSearchParams(); if (search.trim()) next.set("search", search.trim()); if (category) next.set("category", category); if (status) next.set("status", status); onApply(next.toString());
   }}>
     <label className="admin-field">Search pass ID<input type="search" maxLength={120} autoComplete="off" value={search} disabled={disabled} onChange={event => setSearch(event.target.value)} /></label>
     <label className="admin-field">Visitor type<select value={category} disabled={disabled} onChange={event => setCategory(event.target.value)}><option value="">All visitor types</option>{references?.categories.map(item => <option key={item.id} value={item.code}>{item.label}</option>)}</select></label>
-    <label className="admin-field">Destination<select value={destination} disabled={disabled} onChange={event => setDestination(event.target.value)}><option value="">All destinations</option>{references?.destinations.map(item => <option key={item.id} value={item.id}>{item.label}</option>)}</select></label>
     <label className="admin-field">Status<select value={status} disabled={disabled} onChange={event => setStatus(event.target.value)}><option value="">All statuses</option>{["AVAILABLE", "ISSUED", "OVERDUE", "LOST", "DISABLED"].map(value => <option key={value}>{value}</option>)}</select></label>
     <div className="dialog-actions"><Button variant="secondary" onClick={onCancel}>Cancel</Button><Button type="submit" disabled={disabled}>Apply filters</Button></div>
   </form>;

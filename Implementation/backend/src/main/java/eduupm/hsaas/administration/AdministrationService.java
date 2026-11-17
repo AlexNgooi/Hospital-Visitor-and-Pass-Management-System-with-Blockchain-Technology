@@ -135,7 +135,7 @@ public class AdministrationService {
     /** Historical references are retained; reference code is immutable after insertion and no delete command exists. */
     public List<Reference> references(Proof proof,String kind) {
         String table=table(kind);
-        return tx.execute(status->{access.require(proof);return jdbc.query("SELECT id,code,name,active,version FROM "+table+" ORDER BY id",(rs,n)->new Reference(Long.toString(rs.getLong(1)),rs.getString(2),rs.getString(3),rs.getBoolean(4),rs.getLong(5)));});
+        return tx.execute(status->{access.require(proof);return jdbc.query("SELECT id,code,name,active,version,"+(kind.equals("destinations")?"destination_kind":"NULL")+" FROM "+table+" ORDER BY id",(rs,n)->new Reference(Long.toString(rs.getLong(1)),rs.getString(2),rs.getString(3),rs.getBoolean(4),rs.getLong(5),rs.getString(6)));});
     }
 
     /** Four form categories are fixed by M03; wards and counters can be added without inventing a fifth form schema. */
@@ -143,9 +143,12 @@ public class AdministrationService {
         if(input==null)throw AdminInputs.invalid();
         String table=table(kind); if(kind.equals("categories")) throw AdminInputs.invalid();
         String code=AdminInputs.code(input.code()),name=AdminInputs.name(input.name()),reason=AdminInputs.reason(input.reason());
+        String destinationKind=kind.equals("destinations")?destinationKind(input.kind()):null;
+        if(kind.equals("destinations") && code.length()>32)throw AdminInputs.invalid();
         try {tx.executeWithoutResult(status->{
             accounts.lock(accounts.find(proof.login()).id());var actor=access.require(proof);
-            jdbc.update("INSERT INTO "+table+"(code,name,active) VALUES(?,?,TRUE)",code,name);
+            if(kind.equals("destinations")) jdbc.update("INSERT INTO destinations(code,name,active,destination_kind) VALUES(?,?,TRUE,?)",code,name,destinationKind);
+            else jdbc.update("INSERT INTO "+table+"(code,name,active) VALUES(?,?,TRUE)",code,name);
             long id=jdbc.queryForObject("SELECT id FROM "+table+" WHERE code=?",Long.class,code);
             audit.append(LocalAuditPort.Action.ADMIN_CHANGED,target(kind),Long.toString(id),actor.id(),new LocalAuditPort.Snapshot(null,"ACTIVE",null,0L,"LOCAL"));
             history(target(kind),Long.toString(id),null,0L,reason,actor.id());
@@ -167,7 +170,8 @@ public class AdministrationService {
             if((long)rows.getFirst()[1]!=(kind.equals("counters")?version+1:version))throw new ApiFailure(409,"VERSION_CONFLICT","Reload this reference.");
             if(kind.equals("counters")) jdbc.update("UPDATE counters SET name=? WHERE id=?",name,targetId);
             else {
-                jdbc.update("UPDATE "+table+" SET name=?,active=?,version=version+1 WHERE id=?",name,active,targetId);
+                if(kind.equals("destinations")) jdbc.update("UPDATE destinations SET name=?,active=?,destination_kind=?,version=version+1 WHERE id=?",name,active,destinationKind(input.kind()),targetId);
+                else jdbc.update("UPDATE "+table+" SET name=?,active=?,version=version+1 WHERE id=?",name,active,targetId);
                 audit.append(LocalAuditPort.Action.ADMIN_CHANGED,target(kind),id,actor.id(),new LocalAuditPort.Snapshot((boolean)rows.getFirst()[0]?"ACTIVE":"INACTIVE",active?"ACTIVE":"INACTIVE",version,version+1,"LOCAL"));
             }
             history(target(kind),id,version,version+1,reason,actor.id(),previous);
@@ -216,7 +220,7 @@ public class AdministrationService {
         List<Map<String,Object>> values;
         if(kind.equals("PERMISSION")) {var ids=id.split(":");values=jdbc.queryForList("SELECT active FROM user_counter_permissions WHERE user_id=? AND counter_id=?",AdminInputs.id(ids[0]),AdminInputs.id(ids[1]));}
         else {
-            String query=switch(kind){case "USER"->"SELECT role,active FROM users";case "CATEGORY"->"SELECT code,name,active FROM visitor_categories";case "DESTINATION"->"SELECT code,name,active FROM destinations";case "COUNTER"->"SELECT code,name,active FROM counters";case "SETTING"->"SELECT setting_key,value_int FROM system_settings";default->throw AdminInputs.invalid();};
+            String query=switch(kind){case "USER"->"SELECT role,active FROM users";case "CATEGORY"->"SELECT code,name,active FROM visitor_categories";case "DESTINATION"->"SELECT code,name,active,destination_kind FROM destinations";case "COUNTER"->"SELECT code,name,active FROM counters";case "SETTING"->"SELECT setting_key,value_int FROM system_settings";default->throw AdminInputs.invalid();};
             values=jdbc.queryForList(query+" WHERE id=?",AdminInputs.id(id));
         }
         return values.isEmpty()?null:json.writeValueAsString(values.getFirst());
@@ -232,9 +236,11 @@ public class AdministrationService {
     public record Resend(Long version){}
     public record Delivery(boolean saved,String id,String emailStatus){}
     public record PermissionChange(Long version,Boolean active,String reason){}
-    public record Reference(String id,String code,String name,boolean active,long version){}
-    public record ReferenceCreate(String code,String name,String reason){}
-    public record ReferenceChange(Long version,String name,Boolean active,String reason){}
+    /** Only wards are eligible for Executive/Penjaga; other visitor types may select either kind. */
+    private static String destinationKind(String kind){if(!Set.of("WARD","OTHER").contains(kind==null?"":kind))throw AdminInputs.invalid();return kind;}
+    public record Reference(String id,String code,String name,boolean active,long version,String kind){}
+    public record ReferenceCreate(String code,String name,String reason,String kind){}
+    public record ReferenceChange(Long version,String name,Boolean active,String reason,String kind){}
     private record SettingKey(String key,long version){}
     public record Setting(String id,String key,Integer value,long version){}
     /** Required JSON keys distinguish a deliberate no-deadline choice from an accidentally omitted value. */

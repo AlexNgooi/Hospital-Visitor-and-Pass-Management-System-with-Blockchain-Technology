@@ -165,6 +165,11 @@
 .admin-filter-period { color: var(--muted); font-size: 14px; line-height: 1.5; margin: 0; }
 .admin-filter-period small { display: block; font-size: 12px; }
 .admin-filter-summary { display: block; overflow-wrap: anywhere; }
+/* Wide personal reports scroll inside their card instead of widening the workspace. */
+.admin-visitor-data { min-width: 0; }
+.admin-visitor-data .admin-table-scroll { max-height: min(54vh, 520px); overflow: auto; scrollbar-gutter: stable; }
+.admin-visitor-data th { position: sticky; top: 0; z-index: 1; background: var(--surface, white); }
+.admin-visitor-data td { max-width: 280px; overflow-wrap: anywhere; }
 @media (max-width: 480px) {
   .admin-filter-dates { grid-template-columns: minmax(0, 1fr); }
 }

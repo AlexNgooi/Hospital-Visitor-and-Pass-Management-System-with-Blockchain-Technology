@@ -8,7 +8,8 @@ import eduupm.hsaas.common.ApiFailure;
 /** Versioned manual forms retain legacy history while collecting only the current approved synthetic fields. */
 public final class RegistrationFields {
     public static final String LEGACY_VERSION = "synthetic-registration-v1";
-    public static final String VERSION = "manual-registration-v2";
+    public static final String PREVIOUS_VERSION = "manual-registration-v2";
+    public static final String VERSION = "manual-registration-v3";
     public static final String TERMS_VERSION = "penjaga-pass-terms-v1";
     public static final String TERMS_TEXT = "Saya bersetuju menjaga kad akses penjaga, menggunakannya hanya untuk lawatan yang dibenarkan, "
             + "dan memulangkannya kepada kakitangan selepas digunakan. Pengesahan kakitangan diperlukan sebelum kad dikeluarkan.";
@@ -19,8 +20,9 @@ public final class RegistrationFields {
     public static final List<String> LEGACY_FIELDS = List.of("fullName", "identificationType", "identificationNumber", "phone",
             "mrn", "wardCode", "relationship", "organisation", "company", "contactPerson", "destinationCode",
             "visitPurpose", "deliveryPurpose", "workPurpose");
-    public static final List<String> ALL_FIELDS = java.util.stream.Stream.concat(LEGACY_FIELDS.stream(),
+    public static final List<String> V2_FIELDS = java.util.stream.Stream.concat(LEGACY_FIELDS.stream(),
             java.util.stream.Stream.of("currentAddress", "patientName", "destinationCodes")).toList();
+    public static final List<String> ALL_FIELDS = java.util.stream.Stream.concat(V2_FIELDS.stream(), java.util.stream.Stream.of("bed")).toList();
     private RegistrationFields() { }
 
     /** The same definitions drive server validation and the UI metadata; fields never come from caller configuration. */
@@ -39,11 +41,20 @@ public final class RegistrationFields {
         } else if (category.equals("EXECUTIVE")) {
             result.add(field("wardCode", "Wad", "DESTINATION", 32, "REFERENCE", "", List.of()));
             result.add(field("patientName", "Nama pesakit", "TEXT", 100, "TEXT", "Gunakan nama pesakit rekaan.", List.of()));
+            result.add(field("bed", "No. katil", "TEXT", 64, "TEXT", "Masukkan nombor katil pesakit.", List.of()));
         } else {
             result.add(field("company", "Syarikat", "TEXT", 120, "TEXT", "", List.of()));
             result.add(field("destinationCodes", "Lokasi", "DESTINATIONS", 32, "REFERENCES", "Pilih satu atau lebih lokasi.", List.of()));
         }
         return List.copyOf(result);
+    }
+
+    /** Historical v2 records stay readable without requiring the newly collected Executive bed. */
+    public static List<FieldSpec> storedFields(String category, String schema) {
+        if (LEGACY_VERSION.equals(schema)) return legacyFields(category);
+        if (PREVIOUS_VERSION.equals(schema)) return fields(category).stream().filter(field -> !field.name().equals("bed")).toList();
+        if (VERSION.equals(schema)) return fields(category);
+        return List.of();
     }
 
     /** Legacy validation is retained for historical tools; fresh HTTP submission requires VERSION instead. */

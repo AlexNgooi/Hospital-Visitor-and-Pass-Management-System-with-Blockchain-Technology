@@ -24,6 +24,7 @@ public final class RegistrationPayload {
         String version = text(input.path("fieldSchemaVersion"), "fieldSchemaVersion", 64);
         // A retained legacy replay must not silently ignore new v2 properties outside its original HMAC schema.
         if (RegistrationFields.LEGACY_VERSION.equals(version)) allowed(form, new HashSet<>(RegistrationFields.LEGACY_FIELDS));
+        if (RegistrationFields.PREVIOUS_VERSION.equals(version)) allowed(form, new HashSet<>(RegistrationFields.V2_FIELDS));
         return new Parsed(input, context, category, version);
     }
 
@@ -55,7 +56,8 @@ public final class RegistrationPayload {
         boolean legacy = RegistrationFields.LEGACY_VERSION.equals(parsed.schemaVersion());
         // Existing successful v1 commands retain byte-for-byte canonical schema/order for their stored HMAC.
         if (legacy && input.has("termsAcknowledgement")) throw RegistrationFields.invalid("termsAcknowledgement");
-        for (String name : legacy ? RegistrationFields.LEGACY_FIELDS : RegistrationFields.ALL_FIELDS) {
+        boolean previous = RegistrationFields.PREVIOUS_VERSION.equals(parsed.schemaVersion());
+        for (String name : legacy ? RegistrationFields.LEGACY_FIELDS : previous ? RegistrationFields.V2_FIELDS : RegistrationFields.ALL_FIELDS) {
             if (name.equals("destinationCodes")) {
                 var value = input.path("formData").path(name);
                 if (value.isMissingNode()) form.add(RequestEncoding.Field.missing(name));
@@ -87,7 +89,7 @@ public final class RegistrationPayload {
                 fields.add(RequestEncoding.Field.object("termsAcknowledgement", List.of(acknowledged, stringField(terms, "policyVersion"))));
             }
         }
-        return RequestEncoding.encode(json, scope, "SUBMIT", "REGISTER", legacy ? 1 : 2, fields);
+        return RequestEncoding.encode(json, scope, "SUBMIT", "REGISTER", legacy ? 1 : previous ? 2 : 3, fields);
     }
 
     /** No record representation can emit raw form data into an exception or diagnostic. */

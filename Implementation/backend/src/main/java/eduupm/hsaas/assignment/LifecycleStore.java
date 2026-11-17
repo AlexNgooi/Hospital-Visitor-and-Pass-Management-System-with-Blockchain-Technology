@@ -66,8 +66,15 @@ final class LifecycleStore {
                 rs.getLong("issue_counter_id"),rs.getLong("return_counter_id"),time(rs,"issued_at"),time(rs,"due_at"),
                 rs.getString("return_rule_key"),rs.getLong("return_rule_version"),time(rs,"returned_at"),time(rs,"closed_at"),
                 rs.getString("closure_reason"),rs.getLong("version"),rs.getString("operation_origin"),rs.getString("environment"),
-                rs.getString("data_origin"),nullableId(rs,"destination_id"),rs.getString("destination_code"),rs.getString("destination_name"),
+                rs.getString("data_origin"),nullableId(rs,"destination_id"),rs.getString("destination_code"),assignmentDestinations(rs),
                 nullableId(rs,"issued_by"),nullableId(rs,"returned_by"),nullableId(rs,"closed_by"));
+    }
+    /** Registration-scoped loans expose every snapshotted location; legacy loans keep their exact old label. */
+    private String assignmentDestinations(ResultSet rs) throws SQLException {
+        if(!"REGISTRATION".equals(rs.getString("destination_scope"))) return rs.getString("destination_name");
+        var labels=jdbc.query("SELECT destination_name FROM assignment_destinations WHERE assignment_id=? ORDER BY destination_id",(row,n)->row.getString(1),rs.getString("id"));
+        if(labels.isEmpty()) throw CardRules.unavailable();
+        return String.join("; ",labels);
     }
     static String nullableId(ResultSet rs,String name) throws SQLException { return rs.getObject(name)==null?null:Long.toString(rs.getLong(name)); }
     static Instant time(ResultSet rs,String name) throws SQLException { return DatabaseTime.instant(rs.getObject(name,LocalDateTime.class)); }
@@ -78,7 +85,7 @@ final class LifecycleStore {
         return jdbc.query("SELECT c.*,d.name AS destination_label FROM cards c LEFT JOIN destinations d ON d.id=c.destination_id WHERE c.environment=? AND "+CARD_SOURCE+" ORDER BY c.enrolled_at DESC,c.id DESC LIMIT 25 OFFSET ?",
                 (rs,n)->cardView(rs),environment,page*25);
     }
-    /** Reusable safe projection works for legacy unbound stock and new manually bound stock. */
+    /** Reusable projection retains historical bindings while new manual stock is destination-free. */
     CardView cardView(ResultSet rs) throws SQLException {
         var card=cardRow(rs);
         return new CardView(card.id(),card.code(),card.uid()==null?null:"***"+card.uid().substring(Math.max(0,card.uid().length()-4)),

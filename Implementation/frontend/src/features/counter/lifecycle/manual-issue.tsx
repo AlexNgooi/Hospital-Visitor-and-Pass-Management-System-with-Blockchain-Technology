@@ -9,7 +9,7 @@ import type { Card, IssueContext, PassSelection } from "./contracts";
 import { Pager } from "./shared";
 import "./lifecycle.css";
 
-type Choice = { card: Card; destinationId: string; deadline: string; noDeadline: boolean };
+type Choice = { card: Card; deadline: string; noDeadline: boolean };
 /** Edit explicit MYT wall time regardless of the browser timezone. */
 function wallTime(instant: string, hours: number): string {
   return new Date(Date.parse(instant) + (hours + 8) * 3600000).toISOString().slice(0, 16);
@@ -51,7 +51,7 @@ export function ManualIssue({ registrationId, commands, disabled, onDone, onAcce
     if (!id) { setChoices({}); return; }
     const card = context?.cards.items.find(value => value.id === id);
     if (!context || !card) return;
-    const choice: Choice = { card, destinationId: card.destinationId ?? context.destinations[0]?.id ?? "",
+    const choice: Choice = { card,
       noDeadline: context.defaultReturnHours === null, deadline: wallTime(context.cards.serverNow, context.defaultReturnHours ?? 1) };
     setChoices(current => context.multipleActivePassesAllowed ? { ...current, [id]: choice } : { [id]: choice });
   }
@@ -61,9 +61,9 @@ export function ManualIssue({ registrationId, commands, disabled, onDone, onAcce
     if (blocked || noPassBlocked || !context || (!noPass && selected.length === 0) || commands.locked) return;
     try {
       const passes: PassSelection[] = selected.map(choice => ({ cardId: choice.card.id, expectedVersion: choice.card.version,
-        destinationId: choice.destinationId, dueAt: choice.noDeadline ? null : new Date(`${choice.deadline}:00+08:00`).toISOString() }));
-      if (passes.some(pass => !pass.destinationId || (pass.dueAt !== null && Date.parse(pass.dueAt) <= Date.now()))) {
-        setError("Choose an eligible destination and a future deadline, or select no deadline."); return;
+        dueAt: choice.noDeadline ? null : new Date(`${choice.deadline}:00+08:00`).toISOString() }));
+      if (passes.some(pass => pass.dueAt !== null && Date.parse(pass.dueAt) <= Date.now())) {
+        setError("Choose a future deadline, or select no deadline."); return;
       }
       // Only a physical issue attests handover; no pass uses its own immutable command and audit action.
       const original = noPass
@@ -93,7 +93,7 @@ export function ManualIssue({ registrationId, commands, disabled, onDone, onAcce
           <option value="">Choose a pass</option>
           <option value="NO_PASS" disabled={context.activePassCount > 0 || context.noPassRecorded}>No pass</option>
           {!context.multipleActivePassesAllowed && selected[0] && !context.cards.items.some(card => card.id === selected[0].card.id) && <option value={selected[0].card.id}>{selected[0].card.cardCode}</option>}
-          {context.cards.items.filter(card => !context.multipleActivePassesAllowed || !choices[card.id]).map(card => <option key={card.id} value={card.id} disabled={context.multipleActivePassesAllowed && selected.length >= 50}>{card.cardCode} · {card.destinationLabel ?? "Choose destination"}</option>)}
+          {context.cards.items.filter(card => !context.multipleActivePassesAllowed || !choices[card.id]).map(card => <option key={card.id} value={card.id} disabled={context.multipleActivePassesAllowed && selected.length >= 50}>{card.cardCode}</option>)}
         </select>
       </label>
       {noPass && <p className="pass-summary" role="status">No pass will be issued. This decision is saved with the registration and will not appear in Pass returns.</p>}
@@ -101,9 +101,7 @@ export function ManualIssue({ registrationId, commands, disabled, onDone, onAcce
       {!noPass && context.cards.total > 25 && <Pager page={page} total={context.cards.total} disabled={disabled || loading} change={value => { setLoading(true); setPage(value); }} />}
       {selected.map(choice => <fieldset className="pass-choice" key={choice.card.id} disabled={blocked}>
         <legend>{choice.card.cardCode} <span className="badge">Available</span></legend>
-        <label className="lc-field">Destination<select value={choice.destinationId} onChange={event => update(choice.card.id, { destinationId: event.target.value })}>
-          {context.destinations.filter(destination => choice.card.destinationId === null || destination.id === choice.card.destinationId).map(destination => <option key={destination.id} value={destination.id}>{destination.label}</option>)}
-        </select></label>
+        <p className="muted">Registered destinations: {context.destinations.map(destination => destination.label).join("; ") || "Unavailable"}</p>
         <div className="deadline-choice" role="group" aria-label={`Return deadline for ${choice.card.cardCode}`}>
           <span>Return deadline</span><div className="deadline-options">
             <Button variant="secondary" aria-pressed={choice.noDeadline} onClick={() => update(choice.card.id, { noDeadline: true })}>No deadline</Button>
@@ -111,7 +109,7 @@ export function ManualIssue({ registrationId, commands, disabled, onDone, onAcce
           </div>
         </div>
         {!choice.noDeadline && <label className="lc-field">Return deadline (MYT)<input type="datetime-local" required value={choice.deadline} onChange={event => update(choice.card.id, { deadline: event.target.value })} /></label>}
-        <p className="pass-summary">{choice.card.cardCode} → {context.destinations.find(value => value.id === choice.destinationId)?.label}<br /><small>{choice.noDeadline ? "No return deadline · Return is still required" : `Return by ${choice.deadline.replace("T", " ")} MYT`}</small></p>
+        <p className="pass-summary">{choice.card.cardCode} → {context.destinations.map(value => value.label).join("; ")}<br /><small>{choice.noDeadline ? "No return deadline · Return is still required" : `Return by ${choice.deadline.replace("T", " ")} MYT`}</small></p>
         {context.multipleActivePassesAllowed && <Button variant="ghost" onClick={() => setChoices(current => { const next = { ...current }; delete next[choice.card.id]; return next; })}>Remove {choice.card.cardCode}</Button>}
       </fieldset>)}
       <div className="pass-stock-meta"><small className="muted">Inventory checked {formatMyt(context.cards.serverNow)} MYT</small><Button variant="ghost" disabled={disabled || loading} onClick={reload}>Refresh inventory</Button></div>

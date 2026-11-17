@@ -15,3 +15,7 @@ Inputs: original M02 EntryGrant, server schema, shared ApiClient and reviewed C1
 Outputs: one minimal public reference. No pass, card, sending consent or patient record is produced.
 Boundary: drafts and feedback capabilities remain in memory. M02 guards ordinary inputs; UNKNOWN recovery lives outside its fieldset and retains its original command.
 Verification: component/transport tests, disposable MySQL/servlet and browser evidence; coordinator owns merge approval.
+
+## 2026-11-17 v3 forms
+
+Current metadata requires Executive Ward/patient name/bed. Ward/Other kind filters apply only to Executive/Penjaga; vendor/company and multiple destinations are retained. The existing server-bound Penjaga lookup and explicit failure/manual fallback remain. V3 is required for new submissions; old history/replay remains server-readable. Build/lint are separate from user-run SQL/business acceptance (NOT_RUN).

@@ -9,9 +9,10 @@ import { AdminFilterDialog } from "./filter-dialog";
 import { reportQuery } from "./report-query";
 
 const actions: Record<string, string> = {
+  REPORT_VIEWED: "Visitor report viewed",
   ADMIN_CHANGED: "Administration changed", ADMIN_BOOTSTRAPPED: "Administrator initialized", REGISTRATION_SUBMITTED: "Registration submitted", REGISTRATION_VERIFIED: "Registration approved", REGISTRATION_REJECTED: "Registration rejected", REGISTRATION_NO_PASS: "No pass recorded", REGISTRATION_REVIEW_FIELDS_VIEWED: "Registration details viewed", CARD_REGISTERED: "Pass added", CARD_RENAMED: "Pass renamed", ISSUED: "Pass issued", RETURNED: "Pass returned", OVERDUE: "Pass overdue", MARKED_LOST: "Pass marked lost", DISABLED: "Pass disabled", RESTORED: "Pass restored", CONTACT_REVEALED: "Contact details viewed", FOLLOWUP_RECORDED: "Follow-up recorded", REPORT_EXPORTED: "Report exported", PASSWORD_CHANGED: "Initial password replaced", STAFF_EMAIL_REQUESTED: "Initial password email requested",
 };
-const fields: Record<string, string> = { previousState: "Previous state", state: "State", previousVersion: "Previous version", version: "Version", origin: "Source", role: "Account type", active: "Active", code: "Code", name: "Name", setting_key: "Setting", value_int: "Value", exportKind: "Export type", rowCount: "Rows", from: "Start date", to: "End date", categoryId: "Visitor type ID", destinationId: "Destination ID", snapshotUpdatedAt: "Snapshot time" };
+const fields: Record<string, string> = { previousState: "Previous state", state: "State", previousVersion: "Previous version", version: "Version", origin: "Source", role: "Account type", active: "Active", code: "Code", name: "Name", destination_kind: "Destination type", setting_key: "Setting", value_int: "Value", exportKind: "Export type", rowCount: "Rows", from: "Start date", to: "End date", categoryId: "Visitor type ID", destinationId: "Destination ID", snapshotUpdatedAt: "Snapshot time" };
 type SafeValues = Record<string, string | number | boolean | null>;
 /** Only existing safe snapshot fields are rendered; unknown properties never become a raw JSON panel. */
 function values(input: string | null): SafeValues {

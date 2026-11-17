@@ -34,15 +34,15 @@ export function WorkspaceShell({ slots }: { slots: readonly FeatureSlot[] }) {
   // Staff queues and the four admin task surfaces use separate viewport frames; supporting pages reflow naturally.
   const queueSurface = isStaff && /^\/staff(?:\/(?:registrations|passes))?\/?$/.test(location.pathname);
   const overview = isStaff && /^\/staff\/?$/.test(location.pathname);
-  const adminTasks = !isStaff && /^\/admin\/(?:users|cards|audit)\/?$/.test(location.pathname);
+  const adminTasks = !isStaff && /^\/admin\/(?:users|cards|destinations|audit)\/?$/.test(location.pathname);
   const adminOverview = !isStaff && /^\/admin\/?$/.test(location.pathname);
   const passes = isStaff && /^\/staff\/passes\/?$/.test(location.pathname);
   const base = isStaff ? "/staff" : "/admin";
   const activeCounter = user.counterIds.includes(counter ?? "")
     ? counter
     : (user.counterIds[0] ?? null);
-  const navigation = slots.filter((slot) => slot.role === user.role && (isStaff || ["/admin/users", "/admin/cards", "/admin/audit"].includes(slot.path)))
-    .sort((a, b) => isStaff ? 0 : ["/admin/users", "/admin/cards", "/admin/audit"].indexOf(a.path) - ["/admin/users", "/admin/cards", "/admin/audit"].indexOf(b.path));
+  const navigation = slots.filter((slot) => slot.role === user.role && (isStaff || ["/admin/users", "/admin/cards", "/admin/destinations", "/admin/audit"].includes(slot.path)))
+    .sort((a, b) => isStaff ? 0 : ["/admin/users", "/admin/cards", "/admin/destinations", "/admin/audit"].indexOf(a.path) - ["/admin/users", "/admin/cards", "/admin/destinations", "/admin/audit"].indexOf(b.path));
   // Resolve header labels from the same role-filtered routes, including the staff overview and trailing slashes.
   const currentPath = location.pathname.replace(/\/+$/, "");
   const current =

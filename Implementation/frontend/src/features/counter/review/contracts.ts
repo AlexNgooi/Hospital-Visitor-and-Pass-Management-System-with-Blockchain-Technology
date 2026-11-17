@@ -41,7 +41,7 @@ const maskedIdSchema = z.string().min(3).max(80).regex(/^[A-Za-z0-9* -]+$/).refi
 /** Audited modal fields stay separate from bounded queue-name previews and masked identifier metadata. */
 export const reviewFieldsSchema = z.object({
   id: idSchema, version: versionSchema,
-  fieldSchemaVersion: z.enum(["synthetic-registration-v1", "manual-registration-v2"]),
+  fieldSchemaVersion: z.enum(["synthetic-registration-v1", "manual-registration-v2", "manual-registration-v3"]),
   fields: z.array(z.object({
     name: z.enum(["fullName", "identificationType", "identificationNumber", "phone", "mrn", "wardCode", "relationship",
       "organisation", "company", "contactPerson", "destinationCode", "visitPurpose", "deliveryPurpose", "workPurpose",

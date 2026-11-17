@@ -138,6 +138,7 @@ function RegistrationForm({ entry, port, initial, onDraft, onSubmit }: {
       // Retry metadata explicitly under the original context, with the effect's abort fence; the parent still guards availability.
       setLoading(true);setLoadError("");setLoadAttempt(attempt => attempt + 1);
     }}>Cuba semula borang</Button>}>{loadError || "Sila dapatkan bantuan di kaunter."}</StatusPanel>;
+  const selectableDestinations = schema.destinations.filter(item => !["EXECUTIVE", "PENJAGA"].includes(category) || item.kind === "WARD");
   const definitions = current.fields, visible = definitions.filter(field => step === 0 ? common.has(field.name) : step === 1 && !common.has(field.name));
   const update = (name: FieldName, value: string) => {
     setValues(previous => ({ ...previous, [name]: value }));setErrors(previous => ({ ...previous, [name]: undefined }));
@@ -157,7 +158,7 @@ function RegistrationForm({ entry, port, initial, onDraft, onSubmit }: {
       if (field.kind === "DESTINATIONS") {
         const selected = raw ? raw.split(",") : [];
         if (!selected.length || selected.length > 50 || new Set(selected).size !== selected.length
-            || selected.some(code => !schema.destinations.some(item => item.code === code))) next[field.name] = "Pilih sekurang-kurangnya satu lokasi.";
+            || selected.some(code => !selectableDestinations.some(item => item.code === code))) next[field.name] = "Pilih sekurang-kurangnya satu lokasi.";
         continue;
       }
       // Mirror the server's printable Character.isWhitespace/isSpaceChar union after rejecting original controls.
@@ -169,7 +170,7 @@ function RegistrationForm({ entry, port, initial, onDraft, onSubmit }: {
           ? /^(?:[0-9]{12}|[0-9]{6}-[0-9]{2}-[0-9]{4})$/.test(normalized) : /^[A-Za-z0-9][A-Za-z0-9-]{4,29}$/.test(normalized)))
         && (field.rule !== "PHONE" || /^\+[0-9]{8,15}$/.test(normalized))
         && (field.rule !== "ENUM" || field.options.some(option => option.value === normalized))
-        && (field.kind !== "DESTINATION" || schema.destinations.some(option => option.code === normalized));
+        && (field.kind !== "DESTINATION" || selectableDestinations.some(option => option.code === normalized));
       if (!valid) next[field.name] = "Semak maklumat ini.";
     }
     return next;
@@ -237,7 +238,7 @@ function RegistrationForm({ entry, port, initial, onDraft, onSubmit }: {
       field.kind === "DESTINATIONS" ? <fieldset className="registration-locations" key={field.name} id={"registration-" + field.name} tabIndex={-1}
         aria-describedby={errors[field.name] ? "registration-" + field.name + "-error" : undefined}>
         <legend>{field.label}</legend><p className="muted">{field.hint}</p>
-        {schema.destinations.map(location => {
+        {selectableDestinations.map(location => {
           const selected = (values.destinationCodes ?? "").split(",").filter(Boolean);
           return <label key={location.code}><input type="checkbox" checked={selected.includes(location.code)}
             onChange={event => update("destinationCodes", (event.target.checked ? [...selected, location.code] : selected.filter(code => code !== location.code)).join(","))} />{location.label}</label>;
@@ -249,7 +250,7 @@ function RegistrationForm({ entry, port, initial, onDraft, onSubmit }: {
           aria-invalid={Boolean(errors[field.name])} aria-describedby={errors[field.name] ? "registration-" + field.name + "-error" : undefined}
           onChange={event => update(field.name, event.target.value)}>
           {field.name !== "identificationType" && <option value="">Pilih {field.label.toLowerCase()}</option>}
-          {(field.kind === "DESTINATION" ? schema.destinations.map(item => ({value:item.code,label:item.label})) : field.options)
+          {(field.kind === "DESTINATION" ? selectableDestinations.map(item => ({value:item.code,label:item.label})) : field.options)
             .map(option => <option key={option.value} value={option.value}>{option.label}</option>)}</select>
         {errors[field.name] && <span className="feedback-sr-only" id={"registration-" + field.name + "-error"}>{errors[field.name]}</span>}</div>
       : <InputField key={field.name} id={"registration-" + field.name} label={field.label} value={values[field.name] ?? ""}

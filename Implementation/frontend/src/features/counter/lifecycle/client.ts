@@ -23,7 +23,7 @@ export const lifecycleApi = {
   cancel: (admin: boolean, id: string) => apiClient.command(`/api/${admin ? "admin" : "staff"}/scan-jobs/${id}/cancel`, {}, safeResultSchema, { authRequired: true }),
   references: (signal?: AbortSignal) => apiClient.get("/api/admin/cards/references", inventoryReferencesSchema, { signal, authRequired: true }),
   issueContext: (id: string, page: number, signal?: AbortSignal) => apiClient.get(`/api/staff/registrations/${id}/issue-context?page=${page}`, issueContextSchema, { signal, authRequired: true }),
-  enroll: (cardCode: string, categoryCode: string, destinationId: string) => apiClient.command("/api/admin/cards", { cardCode, categoryCode, destinationId }, safeResultSchema, { authRequired: true }),
+  enroll: (cardCode: string, categoryCode: string) => apiClient.command("/api/admin/cards", { cardCode, categoryCode }, safeResultSchema, { authRequired: true }),
   issue: (registrationId: string, expectedVersion: number, passes: PassSelection[]) => apiClient.command("/api/staff/card-assignments", { registrationId, expectedVersion, passes, handoverConfirmed: true }, safeResultSchema, { authRequired: true }),
   // The final modal action confirms both staff comparison and physical handover in one atomic command.
   approveAndIssue: (registrationId: string, expectedVersion: number, passes: PassSelection[]) => apiClient.command("/api/staff/card-assignments/approve-and-issue", { registrationId, expectedVersion, passes, reviewConfirmed: true, handoverConfirmed: true }, safeResultSchema, { authRequired: true }),

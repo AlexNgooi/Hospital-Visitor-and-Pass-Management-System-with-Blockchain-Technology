@@ -42,8 +42,9 @@ async function configure() {
       || config.user !== 'hsaas_manual_native' || typeof config.password !== 'string' || !config.password || config.password.startsWith('REPLACE_')
       || ![config.mysql, config.mysqldump].every(value => typeof value === 'string' && value.length)) throw new Error('Invalid configuration');
 }
-function sqlArgs() {
-  return ['--no-defaults', '--protocol=TCP', '--host=127.0.0.1', `--port=${config.port}`, `--user=${config.user}`, '--connect-timeout=3'];
+function sqlArgs(dump = false) {
+  // mysql accepts connect-timeout; mysqldump 8.0 rejects it before producing a backup.
+  return ['--no-defaults', '--protocol=TCP', '--host=127.0.0.1', `--port=${config.port}`, `--user=${config.user}`, ...(dump ? [] : ['--connect-timeout=3'])];
 }
 async function sql(query) {
   return exec(config.mysql, [...sqlArgs(), '--batch', '--skip-column-names', database, '--execute', query],
@@ -98,7 +99,7 @@ async function transfer(command, args, filename, restore = false) {
 async function backup() {
   const directory = resolve(backups, new Date().toISOString().replaceAll(/[:.]/g, '-') + '-' + randomBytes(3).toString('hex'));
   await mkdir(directory, { recursive: true });
-  await transfer(config.mysqldump, [...sqlArgs(), '--single-transaction', '--set-gtid-purged=OFF', '--no-tablespaces', database], resolve(directory, 'database.sql'));
+  await transfer(config.mysqldump, [...sqlArgs(true), '--single-transaction', '--set-gtid-purged=OFF', '--no-tablespaces', database], resolve(directory, 'database.sql'));
   await writeFile(resolve(directory, 'keys.json'), JSON.stringify(keys), { mode: 0o600 });
   await writeFile(resolve(directory, 'complete.json'), JSON.stringify({ owner, createdAt: new Date().toISOString() }), { mode: 0o600 });
   return directory;

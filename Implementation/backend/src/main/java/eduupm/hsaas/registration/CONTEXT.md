@@ -19,3 +19,7 @@ Current staff pass-list/history exception: RegistrationLifecyclePort.passVisitor
 - Outputs: module source/tests and [M03 handoff](../../../../../../../docs/evidence/modules/M03/HANDOFF.md). Actual V5 is implemented under the approved shared-file exception and awaits final coordinator acceptance; V1–V4 stay immutable.
 - Verification: explicit native test schemas and user-run actual application acceptance; see ../../../../../../LOCAL_TESTING.md and current runbooks. Never use application schema credentials for tests.
 - Authorization: user replied “继续” in M03 on 2026-10-09 after the existing module permission request. Assistant directly implements/tests with English comments in the isolated codex/hsaas-m03-visitor-registration branch; coordinator reviews/merges.
+
+## 2026-11-17 registration destinations (supersedes current v2-only statements)
+
+Fresh forms use v3: Executive requires Ward, patient name and bed. Penjaga retains trusted MRN/mock/manual-fallback behavior and Ward-only selection; Vendor/Contractor retain company/multiple destinations without added verification. V1/v2 history and successful canonical replay bytes remain compatible. V11 captures registration destination code/name; old backfill reflects migration-time labels. RegistrationReportingPort supplies current-ADMIN, environment-scoped, name-only batches for explicit audited personal reports, excluding identity/contact/patient fields. New source does not run without coordinated V11. SQL/browser/business acceptance NOT_RUN; see docs/runbooks/MANUAL_DESTINATIONS.md from Implementation.

@@ -131,21 +131,18 @@ final class ManualLifecycle {
         if(!assignment.environment().equals(environment) || !Set.of("SIMULATED","MANUAL").contains(assignment.origin())) throw CardRules.unavailable();
     }
 
-    /** Enrollment locks reference rows in stable category/destination order; ADMIN never acquires staff capabilities. */
+    /** Enrollment locks its category only; physical stock has no destination and ADMIN acquires no staff capability. */
     private SafeResult enroll(ManualInput input,long actor,Instant now) {
         String category=input.text("categoryCode");
         String code=PassNaming.canonical(category,input.text("cardCode"));
         var categories=store.jdbc.query("SELECT id FROM visitor_categories WHERE code=? AND active=TRUE FOR SHARE",(rs,n)->rs.getLong(1),category);
         CardRules.require(!categories.isEmpty(),"CARD_CATEGORY_UNAVAILABLE");
-        long destination=LifecycleInput.decimal(input.text("destinationId"));
-        var destinations=store.jdbc.query("SELECT id FROM destinations WHERE id=? AND active=TRUE FOR SHARE",(rs,n)->rs.getLong(1),destination);
-        CardRules.require(!destinations.isEmpty(),"CARD_DESTINATION_MISMATCH");
         // The global unique key remains the concurrent fence; this read supplies a clear ordinary duplicate error.
         Long duplicate=store.jdbc.queryForObject("SELECT COUNT(*) FROM cards WHERE card_code=?",Long.class,code);
         CardRules.require(duplicate!=null && duplicate==0,"CARD_ALREADY_ENROLLED");
         String id=uuid();
-        store.jdbc.update("INSERT INTO cards(id,card_code,category_id,category_code,status,enrolled_by,enrolled_at,data_origin,environment,enrollment_method,destination_id) VALUES(?,?,?,?,'AVAILABLE',?,?,'SYNTHETIC',?,'MANUAL',?)",
-                id,code,categories.getFirst(),category,actor,DatabaseTime.sql(now),environment,destination);
+        store.jdbc.update("INSERT INTO cards(id,card_code,category_id,category_code,status,enrolled_by,enrolled_at,data_origin,environment,enrollment_method,destination_id) VALUES(?,?,?,?,'AVAILABLE',?,?,'SYNTHETIC',?,'MANUAL',NULL)",
+                id,code,categories.getFirst(),category,actor,DatabaseTime.sql(now),environment);
         event("CARD_REGISTERED",id,null,null,actor,null,"AVAILABLE",null,0L,null,now);
         return new SafeResult(id,code,"AVAILABLE",0);
     }
@@ -169,15 +166,17 @@ final class ManualLifecycle {
             var card=cards.get(selection.id()); CardRules.version(card.version(),selection.version());
             CardRules.require(card.status().equals("AVAILABLE") && card.categoryId()==LifecycleInput.decimal(root.categoryId())
                     && card.category().equals(root.categoryCode()) && store.activeForCard(card.id())==null,"CARD_CATEGORY_MISMATCH");
-            var destination=root.destinations().stream().filter(value->value.id().equals(selection.destination())).findFirst().orElseThrow(CardRules::unavailable);
-            Long bound=store.jdbc.queryForObject("SELECT destination_id FROM cards WHERE id=?",Long.class,card.id());
-            CardRules.require(bound==null || bound==LifecycleInput.decimal(destination.id()),"CARD_DESTINATION_MISMATCH");
+            // Every new loan inherits the complete registered set; stock has no destination restriction.
+            CardRules.require(!root.destinations().isEmpty(),"CARD_DESTINATION_MISMATCH");
+            if(selection.destination()!=null) CardRules.require(root.destinations().stream().anyMatch(value->value.id().equals(selection.destination())),"CARD_DESTINATION_MISMATCH");
             CardRules.require(selection.due()==null || selection.due().isAfter(now),"DEADLINE_INVALID");
             String id=uuid(),reference="P-DEMO-"+uuid().replace("-","");
-            store.jdbc.update("INSERT INTO card_assignments(id,pass_reference,card_id,registration_id,issue_counter_id,return_counter_id,issued_by,issued_at,due_at,return_rule_key,return_rule_version,handover_confirmed_at,operation_origin,environment,category_code,data_origin,destination_id,destination_code,destination_name) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,'MANUAL',?,?,'SYNTHETIC',?,?,?)",
+            store.jdbc.update("INSERT INTO card_assignments(id,pass_reference,card_id,registration_id,issue_counter_id,return_counter_id,issued_by,issued_at,due_at,return_rule_key,return_rule_version,handover_confirmed_at,operation_origin,environment,category_code,data_origin,destination_scope) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,'MANUAL',?,?,'SYNTHETIC','REGISTRATION')",
                     id,reference,card.id(),registration,LifecycleInput.decimal(root.coordinates().counterId()),LifecycleInput.decimal(root.coordinates().counterId()),actor,
                     DatabaseTime.sql(now),selection.due()==null?null:DatabaseTime.sql(selection.due()),rule.key(),rule.version(),DatabaseTime.sql(now),environment,
-                    root.categoryCode(),LifecycleInput.decimal(destination.id()),destination.code(),destination.label());
+                    root.categoryCode());
+            for(var destination:root.destinations()) store.jdbc.update("INSERT INTO assignment_destinations(assignment_id,destination_id,destination_code,destination_name) VALUES(?,?,?,?)",
+                    id,LifecycleInput.decimal(destination.id()),destination.code(),destination.label());
             service.changeCard(card,"ISSUED");
             event("ISSUED",card.id(),id,registration,actor,card.status(),"ISSUED",card.version(),card.version()+1,null,now);
         }

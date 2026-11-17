@@ -49,6 +49,8 @@ public class LocalAuditPort {
         CONTACT_REVEALED,FOLLOWUP_RECORDED,REPORT_EXPORTED
         // R01 explicit staff comparison is audited without storing any revealed field in this event.
         ,REGISTRATION_REVIEW_FIELDS_VIEWED
+        // Explicit administrator name-only report reads never retain the viewed personal values.
+        ,REPORT_VIEWED
     }
     /** The immutable safe snapshot deliberately has no generic payload or note extension. */
     public record Snapshot(String previousState,String state,Long previousVersion,Long version,String origin) { }

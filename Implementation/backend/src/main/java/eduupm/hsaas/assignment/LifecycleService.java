@@ -345,15 +345,8 @@ public final class LifecycleService {
             return new InventoryReferences(
                     store.jdbc.query("SELECT id,code,name FROM visitor_categories WHERE active=TRUE AND code IN ('EXECUTIVE','PENJAGA','VENDOR','CONTRACTOR') ORDER BY id",
                             (rs,n)->new Reference(Long.toString(rs.getLong(1)),rs.getString(2),rs.getString(3))),
-                    boundedDestinations());
+                    List.of());
         });
-    }
-    /** Reject an oversized reference catalogue rather than send an unbounded inventory form payload. */
-    private List<Reference> boundedDestinations() {
-        var values=store.jdbc.query("SELECT id,code,name FROM destinations WHERE active=TRUE ORDER BY id LIMIT 501",
-                (rs,n)->new Reference(Long.toString(rs.getLong(1)),rs.getString(2),rs.getString(3)));
-        if(values.size()>500) throw new ApiFailure(503,"SERVICE_UNAVAILABLE","The destination catalogue exceeds this form's supported size.");
-        return values;
     }
 
     /** The root is the only eligibility reader; list availability is advisory and the write locks/revalidates it. */
@@ -372,8 +365,7 @@ public final class LifecycleService {
             if(rules.isEmpty()) throw new ApiFailure(503,"SERVICE_UNAVAILABLE","Return defaults are unavailable.");
             var rule=rules.getFirst(); Instant now=clock.instant();
             var args=new ArrayList<Object>(); args.add(properties.environment()); args.add(LifecycleInput.decimal(root.categoryId()));
-            String destinations=eligible.isEmpty()?"FALSE":("(c.destination_id IS NULL OR c.destination_id IN ("+String.join(",",Collections.nCopies(eligible.size(),"?")) +"))");
-            for(var destination:eligible) args.add(LifecycleInput.decimal(destination.id()));
+            String destinations=eligible.isEmpty()?"FALSE":"TRUE";
             String filter=" FROM cards c LEFT JOIN destinations d ON d.id=c.destination_id WHERE c.environment=? AND c.category_id=? AND c.status='AVAILABLE' AND "+CARD_SOURCE+" AND "+destinations;
             long total=Objects.requireNonNull(store.jdbc.queryForObject("SELECT COUNT(*)"+filter,Long.class,args.toArray()));
             args.add(page*25);
@@ -404,7 +396,7 @@ public final class LifecycleService {
             var args=new ArrayList<Object>();args.add(properties.environment());
             if(!search.isBlank()){scope+=" AND LOCATE(LOWER(?),LOWER(c.card_code))>0";args.add(search.strip());}
             if(!category.isEmpty()){scope+=" AND c.category_code=?";args.add(category);}
-            if(destinationId!=null){scope+=" AND c.destination_id=?";args.add(destinationId);}
+            if(destinationId!=null)throw new ApiFailure(400,"VALIDATION_FAILED","Physical passes no longer have a destination filter.");
             var counts=new java.util.LinkedHashMap<String,Long>();for(String key:List.of("AVAILABLE","ISSUED","OVERDUE","LOST","DISABLED"))counts.put(key,0L);
             store.jdbc.query("SELECT c.status,COUNT(*)"+scope+" GROUP BY c.status",(org.springframework.jdbc.core.RowCallbackHandler)rs->counts.put(rs.getString(1),rs.getLong(2)),args.toArray());
             long total=state.isEmpty()?counts.values().stream().mapToLong(Long::longValue).sum():counts.get(state);

@@ -2,8 +2,8 @@
   "openapi": "3.1.0",
   "info": {
     "title": "HSAAS administration redesign increment",
-    "version": "2026-11-16",
-    "description": "Current authorized increment for codex/admin-management-redesign. Supplements the frozen foundation mirror; does not claim complete application OpenAPI coverage. ADMIN does not inherit counter staff authority. All writes use same-origin CSRF. Visitor management is excluded."
+    "version": "2026-11-17",
+    "description": "Current authorized increment for codex/admin-management-redesign. Supplements the frozen foundation mirror; does not claim complete application OpenAPI coverage. ADMIN does not inherit counter staff authority. All writes use same-origin CSRF. Visitor management is excluded. V11 adds Ward/Other destinations, unbound manual stock, registration-scoped loans and explicitly audited visitor-name report views/exports. Dynamic visitor-type/field management remains excluded."
   },
   "servers": [
     {
@@ -339,7 +339,7 @@
     },
     "/api/admin/cards": {
       "get": {
-        "summary": "Search complete authorized inventory; summary counts ignore the status filter but honor search/category/destination.",
+        "summary": "Search inventory by pass code / visitor type / status. Physical stock has no destination restriction; summary ignores status.",
         "security": [
           {
             "sessionCookie": []
@@ -404,14 +404,6 @@
             }
           },
           {
-            "name": "destination",
-            "in": "query",
-            "schema": {
-              "type": "string",
-              "pattern": "^[1-9][0-9]{0,18}$"
-            }
-          },
-          {
             "name": "status",
             "in": "query",
             "schema": {
@@ -430,7 +422,7 @@
     },
     "/api/admin/reports/compiled-exports": {
       "post": {
-        "summary": "Audit and export all matching registration/pass/metric rows in one formula-safe masked CSV, or reject without a partial download. Maximum 10,000 total rows and bounded 1 MiB JSON. Read-committed queries do not reconstruct historical as-of state.",
+        "summary": "Compatibility endpoint now exports one pass-borrowing CSV with visitor names, filtered by issue time; no mixed REGISTRATION/PASS/METRIC rows.",
         "security": [
           {
             "sessionCookie": [],
@@ -593,6 +585,315 @@
             }
           }
         }
+      }
+    },
+    "/api/admin/destinations": {
+      "get": {
+        "summary": "All destinations, including inactive historical references.",
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Current authorized result. No-store. SQL and business acceptance are separate from compilation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Destination"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid shape or reference"
+          },
+          "401": {
+            "description": "Authentication required"
+          },
+          "403": {
+            "description": "Current ADMIN authority / CSRF required"
+          },
+          "409": {
+            "description": "Version conflict"
+          },
+          "422": {
+            "description": "Complete export exceeds row or escaped-response bound"
+          }
+        }
+      },
+      "post": {
+        "summary": "Add a Ward or Other destination; immutable code.",
+        "security": [
+          {
+            "sessionCookie": [],
+            "csrfHeader": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Current authorized result. No-store. SQL and business acceptance are separate from compilation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Saved"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid shape or reference"
+          },
+          "401": {
+            "description": "Authentication required"
+          },
+          "403": {
+            "description": "Current ADMIN authority / CSRF required"
+          },
+          "409": {
+            "description": "Version conflict"
+          },
+          "422": {
+            "description": "Complete export exceeds row or escaped-response bound"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DestinationCreate"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/admin/destinations/{id}": {
+      "patch": {
+        "summary": "Versioned name/type/status change; no deletion or historical snapshot rewrite.",
+        "security": [
+          {
+            "sessionCookie": [],
+            "csrfHeader": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Current authorized result. No-store. SQL and business acceptance are separate from compilation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Saved"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid shape or reference"
+          },
+          "401": {
+            "description": "Authentication required"
+          },
+          "403": {
+            "description": "Current ADMIN authority / CSRF required"
+          },
+          "409": {
+            "description": "Version conflict"
+          },
+          "422": {
+            "description": "Complete export exceeds row or escaped-response bound"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DestinationChange"
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[1-9][0-9]{0,18}$"
+            }
+          }
+        ]
+      }
+    },
+    "/api/admin/reports/tables": {
+      "post": {
+        "summary": "Audited visitor-name views; 50 rows per page. Registrations use submission time, loans use issue time, activities use event time. No IC/contact/patient fields.",
+        "security": [
+          {
+            "sessionCookie": [],
+            "csrfHeader": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Current authorized result. No-store. SQL and business acceptance are separate from compilation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VisitorReportTable"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid shape or reference"
+          },
+          "401": {
+            "description": "Authentication required"
+          },
+          "403": {
+            "description": "Current ADMIN authority / CSRF required"
+          },
+          "409": {
+            "description": "Version conflict"
+          },
+          "422": {
+            "description": "Complete export exceeds row or escaped-response bound"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/VisitorReportRequest"
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "in": "query",
+            "name": "from",
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          },
+          {
+            "in": "query",
+            "name": "to",
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          },
+          {
+            "in": "query",
+            "name": "categoryId",
+            "schema": {
+              "type": "string",
+              "pattern": "^[1-9][0-9]{0,18}$"
+            }
+          },
+          {
+            "in": "query",
+            "name": "destinationId",
+            "schema": {
+              "type": "string",
+              "pattern": "^[1-9][0-9]{0,18}$"
+            }
+          }
+        ]
+      }
+    },
+    "/api/admin/reports/table-exports": {
+      "post": {
+        "summary": "One report grain per CSV, full matching result or error (10000 rows / bounded 1 MiB JSON), audited before response. No automatic retry.",
+        "security": [
+          {
+            "sessionCookie": [],
+            "csrfHeader": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Current authorized result. No-store. SQL and business acceptance are separate from compilation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Export"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid shape or reference"
+          },
+          "401": {
+            "description": "Authentication required"
+          },
+          "403": {
+            "description": "Current ADMIN authority / CSRF required"
+          },
+          "409": {
+            "description": "Version conflict"
+          },
+          "422": {
+            "description": "Complete export exceeds row or escaped-response bound"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/VisitorReportRequest"
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "in": "query",
+            "name": "from",
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          },
+          {
+            "in": "query",
+            "name": "to",
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          },
+          {
+            "in": "query",
+            "name": "categoryId",
+            "schema": {
+              "type": "string",
+              "pattern": "^[1-9][0-9]{0,18}$"
+            }
+          },
+          {
+            "in": "query",
+            "name": "destinationId",
+            "schema": {
+              "type": "string",
+              "pattern": "^[1-9][0-9]{0,18}$"
+            }
+          }
+        ]
       }
     }
   },
@@ -1119,6 +1420,222 @@
           "items",
           "serverNow",
           "summary"
+        ]
+      },
+      "Destination": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[1-9][0-9]{0,18}$"
+          },
+          "code": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "active": {
+            "type": "boolean"
+          },
+          "version": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "WARD",
+              "OTHER"
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "code",
+          "name",
+          "active",
+          "version",
+          "kind"
+        ]
+      },
+      "DestinationCreate": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "code": {
+            "type": "string",
+            "pattern": "^[A-Z][A-Z0-9_-]{0,31}$"
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 120
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "WARD",
+              "OTHER"
+            ]
+          },
+          "reason": {
+            "type": "string",
+            "enum": [
+              "POLICY_UPDATE",
+              "STAFF_ONBOARDING",
+              "ACCESS_REVIEW",
+              "REFERENCE_CORRECTION",
+              "OPERATIONS_CHANGE"
+            ]
+          }
+        },
+        "required": [
+          "code",
+          "name",
+          "kind",
+          "reason"
+        ]
+      },
+      "DestinationChange": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 120
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "WARD",
+              "OTHER"
+            ]
+          },
+          "reason": {
+            "type": "string",
+            "enum": [
+              "POLICY_UPDATE",
+              "STAFF_ONBOARDING",
+              "ACCESS_REVIEW",
+              "REFERENCE_CORRECTION",
+              "OPERATIONS_CHANGE"
+            ]
+          },
+          "version": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "active": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "name",
+          "kind",
+          "reason",
+          "version",
+          "active"
+        ]
+      },
+      "VisitorReportRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": [
+              "REGISTRATIONS",
+              "PASSES",
+              "ACTIVITIES",
+              "SUMMARY"
+            ]
+          },
+          "page": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 1000
+          },
+          "registrationId": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "pattern": "^[1-9][0-9]{0,18}$",
+            "description": "Only ACTIVITIES views accept this; a selected timeline ignores period dates. Exports require null and page 0."
+          }
+        },
+        "required": [
+          "kind",
+          "page",
+          "registrationId"
+        ]
+      },
+      "VisitorReportTable": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": [
+              "REGISTRATIONS",
+              "PASSES",
+              "ACTIVITIES",
+              "SUMMARY"
+            ]
+          },
+          "columns": {
+            "type": "array",
+            "maxItems": 20,
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "key": {
+                  "type": "string"
+                },
+                "label": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "key",
+                "label"
+              ]
+            }
+          },
+          "rows": {
+            "type": "array",
+            "maxItems": 50,
+            "items": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "string",
+                "maxLength": 12200
+              }
+            }
+          },
+          "more": {
+            "type": "boolean"
+          },
+          "page": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "serverUpdatedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "kind",
+          "columns",
+          "rows",
+          "more",
+          "page",
+          "serverUpdatedAt"
         ]
       }
     }

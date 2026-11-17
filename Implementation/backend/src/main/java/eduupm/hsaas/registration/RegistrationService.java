@@ -53,7 +53,7 @@ public final class RegistrationService {
                             RegistrationFields.fields(category.code()))).toList();
             if (categories.isEmpty()) { throw RegistrationFields.invalid("categoryCode"); }
             var destinations = store.destinations().stream()
-                    .map(destination -> new DestinationOption(destination.code(), RegistrationMasking.destination(destination.label()))).toList();
+                    .map(destination -> new DestinationOption(destination.code(), RegistrationMasking.destination(destination.label()), destination.kind())).toList();
             return new SchemaReply(context, RegistrationFields.VERSION, "SYNTHETIC", "NOT_ENABLED",
                     new PrivacyPolicy(RegistrationFields.PRIVACY_VERSION, RegistrationFields.PRIVACY_TEXT), categories, destinations,
                     new PrivacyPolicy(RegistrationFields.TERMS_VERSION, RegistrationFields.TERMS_TEXT));
@@ -81,10 +81,11 @@ public final class RegistrationService {
                 return new FeedbackReply(lookup.outcome() == HospitalVerificationPort.Outcome.MATCH ? "UNAVAILABLE" : lookup.outcome().name(),
                         "mock", "SYNTHETIC", null, null, null);
             var patient = lookup.patient();
-            var destinations = store.destinations().stream().filter(value -> value.code().equals(patient.wardCode())).toList();
+            var destinations = store.destinations().stream().filter(value -> value.code().equals(patient.wardCode()) && value.kind().equals("WARD")).toList();
             // A fixture never reassigns a patient to an unrelated active location when its ward is disabled/missing.
             if (destinations.isEmpty()) return new FeedbackReply("UNAVAILABLE", "mock", "SYNTHETIC", null, null, null);
             var destination = store.destination(patient.wardCode(), "wardCode");
+            if (!destination.kind().equals("WARD")) return new FeedbackReply("UNAVAILABLE", "mock", "SYNTHETIC", null, null, null);
             String name = RegistrationFields.normalized(patient.patientName(), 100, "patient");
             String bed = patient.bed() == null ? null : RegistrationFields.normalized(patient.bed(), 64, "patient");
             byte[] bytes = new byte[32]; random.nextBytes(bytes);
@@ -131,6 +132,8 @@ public final class RegistrationService {
                 } else destinationCodes.add((String) form.get("wardCode"));
                 // Stable catalogue lock ordering prevents overlapping multi-location submissions taking opposite locks.
                 var destinations = store.resolveDestinations(destinationCodes);
+                if ((penjaga || category.code().equals("EXECUTIVE")) && destinations.stream().anyMatch(value -> !value.kind().equals("WARD")))
+                    throw RegistrationFields.invalid("formData.wardCode");
                 var destination = destinations.stream().filter(value -> value.code().equals(destinationCodes.getFirst())).findFirst().orElseThrow();
                 var privacy = parsed.input().path("privacyAcknowledgement");
                 if (!privacy.path("acknowledged").isBoolean() || !privacy.path("acknowledged").asBoolean()) {
@@ -244,7 +247,7 @@ public final class RegistrationService {
     }
     public record PrivacyPolicy(String policyVersion, String text) { }
     public record CategorySchema(String id, String code, String label, List<RegistrationFields.FieldSpec> fields) { }
-    public record DestinationOption(String code, String label) { }
+    public record DestinationOption(String code, String label, String kind) { }
     public record SchemaReply(FormContext formContext, String fieldSchemaVersion, String source, String notificationStatus,
             PrivacyPolicy privacy, List<CategorySchema> categories, List<DestinationOption> destinations, PrivacyPolicy terms) { }
     private record FeedbackRecord(String scope, String grant, long version, byte[] fingerprint, String keyVersion, long ward,

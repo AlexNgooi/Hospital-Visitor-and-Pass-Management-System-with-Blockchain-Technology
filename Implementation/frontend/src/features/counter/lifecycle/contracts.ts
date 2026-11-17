@@ -18,7 +18,7 @@ export const cardSchema = z.object({
   status: z.enum(["AVAILABLE", "ISSUED", "OVERDUE", "LOST", "DISABLED"]), version, source, environment,
   destinationId: decimal.nullable(), destinationLabel: label.nullable(), enrollmentMethod: z.enum(["SCAN", "MANUAL"]),
 }).strict().refine(card => card.enrollmentMethod === "MANUAL"
-  ? card.source === "SYNTHETIC" && card.maskedUid === null && card.destinationId !== null && card.destinationLabel !== null
+  ? card.source === "SYNTHETIC" && card.maskedUid === null
   : card.source === "SIMULATED" && card.maskedUid !== null, "Inventory method and provenance must agree");
 export const assignmentSchema = z.object({
   id: uuid, passReference: z.string().regex(/^P-DEMO-[a-f0-9]{32}$/), cardId: uuid, cardCode: label,
@@ -26,10 +26,10 @@ export const assignmentSchema = z.object({
   issuedAt: utc, dueAt: utc.nullable(), returnRuleKey: z.string().regex(/^return_hours_(EXECUTIVE|PENJAGA|VENDOR|CONTRACTOR)$/),
   returnRuleVersion: version, returnedAt: utc.nullable(), closedAt: utc.nullable(), closureReason: z.enum(["RETURNED", "LOST"]).nullable(),
   version, operationOrigin: z.enum(["SIMULATED", "MANUAL"]), environment, dataSource: source,
-  destinationId: decimal.nullable(), destinationCode: label.nullable(), destinationLabel: label.nullable(),
+  destinationId: decimal.nullable(), destinationCode: label.nullable(), destinationLabel: z.string().min(1).max(12200).nullable(),
   issuedBy: decimal, returnedBy: decimal.nullable(), closedBy: decimal.nullable(),
 }).strict().refine(pass => (pass.operationOrigin === "MANUAL"
-  ? pass.dataSource === "SYNTHETIC" && pass.destinationId !== null && pass.destinationCode !== null && pass.destinationLabel !== null
+  ? pass.dataSource === "SYNTHETIC" && pass.destinationLabel !== null
   : pass.dataSource === "SIMULATED") && (pass.status !== "OVERDUE" || pass.dueAt !== null), "Pass method, provenance and deadline must agree");
 export const pageSchema = <T extends z.ZodType>(item: T) => z.object({
   items: z.array(item).max(25), total: version, page: version, pageSize: z.literal(25), serverNow: utc,
@@ -72,7 +72,7 @@ export const issueContextSchema = z.object({
 }).strict();
 export type IssueContext = z.infer<typeof issueContextSchema>;
 export type InventoryReferences = z.infer<typeof inventoryReferencesSchema>;
-export type PassSelection = { cardId: string; expectedVersion: number; destinationId: string; dueAt: string | null };
+export type PassSelection = { cardId: string; expectedVersion: number; dueAt: string | null };
 
 /** Staff scrolling rows add only a bounded visitor label and category to the existing safe assignment projection. */
 export const passRowSchema = z.object({ assignment: assignmentSchema, visitorName: label.refine(value => Array.from(value).length <= 13), categoryCode: category }).strict();

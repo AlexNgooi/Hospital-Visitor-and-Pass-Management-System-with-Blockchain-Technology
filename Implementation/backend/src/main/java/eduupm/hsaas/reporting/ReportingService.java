@@ -47,7 +47,7 @@ public class ReportingService {
             add(sql,args,"noDeadline","SELECT COUNT(*)"+assignments+"a.closed_at IS NULL AND a.due_at IS NULL"+assignmentScope(filter),assignmentArgs(filter,false));
             var dueArgs=new ArrayList<Object>();dueArgs.add(DatabaseTime.sql(now));dueArgs.addAll(assignmentArgs(filter,false));
             add(sql,args,"overdue","SELECT COUNT(*)"+assignments+"a.closed_at IS NULL AND a.due_at IS NOT NULL AND a.due_at<=?"+assignmentScope(filter),dueArgs);
-            // Inventory intentionally ignores the selected assignment destination, including destination-bound manual cards.
+            // Inventory intentionally ignores registration destinations; physical stock is not destination-bound.
             String cardScope=" AND environment=? AND ((enrollment_method='SCAN' AND data_origin='SIMULATED') OR (enrollment_method='MANUAL' AND data_origin='SYNTHETIC'))"+(filter.categoryId()==null?"":" AND category_id=?");
             var cardArgs=new ArrayList<Object>();cardArgs.add(environment);if(filter.categoryId()!=null)cardArgs.add(filter.categoryId());
             add(sql,args,"lostCards","SELECT COUNT(*) FROM cards WHERE status='LOST'"+cardScope,cardArgs);
@@ -143,7 +143,7 @@ public class ReportingService {
     /** Correlated JSON aggregation avoids count fan-out and GROUP_CONCAT's silent label truncation. No form_data is read. */
     private List<ReportRow> rows(ReportFilter filter,int limit){
         var args=registrationArgs(filter,true);args.add(limit);
-        return jdbc.query("SELECT r.public_reference,r.category_code,(SELECT JSON_ARRAYAGG(d.name) FROM registration_destinations rd JOIN destinations d ON d.id=rd.destination_id WHERE rd.registration_id=r.id) requested_destinations,r.status,r.submitted_at FROM visitor_registrations r WHERE r.submitted_at>=? AND r.submitted_at<?"+registrationScope(filter)+" ORDER BY r.submitted_at,r.id LIMIT ?",
+        return jdbc.query("SELECT r.public_reference,r.category_code,(SELECT JSON_ARRAYAGG(rd.destination_name) FROM registration_destinations rd JOIN destinations d ON d.id=rd.destination_id WHERE rd.registration_id=r.id) requested_destinations,r.status,r.submitted_at FROM visitor_registrations r WHERE r.submitted_at>=? AND r.submitted_at<?"+registrationScope(filter)+" ORDER BY r.submitted_at,r.id LIMIT ?",
             (rs,n)->new ReportRow(rs.getString(1),"***",rs.getString(2),destinationLabels(rs.getString(3)),rs.getString(4),DatabaseTime.instant(rs.getObject(5,LocalDateTime.class))),args.toArray());
     }
 
@@ -151,9 +151,9 @@ public class ReportingService {
     private List<PassReportRow> passRows(ReportFilter filter,int limit,Instant now){
         var args=new ArrayList<Object>();args.add(DatabaseTime.sql(now));
         for(int i=0;i<3;i++){args.add(filter.start());args.add(filter.end());}args.addAll(assignmentArgs(filter,false));args.add(limit);
-        String destination="CASE WHEN a.operation_origin='SIMULATED' AND a.destination_id IS NULL THEN legacy.name ELSE a.destination_name END";
-        return jdbc.query("SELECT r.public_reference,a.pass_reference,c.card_code,r.category_code,"+destination+",CASE WHEN a.closure_reason='RETURNED' THEN 'RETURNED' WHEN a.closure_reason='LOST' THEN 'LOST' WHEN a.due_at IS NOT NULL AND a.due_at<=? THEN 'OVERDUE' ELSE 'OPEN' END,a.issued_at,a.issued_by,a.due_at,a.returned_at,a.returned_by,a.closed_at,a.closed_by,a.operation_origin,a.data_origin FROM card_assignments a JOIN visitor_registrations r ON r.id=a.registration_id JOIN cards c ON c.id=a.card_id JOIN destinations legacy ON legacy.id=r.destination_id WHERE ((a.issued_at>=? AND a.issued_at<?) OR (a.closure_reason='RETURNED' AND a.returned_at>=? AND a.returned_at<?) OR (a.closure_reason='LOST' AND a.closed_at>=? AND a.closed_at<?))"+assignmentScope(filter)+" ORDER BY a.issued_at,a.id LIMIT ?",
-            (rs,n)->new PassReportRow(rs.getString(1),rs.getString(2),rs.getString(3),rs.getString(4),referenceLabel(rs.getString(5)),rs.getString(6),DatabaseTime.instant(rs.getObject(7,LocalDateTime.class)),rs.getString(8),DatabaseTime.instant(rs.getObject(9,LocalDateTime.class)),DatabaseTime.instant(rs.getObject(10,LocalDateTime.class)),rs.getString(11),DatabaseTime.instant(rs.getObject(12,LocalDateTime.class)),rs.getString(13),"SIMULATED".equals(rs.getString(14))?"SCAN (legacy)":"MANUAL",rs.getString(15)),args.toArray());
+        String destination="CASE WHEN a.destination_scope='REGISTRATION' THEN (SELECT JSON_ARRAYAGG(ad.destination_name) FROM assignment_destinations ad WHERE ad.assignment_id=a.id) WHEN a.operation_origin='SIMULATED' AND a.destination_id IS NULL THEN (SELECT rd.destination_name FROM registration_destinations rd WHERE rd.registration_id=r.id AND rd.destination_id=r.destination_id) ELSE a.destination_name END";
+        return jdbc.query("SELECT r.public_reference,a.pass_reference,c.card_code,r.category_code,"+destination+",CASE WHEN a.closure_reason='RETURNED' THEN 'RETURNED' WHEN a.closure_reason='LOST' THEN 'LOST' WHEN a.due_at IS NOT NULL AND a.due_at<=? THEN 'OVERDUE' ELSE 'OPEN' END,a.issued_at,a.issued_by,a.due_at,a.returned_at,a.returned_by,a.closed_at,a.closed_by,a.operation_origin,a.data_origin,a.destination_scope FROM card_assignments a JOIN visitor_registrations r ON r.id=a.registration_id JOIN cards c ON c.id=a.card_id JOIN destinations legacy ON legacy.id=r.destination_id WHERE ((a.issued_at>=? AND a.issued_at<?) OR (a.closure_reason='RETURNED' AND a.returned_at>=? AND a.returned_at<?) OR (a.closure_reason='LOST' AND a.closed_at>=? AND a.closed_at<?))"+assignmentScope(filter)+" ORDER BY a.issued_at,a.id LIMIT ?",
+            (rs,n)->new PassReportRow(rs.getString(1),rs.getString(2),rs.getString(3),rs.getString(4),"REGISTRATION".equals(rs.getString(16))?destinationLabels(rs.getString(5)):referenceLabel(rs.getString(5)),rs.getString(6),DatabaseTime.instant(rs.getObject(7,LocalDateTime.class)),rs.getString(8),DatabaseTime.instant(rs.getObject(9,LocalDateTime.class)),DatabaseTime.instant(rs.getObject(10,LocalDateTime.class)),rs.getString(11),DatabaseTime.instant(rs.getObject(12,LocalDateTime.class)),rs.getString(13),"SIMULATED".equals(rs.getString(14))?"SCAN (legacy)":"MANUAL",rs.getString(15)),args.toArray());
     }
 
     /** V8 backfills old singleton destinations. Missing new relation data fails explicitly instead of inventing a location. */
@@ -171,11 +171,11 @@ public class ReportingService {
     /** The deployment and synthetic provenance are server-selected, never supplied by a query parameter. */
     private String registrationScope(ReportFilter filter){return " AND r.environment=? AND r.data_origin='SYNTHETIC'"+filter.scope("r");}
 
-    /** Only approved historical scan and new manual/source pairs are visible; actual pass destination drives this filter. */
+    /** Only approved source pairs are visible; registered destination EXISTS predicates avoid count fan-out. */
     private String assignmentScope(ReportFilter filter){
         return " AND r.environment=? AND r.data_origin='SYNTHETIC' AND a.environment=? AND ((a.operation_origin='SIMULATED' AND a.data_origin='SIMULATED') OR (a.operation_origin='MANUAL' AND a.data_origin='SYNTHETIC'))"
                 +(filter.categoryId()==null?"":" AND r.category_id=?")
-                +(filter.destinationId()==null?"":" AND (a.destination_id=? OR (a.operation_origin='SIMULATED' AND a.destination_id IS NULL AND r.destination_id=?))");
+                +(filter.destinationId()==null?"":" AND EXISTS(SELECT 1 FROM registration_destinations rd WHERE rd.registration_id=r.id AND rd.destination_id=?)");
     }
 
     /** Parameters follow the corresponding SQL predicate order; EXISTS never multiplies registration rows. */
@@ -183,10 +183,10 @@ public class ReportingService {
         var args=new ArrayList<Object>();if(period){args.add(filter.start());args.add(filter.end());}args.add(environment);args.addAll(filter.scopeArgs());return args;
     }
 
-    /** Pass scope deliberately does not reuse requested-registration destination filters. */
+    /** Pass scope shares the registered destination filter while retaining exact assignment provenance. */
     private List<Object> assignmentArgs(ReportFilter filter,boolean period){
         var args=new ArrayList<Object>();if(period){args.add(filter.start());args.add(filter.end());}args.add(environment);args.add(environment);
-        if(filter.categoryId()!=null)args.add(filter.categoryId());if(filter.destinationId()!=null){args.add(filter.destinationId());args.add(filter.destinationId());}return args;
+        if(filter.categoryId()!=null)args.add(filter.categoryId());if(filter.destinationId()!=null)args.add(filter.destinationId());return args;
     }
 
     /** Inactive references remain valid historical filters; unknown IDs are rejected rather than silently broadened. */
@@ -201,5 +201,7 @@ public class ReportingService {
     public record ReportRow(String reference,String visitor,String category,String destination,String status,Instant submittedAt){}
     public record Report(String from,String to,Instant serverUpdatedAt,String timezone,String origin,List<Metric> metrics,List<ReportRow> preview,List<PassReportRow> passPreview){}
     /** A bounded JSON envelope uses the existing CSRF client and never adds a second unaudited download GET. */
-    public record Export(String id,String filename,String csv,int rowCount,Instant serverUpdatedAt){}
+    public record Export(String id,String filename,String csv,int rowCount,Instant serverUpdatedAt){
+        @Override public String toString(){return "ReportExport[REDACTED]";}
+    }
 }

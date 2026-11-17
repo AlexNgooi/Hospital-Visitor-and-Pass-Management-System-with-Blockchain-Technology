@@ -29,6 +29,8 @@ final class ManualInput {
                 case "RESTORE" -> Set.of("expectedVersion","physicalFoundConfirmed","inventoryCheckedConfirmed","reasonCode");
                 default -> throw LifecycleInput.invalid();
             };
+            // Legacy command shapes remain parseable so already committed outcomes can replay unchanged.
+            if(operation.equals("CARD_ENROLL") && !node.has("destinationId")) fields=Set.of("cardCode","categoryCode");
             exact(node,fields);
             var result=new ManualInput(node);
             for(String field:fields) {
@@ -69,10 +71,10 @@ final class ManualInput {
         if(!array.isArray() || array.size()<1 || array.size()>50) throw LifecycleInput.invalid();
         var result=new ArrayList<Selection>(); var identifiers=new HashSet<String>();
         for(var item:array) {
-            exact(item,issue?Set.of("cardId","expectedVersion","destinationId","dueAt"):Set.of("assignmentId","expectedVersion"));
+            exact(item,issue?(item.has("destinationId")?Set.of("cardId","expectedVersion","destinationId","dueAt"):Set.of("cardId","expectedVersion","dueAt")):Set.of("assignmentId","expectedVersion"));
             String id=LifecycleInput.uuid(text(item,issue?"cardId":"assignmentId"));
             if(!identifiers.add(id)) throw LifecycleInput.invalid();
-            String destination=issue?Long.toString(LifecycleInput.decimal(text(item,"destinationId"))):null;
+            String destination=issue && item.has("destinationId")?Long.toString(LifecycleInput.decimal(text(item,"destinationId"))):null;
             Instant due=null;
             if(issue && !item.path("dueAt").isNull()) {
                 if(!item.path("dueAt").isString() || !item.path("dueAt").asString().endsWith("Z")) throw LifecycleInput.invalid();
@@ -96,7 +98,7 @@ final class ManualInput {
                     row.add(RequestEncoding.Field.text("id",selection.id()));
                     row.add(RequestEncoding.Field.integer("expectedVersion",selection.version()));
                     if(isIssue(operation)) {
-                        row.add(RequestEncoding.Field.text("destinationId",selection.destination()));
+                        if(selection.destination()!=null) row.add(RequestEncoding.Field.text("destinationId",selection.destination()));
                         row.add(selection.due()==null?RequestEncoding.Field.nil("dueAt"):RequestEncoding.Field.instant("dueAt",selection.due()));
                     }
                     nested.add(RequestEncoding.Field.object("pass"+index++,row));
@@ -106,7 +108,9 @@ final class ManualInput {
             else if(value.isIntegralNumber()) fields.add(RequestEncoding.Field.integer(name,value.asLong()));
             else fields.add(RequestEncoding.Field.text(name,text(name)));
         }
-        return RequestEncoding.encode(json,scope,operation,target,2,fields);
+        boolean current=operation.equals("CARD_ENROLL")?!node.has("destinationId")
+                : isIssue(operation) && passes(true).stream().anyMatch(selection->selection.destination()==null);
+        return RequestEncoding.encode(json,scope,operation,target,current?3:2,fields);
     }
     record Selection(String id,long version,String destination,Instant due) { }
     @Override public String toString() { return "ManualInput[REDACTED]"; }

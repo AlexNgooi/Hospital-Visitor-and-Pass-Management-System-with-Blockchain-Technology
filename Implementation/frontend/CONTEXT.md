@@ -37,3 +37,7 @@ User requested the earlier sidebar behavior. Both ADMIN and COUNTER_STAFF now us
 ## 2026-11-17 compact remaining administrator tasks
 
 Staff management, Pass management and System audit now opt into the same >=800×620 viewport shell/density as Overview, with natural reflow below that threshold. Shared AdminFilterDialog moves list criteria into explicit Apply/Cancel modals with discard-on-close drafts. Tables keep sticky headers and independent keyboard-focusable scrolling; pagination/counts remain outside those regions. Audit details have their own bounded scroll area, including a side-by-side layout at tablet widths. Dialog and lifecycle commands retain their original version/permission/UNKNOWN behavior. Frontend build/lint and current planning/diff checks PASS; browser/focus/viewport/business acceptance NOT_RUN. No backend/database/process changes.
+
+## 2026-11-17 destination increment
+
+Destination management is the fifth ADMIN drawer task and uses the existing compact viewport shell. New registration metadata is v3 (Executive bed and Ward kind), staff reveal accepts v1/v2/v3, stock enrollment and pass selection omit per-card destination. Overview details and CSV offer explicitly audited name-only visitor records; no patient/contact/identity data enters admin reports. Generated foundation files are unchanged. See docs/runbooks/MANUAL_DESTINATIONS.md from Implementation; V11 and user acceptance NOT_RUN.

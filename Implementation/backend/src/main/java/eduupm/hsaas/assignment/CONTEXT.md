@@ -39,3 +39,7 @@ Checks: backend `mvnw.cmd -B -DskipTests package`; narrowly scoped `mvnw.cmd -B 
 ## 2026-11-16 inventory read increment
 
 ADMIN GET /api/admin/cards now accepts bounded search/category/destination/status filters across all matching authorized source/environment stock. A safe summary groups all statuses under search/category/destination and is independent of the status selection; the page remains bounded to 25 records. Card lifecycle mutations, naming, confirmations, history, idempotency and No pass handling are unchanged.
+
+## 2026-11-17 unbound physical stock
+
+V11/new manual enrollment removes required physical destination binding. New issue inherits and atomically snapshots every active registered destination in assignment_destinations, ignoring old physical bindings. Legacy assignment snapshots remain unchanged and readable. ManualInput preserves old shape/HMAC v2 replay and uses v3 encodings for destination-free enrollment/issue bodies. All old transaction, authority, category cardinality, UNKNOWN and partial-return rules remain. Existing inactive references do not prevent return/lost/history. Migration/SQL/business checks NOT_RUN.

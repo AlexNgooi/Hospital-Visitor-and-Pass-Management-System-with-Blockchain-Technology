@@ -111,3 +111,7 @@ apply 在一个事务中锁库存、检查计划中的名称/版本/状态与总
 ## Admin redesign branch prerequisite
 
 The `codex/admin-management-redesign` worktree requires the new V10 staff-onboarding migration before use. It was not applied during implementation; starting it with `--no-migrate` against an older schema will not work. Staff onboarding SMTP is separately opt-in and disabled by default. See [MANUAL_ADMIN.md](MANUAL_ADMIN.md) for this branch's exact prerequisites, configuration variables and user-run acceptance; do not automatically replace a running application or migrate the original `hsaas_db`.
+
+## 2026-11-17 current admin worktree runtime
+
+After explicit user authorization, V11 was applied to hsaas_manual_native and the latest codex/admin-management-redesign worktree started with the existing runtime-root in place. Entry remains http://127.0.0.1:15417/login. Existing registrations/cards/loans and original keys are retained; no initialize/reseed/restore or MySQL restart. The source worktree and runtime directory remain separate, with no private configuration copied. The launcher's mysqldump invocation was corrected to omit mysql-only connect-timeout; its post-switch backup completed. [Current migration, process and startup verification](MANUAL_DESTINATIONS.md) supersedes earlier branch-prerequisite NOT_RUN statements for this dedicated native runtime only. Browser/business acceptance remains NOT_RUN.

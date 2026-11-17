@@ -22,3 +22,7 @@
 ## 2026-11-16 visualization and compiled export increment
 
 Report aggregates include current lost/disabled inventory plus MYT daily issued/actual-return groups. A compiled export combines REGISTRATION, PASS and METRIC rows in a fixed 25-column CSV, preserving separate grains and blank actual-return/deadline values. Combined row/escaped UTF-8 bounds reject rather than truncate. Chart export audits filter/snapshot metadata only; PNG generation stays in the browser. Existing source/environment, masked fields, READ_COMMITTED consistency, per-metric timestamp and category-only inventory scope remain authoritative. SMTP/SQL/browser acceptance is not implied by builds.
+
+## 2026-11-17 personal admin report increment (supersedes masked-only/compiled export UI)
+
+VisitorReportService owns explicit audited ADMIN+CSRF POST tables/table-exports, backed by the root-owned name-only projection. Registration, issue-time borrowing history, event-time activities and summary each have one CSV grain; no IC/contact/patient fields. Registration timelines can span all dates. No pass comes from permanent registration audits, not invented assignments. Destination filters use registration EXISTS, new loan labels use all assignment snapshots, legacy snapshots remain labelled as legacy. Bounds, formula safety, exact source/environment pairs, no-store and no automatic retry remain. Details use 50-row pages, all-result exports are bounded at 10000 rows/escaped response size. The old compiled endpoint delegates to the new loan export. V11/SQL/browser/business acceptance NOT_RUN.

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { ArrowUpRight, Download, ImageDown, RefreshCw, SlidersHorizontal, X } from "lucide-react";
+import { ArrowUpRight, ImageDown, RefreshCw, SlidersHorizontal, X } from "lucide-react";
 import { z } from "zod";
 import * as Dialog from "@radix-ui/react-dialog";
 import { preserveToastInteraction } from "../../components/ui/dialog-feedback";
@@ -9,7 +9,8 @@ import { ToastNotice } from "../../components/ui/toast";
 import { apiClient } from "../../lib/api-client";
 import { ClientError, safeError } from "../../lib/errors";
 import { formatMyt } from "../../lib/time";
-import { exportSchema, referencesSchema, reportSchema, type Report, type Reference } from "./contracts";
+import { referencesSchema, reportSchema, type Report, type Reference } from "./contracts";
+import { CsvExport } from "./visitor-data";
 import { LoadNotice } from "./data";
 import { useRemote } from "./hooks";
 import { CategoryChart, InventoryChart, TrendChart } from "./charts";
@@ -102,17 +103,14 @@ function ReportResults({ query, scope, referencesReady }: { query: string; scope
         const blob = await chartImage(snapshot, scope, svgs); if (!alive.current) return;
         await apiClient.post(`/api/admin/reports/chart-exports?${query}`, { snapshotUpdatedAt: snapshot.serverUpdatedAt }, chartReceipt, { authRequired: true });
         if (alive.current) downloadBlob(blob, `hsaas-charts-${snapshot.from}-${snapshot.to}.png`);
-      } else {
-        const result = await apiClient.post(`/api/admin/reports/compiled-exports?${query}`, {}, exportSchema, { authRequired: true });
-        if (alive.current) downloadBlob(new Blob([result.csv], { type: "text/csv;charset=utf-8" }), result.filename);
       }
-      if (alive.current) { setTone("success"); setMessage(image ? "Chart image exported. Export audit recorded." : "Compiled CSV exported with all matching report rows and summary metrics. Export audit recorded."); }
+      if (alive.current) { setTone("success"); setMessage("Chart image exported. Export audit recorded."); }
     } catch (error) { if (alive.current) { setTone("error"); setMessage(error instanceof ClientError && error.code === "EXPORT_TOO_LARGE" ? "The complete export exceeds 10,000 rows or the response size limit. Narrow the range; no partial CSV was produced." : `${safeError(error)} An uncertain download may still have an export audit. No automatic retry was sent.`); } }
     finally { lock.current = false; if (alive.current) setExporting(false); }
   }
   return <><LoadNotice busy={remote.busy && !remote.data} error={remote.error} reload={remote.reload} />
     {remote.data && <>
-      <div className="admin-report-toolbar"><p role="status" className={remote.stale ? "admin-inline-error" : "muted"}><span className="admin-filter-summary">{remote.data.from} — {remote.data.to} · {scope}</span>{remote.stale ? "Stale · last successful data" : "Updated"} {formatMyt(remote.data.serverUpdatedAt)} MYT</p><div className="admin-actions"><Button variant="secondary" disabled={remote.busy || exporting} onClick={remote.reload}><RefreshCw size={17} aria-hidden="true" />Refresh</Button><Button variant="secondary" disabled={remote.stale || exporting || !referencesReady} onClick={() => { void download(false); }}><Download size={17} aria-hidden="true" />Export CSV</Button><Button disabled={remote.stale || exporting || !referencesReady} busy={exporting} onClick={() => { void download(true); }}><ImageDown size={17} aria-hidden="true" />Export charts</Button></div></div>
+      <div className="admin-report-toolbar"><p role="status" className={remote.stale ? "admin-inline-error" : "muted"}><span className="admin-filter-summary">{remote.data.from} — {remote.data.to} · {scope}</span>{remote.stale ? "Stale · last successful data" : "Updated"} {formatMyt(remote.data.serverUpdatedAt)} MYT</p><div className="admin-actions"><Button variant="secondary" disabled={remote.busy || exporting} onClick={remote.reload}><RefreshCw size={17} aria-hidden="true" />Refresh</Button><CsvExport query={query} disabled={remote.stale || exporting || !referencesReady} /><Button disabled={remote.stale || exporting || !referencesReady} busy={exporting} onClick={() => { void download(true); }}><ImageDown size={17} aria-hidden="true" />Export charts</Button></div></div>
       {message && <ToastNotice tone={tone}>{message}</ToastNotice>}
       <div className="admin-overview-metric-groups"><section><h2>Selected period</h2><div className="admin-metrics">{[["visits", "Registrations"], ["issued", "Passes issued"], ["returned", "Passes returned"], ["lost", "Passes closed lost"]].map(([key, label]) => <MetricCard key={key} report={remote.data!} metricKey={key} label={label} />)}</div></section>
       <section><h2>Current snapshot</h2><div className="admin-metrics admin-current-metrics">{[["inUse", "Unreturned passes"], ["overdue", "Overdue"], ["noDeadline", "No deadline"]].map(([key, label]) => <MetricCard key={key} report={remote.data!} metricKey={key} label={label} />)}</div></section>
