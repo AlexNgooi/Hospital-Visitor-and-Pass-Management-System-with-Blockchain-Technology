@@ -95,3 +95,9 @@ Validation: frontend build/lint PASS; planning and diff checks PASS. The existin
 ## 2026-11-17 navigation follow-up
 
 The user requested restoring the earlier sidebar. ADMIN now uses the same on-demand navigation drawer at all widths: click the top-left menu to open it, close via X/Escape/outside click, or select a route. The persistent desktop sidebar and reserved left margin are removed. Four admin tasks, compact Overview and the separate filtered details page are retained. Frontend build/lint, planning/diff checks PASS; browser/focus/viewport acceptance NOT_RUN. No backend/database/service changes or restart.
+
+## 2026-11-17 Filter button follow-up
+
+The inline Overview filter bar is removed. Use **Filter**, beside **View details**, to open the modal. Choose This day/month/year/Customize plus visitor type/destination, then **Apply filters** to refresh and close. Custom ranges remain limited to 366 MYT days. Cancel/X/Escape/outside click discard unapplied values; reopening starts from the currently applied scope. A compact text summary shows that scope on the main page. CSV/PNG exports and the details link follow only applied filters. Focus starts on Time period and returns to the trigger after dismissal. Metadata failures retain a retry and block Apply.
+
+Frontend build/lint and planning/diff checks PASS. Browser/modal/keyboard/viewport/export/business acceptance NOT_RUN; user checks include Apply vs Cancel, draft reset on reopening, custom-date validation, focus restoration and matching exported/detail scopes. No backend/database/service changes or restart.

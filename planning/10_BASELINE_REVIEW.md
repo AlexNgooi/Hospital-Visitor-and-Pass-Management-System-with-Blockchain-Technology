@@ -126,3 +126,7 @@ Penjaga仅IC、每登记最多一张活动pass、条款勾选并记录服务器�
 ## 2026-11-17 restore earlier sidebar behavior
 
 User requested restoring the earlier admin navigation. The permanent ADMIN aside and desktop-only margin/menu-hiding rules are removed; the shared on-demand drawer is available from the top-left menu at all widths, retaining existing close/focus/navigation behavior. Compact Overview and View details/new-page filters are retained. Frontend build/lint and planning/diff checks PASS; browser/viewport/focus/business acceptance NOT_RUN. No backend/schema/process changes, restart, merge or push.
+
+## 2026-11-17 replace Overview filter strip with modal
+
+User requested removing the visible filter strip and using a Filter button/modal. The existing Radix dialog now contains presets/custom dates and category/destination selectors. Only Apply commits validated filters to query/URL and closes; dismissal discards drafts. A compact applied-scope summary remains, and reports/exports/details links retain the applied scope. Old inline-filter styles are removed. Frontend build/lint and planning/diff checks PASS; browser/modal/focus/viewport/business acceptance NOT_RUN. No backend/schema/process changes, restart, merge or push.
