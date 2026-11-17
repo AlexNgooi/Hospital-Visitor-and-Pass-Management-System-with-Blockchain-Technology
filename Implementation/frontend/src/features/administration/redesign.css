@@ -3,9 +3,6 @@
 .admin-page h1, .admin-pass-management h1 { letter-spacing: -.035em; }
 .admin-page h2 { font-size: 18px; letter-spacing: -.02em; }
 .admin-page h3 { font-size: 16px; }
-.admin-sidebar .nav-link { min-height: 48px; }
-.admin-sidebar .shell-brand { margin-bottom: 28px; }
-.admin-sidebar .nav-new-tab { min-width: 30px; }
 .workspace-admin .workspace-footer { margin-top: auto; }
 .admin-directory-card { padding: 0; overflow: hidden; }
 .admin-directory-filters { display: grid; grid-template-columns: minmax(220px, 2fr) repeat(2, minmax(160px, 1fr)); gap: 16px; padding: 20px; }
@@ -89,13 +86,7 @@
 .admin-pass-management .admin-filters input { min-height: 44px; border: 1px solid #b7bdc7; border-radius: 8px; padding: 9px 12px; width: 100%; }
 .admin-pass-management .admin-metrics .admin-card { border-top: 1px solid var(--border); }
 
-@media (min-width: 1180px) {
-  .workspace-admin .admin-sidebar { display: flex; width: 236px; }
-  .workspace-admin.workspace-drawer-layout .workspace-body { margin-left: 236px; }
-  .workspace-admin .workspace-menu { display: none; }
-}
 @media (max-width: 1179px) {
-  .workspace-admin .admin-sidebar { display: none; }
   .admin-audit-layout.has-selection { grid-template-columns: minmax(0, 1fr); }
   .admin-audit-detail { position: static; }
 }

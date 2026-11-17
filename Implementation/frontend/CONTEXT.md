@@ -29,3 +29,7 @@ The ADMIN shell now exposes exactly Overview, Staff management, Pass management 
 ## 2026-11-17 Overview density
 
 Only `/admin` receives the compact viewport shell at >=800px wide and >=620px high. Header/footer/filter/metric spacing is reduced; charts retain a keyboard-focusable internal overflow fallback. Other routes and smaller/zoomed viewports keep natural scrolling. `/admin/report-details` is a hidden ADMIN-only route associated with Overview; current filters travel as bounded date/reference parameters to a new tab. No backend, role, database or process changes were made. Browser visual acceptance is NOT_RUN.
+
+## 2026-11-17 restore on-demand admin navigation
+
+User requested the earlier sidebar behavior. Both ADMIN and COUNTER_STAFF now use the existing Radix drawer at every width: navigation is hidden until the top-left menu opens it; Close/Escape/outside interaction and route navigation retain existing dismissal/focus behavior. The permanent ADMIN aside and its desktop width/menu-hiding overrides are removed, so the workspace uses its full available width. Compact Overview, its four tasks and the independent details page are unchanged. Frontend build/lint and browser acceptance are recorded separately.

@@ -104,7 +104,7 @@ export function WorkspaceShell({ slots }: { slots: readonly FeatureSlot[] }) {
   return (
     <CounterContext.Provider value={activeCounter}>
       <div className={`workspace workspace-drawer-layout${isStaff ? " workspace-staff" : " workspace-admin"}${adminOverview ? " workspace-admin-overview" : ""}${queueSurface ? ` workspace-viewport ${overview ? "workspace-dashboard" : passes ? "workspace-passes" : "workspace-review"}` : ""}`}>
-        {!isStaff && <aside className="sidebar admin-sidebar" aria-label="Administration">{nav}</aside>}
+        {/* Both roles use the existing on-demand drawer, leaving the full workspace width available. */}
         <div className="workspace-body">
           <header className="topbar">
             <Dialog.Root
