@@ -1,6 +1,6 @@
 # HSAAS 当前规划
 
-更新：2026-11-16。这里只维护当前有效规范；已替代的模块聊天记录、旧图、原型资产和生成脚本已删除，历史版本可从 Git 查询。应用验收记录保存在 Implementation/docs/evidence/，不作为当前启动命令。
+更新：2026-11-17。这里只维护当前有效规范；已替代的模块聊天记录、旧图、原型资产和生成脚本已删除，历史版本可从 Git 查询。应用验收记录保存在 Implementation/docs/evidence/，不作为当前启动命令。
 
 | 需要做什么 | 入口 |
 |---|---|
@@ -21,3 +21,5 @@ M00–M07 与 R01–R03 已在本机 main 合并；2026-11-10用户明确要求�
 2026-11-16 用户明确要求 GitHub 与本机 main 同步，本次发布纳入 `codex/visitor-review-issue-dashboard` 至 `1866a6c`：Overview/审核发卡、归还与历史导出、No pass、staff 面包屑和库存命名。已有 9 张库存的改名是先前明确请求的独立本机数据维护，不会随 Git 推送复制或自动重跑。
 
 文档检查：`python planning/verify_planning.py`，只检查规划引用和必备入口，不启动应用或数据库。
+
+2026-11-17 用户明确要求本机 main 与 GitHub main 同步。本次发布来源为 `codex/admin-management-redesign` 至 `0718687`：Admin 五项管理、紧凑布局/modal、staff 初始密码邮件框架、V10/V11、Ward/Other 与 Executive 床号、不绑定地点的实体 pass、visitor activities 与分类 CSV、native 备份修复。发布范围与验收边界见 [10](10_BASELINE_REVIEW.md)；Git 同步不重新执行迁移或切换运行进程。
