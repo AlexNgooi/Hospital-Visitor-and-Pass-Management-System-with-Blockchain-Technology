@@ -109,8 +109,11 @@
 .admin-overview .admin-details-button { flex-shrink: 0; white-space: nowrap; }
 .admin-overview-metric-groups { display: grid; grid-template-columns: 4fr 3fr; gap: 12px; min-width: 0; }
 .admin-overview-metric-groups > section { min-width: 0; }
-.admin-overview .admin-chart-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-.admin-overview .admin-chart-grid svg { margin-top: 6px; }
+/* Timeline plots receive 60% of each row; SVGs center below their fixed headings without distortion. */
+.admin-overview .admin-chart-grid { grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); }
+.admin-overview .admin-chart-grid > .admin-card { display: flex; flex-direction: column; gap: 12px; }
+.admin-overview .admin-chart-grid > .admin-card > h2 { flex: 0 0 auto; }
+.admin-overview .admin-chart-grid svg { flex: 0 0 auto; margin-block: auto; }
 .admin-report-details-page .admin-heading .admin-actions { margin: 0; }
 .admin-report-details-page .admin-report-data > h2:first-child { margin-top: 0; }
 .admin-report-details-page .admin-notice p { margin: 6px 0 0; }
@@ -141,7 +144,7 @@
   .admin-overview .admin-chart-grid { flex: 1 1 0; min-height: 0; gap: 8px; grid-auto-rows: minmax(min-content, 1fr); overflow: auto; scrollbar-gutter: stable; align-content: start; }
   .admin-overview .admin-chart-grid > .admin-card { padding: 6px 10px; min-height: 0; }
   .admin-overview .admin-chart-grid h2 { font-size: 14px; line-height: 18px; margin: 0; }
-  .admin-overview .admin-chart-grid svg { display: block; width: 100%; height: clamp(94px, calc((100dvh - 480px) / 2), 160px); margin-top: 4px; }
+  .admin-overview .admin-chart-grid svg { display: block; width: 100%; height: clamp(94px, calc((100dvh - 480px) / 2), 160px); }
   .admin-overview .admin-report-note { font-size: 11px; line-height: 14px; margin: 0; }
 }
 

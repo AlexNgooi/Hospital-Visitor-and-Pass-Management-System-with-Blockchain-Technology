@@ -130,3 +130,7 @@ User requested restoring the earlier admin navigation. The permanent ADMIN aside
 ## 2026-11-17 replace Overview filter strip with modal
 
 User requested removing the visible filter strip and using a Filter button/modal. The existing Radix dialog now contains presets/custom dates and category/destination selectors. Only Apply commits validated filters to query/URL and closes; dismissal discards drafts. A compact applied-scope summary remains, and reports/exports/details links retain the applied scope. Old inline-filter styles are removed. Frontend build/lint and planning/diff checks PASS; browser/modal/focus/viewport/business acceptance NOT_RUN. No backend/schema/process changes, restart, merge or push.
+
+## 2026-11-17 Overview chart 60/40 layout
+
+User requested both chart rows use left 60% / right 40%, and SVGs sit farther from h2 near each card's center. CSS now uses 3fr/2fr columns and flex cards with fixed headings, 12px minimum separation and vertically centered SVGs. Narrow screens still use one column. No data, export, backend, schema or process changes. Frontend build/lint and planning/diff checks PASS; browser/viewport visual acceptance NOT_RUN.

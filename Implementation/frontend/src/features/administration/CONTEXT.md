@@ -29,3 +29,7 @@ User requested retaining the design while reducing whole-page overflow at 1480×
 ## 2026-11-17 Overview filter modal
 
 User requested replacing the in-page filter strip with a Filter button. The top-right Radix trigger now opens a centered, scroll-bounded modal containing time preset/custom dates, visitor type and destination. Drafts live only in the mounted dialog form; Cancel/X/Escape/outside dismissal discard them. Apply validates the existing bounded report query, updates the applied query/URL and closes. Metadata loading/errors retain retry controls and block Apply. Initial focus targets the time-period control; Radix owns focus trapping/restoration. A small report-toolbar summary shows applied dates/reference labels, while reports, export scope and details links never use drafts. Retired inline-filter styles are removed. Frontend build/lint PASS; browser/modal/viewport/business acceptance NOT_RUN.
+
+## 2026-11-17 chart proportions and vertical placement
+
+User requested left/right chart widths of 60/40 and more separation between each heading and its SVG. Overview chart columns now use 3fr/2fr above the existing single-column breakpoint. Each card is a flex column with a fixed heading, 12px minimum gap and automatic block margins that center the undistorted SVG in the space below the heading. Compact SVG sizing, internal scrolling, mobile reflow, data and exports remain unchanged. Build/lint PASS; browser/viewport visual acceptance NOT_RUN.
