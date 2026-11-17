@@ -33,3 +33,7 @@ User requested replacing the in-page filter strip with a Filter button. The top-
 ## 2026-11-17 chart proportions and vertical placement
 
 User requested left/right chart widths of 60/40 and more separation between each heading and its SVG. Overview chart columns now use 3fr/2fr above the existing single-column breakpoint. Each card is a flex column with a fixed heading, 12px minimum gap and automatic block margins that center the undistorted SVG in the space below the heading. Compact SVG sizing, internal scrolling, mobile reflow, data and exports remain unchanged. Build/lint PASS; browser/viewport visual acceptance NOT_RUN.
+
+## 2026-11-17 unify staff and audit density
+
+Staff management and System audit share Overview's compact task frame. Filters move into AdminFilterDialog; form drafts do not change visible data until Apply, and dismissal resets them. Staff search stays memory-only across the complete authorized directory; Refresh reloads staff/counter/email readiness, while create/edit/grant/email behavior is retained. Audit modal supports date presets/custom ranges, actor/action/module with the existing 366-day validation and independent event/configuration scopes. Lists use sticky headers and internal scrolling, footer controls stay visible, and selected audit details scroll independently. Shared modal focus returns to the trigger or temporarily to the heading while inventory refresh disables that trigger; later restoration avoids stealing focus from another control. Browser/focus/viewport acceptance NOT_RUN.

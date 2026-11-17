@@ -41,3 +41,7 @@ Initial checks: pnpm run build, pnpm run lint, pnpm run typecheck:test. These ar
 ## 2026-11-16 Pass management
 
 The ADMIN slot is labelled Pass management with current inventory summary, complete server-side filters, readable pass/destination/category/status rows and a labelled detail modal retaining history and controlled lifecycle actions. Add pass remains a modal. Existing settings are reached through an in-page link, not a new nav task. Staff pass APIs and No pass semantics are unchanged.
+
+## 2026-11-17 compact inventory task
+
+Pass management uses the compact admin task frame, small current-summary cards, an applied-filter caption and a Filter modal. Applying search/category/destination/status resets pagination and retains the original whole-inventory query. Add pass, Refresh and the existing settings link move to the top header; the enrollment trigger ref and all focus/confirmation/UNKNOWN recovery guards remain. Only the inventory table scrolls; its page controls remain outside the scroll region. No lifecycle API/body, mutation, backend/schema or staff-pass behavior changed. Browser/business acceptance NOT_RUN.

@@ -31,9 +31,10 @@ export function WorkspaceShell({ slots }: { slots: readonly FeatureSlot[] }) {
   if (state.kind !== "authenticated") return null;
   const { user } = state;
   const isStaff = user.role === "COUNTER_STAFF";
-  // Both queue surfaces share the desktop viewport frame; other workspaces keep their natural document flow.
+  // Staff queues and the four admin task surfaces use separate viewport frames; supporting pages reflow naturally.
   const queueSurface = isStaff && /^\/staff(?:\/(?:registrations|passes))?\/?$/.test(location.pathname);
   const overview = isStaff && /^\/staff\/?$/.test(location.pathname);
+  const adminTasks = !isStaff && /^\/admin\/(?:users|cards|audit)\/?$/.test(location.pathname);
   const adminOverview = !isStaff && /^\/admin\/?$/.test(location.pathname);
   const passes = isStaff && /^\/staff\/passes\/?$/.test(location.pathname);
   const base = isStaff ? "/staff" : "/admin";
@@ -103,7 +104,7 @@ export function WorkspaceShell({ slots }: { slots: readonly FeatureSlot[] }) {
   );
   return (
     <CounterContext.Provider value={activeCounter}>
-      <div className={`workspace workspace-drawer-layout${isStaff ? " workspace-staff" : " workspace-admin"}${adminOverview ? " workspace-admin-overview" : ""}${queueSurface ? ` workspace-viewport ${overview ? "workspace-dashboard" : passes ? "workspace-passes" : "workspace-review"}` : ""}`}>
+      <div className={`workspace workspace-drawer-layout${isStaff ? " workspace-staff" : " workspace-admin"}${adminOverview ? " workspace-admin-overview" : ""}${adminTasks ? " workspace-admin-tasks" : ""}${queueSurface ? ` workspace-viewport ${overview ? "workspace-dashboard" : passes ? "workspace-passes" : "workspace-review"}` : ""}`}>
         {/* Both roles use the existing on-demand drawer, leaving the full workspace width available. */}
         <div className="workspace-body">
           <header className="topbar">

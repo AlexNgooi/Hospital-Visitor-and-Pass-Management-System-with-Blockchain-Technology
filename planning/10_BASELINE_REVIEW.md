@@ -134,3 +134,9 @@ User requested removing the visible filter strip and using a Filter button/modal
 ## 2026-11-17 Overview chart 60/40 layout
 
 User requested both chart rows use left 60% / right 40%, and SVGs sit farther from h2 near each card's center. CSS now uses 3fr/2fr columns and flex cards with fixed headings, 12px minimum separation and vertically centered SVGs. Narrow screens still use one column. No data, export, backend, schema or process changes. Frontend build/lint and planning/diff checks PASS; browser/viewport visual acceptance NOT_RUN.
+
+## 2026-11-17 compact Staff management, Pass management and System audit
+
+User requested applying Overview's design to the other three main admin tasks to reduce overflow. These routes now share the >=800×620 viewport shell, compact titles/controls/metrics and explicit Filter modals with discarded drafts on dismissal. Lists use keyboard-focusable internal scrolling and sticky headers; footer counts/pagination remain outside their scrollers. Staff adds manual Refresh; inventory retains all-stock filtering/page reset and moves Add pass/settings/refresh to the header. Audit preserves independent event/change scopes and adds bounded selected-detail scrolling. Existing account permissions, inventory mutation confirmations, version/UNKNOWN handling and backend APIs are unchanged.
+
+Frontend build/lint and planning/diff checks PASS. Browser/modal/focus/viewport/business acceptance NOT_RUN. No backend/schema/process changes, migration, service restart, merge or push. User checks are in [MANUAL_ADMIN](../Implementation/docs/runbooks/MANUAL_ADMIN.md).

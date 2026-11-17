@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import * as Dialog from "@radix-ui/react-dialog";
-import { LockKeyhole, Plus, Search, ShieldCheck, X } from "lucide-react";
+import { LockKeyhole, Plus, RefreshCw, ShieldCheck, X } from "lucide-react";
 import { ToastNotice } from "../../components/ui/toast";
 import { preserveToastInteraction } from "../../components/ui/dialog-feedback";
 import { useAuth } from "../../app/auth-context";
@@ -9,6 +9,7 @@ import { apiClient } from "../../lib/api-client";
 import { referencesSchema, savedSchema, usersSchema, staffEmailSchema, deliverySchema, type User } from "./contracts";
 import { LoadNotice } from "./data";
 import { useRemote, useSave } from "./hooks";
+import { AdminFilterDialog } from "./filter-dialog";
 
 /** The directory is horizontal; creation remains an explicit, focus-managed modal action. */
 export function AccountPage() {
@@ -47,16 +48,16 @@ function AccountWorkspace({ currentUserId }: { currentUserId: string }) {
   function sent(result: { emailStatus: string }) {
     setDelivery(result.emailStatus === "ACCEPTED" ? "Account saved. The mail server accepted the email; inbox delivery is not confirmed." : "Account saved, but email delivery is unknown. Inspect the account before deliberately sending a replacement password.");
   }
-  return <div className="admin-page admin-directory">
-    <header className="admin-heading"><div><h1 ref={heading} tabIndex={-1}>Staff management</h1><p>Manage staff accounts and access.</p></div><Button ref={createButton} disabled={blocked} onClick={event => { opener.current = event.currentTarget; setDelivery(""); setEditing("new"); }}><Plus size={18} aria-hidden="true" />Create account</Button></header>
+  return <div className="admin-page admin-directory admin-task-page">
+    <header className="admin-heading"><div><h1 ref={heading} tabIndex={-1}>Staff management</h1><p>Manage staff accounts and access.</p></div><div className="admin-actions">
+      <AdminFilterDialog title="Filter staff" description="Search staff names or logins and choose an account type and status." disabled={save.busy}>
+        {close => <StaffFilters search={search} role={role} status={status} onCancel={close} onApply={value => { setSearch(value.search); setRole(value.role); setStatus(value.status); close(); }} />}
+      </AdminFilterDialog><Button variant="secondary" disabled={save.busy || users.busy} onClick={() => { users.reload(); counters.reload(); email.reload(); }}><RefreshCw size={17} aria-hidden="true" />Refresh</Button><Button ref={createButton} disabled={blocked} onClick={event => { opener.current = event.currentTarget; setDelivery(""); setEditing("new"); }}><Plus size={18} aria-hidden="true" />Create account</Button></div></header>
     <LoadNotice busy={users.busy || counters.busy || email.busy} error={users.error || counters.error || email.error} reload={() => { users.reload(); counters.reload(); email.reload(); }} />
     {save.message && <ToastNotice tone={save.tone}>{save.message}</ToastNotice>}
     {delivery && <div className="admin-notice" role="status">{delivery}</div>}
-    <section className="admin-card admin-directory-card">
-      <div className="admin-directory-filters"><label className="admin-search"><Search size={18} aria-hidden="true" /><span className="sr-only">Search staff name or login</span><input type="search" placeholder="Search name or login" value={search} onChange={event => setSearch(event.target.value)} /></label>
-        <label className="admin-field"><span className="sr-only">Account type</span><select value={role} onChange={event => setRole(event.target.value)}><option value="">All account types</option><option value="ADMIN">Administrator</option><option value="COUNTER_STAFF">Counter staff</option></select></label>
-        <label className="admin-field"><span className="sr-only">Account status</span><select value={status} onChange={event => setStatus(event.target.value)}><option value="">All statuses</option><option value="true">Active</option><option value="false">Inactive</option></select></label>
-      </div>
+    <p className="admin-applied-summary">{search ? `Search: ${search}` : "All names"} · {role === "ADMIN" ? "Administrator" : role === "COUNTER_STAFF" ? "Counter staff" : "All account types"} · {status === "true" ? "Active" : status === "false" ? "Inactive" : "All statuses"}</p>
+    <section className="admin-card admin-directory-card admin-task-fill">
       {users.data && <><div className="admin-table-scroll" role="region" aria-label="Staff accounts" tabIndex={0}><table><thead><tr><th>Name</th><th>Account type</th><th>Status</th><th>Action</th></tr></thead><tbody>
         {rows?.map(user => <tr key={user.id}><td><div className="admin-person"><span className="admin-initials" aria-hidden="true">{user.fullName.split(/\s+/).slice(0, 2).map(word => Array.from(word)[0]).join("").toUpperCase()}</span><span><strong>{user.fullName}</strong>{user.id === currentUserId && <small> · You</small>}<small>{user.login}{user.passwordChangeRequired ? " · Password setup required" : ""}</small></span></div></td><td>{user.role === "ADMIN" ? "Administrator" : "Counter staff"}</td><td><span className={`admin-status ${user.active ? "status-active" : "status-inactive"}`}>{user.active ? "Active" : "Inactive"}</span></td><td><Button variant="secondary" disabled={blocked} onClick={event => { opener.current = event.currentTarget; setEditing(user); }}>Edit</Button></td></tr>)}
       </tbody></table></div>{!rows?.length && <p className="admin-empty">No accounts match these filters.</p>}<div className="admin-table-footer"><span>{rows?.length} of {users.data.length} staff accounts</span><span><ShieldCheck size={17} aria-hidden="true" />The last administrator with a completed password setup is protected.</span></div></>}
@@ -104,5 +105,16 @@ function AccountForm({ user, busy, emailReady, lastAdmin, onCancel, onSubmit }: 
     {user ? <><label className="admin-check"><input type="checkbox" checked={active} disabled={busy || lastAdmin} onChange={event => { setActive(event.target.checked); setConfirmed(false); }} />Active account</label><p className="muted">Saving account changes revokes existing sessions.</p>{lastAdmin && <p className="muted">The last ready administrator cannot be disabled or demoted.</p>}</> : <><div className="admin-password-note"><LockKeyhole size={22} aria-hidden="true" /><div><strong>System-generated temporary password</strong><p>Emailed to the staff member. Password change required on first sign-in.</p></div></div><p className="muted">Temporary password expires in 24 hours. Email status is shown after creation.</p>{!emailReady && <p className="admin-inline-error" role="status">Staff email is not configured or its status is unavailable. Creation is unavailable until it is configured.</p>}</>}
     {policyChanged && <label className="admin-check"><input type="checkbox" required checked={confirmed} disabled={busy} onChange={event => setConfirmed(event.target.checked)} />I confirm this account type/status change and session revocation.</label>}
     <div className="dialog-actions"><Button variant="secondary" disabled={busy} onClick={onCancel}>Cancel</Button><Button type="submit" busy={busy} disabled={!changed || !user && !emailReady || policyChanged && !confirmed}>{user ? "Save changes" : "Create & send email"}</Button></div>
+  </form>;
+}
+
+/** Search remains memory-only and covers the complete authorized staff directory, not a visible row subset. */
+function StaffFilters({ search, role, status, onApply, onCancel }: { search: string; role: string; status: string; onApply: (value: { search: string; role: string; status: string }) => void; onCancel: () => void }) {
+  const [draftSearch, setSearch] = useState(search), [draftRole, setRole] = useState(role), [draftStatus, setStatus] = useState(status);
+  return <form className="admin-filter-form" onSubmit={event => { event.preventDefault(); onApply({ search: draftSearch.trim(), role: draftRole, status: draftStatus }); }}>
+    <InputField id="staff-filter-search" label="Search name or login" type="search" maxLength={120} autoComplete="off" value={draftSearch} onChange={event => setSearch(event.target.value)} />
+    <label className="admin-field">Account type<select value={draftRole} onChange={event => setRole(event.target.value)}><option value="">All account types</option><option value="ADMIN">Administrator</option><option value="COUNTER_STAFF">Counter staff</option></select></label>
+    <label className="admin-field">Status<select value={draftStatus} onChange={event => setStatus(event.target.value)}><option value="">All statuses</option><option value="true">Active</option><option value="false">Inactive</option></select></label>
+    <div className="dialog-actions"><Button variant="secondary" onClick={onCancel}>Cancel</Button><Button type="submit">Apply filters</Button></div>
   </form>;
 }

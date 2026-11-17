@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState, type FormEvent } from "react"
 import * as Dialog from "@radix-ui/react-dialog";
 import { Eye, Plus, X } from "lucide-react";
 import { Link } from "react-router-dom";
+import { AdminFilterDialog } from "../../administration/filter-dialog";
 import { useAuth } from "../../../app/auth-context";
 import { Button, StatusPanel } from "../../../components/ui/primitives";
 import { ToastNotice } from "../../../components/ui/toast";
@@ -29,7 +30,6 @@ function InventoryWorkspace({ recheck }: { recheck: () => void }) {
   const [categoryCode, setCategoryCode] = useState("");
   const [destinationId, setDestinationId] = useState("");
   const [page, setPage] = useState(0);
-  const [search, setSearch] = useState(""), [filterCategory, setFilterCategory] = useState(""), [filterDestination, setFilterDestination] = useState(""), [filterStatus, setFilterStatus] = useState("");
   const [filters, setFilters] = useState("");
   const [selected, setSelected] = useState<Card | null>(null);
   const [enrolling, setEnrolling] = useState(false);
@@ -95,6 +95,11 @@ function InventoryWorkspace({ recheck }: { recheck: () => void }) {
   function open(card: Card, trigger: HTMLButtonElement) {
     cardOpener.current = trigger; reset(); setSelected(card); void loadHistory(card);
   }
+  const applied = new URLSearchParams(filters);
+  const filterSummary = [applied.get("search") ? `Search: ${applied.get("search")}` : "",
+    references?.categories.find(item => item.code === applied.get("category"))?.label ?? applied.get("category") ?? "All visitor types",
+    references?.destinations.find(item => item.id === applied.get("destination"))?.label ?? (applied.get("destination") ? `Destination ID ${applied.get("destination")}` : "All destinations"),
+    applied.get("status") || "All statuses"].filter(Boolean).join(" · ");
   const restore = selected && ["LOST", "DISABLED"].includes(selected.status);
   /** Validate locally and retain the exact submitted command when its outcome is unknown. */
   function enroll(event: FormEvent<HTMLFormElement>) {
@@ -112,20 +117,20 @@ function InventoryWorkspace({ recheck }: { recheck: () => void }) {
     setEnrollError("");
     commands.submit(lifecycleApi.enroll(cardCode, categoryCode, destinationId), "Card enrollment", () => { setPassNumber(""); done(); });
   }
-  return <div className="lc-workspace admin-page admin-pass-management">
-    <header className="lc-header"><div><p className="lc-eyebrow">ADMINISTRATION</p><h1 ref={inventoryHeading} tabIndex={-1}>Pass management</h1><p className="muted">Manage physical pass inventory and availability.</p></div><Button variant="secondary" busy={busy} disabled={commands.locked || denied} onClick={() => void refresh()}>Refresh inventory</Button></header>
+  return <div className="lc-workspace admin-page admin-pass-management admin-task-page">
+    <header className="lc-header"><div><h1 ref={inventoryHeading} tabIndex={-1}>Pass management</h1><p className="muted">Manage physical pass inventory and availability.</p></div><div className="admin-actions">
+      <AdminFilterDialog title="Filter passes" description="Search the complete authorized inventory and choose visitor type, destination and status." disabled={blocked || !references}>
+        {close => <InventoryFilters query={filters} references={references} disabled={blocked || !references} onCancel={close} onApply={next => { setPage(0); setFilters(next); close(); }} />}
+      </AdminFilterDialog>
+      <Link to="/admin/settings" className="button button-secondary" aria-label="Return defaults and existing settings">Settings</Link>
+      <Button variant="secondary" busy={busy} disabled={commands.locked || denied} onClick={() => void refresh()}>Refresh</Button><Button ref={enrollTrigger} disabled={blocked || !references} onClick={() => { reset(); setPassNumber(""); setEnrollError(""); setEnrolling(true); }}><Plus size={18} aria-hidden="true" />Add pass</Button></div></header>
     <p className="muted">Synthetic demonstration inventory · Issue and return actions are handled by counter staff.</p>{commands.notice}{!enrolling && !selected && commands.recovery}
     {denied && <StatusPanel kind="error" title="Current access must be rechecked" action={<Button onClick={recheck}>Recheck session</Button>}>Inventory and selections have been cleared.</StatusPanel>}
     {error && <ToastNotice>{error}</ToastNotice>}
-    <div className="admin-pass-tabs"><span aria-current="page">Inventory</span><Link to="/admin/settings">Return defaults & existing settings</Link></div>
+    <p className="admin-applied-summary">{filterSummary}</p>
     {data && <section aria-label="Inventory summary"><p className="muted">All statuses matching the applied search, visitor type and destination.</p><div className="admin-metrics">{[["Available", data.summary.AVAILABLE], ["Issued / overdue", data.summary.ISSUED + data.summary.OVERDUE], ["Lost", data.summary.LOST], ["Disabled", data.summary.DISABLED]].map(([label, value]) => <div className="admin-card" key={label}><span>{label}</span><strong>{value.toLocaleString()}</strong></div>)}</div></section>}
-    <form className="admin-card admin-filters" onSubmit={event => { event.preventDefault(); const query = new URLSearchParams(); if (search.trim()) query.set("search", search.trim()); if (filterCategory) query.set("category", filterCategory); if (filterDestination) query.set("destination", filterDestination); if (filterStatus) query.set("status", filterStatus); setPage(0); setFilters(query.toString()); }}>
-      <label className="admin-field">Search pass ID<input type="search" maxLength={120} value={search} onChange={event => setSearch(event.target.value)} /></label>
-      <label className="admin-field">Visitor type<select value={filterCategory} onChange={event => setFilterCategory(event.target.value)}><option value="">All visitor types</option>{references?.categories.map(item => <option key={item.id} value={item.code}>{item.label}</option>)}</select></label>
-      <label className="admin-field">Destination<select value={filterDestination} onChange={event => setFilterDestination(event.target.value)}><option value="">All destinations</option>{references?.destinations.map(item => <option key={item.id} value={item.id}>{item.label}</option>)}</select></label>
-      <label className="admin-field">Status<select value={filterStatus} onChange={event => setFilterStatus(event.target.value)}><option value="">All statuses</option>{["AVAILABLE", "ISSUED", "OVERDUE", "LOST", "DISABLED"].map(status => <option key={status}>{status}</option>)}</select></label><Button type="submit" disabled={blocked}>Apply</Button>
-    </form>
-    <section className="lc-panel"><div className="lc-header"><h2>Pass inventory</h2><Button ref={enrollTrigger} disabled={blocked || !references} onClick={() => { reset(); setPassNumber(""); setEnrollError(""); setEnrolling(true); }}><Plus size={18} aria-hidden="true" />Add pass</Button></div>
+
+    <section className="lc-panel admin-inventory-panel admin-task-fill"><div className="lc-header"><h2>Pass inventory</h2></div>
       {data && <><p className="lc-caption">Updated {formatMyt(data.serverNow)} MYT · All matching inventory, 25 passes per page</p><div className="lc-table" role="region" aria-label="Pass inventory" tabIndex={0}><table><thead><tr><th>Pass ID</th><th>Compatible destination</th><th>Visitor type</th><th>Status</th><th>Action</th></tr></thead><tbody>
         {data.items.map(card => <tr key={card.id}><td>{card.cardCode}</td><td>{card.destinationLabel ?? "Legacy stock"}</td><td>{card.categoryCode}</td><td><span className={`lc-badge lc-${card.status.toLowerCase()}`}>{card.status}</span></td><td><Button variant="secondary" disabled={blocked} aria-label={`Open card ${card.cardCode}`} aria-haspopup="dialog" title="Open card" onClick={event => open(card, event.currentTarget)}><Eye size={18} aria-hidden="true" />View details</Button></td></tr>)}
       </tbody></table></div>{data.items.length === 0 && <p>No passes match these filters. Change the filters or add a pass.</p>}<Pager page={page} total={data.total} disabled={blocked} change={setPage} /></>}
@@ -187,4 +192,20 @@ function InventoryWorkspace({ recheck }: { recheck: () => void }) {
       </Dialog.Portal>
     </Dialog.Root>
   </div>;
+}
+
+/** Applying filters resets pagination; draft edits never affect pending lifecycle commands or the visible query. */
+function InventoryFilters({ query, references, disabled, onApply, onCancel }: { query: string; references: InventoryReferences | null; disabled: boolean; onApply: (query: string) => void; onCancel: () => void }) {
+  const applied = new URLSearchParams(query);
+  const [search, setSearch] = useState(applied.get("search") ?? ""), [category, setCategory] = useState(applied.get("category") ?? ""), [destination, setDestination] = useState(applied.get("destination") ?? ""), [status, setStatus] = useState(applied.get("status") ?? "");
+  return <form className="admin-filter-form" onSubmit={event => {
+    event.preventDefault(); if (disabled) return;
+    const next = new URLSearchParams(); if (search.trim()) next.set("search", search.trim()); if (category) next.set("category", category); if (destination) next.set("destination", destination); if (status) next.set("status", status); onApply(next.toString());
+  }}>
+    <label className="admin-field">Search pass ID<input type="search" maxLength={120} autoComplete="off" value={search} disabled={disabled} onChange={event => setSearch(event.target.value)} /></label>
+    <label className="admin-field">Visitor type<select value={category} disabled={disabled} onChange={event => setCategory(event.target.value)}><option value="">All visitor types</option>{references?.categories.map(item => <option key={item.id} value={item.code}>{item.label}</option>)}</select></label>
+    <label className="admin-field">Destination<select value={destination} disabled={disabled} onChange={event => setDestination(event.target.value)}><option value="">All destinations</option>{references?.destinations.map(item => <option key={item.id} value={item.id}>{item.label}</option>)}</select></label>
+    <label className="admin-field">Status<select value={status} disabled={disabled} onChange={event => setStatus(event.target.value)}><option value="">All statuses</option>{["AVAILABLE", "ISSUED", "OVERDUE", "LOST", "DISABLED"].map(value => <option key={value}>{value}</option>)}</select></label>
+    <div className="dialog-actions"><Button variant="secondary" onClick={onCancel}>Cancel</Button><Button type="submit" disabled={disabled}>Apply filters</Button></div>
+  </form>;
 }

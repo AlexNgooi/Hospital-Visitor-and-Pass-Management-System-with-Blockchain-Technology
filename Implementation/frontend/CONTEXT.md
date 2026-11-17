@@ -33,3 +33,7 @@ Only `/admin` receives the compact viewport shell at >=800px wide and >=620px hi
 ## 2026-11-17 restore on-demand admin navigation
 
 User requested the earlier sidebar behavior. Both ADMIN and COUNTER_STAFF now use the existing Radix drawer at every width: navigation is hidden until the top-left menu opens it; Close/Escape/outside interaction and route navigation retain existing dismissal/focus behavior. The permanent ADMIN aside and its desktop width/menu-hiding overrides are removed, so the workspace uses its full available width. Compact Overview, its four tasks and the independent details page are unchanged. Frontend build/lint and browser acceptance are recorded separately.
+
+## 2026-11-17 compact remaining administrator tasks
+
+Staff management, Pass management and System audit now opt into the same >=800×620 viewport shell/density as Overview, with natural reflow below that threshold. Shared AdminFilterDialog moves list criteria into explicit Apply/Cancel modals with discard-on-close drafts. Tables keep sticky headers and independent keyboard-focusable scrolling; pagination/counts remain outside those regions. Audit details have their own bounded scroll area, including a side-by-side layout at tablet widths. Dialog and lifecycle commands retain their original version/permission/UNKNOWN behavior. Frontend build/lint and current planning/diff checks PASS; browser/focus/viewport/business acceptance NOT_RUN. No backend/database/process changes.

@@ -120,11 +120,11 @@
 
 /* Shallow desktop/tablet windows get a viewport frame, with an accessible chart-region overflow fallback. */
 @media (min-width: 800px) and (min-height: 620px) {
-  .workspace-admin-overview { height: 100dvh; min-height: 0; }
-  .workspace-admin-overview .workspace-body { height: 100%; min-height: 0; }
-  .workspace-admin-overview .topbar { min-height: 56px; flex: 0 0 auto; padding: 6px 20px; }
-  .workspace-admin-overview .workspace-footer { flex: 0 0 26px; padding: 3px 16px; line-height: 19px; }
-  .workspace-admin-overview .workspace-main { min-height: 0; display: flex; flex-direction: column; padding: 10px 14px; }
+  :is(.workspace-admin-overview, .workspace-admin-tasks) { height: 100dvh; min-height: 0; }
+  :is(.workspace-admin-overview, .workspace-admin-tasks) .workspace-body { height: 100%; min-height: 0; }
+  :is(.workspace-admin-overview, .workspace-admin-tasks) .topbar { min-height: 56px; flex: 0 0 auto; padding: 6px 20px; }
+  :is(.workspace-admin-overview, .workspace-admin-tasks) .workspace-footer { flex: 0 0 26px; padding: 3px 16px; line-height: 19px; }
+  :is(.workspace-admin-overview, .workspace-admin-tasks) .workspace-main { min-height: 0; display: flex; flex-direction: column; padding: 10px 14px; }
   .workspace-admin-overview .admin-overview { display: flex; flex-direction: column; flex: 1; min-height: 0; gap: 8px; }
   .admin-overview > :not(.admin-chart-grid) { flex-shrink: 0; }
   .admin-overview .admin-heading { gap: 12px; flex-wrap: nowrap; }
@@ -167,4 +167,50 @@
 .admin-filter-summary { display: block; overflow-wrap: anywhere; }
 @media (max-width: 480px) {
   .admin-filter-dates { grid-template-columns: minmax(0, 1fr); }
+}
+
+/* The remaining admin tasks share Overview density; only their content regions scroll at desktop/tablet sizes. */
+.admin-applied-summary { color: var(--muted); font-size: 13px; line-height: 18px; overflow-wrap: anywhere; margin: 0; }
+.admin-task-page > :is(.admin-heading, .lc-header) > .admin-actions { margin: 0; gap: 8px; }
+.admin-task-page .admin-filter-form input { min-height: 44px; }
+@media (min-width: 800px) and (min-height: 620px) {
+  .workspace-admin-tasks .admin-task-page { display: flex; flex-direction: column; flex: 1; min-height: 0; gap: 8px; }
+  .admin-task-page > :not(.admin-task-fill) { flex-shrink: 0; }
+  .admin-task-page > :is(.admin-heading, .lc-header) { align-items: center; gap: 12px; flex-wrap: nowrap; }
+  .admin-task-page > :is(.admin-heading, .lc-header) h1 { font-size: 26px; line-height: 28px; margin: 0; }
+  .admin-task-page > :is(.admin-heading, .lc-header) p { font-size: 12px; line-height: 16px; margin: 0; }
+  .admin-task-page .button { min-height: 44px; font-size: 12px; padding: 8px 10px; }
+  .admin-task-page > .muted { font-size: 12px; line-height: 16px; }
+  .admin-task-page .admin-applied-summary { font-size: 12px; line-height: 16px; }
+  .admin-task-page .admin-task-fill { flex: 1 1 0; min-height: 0; }
+  .admin-task-page > .admin-notice { padding: 10px 12px; font-size: 13px; }
+  .admin-task-page .admin-directory-card { display: flex; flex-direction: column; }
+  .admin-task-page .admin-directory-card > .admin-table-scroll { flex: 1 1 0; min-height: 0; overflow: auto; scrollbar-gutter: stable; }
+  .admin-task-page .admin-table-footer { padding: 8px 12px; gap: 8px; font-size: 12px; flex-shrink: 0; }
+  .admin-task-page table th, .admin-task-page table td { padding: 8px 10px; }
+  .admin-task-page table td { font-size: 13px; }
+  .admin-task-page .admin-person { gap: 10px; }
+  .admin-task-page .admin-initials { flex-basis: 36px; height: 36px; }
+  .admin-task-page .admin-person small { font-size: 12px; }
+  .admin-task-page .admin-metrics { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; margin: 4px 0 0; }
+  .admin-task-page .admin-metrics .admin-card { padding: 8px 10px; }
+  .admin-task-page .admin-metrics span { font-size: 12px; line-height: 14px; }
+  .admin-task-page .admin-metrics strong { font-size: 24px; line-height: 26px; margin-top: 2px; }
+  .admin-task-page section[aria-label="Inventory summary"] > p { margin: 0; font-size: 12px; line-height: 16px; }
+  .admin-task-page .admin-inventory-panel { display: flex; flex-direction: column; padding: 10px 12px; gap: 8px; }
+  .admin-inventory-panel > :not(.lc-table) { flex-shrink: 0; }
+  .admin-inventory-panel .lc-header h2 { font-size: 14px; line-height: 18px; margin: 0; }
+  .admin-inventory-panel .lc-caption { font-size: 12px; line-height: 16px; margin: 0; }
+  .admin-task-page .admin-inventory-panel > .lc-table { flex: 1 1 0; min-height: 0; max-height: none; overflow: auto; scrollbar-gutter: stable; }
+  .admin-inventory-panel > nav { gap: 10px; margin: 0; font-size: 12px; }
+  .admin-system-audit .admin-local-notice { padding: 8px 12px; gap: 10px; font-size: 12px; }
+  .admin-system-audit .admin-audit-layout { align-items: stretch; gap: 12px; }
+  .admin-system-audit .admin-audit-layout.has-selection { grid-template-columns: minmax(0, 1.8fr) minmax(260px, 1fr); }
+  .admin-system-audit .admin-audit-table { display: flex; flex-direction: column; min-height: 0; }
+  .admin-system-audit .admin-audit-table > .admin-table-scroll { flex: 1 1 0; min-height: 0; max-height: none; overflow: auto; scrollbar-gutter: stable; }
+  .admin-system-audit .admin-audit-detail { position: static; min-height: 0; overflow: auto; padding: 12px; }
+  .admin-system-audit .admin-audit-detail h2 { font-size: 16px; }
+  .admin-system-audit .admin-audit-detail h3 { margin: 10px 0; font-size: 14px; }
+  .admin-system-audit .admin-audit-detail dd { font-size: 13px; margin-bottom: 10px; }
+  .admin-system-audit .admin-audit-tabs, .admin-system-audit .admin-list-pagination { gap: 6px; margin: 0; }
 }
