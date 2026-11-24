@@ -76,4 +76,8 @@ FROM information_schema.tables WHERE table_schema = DATABASE()
 
 The new demo seed can initialize a separate empty native database directly at V12. Business rows and original counter history are not needed for fresh demo setup.
 
-Migration execution, native launch and browser/business acceptance are NOT_RUN.
+## 2026-11-24 native acceptance
+
+- The operator ran the guarded PowerShell switch from release commit `652ad02`. The terminal reported a verified backup, shutdown of the old application, an available native MySQL connection and READY for the new release. The backup bundle `2026-11-24T02-59-38-769Z-29d096` contains the dump, keys and completion marker.
+- Browser handover passed at the local demo URL. A synthetic Vendor registration via the current QR was approved and issued pass `vend-1` by `demo_staff_a` at 11:02 MYT. After sign-out, `demo_staff_b` saw and returned the same pass at 11:03 MYT. The item disappeared from pending returns, appeared in Pass history, and System audit attributed both events to the respective accounts for the same card.
+- Direct Flyway history verification, schema/table inspection, pre/post count reconciliation and the disabled-staff scenario remain NOT_RUN. The browser run verified startup and the shared staff workflow against the migrated application.
