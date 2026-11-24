@@ -28,7 +28,7 @@ class ReviewReadServiceTests {
     private final RecordingTransactions manager = new RecordingTransactions();
     private final Accounts.Account staff = new Accounts.Account(7, "staff", "fixture", "COUNTER_STAFF", true, 0);
     private final ReviewService.StaffContext context = new ReviewService.StaffContext("binding", "owner", 1L, "staff");
-    private final RegistrationReviewPort.ReviewCoordinates coordinates = new RegistrationReviewPort.ReviewCoordinates("1", "2");
+    private final RegistrationReviewPort.ReviewCoordinates coordinates = new RegistrationReviewPort.ReviewCoordinates("1");
     private final RegistrationReadPort.QueuePage page = mock(RegistrationReadPort.QueuePage.class);
     private final RegistrationReadPort.Detail detail = mock(RegistrationReadPort.Detail.class);
     private ReviewReadService service;
@@ -38,24 +38,24 @@ class ReviewReadServiceTests {
             assertThat(TransactionSynchronizationManager.isActualTransactionActive()).isFalse(); return staff;
         });
         when(accounts.lock(7)).thenReturn(staff); when(roots.discover("1")).thenReturn(coordinates);
-        when(reads.captureReadScope("owner", "2")).thenAnswer(call -> {
+        when(reads.captureReadScope("owner")).thenAnswer(call -> {
             assertThat(TransactionSynchronizationManager.isActualTransactionActive()).isTrue();
             assertThat(TransactionSynchronizationManager.getCurrentTransactionIsolationLevel()).isEqualTo(TransactionDefinition.ISOLATION_READ_COMMITTED);
             return scope;
         });
         when(page.page()).thenReturn(0); when(page.pageSize()).thenReturn(10); when(page.items()).thenReturn(List.of());
-        when(detail.id()).thenReturn("1"); when(detail.counterId()).thenReturn("2");
+        when(detail.id()).thenReturn("1");
         when(reads.readMaskedQueue(eq(scope), any())).thenReturn(page); when(reads.readMaskedDetail(scope, "1")).thenReturn(detail);
         service = new ReviewReadService(reads, roots, capabilities, accounts, manager);
     }
 
-    /** A selected counter reaches the root only after current staff, user and the complete owner prefix are checked. */
-    @Test void queueUsesGuardedSingleCounterInOneRcTransaction() {
-        assertThat(service.queue(context, Map.of("counterId", List.of("2")))).isSameAs(page);
+    /** The shared queue reaches the root only after current staff, user and the complete owner prefix are checked. */
+    @Test void queueUsesStaffAccessInOneRcTransaction() {
+        assertThat(service.queue(context, Map.of())).isSameAs(page);
         var order = inOrder(capabilities, accounts, reads);
         order.verify(capabilities).requireHuman("binding", "owner", 1L, "staff"); order.verify(accounts).lock(7);
-        order.verify(capabilities).lockOwners(List.of(new SessionCapabilities.OwnerUse("owner", 2)), null);
-        order.verify(reads).captureReadScope("owner", "2");
+        order.verify(capabilities).lockOwners(List.of("owner"), null);
+        order.verify(reads).captureReadScope("owner");
         order.verify(reads).readMaskedQueue(scope, new RegistrationReadPort.ReadQuery(null, null, 0, 10));
         assertThat(manager.commits).isEqualTo(1); verifyNoInteractions(roots);
     }
@@ -65,7 +65,7 @@ class ReviewReadServiceTests {
         var order = inOrder(capabilities, roots, accounts, reads);
         order.verify(capabilities).requireHuman(anyString(), anyString(), anyLong(), anyString()); order.verify(roots).discover("1");
         order.verify(accounts).lock(7); order.verify(capabilities).lockOwners(anyList(), isNull());
-        order.verify(reads).captureReadScope("owner", "2"); order.verify(reads).readMaskedDetail(scope, "1");
+        order.verify(reads).captureReadScope("owner"); order.verify(reads).readMaskedDetail(scope, "1");
         verify(roots, never()).lock(any()); verify(roots, never()).recordDecision(any(), anyLong(), anyString(), any());
     }
     /** Even malformed query or ID requests first meet current human authentication and role boundaries. */
@@ -75,46 +75,46 @@ class ReviewReadServiceTests {
         failure(() -> service.queue(context, Map.of()), 403); failure(() -> service.detail(context, "bad-id", Map.of("actorId", List.of("9"))), 403);
         verifyNoInteractions(roots, accounts, reads); assertThat(manager.begins).isZero();
     }
-    /** A downgrade after the pre-read is rechecked while the user lock is held, before counter/session or root access. */
+    /** A downgrade after the pre-read is rechecked while the user lock is held, before session or root access. */
     @Test void currentRoleInsideTransactionIsAuthoritative() {
         when(accounts.lock(7)).thenReturn(new Accounts.Account(7, "staff", "fixture", "ADMIN", true, 1));
-        failure(() -> service.queue(context, Map.of("counterId", List.of("2"))), 403);
+        failure(() -> service.queue(context, Map.of()), 403);
         verify(capabilities, never()).lockOwners(anyList(), any()); verifyNoInteractions(reads); assertThat(manager.rollbacks).isEqualTo(1);
     }
-    /** Inactive or removed counter access uses fixed NOT_FOUND, while expired actual session remains 401. */
-    @Test void hiddenCounterAndExpiredSessionKeepDistinctSafeBoundaries() {
+    /** A revoked owner uses fixed NOT_FOUND, while expired actual session remains 401. */
+    @Test void revokedOwnerAndExpiredSessionKeepDistinctSafeBoundaries() {
         doThrow(new ApiFailure(410, "REGISTRATION_ENTRY_REVOKED", "internal QR message")).when(capabilities).lockOwners(anyList(), isNull());
         assertThatThrownBy(() -> service.detail(context, "1", Map.of())).isInstanceOfSatisfying(ApiFailure.class, denied -> {
             assertThat(denied.status()).isEqualTo(404); assertThat(denied.code()).isEqualTo("NOT_FOUND");
             assertThat(denied.getMessage()).isEqualTo("This registration is not available.");
         });
         doThrow(ApiFailure.unauthenticated()).when(capabilities).lockOwners(anyList(), isNull());
-        failure(() -> service.queue(context, Map.of("counterId", List.of("2"))), 401); verifyNoInteractions(reads);
+        failure(() -> service.queue(context, Map.of()), 401); verifyNoInteractions(reads);
     }
     /** Missing or mismatched discovery never returns a public existence lookup and acquires no root read scope. */
     @Test void missingAndUnexpectedCoordinatesAreHidden() {
         failure(() -> service.detail(context, "2", Map.of()), 404);
-        when(roots.discover("1")).thenReturn(new RegistrationReviewPort.ReviewCoordinates("2", "2"));
+        when(roots.discover("1")).thenReturn(new RegistrationReviewPort.ReviewCoordinates("2"));
         failure(() -> service.detail(context, "1", Map.of()), 404); verifyNoInteractions(accounts, reads);
     }
     /** Unknown detail query cannot supply a second authority channel; duplicate queue filters never reach the root. */
     @Test void malformedQueriesDoNotCaptureScope() {
         failure(() -> service.detail(context, "1", Map.of("counterId", List.of("9"))), 400);
-        failure(() -> service.queue(context, Map.of("counterId", List.of("2", "2"))), 400);
+        failure(() -> service.queue(context, Map.of("page", List.of("2", "2"))), 400);
         verifyNoInteractions(accounts, roots, reads); assertThat(manager.begins).isZero();
     }
     /** An erroneous root projection is rejected before serialization, without automatically issuing another operation. */
     @Test void unexpectedRootProjectionFailsClosedWithoutReread() {
-        when(detail.counterId()).thenReturn("3");
+        when(detail.id()).thenReturn("3");
         assertThatThrownBy(() -> service.detail(context, "1", Map.of())).isInstanceOf(IllegalStateException.class);
         when(page.pageSize()).thenReturn(50);
-        assertThatThrownBy(() -> service.queue(context, Map.of("counterId", List.of("2")))).isInstanceOf(IllegalStateException.class);
-        verify(reads, times(2)).captureReadScope("owner", "2"); verify(reads).readMaskedDetail(scope, "1");
+        assertThatThrownBy(() -> service.queue(context, Map.of())).isInstanceOf(IllegalStateException.class);
+        verify(reads, times(2)).captureReadScope("owner"); verify(reads).readMaskedDetail(scope, "1");
         verify(reads).readMaskedQueue(eq(scope), any()); assertThat(manager.rollbacks).isEqualTo(2);
     }
-    /** Outer transactions must not retain binding/context pre-read locks and then chase a new counter. */
+    /** Outer transactions must not retain binding/context pre-read locks before starting review. */
     @Test void callerTransactionIsRejectedBeforeAnyPort() {
-        assertThatThrownBy(() -> new TransactionTemplate(manager).execute(status -> service.queue(context, Map.of("counterId", List.of("2")))))
+        assertThatThrownBy(() -> new TransactionTemplate(manager).execute(status -> service.queue(context, Map.of())))
                 .isInstanceOf(IllegalStateException.class);
         verifyNoInteractions(capabilities, accounts, reads, roots);
     }

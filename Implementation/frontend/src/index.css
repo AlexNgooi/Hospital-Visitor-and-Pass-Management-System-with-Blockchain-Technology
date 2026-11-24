@@ -631,35 +631,6 @@ h2[tabindex]:focus {
   width: 100%;
   margin: 0 auto;
 }
-.counter-bar {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  border-bottom: 1px solid var(--border);
-  padding-bottom: 12px;
-  margin-bottom: 20px;
-  font-size: 12px;
-}
-.counter-bar label {
-  font-weight: 550;
-}
-.counter-bar select {
-  /* Opaque long option labels must not impose intrinsic width beyond their available container. */
-  min-width: 0;
-  width: min(260px, 100%);
-  max-width: 100%;
-  flex: 0 1 auto;
-  min-height: 44px;
-  background: white;
-  border: 1px solid #cfd4dc;
-  border-radius: 7px;
-  padding: 7px 32px 7px 12px;
-  font-size: 12px;
-}
-.counter-bar > .muted {
-  margin-left: auto;
-  font-size: 11px;
-}
 .page-heading h1 {
   font-size: 32px;
   margin-bottom: 8px;
@@ -1023,10 +994,6 @@ h2[tabindex]:focus {
   .workspace-main > .page-heading {
     margin-bottom: 16px;
   }
-  .counter-bar {
-    padding-bottom: 8px;
-    margin-bottom: 16px;
-  }
   .page-heading h1 {
     font-size: 28px;
   }
@@ -1045,12 +1012,6 @@ h2[tabindex]:focus {
     flex-direction: column;
     gap: 6px;
     margin-bottom: 10px;
-  }
-  .counter-bar {
-    flex-wrap: wrap;
-  }
-  .counter-bar > .muted {
-    display: none;
   }
   .workspace-footer {
     padding: 12px 20px;
@@ -1080,9 +1041,6 @@ h2[tabindex]:focus {
   }
   .capability-grid {
     gap: 10px 12px;
-  }
-  .counter-bar select {
-    width: min(210px, 100%);
   }
   .account-avatar {
     display: none;

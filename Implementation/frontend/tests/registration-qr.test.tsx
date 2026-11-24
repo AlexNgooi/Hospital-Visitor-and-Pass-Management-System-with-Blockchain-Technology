@@ -4,7 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import QRCode from "qrcode";
 import jsQR from "jsqr";
 import { StrictMode } from "react";
-import { CounterContext } from "../src/app/counter-context";
+import { AuthContext, type AuthContextValue } from "../src/app/auth-context";
 import { createEntryVault } from "../src/app/entry-token";
 import { ClientError } from "../src/lib/errors";
 import { RegistrationQrDisplay } from "../src/features/registration-qr/display";
@@ -20,14 +20,18 @@ const encodePng = nodeQr.toDataURL.bind(nodeQr);
 const png = qrRequire("pngjs") as { PNG: { sync: { read(value: Buffer): { data: Uint8Array; width: number; height: number } } } };
 const DISPLAY = "a064038e-85cc-432f-af75-023fa487f476";
 const fixtureToken = "ZmFrZWhlYWRlcg.Zml4dHVyZXBheWxvYWQ.Zml4dHVyZXNpZ25hdHVyZQ";
-const scope = { environment: "test", counterId: "1", categoryScope: null };
+const staff: AuthContextValue = {
+  state: { kind: "authenticated", user: { id: "1", login: "test_staff", role: "COUNTER_STAFF", staffAccessEnabled: true } },
+  logoutState: { kind: "idle" }, mutationPending: false, refresh: vi.fn(), login: vi.fn(), logout: vi.fn(),
+};
+const scope = { environment: "test", categoryScope: null };
 const date = (milliseconds: number) => new Date(milliseconds).toISOString().replace(/\.([0-9]{3})Z$/, ".$1000Z");
 function current(): CurrentQr {
   const now = Date.now(); return { displaySessionId: DISPLAY, entryUrl: `${window.location.origin}/register#entry=${fixtureToken}`, scope,
     serverNow: date(now), rotateAt: date(now + 30000), expiresAt: date(now + 45000) };
 }
-function grant(counterId = "1", version = 1): EntryGrant {
-  return { formContext: { grantReference: `synthetic_grant_${version}`, bindingVersion: version }, scope: { ...scope, counterId }, serverNow: date(Date.now()), grantExpiresAt: date(Date.now() + 1200000) };
+function grant(categoryScope: string | null = null, version = 1): EntryGrant {
+  return { formContext: { grantReference: `synthetic_grant_${version}`, bindingVersion: version }, scope: { ...scope, categoryScope }, serverNow: date(Date.now()), grantExpiresAt: date(Date.now() + 1200000) };
 }
 function fixturePort(): QrPort {
   return { capabilities: vi.fn(async () => ({ enabled: true })), create: vi.fn(async () => ({ displaySessionId: DISPLAY })),
@@ -68,34 +72,35 @@ afterEach(() => { vi.restoreAllMocks(); vi.useRealTimers(); });
 describe("registration QR authority display", () => {
   /** Decode actual PNG pixels generated from the rendered image, not a fake illustrative QR block. */
   it("renders an actual decodable current QR", async () => {
-    const port = fixturePort(); render(<CounterContext.Provider value="1"><RegistrationQrDisplay port={port} /></CounterContext.Provider>);
-    await waitFor(() => expect((screen.getByRole("button", { name: "Display registration QR" }) as HTMLButtonElement).disabled).toBe(false));
-    fireEvent.click(screen.getByRole("button", { name: "Display registration QR" }));
+    const port = fixturePort(); render(<AuthContext.Provider value={staff}><RegistrationQrDisplay port={port} /></AuthContext.Provider>);
+
+
     const image = await screen.findByRole("img", { name: /Scan this current QR/ }) as HTMLImageElement;
     const pixels = png.PNG.sync.read(Buffer.from(image.src.split(",")[1], "base64"));
     const decoded = jsQR(new Uint8ClampedArray(pixels.data), pixels.width, pixels.height);
     expect(decoded?.data === `${window.location.origin}/register#entry=${fixtureToken}`).toBe(true);
     expect(screen.queryByText(fixtureToken)).toBeNull();
-    expect(port.create).toHaveBeenCalledWith("1");
+    expect(port.create).toHaveBeenCalledWith();
   });
   /** Disabled capability never renders or creates a display. */
   it("shows disabled state without creating authority", async () => {
     const port = fixturePort(); vi.mocked(port.capabilities).mockResolvedValue({ enabled: false });
-    render(<CounterContext.Provider value="1"><RegistrationQrDisplay port={port} /></CounterContext.Provider>);
+    render(<AuthContext.Provider value={staff}><RegistrationQrDisplay port={port} /></AuthContext.Provider>);
     expect(await screen.findByText("Registration QR is not enabled")).toBeTruthy();expect(port.create).not.toHaveBeenCalled();expect(screen.queryByRole("img")).toBeNull();
   });
   /** Availability failures can recover through a read without accidentally creating a display. */
   it("rechecks unavailable capabilities without replaying commands", async () => {
     const port = fixturePort(); vi.mocked(port.capabilities).mockRejectedValueOnce(new ClientError("timeout"));
-    render(<CounterContext.Provider value="1"><RegistrationQrDisplay port={port} /></CounterContext.Provider>);
+    render(<AuthContext.Provider value={staff}><RegistrationQrDisplay port={port} /></AuthContext.Provider>);
     fireEvent.click(await screen.findByRole("button", { name: "Check QR availability" }));
-    await waitFor(() => expect((screen.getByRole("button", { name: "Display registration QR" }) as HTMLButtonElement).disabled).toBe(false));
-    expect(port.capabilities).toHaveBeenCalledTimes(2); expect(port.create).not.toHaveBeenCalled();
+
+    await screen.findByRole("img");
+    expect(port.capabilities).toHaveBeenCalledTimes(2); expect(port.create).toHaveBeenCalledTimes(1);
   });
   /** Offline and visibility events hide the code synchronously and only a fresh response restores it. */
   it("hides offline and revalidates after tab sleep", async () => {
-    const port = fixturePort();render(<CounterContext.Provider value="1"><RegistrationQrDisplay port={port} /></CounterContext.Provider>);
-    await waitFor(() => expect((screen.getByRole("button", { name: "Display registration QR" }) as HTMLButtonElement).disabled).toBe(false));fireEvent.click(screen.getByRole("button", { name: "Display registration QR" }));
+    const port = fixturePort();render(<AuthContext.Provider value={staff}><RegistrationQrDisplay port={port} /></AuthContext.Provider>);
+
     await screen.findByRole("img");
     Object.defineProperty(navigator, "onLine", { configurable: true, value: false });fireEvent(window, new Event("offline"));expect(screen.queryByRole("img")).toBeNull();
     Object.defineProperty(navigator, "onLine", { configurable: true, value: true });fireEvent(window, new Event("online"));await screen.findByRole("img");
@@ -106,35 +111,33 @@ describe("registration QR authority display", () => {
   /** An explicit failed revoke hides authority while accurately describing its unknown remote outcome. */
   it("never restores a code after revoke timeout", async () => {
     const port = fixturePort();vi.mocked(port.revoke).mockRejectedValue(new ClientError("timeout"));
-    render(<CounterContext.Provider value="1"><RegistrationQrDisplay port={port} /></CounterContext.Provider>);
-    await waitFor(() => expect((screen.getByRole("button", { name: "Display registration QR" }) as HTMLButtonElement).disabled).toBe(false));fireEvent.click(screen.getByRole("button", { name: "Display registration QR" }));await screen.findByRole("img");
+    render(<AuthContext.Provider value={staff}><RegistrationQrDisplay port={port} /></AuthContext.Provider>);
+    await screen.findByRole("img");
     fireEvent.click(screen.getByRole("button", { name: "Revoke display" }));await screen.findByText(/Revocation is unconfirmed/);expect(screen.queryByRole("img")).toBeNull();
   });
-  /** An uncertain revoke retains its exact source across counter changes; only explicit retry reissues that command. */
-  it("retains the original revoke source and retries it explicitly after a counter change", async () => {
+  /** An uncertain revoke retains its exact source; only explicit retry reissues that command. */
+  it("retains the original revoke source and retries it explicitly", async () => {
     const port = fixturePort(), pending = deferred<void>();
     vi.mocked(port.revoke).mockImplementationOnce(() => pending.promise).mockResolvedValueOnce(undefined);
-    const view = render(<CounterContext.Provider value="1"><RegistrationQrDisplay port={port} /></CounterContext.Provider>);
-    await waitFor(() => expect((screen.getByRole("button", { name: "Display registration QR" }) as HTMLButtonElement).disabled).toBe(false));
-    fireEvent.click(screen.getByRole("button", { name: "Display registration QR" })); await screen.findByRole("img");
+    render(<AuthContext.Provider value={staff}><RegistrationQrDisplay port={port} /></AuthContext.Provider>);
+
+    await screen.findByRole("img");
     fireEvent.click(screen.getByRole("button", { name: "Revoke display" })); expect(screen.queryByRole("img")).toBeNull();
-    view.rerender(<CounterContext.Provider value="2"><RegistrationQrDisplay port={port} /></CounterContext.Provider>);
     await act(async () => pending.reject(new ClientError("timeout")));
-    await screen.findByText("Original counter 1");
+    await screen.findByRole("heading", { name: "Display revocation is unconfirmed" });
     expect(screen.queryByRole("button", { name: "Display registration QR" })).toBeNull();
     fireEvent(window, new Event("pageshow")); fireEvent(window, new Event("online"));
     expect(screen.queryByRole("img")).toBeNull(); expect(port.revoke).toHaveBeenCalledTimes(1); expect(port.create).toHaveBeenCalledTimes(1);
     fireEvent.click(screen.getByRole("button", { name: "Retry revoke" })); await screen.findByText(/This display was revoked/);
-    expect(vi.mocked(port.revoke).mock.calls).toEqual([[DISPLAY], [DISPLAY]]); expect(screen.queryByText("Original counter 1")).toBeNull();
+    expect(vi.mocked(port.revoke).mock.calls).toEqual([[DISPLAY], [DISPLAY]]); expect(screen.queryByRole("heading", { name: "Display revocation is unconfirmed" })).toBeNull();
     expect(screen.queryByRole("img")).toBeNull();
-    expect((screen.getByRole("button", { name: "Display registration QR" }) as HTMLButtonElement).disabled).toBe(false);
     expect(port.create).toHaveBeenCalledTimes(1);
   });
   /** A server/proxy returning another origin cannot make this display transport a token to that site. */
   it("rejects an untrusted entry URL", async () => {
     const port = fixturePort();vi.mocked(port.current).mockResolvedValue({ ...current(), entryUrl: `https://other.example.test/register#entry=${fixtureToken}` });
-    render(<CounterContext.Provider value="1"><RegistrationQrDisplay port={port} /></CounterContext.Provider>);
-    await waitFor(() => expect((screen.getByRole("button", { name: "Display registration QR" }) as HTMLButtonElement).disabled).toBe(false));fireEvent.click(screen.getByRole("button", { name: "Display registration QR" }));
+    render(<AuthContext.Provider value={staff}><RegistrationQrDisplay port={port} /></AuthContext.Provider>);
+
     await screen.findByText("Something went wrong. Please try again.");expect(screen.queryByRole("img")).toBeNull();
   });
 });
@@ -154,12 +157,12 @@ describe("public grant entry", () => {
     await screen.findByRole("dialog");fireEvent.click(screen.getByRole("button", { name: "Kekalkan borang" }));
     await screen.findByText("Akses borang aktif");expect(vi.mocked(port.exchange).mock.calls).toHaveLength(1);expect(store.read()).toBeNull();
   });
-  /** Only explicit confirmation supplies expectedFormContext; no category or counter is caller-selected. */
+  /** Only explicit confirmation supplies expectedFormContext; the selected category is derived from the signed QR. */
   it("confirms with the captured old context", async () => {
     const port = fixturePort(), old = grant(), next = grant("2", 2), store = vault();
     vi.mocked(port.exchange).mockRejectedValueOnce(failure("REGISTRATION_ENTRY_RESTART_REQUIRED", 409, { currentFormContext: old.formContext, currentScope: old.scope, requestedScope: next.scope })).mockResolvedValueOnce(next);
     render(<RegistrationEntry port={port} vault={store} />);await screen.findByRole("dialog");fireEvent.click(screen.getByRole("button", { name: "Mulakan semula" }));
-    await screen.findByText("Kaunter 2 · semua kategori");expect(port.exchange).toHaveBeenLastCalledWith(fixtureToken, old.formContext);expect(store.read()).toBeNull();
+    await screen.findByText("kategori 2");expect(port.exchange).toHaveBeenLastCalledWith(fixtureToken, old.formContext);expect(store.read()).toBeNull();
   });
   /** UNKNOWN does not replay the command or claim replacement failed; recovery uses GET and explicit form adoption. */
   it("recovers timeout through current entry without retrying a write", async () => {
@@ -197,7 +200,7 @@ describe("public grant entry", () => {
     expect(input.closest("fieldset")?.disabled).toBe(true); expect(input.dataset.version).toBe("1");
     expect(input.value).toBe("Synthetic retained input"); expect(port.exchange).toHaveBeenCalledTimes(1);
     fireEvent.click(screen.getByRole("button", { name: "Buka borang semasa" }));
-    await screen.findByText("Kaunter 2 · semua kategori");
+    await screen.findByText("kategori 2");
     const fresh = screen.getByRole("textbox") as HTMLInputElement;
     expect(fresh.dataset.version).toBe("2"); expect(fresh.value).toBe("");
     expect(port.entry).toHaveBeenCalledTimes(3); expect(port.exchange).toHaveBeenCalledTimes(1);
@@ -265,7 +268,7 @@ describe("public grant entry", () => {
     view.rerender(<RegistrationEntry port={port} vault={vault()}>{children}</RegistrationEntry>);
     await screen.findByRole("dialog"); fireEvent.click(screen.getByRole("button", { name: "Mulakan semula" }));
     await waitFor(() => expect(port.exchange).toHaveBeenCalledTimes(2)); availability(kind, false);
-    await act(async () => pending.resolve(next)); await screen.findByText("Kaunter 2 · semua kategori");
+    await act(async () => pending.resolve(next)); await screen.findByText("kategori 2");
     const fresh = screen.getByRole("textbox") as HTMLInputElement;
     expect(fresh.value).toBe(""); expect(fresh.closest("fieldset")?.disabled).toBe(true);
     vi.mocked(port.entry).mockResolvedValue(next); availability(kind, true);
@@ -280,7 +283,7 @@ describe("public grant entry", () => {
     const input = await screen.findByRole("textbox") as HTMLInputElement; fireEvent.change(input, { target: { value: "Old context input" } });
     fireEvent(window, new Event("pageshow")); fireEvent.click(await screen.findByRole("button", { name: "Buka borang semasa" }));
     await waitFor(() => expect(port.entry).toHaveBeenCalledTimes(2)); availability(kind, false);
-    await act(async () => pending.resolve(next)); await screen.findByText("Kaunter 2 · semua kategori");
+    await act(async () => pending.resolve(next)); await screen.findByText("kategori 2");
     const fresh = screen.getByRole("textbox") as HTMLInputElement;
     expect(fresh.value).toBe(""); expect(fresh.closest("fieldset")?.disabled).toBe(true);
     availability(kind, true); await waitFor(() => expect(fresh.closest("fieldset")?.disabled).toBe(false));

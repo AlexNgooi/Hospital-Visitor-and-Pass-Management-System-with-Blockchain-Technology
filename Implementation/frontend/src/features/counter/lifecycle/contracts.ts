@@ -22,7 +22,7 @@ export const cardSchema = z.object({
   : card.source === "SIMULATED" && card.maskedUid !== null, "Inventory method and provenance must agree");
 export const assignmentSchema = z.object({
   id: uuid, passReference: z.string().regex(/^P-DEMO-[a-f0-9]{32}$/), cardId: uuid, cardCode: label,
-  registrationId: decimal, counterId: decimal, status: z.enum(["ISSUED", "OVERDUE", "RETURNED", "LOST"]),
+  registrationId: decimal, status: z.enum(["ISSUED", "OVERDUE", "RETURNED", "LOST"]),
   issuedAt: utc, dueAt: utc.nullable(), returnRuleKey: z.string().regex(/^return_hours_(EXECUTIVE|PENJAGA|VENDOR|CONTRACTOR)$/),
   returnRuleVersion: version, returnedAt: utc.nullable(), closedAt: utc.nullable(), closureReason: z.enum(["RETURNED", "LOST"]).nullable(),
   version, operationOrigin: z.enum(["SIMULATED", "MANUAL"]), environment, dataSource: source,
@@ -39,9 +39,8 @@ export const inventoryPageSchema = pageSchema(cardSchema).extend({
 });
 export type InventoryPage = z.infer<typeof inventoryPageSchema>;
 export const sampleSchema = z.object({ sampleCode: label, categoryCode: category, label }).strict();
-export const counterSchema = z.object({ id: decimal, code: label, name: label }).strict();
 export const jobSchema = z.object({
-  id: uuid, deviceId: uuid, counterId: decimal, purpose: z.enum(["ENROLL", "ISSUE", "RETURN", "RESTORE"]), targetId: z.union([decimal, uuid, z.literal("REGISTER")]),
+  id: uuid, deviceId: uuid, purpose: z.enum(["ENROLL", "ISSUE", "RETURN", "RESTORE"]), targetId: z.union([decimal, uuid, z.literal("REGISTER")]),
   status: z.enum(["CLAIMED", "SUCCEEDED", "CONSUMED", "CANCELLED", "EXPIRED"]), expiresAt: utc,
   nonce: z.string().regex(/^[A-Za-z0-9_-]{43}$/).nullable(), leaseToken: z.string().regex(/^[A-Za-z0-9_-]{43}$/).nullable(),
   scanResultId: uuid.nullable(), sampleCode: label.nullable(), source, serverNow: utc,
@@ -55,7 +54,6 @@ export type Card = z.infer<typeof cardSchema>;
 export type Assignment = z.infer<typeof assignmentSchema>;
 export type Job = z.infer<typeof jobSchema>;
 export type Sample = z.infer<typeof sampleSchema>;
-export type Counter = z.infer<typeof counterSchema>;
 export type SafeResult = z.infer<typeof safeResultSchema>;
 export type History = z.infer<typeof historySchema>;
 export type Reveal = z.infer<typeof revealSchema>;
@@ -81,6 +79,6 @@ export const passExportSchema = z.object({ filename: z.string().regex(/^pass-his
 export type PassRow = z.infer<typeof passRowSchema>;
 export type PassFeed = z.infer<typeof passFeedSchema>;
 export interface PassFilters {
-  counterId: string; history: boolean; category: "ALL" | z.infer<typeof category>;
+  history: boolean; category: "ALL" | z.infer<typeof category>;
   status: "ALL" | "ISSUED" | "OVERDUE"; search: string; from?: string; to?: string;
 }

@@ -46,7 +46,7 @@ final class ManualLifecycle {
             byte[] encoding=input.encoding(json,scope,operation,plan.target()); boolean recovering=attempt>0;
             try {
                 return service.tx.execute(status->{
-                    var current=security.lock(context,admin,plan.counter()==null?List.of():List.of(plan.counter()));
+                    var current=security.lock(context,admin);
                     var replay=idem.replay(namespace,encoding);
                     if(replay.isPresent()) return replay.get().result();
                     if(recovering) throw new ApiFailure(409,"IDEMPOTENCY_CONFLICT","Check the original command before retrying.");
@@ -101,8 +101,8 @@ final class ManualLifecycle {
 
     /** Discovery supplies immutable coordinates only; current locked rows are checked again before any write. */
     private Plan discover(String operation,String target,ManualInput input) {
-        if(operation.equals("CARD_ENROLL")) return new Plan("REGISTER",null,null,List.of(),List.of());
-        if(operation.equals("RESTORE")) return new Plan(LifecycleInput.uuid(target),null,null,List.of(target),List.of());
+        if(operation.equals("CARD_ENROLL")) return new Plan("REGISTER",null,List.of(),List.of());
+        if(operation.equals("RESTORE")) return new Plan(LifecycleInput.uuid(target),null,List.of(target),List.of());
         String registration; var cards=new ArrayList<String>(); var assignments=new ArrayList<String>();
         if(Set.of("ISSUE","APPROVE_ISSUE","NO_PASS","APPROVE_NO_PASS").contains(operation)) {
             registration=Long.toString(LifecycleInput.decimal(input.text("registrationId")));
@@ -118,8 +118,7 @@ final class ManualLifecycle {
                 cards.add(assignment.cardId()); assignments.add(id);
             }
         }
-        long counter=LifecycleInput.decimal(roots.discover(registration).counterId());
-        return new Plan(operation.equals("RETURN")?target:registration,registration,counter,List.copyOf(cards),List.copyOf(assignments));
+        return new Plan(operation.equals("RETURN")?target:registration,registration,List.copyOf(cards),List.copyOf(assignments));
     }
     private void requireRoot(RegistrationLifecyclePort.Access root) {
         if(!root.environment().equals(environment) || !root.origin().equals("SYNTHETIC")) throw CardRules.unavailable();
@@ -171,8 +170,8 @@ final class ManualLifecycle {
             if(selection.destination()!=null) CardRules.require(root.destinations().stream().anyMatch(value->value.id().equals(selection.destination())),"CARD_DESTINATION_MISMATCH");
             CardRules.require(selection.due()==null || selection.due().isAfter(now),"DEADLINE_INVALID");
             String id=uuid(),reference="P-DEMO-"+uuid().replace("-","");
-            store.jdbc.update("INSERT INTO card_assignments(id,pass_reference,card_id,registration_id,issue_counter_id,return_counter_id,issued_by,issued_at,due_at,return_rule_key,return_rule_version,handover_confirmed_at,operation_origin,environment,category_code,data_origin,destination_scope) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,'MANUAL',?,?,'SYNTHETIC','REGISTRATION')",
-                    id,reference,card.id(),registration,LifecycleInput.decimal(root.coordinates().counterId()),LifecycleInput.decimal(root.coordinates().counterId()),actor,
+            store.jdbc.update("INSERT INTO card_assignments(id,pass_reference,card_id,registration_id,issued_by,issued_at,due_at,return_rule_key,return_rule_version,handover_confirmed_at,operation_origin,environment,category_code,data_origin,destination_scope) VALUES(?,?,?,?,?,?,?,?,?,?,'MANUAL',?,?,'SYNTHETIC','REGISTRATION')",
+                    id,reference,card.id(),registration,actor,
                     DatabaseTime.sql(now),selection.due()==null?null:DatabaseTime.sql(selection.due()),rule.key(),rule.version(),DatabaseTime.sql(now),environment,
                     root.categoryCode());
             for(var destination:root.destinations()) store.jdbc.update("INSERT INTO assignment_destinations(assignment_id,destination_id,destination_code,destination_name) VALUES(?,?,?,?)",
@@ -211,8 +210,7 @@ final class ManualLifecycle {
         var selections=operation.equals("RETURN")?List.of(new ManualInput.Selection(plan.target(),input.version(),null,null)):input.passes(false);
         for(var selection:selections) {
             var assignment=assignments.get(selection.id()); requireAssignment(assignment);
-            if(!Long.toString(assignment.registration()).equals(plan.registration()) || assignment.counter()!=plan.counter()
-                    || assignment.returnCounter()!=plan.counter() || !cards.containsKey(assignment.cardId())) throw CardRules.unavailable();
+            if(!Long.toString(assignment.registration()).equals(plan.registration()) || !cards.containsKey(assignment.cardId())) throw CardRules.unavailable();
             var card=cards.get(assignment.cardId()); CardRules.version(assignment.version(),selection.version());
             CardRules.require(assignment.closed()==null && Set.of("ISSUED","OVERDUE").contains(card.status()),"CARD_STATE_CONFLICT");
             service.overdueLocked(assignment,card,now);
@@ -249,5 +247,5 @@ final class ManualLifecycle {
                 uuid(),assignment,card,registration,type,actor,DatabaseTime.sql(now),reason,commitment);
     }
     record ReturnDefault(String key,Integer hours,long version) { }
-    private record Plan(String target,String registration,Long counter,List<String> cards,List<String> assignments) { }
+    private record Plan(String target,String registration,List<String> cards,List<String> assignments) { }
 }

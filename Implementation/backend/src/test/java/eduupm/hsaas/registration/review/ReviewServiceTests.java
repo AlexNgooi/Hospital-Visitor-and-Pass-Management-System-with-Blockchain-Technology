@@ -34,7 +34,7 @@ class ReviewServiceTests {
     private final RecordingTransactions manager = new RecordingTransactions();
     private final Accounts.Account staff = new Accounts.Account(7, "fixture_staff", "not-a-password", "COUNTER_STAFF", true, 0);
     private final ReviewService.StaffContext context = new ReviewService.StaffContext("fixture-binding", "fixture-owner", 1L, "fixture_staff");
-    private final RegistrationReviewPort.ReviewCoordinates coordinates = new RegistrationReviewPort.ReviewCoordinates("1", "1");
+    private final RegistrationReviewPort.ReviewCoordinates coordinates = new RegistrationReviewPort.ReviewCoordinates("1");
     private final IdempotencyPort.SafeResult approved = new IdempotencyPort.SafeResult("1", "R-TEST-001", "VERIFIED", 1);
     private final String key = "09fbd5b9-6312-478e-ba27-f85056c9875d";
     private ReviewService service;
@@ -112,8 +112,8 @@ class ReviewServiceTests {
         assertThatThrownBy(() -> service.verify(context, "1", key, body())).isInstanceOfSatisfying(ApiFailure.class, failure -> assertThat(failure.status()).isEqualTo(409));
         verify(root, times(1)).recordDecision(any(), anyLong(), anyString(), any()); assertThat(manager.rollbacks).isEqualTo(2);
     }
-    /** Revocation between the failed insert and recovery rechecks current counter access before stored result lookup. */
-    @Test void uniqueRecoveryCannotBypassRevokedCounterAccess() {
+    /** Revocation between the failed insert and recovery rechecks current staff access before stored result lookup. */
+    @Test void uniqueRecoveryCannotBypassRevokedStaffAccess() {
         doNothing().doThrow(new ApiFailure(410, "REGISTRATION_ENTRY_REVOKED", "QR-only diagnostic")).when(capabilities).lockOwners(anyList(), isNull());
         doThrow(new DuplicateKeyException("synthetic uniqueness race")).when(idempotency).success(any(), any(), anyInt(), any());
         assertThatThrownBy(() -> service.verify(context, "1", key, body())).isInstanceOfSatisfying(ApiFailure.class, failure -> {

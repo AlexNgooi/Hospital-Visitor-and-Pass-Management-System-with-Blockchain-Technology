@@ -12,7 +12,7 @@ import "./registration-qr.css";
 function sameAuthority(left: EntryGrant, right: EntryGrant) {
   return left.formContext.grantReference === right.formContext.grantReference
     && left.formContext.bindingVersion === right.formContext.bindingVersion
-    && left.scope.environment === right.scope.environment && left.scope.counterId === right.scope.counterId
+    && left.scope.environment === right.scope.environment
     && left.scope.categoryScope === right.scope.categoryScope && left.grantExpiresAt === right.grantExpiresAt;
 }
 
@@ -182,7 +182,7 @@ export function RegistrationEntry({ port = qrPort, vault = entryVault, children,
     if (!entry) void recover(token ?? undefined);
     else if (token) vault.clear(token);
   };
-  const label = (scope: EntryGrant["scope"]) => `Kaunter ${scope.counterId} · ${scope.categoryScope === null ? "semua kategori" : `kategori ${scope.categoryScope}`}`;
+  const label = (scope: EntryGrant["scope"]) => `${scope.categoryScope === null ? "semua kategori" : `kategori ${scope.categoryScope}`}`;
 
   // C16 is presentation-only: default M02 markup stays intact; no authority, polling or fieldset logic changes.
   return <div className={"qr-feature qr-entry" + (compact ? " qr-entry-compact" : "")}>

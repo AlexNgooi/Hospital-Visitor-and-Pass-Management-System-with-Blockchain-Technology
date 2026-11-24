@@ -16,7 +16,7 @@ interface Draft {
   readonly context: string; readonly category: string; readonly values: Partial<Record<FieldName, string>>;
   readonly step: number; readonly acknowledged: boolean; readonly termsAcknowledged: boolean; readonly feedback: Feedback | null;
 }
-interface Pending { readonly command: Command<Receipt>; readonly counter: string; readonly original: Draft }
+interface Pending { readonly command: Command<Receipt>; readonly original: Draft }
 const common = new Set<FieldName>(["fullName", "identificationType", "identificationNumber", "phone"]);
 const contextKey = (entry: EntryGrant) => entry.formContext.grantReference + ":" + entry.formContext.bindingVersion;
 
@@ -29,7 +29,7 @@ export function RegistrationPage({ port = registrationPort, entryPort, vault }: 
   port?: RegistrationPort; entryPort?: QrPort; vault?: EntryVault;
 }) {
   const [draft, setDraft] = useState<Draft | null>(null), [pending, setPending] = useState<Pending | null>(null);
-  const [receipt, setReceipt] = useState<{ value: Receipt; counter: string } | null>(null);
+  const [receipt, setReceipt] = useState<Receipt | null>(null);
   const [busy, setBusy] = useState(false), [unknown, setUnknown] = useState(false), [message, setMessage] = useState("");
   const activeVault = vault ?? entryVault;
   const incomingEntry = useSyncExternalStore(activeVault.subscribe, activeVault.read);
@@ -51,7 +51,7 @@ export function RegistrationPage({ port = registrationPort, entryPort, vault }: 
     dispatching.current = true;setBusy(true);setMessage("");
     try {
       const value = await operation.command.execute();
-      setReceipt({ value, counter: operation.counter });setPending(null);setDraft(null);setUnknown(false);
+      setReceipt(value);setPending(null);setDraft(null);setUnknown(false);
     } catch (error) {
       if (recovery || uncertain(error)) {
         setUnknown(true);setMessage("Hasil belum dapat disahkan. Cuba semula permohonan asal atau dapatkan bantuan di kaunter.");
@@ -64,17 +64,17 @@ export function RegistrationPage({ port = registrationPort, entryPort, vault }: 
       }
     } finally { dispatching.current = false;setBusy(false); }
   };
-  const submit = (body: Submission, original: Draft, counter: string) => {
+  const submit = (body: Submission, original: Draft) => {
     if (dispatching.current) return;
-    const operation: Pending = Object.freeze({ command: port.submission(body), counter, original });
+    const operation: Pending = Object.freeze({ command: port.submission(body), original });
     setPending(operation);setUnknown(false);setMessage("");void execute(operation, false);
   };
   return <div className="registration-page">
     {receipt ? <section className="registration-result" aria-live="polite">
       <CheckCircle2 size={40} aria-hidden="true" /><span className="eyebrow">DEMO · DATA SINTETIK</span>
       <h1 ref={heading} tabIndex={-1}>Pendaftaran diterima</h1>
-      <p>Tunjukkan rujukan ini di kaunter {receipt.counter} untuk pengesahan.</p>
-      <p className="registration-reference">{receipt.value.publicReference}</p>
+      <p>Tunjukkan rujukan ini di kaunter untuk pengesahan.</p>
+      <p className="registration-reference">{receipt.publicReference}</p>
       <p className="muted">Pengesahan kakitangan masih diperlukan. WhatsApp belum diaktifkan.</p>
       <p className="muted">Untuk pendaftaran seterusnya, imbas QR semasa di kaunter. Halaman kaunter tidak perlu dimuat semula.</p>
     </section> : pending ? <section className="registration-result" aria-live="polite">
@@ -95,7 +95,7 @@ export function RegistrationPage({ port = registrationPort, entryPort, vault }: 
 /** Three steps keep fields in memory, with toast validation and focus on the first invalid control. */
 function RegistrationForm({ entry, port, initial, onDraft, onSubmit }: {
   entry: EntryGrant; port: RegistrationPort; initial: Draft | null;
-  onDraft: (draft: Draft) => void; onSubmit: (body: Submission, draft: Draft, counter: string) => void;
+  onDraft: (draft: Draft) => void; onSubmit: (body: Submission, draft: Draft) => void;
 }) {
   const [schema, setSchema] = useState<RegistrationSchema | null>(null), [loading, setLoading] = useState(true), [loadError, setLoadError] = useState("");
   const [loadAttempt, setLoadAttempt] = useState(0);
@@ -212,7 +212,7 @@ function RegistrationForm({ entry, port, initial, onDraft, onSubmit }: {
       formData, privacyAcknowledgement: { acknowledged: true, policyVersion: schema.privacy.policyVersion },
       ...(current.code === "PENJAGA" ? { termsAcknowledgement: { acknowledged: true as const, policyVersion: schema.terms.policyVersion } } : {}),
       ...(current.code === "PENJAGA" && feedback?.validationToken ? { mrnValidationToken: feedback.validationToken } : {}) };
-    onSubmit(body, { context: contextKey(entry), category, values, step, acknowledged, termsAcknowledged, feedback }, entry.scope.counterId);
+    onSubmit(body, { context: contextKey(entry), category, values, step, acknowledged, termsAcknowledged, feedback });
   };
   const changeCategory = (value: string) => {
     mrnRequest.current?.controller.abort();mrnRequest.current=null;automaticMrnKey.current=null;

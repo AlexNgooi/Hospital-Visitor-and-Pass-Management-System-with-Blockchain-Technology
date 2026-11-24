@@ -56,9 +56,9 @@ export function lifecycleError(error: unknown): string {
   if (error instanceof ClientError) {
     const messages: Record<string, string> = {
       EXPORT_TOO_LARGE: "Too many matching records to export. Choose a shorter date range or narrow the filters.",
-      SCAN_DEVICE_BUSY: "This counter reader has an active scan. Cancel or finish it before starting another.",
+      SCAN_DEVICE_BUSY: "The reader has an active scan. Cancel or finish it before starting another.",
       SCAN_EXPIRED: "The scan expired. Cancel it, then start a new scan.",
-      SCAN_BINDING_INVALID: "The scan does not match this actor, counter, purpose or record. Scan again.",
+      SCAN_BINDING_INVALID: "The scan does not match this actor, purpose or record. Scan again.",
       SCAN_STATE_CONFLICT: "This scan is no longer usable. Refresh its status.",
       SCAN_PROFILE_UNKNOWN: "Select a supported synthetic sample.",
       CARD_CATEGORY_MISMATCH: "The card must be available and match the verified registration category.",
@@ -72,7 +72,7 @@ export function lifecycleError(error: unknown): string {
       PASS_NUMBER_INVALID: "Enter a pass number from 1 to 9999. The category prefix is set automatically.",
       ASSIGNMENT_NOT_OVERDUE: "This assignment is no longer active and overdue. Refresh the list.",
       ASSIGNMENT_ALREADY_ACTIVE: "This registration already has an active assignment. Open it in the assignment list.",
-      NOT_FOUND: "This record is unavailable in your current scope. Recheck your session and counter.",
+      NOT_FOUND: "This record is unavailable in your current scope. Recheck your staff session.",
     };
     return messages[error.code ?? ""] ?? safeError(error);
   }

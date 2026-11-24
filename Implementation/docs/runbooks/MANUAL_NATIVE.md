@@ -2,6 +2,8 @@
 
 2026-11-10。用户已明确要求将最新UI及 `codex/no-docker-multi-page` 的本机运行/多页面/规划清理成果合并并推送main。本指南使用主项目checkout；Git更新不会自动重启应用或迁移数据库。
 
+For an existing V11 native database, see the [shared staff workspace upgrade](MANUAL_COUNTER_REMOVAL.md) before starting this branch.
+
 ## 一次性准备
 
 Java 21、Node/pnpm、本机 MySQL 8.0；全部日常运行与测试工具使用本机进程。由用户在 MySQL 管理工具中创建新的专用数据库 `hsaas_manual_native`，字符集 utf8mb4；创建同名账号 `hsaas_manual_native`，允许从 `127.0.0.1` 连接，并且只授予该库所需的建表、迁移及数据读写权限。使用独立密码，不以 root 运行应用，不连接原 `hsaas_db`。若库/账号已存在先核对，不删除已有资料来满足初始化条件。
@@ -30,18 +32,18 @@ node Implementation/scripts/manual-demo.mjs check
 node Implementation/scripts/manual-demo.mjs start --initialize
 ```
 
-等 `READY manual demonstration: http://127.0.0.1:15417/login` 后打开该地址。web15417/backend18407/control15418；占用端口会拒绝启动，不停止旧服务。Flyway 仅针对这个新的专用演示库执行 V1–V9，不执行 repair/baseline/clean。
+等 `READY manual demonstration: http://127.0.0.1:15417/login` 后打开该地址。web15417/backend18407/control15418；占用端口会拒绝启动，不停止旧服务。Flyway 仅针对这个新的专用演示库执行 V1–V12，不执行 repair/baseline/clean。
 
 以后启动：`node Implementation/scripts/manual-demo.mjs start`，`resume` 同义。普通重启不重新 seed、不删除数据。初始化中断可能留下已完成的 MySQL DDL；保留库、日志及 keys，核对失败阶段，不盲目重复初始化或清库。
 
 启动器以 `tmp/manual-demo-native/launcher.lock` 防止并发启动。强制断电可能留下锁；先确认其中 PID 已退出、三个应用端口无人使用，再手动移除该锁文件。不要删除密钥或数据库来清理锁。
 
-公开合成账号：`demo_staff_a` / `demo_staff_b` 柜台1；`demo_staff_other` 柜台2；`demo_admin_a` / `demo_admin_b` 为 ADMIN。初始公开演示密码为 `Public-synthetic-demo_1`，仅用于此合成环境。只 seed 账号/类别/地点，不伪造业务登记、库存或借还记录。
+New demo seed accounts `demo_staff_a`, `demo_staff_b` and `demo_staff_other` all have access to the shared staff workspace. `demo_admin_a` and `demo_admin_b` are administrators. The public synthetic password is `Public-synthetic-demo_1`. The seed creates synthetic accounts, categories and destinations.
 
 ## 同时打开审核与二维码
 
 1. 登录 Counter Staff，Overview 默认同屏展示 QR 和 Registration queue；顶部仅保留菜单与账号工具。
-2. 如需独立页面，从左上角菜单的 QR 或 Registration review 入口右侧箭头另开标签；新页继承当前柜台并由服务器校验权限。多柜台账号在菜单内切换柜台。
+2. Open QR or Registration review in a new tab using the arrow in the navigation drawer. The new tab uses the signed-in staff session.
 3. Overview 和独立 QR 页自动展示二维码；本轮源码已纳入用户明确要求的 main 发布。可以把两页拖成并排窗口，无需重复登录。
 4. 导航菜单各入口右侧箭头可另开页面，包括审核、QR 和 ADMIN 工具；不再使用独立柜台工具栏。
 5. 侧边栏默认隐藏，左上角菜单打开；点击关闭/遮罩或按 Escape 收起，焦点返回菜单按钮。

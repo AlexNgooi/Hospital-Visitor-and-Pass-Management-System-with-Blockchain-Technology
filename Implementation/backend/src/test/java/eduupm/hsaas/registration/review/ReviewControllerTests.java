@@ -37,14 +37,14 @@ class ReviewControllerTests {
     }
     @AfterEach void clearPrincipal() { SecurityContextHolder.clearContext(); }
 
-    /** Spring request binding must retain both counter selections so ReviewQueries can reject ambiguity instead of last-value wins. */
+    /** Spring request binding must retain both pagination values so ReviewQueries can reject ambiguity instead of last-value wins. */
     @Test void queueServletBindingPreservesDuplicateParameters() throws Exception {
         when(reads.queue(eq(context), anyMap())).thenAnswer(call -> {
             Map<String, List<String>> parameters = call.getArgument(1);
-            assertThat(parameters.get("counterId")).containsExactly("2", "3");
+            assertThat(parameters.get("page")).containsExactly("2", "3");
             return new RegistrationReadPort.QueuePage(List.of(), 0, 0, 10, "2026-10-10T00:00:00Z");
         });
-        mvc.perform(get("/api/staff/registrations").session(session).param("counterId", "2", "3"))
+        mvc.perform(get("/api/staff/registrations").session(session).param("page", "2", "3"))
                 .andExpect(status().isOk()).andExpect(header().string("Cache-Control", "no-store"))
                 .andExpect(header().string("Referrer-Policy", "no-referrer")).andExpect(jsonPath("$.pageSize").value(10));
         verify(reads).queue(eq(context), anyMap()); verifyNoInteractions(commands);

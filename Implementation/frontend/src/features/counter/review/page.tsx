@@ -2,7 +2,6 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import * as Dialog from "@radix-ui/react-dialog";
 import { ArrowRight, RefreshCw, Search, X } from "lucide-react";
 import { useAuth } from "../../../app/auth-context";
-import { useCounterScope } from "../../../app/counter-context";
 import { Button, StatusPanel } from "../../../components/ui/primitives";
 import { preserveToastInteraction } from "../../../components/ui/dialog-feedback";
 import { ClientError, safeError } from "../../../lib/errors";
@@ -14,18 +13,17 @@ import { reviewPort } from "./client";
 import { categoryLabels, reasonLabels, statusLabels, type Category, type Detail, type Queue, type Reason, type ReviewFields, type ReviewPort, type Status } from "./contracts";
 import "./review.css";
 
-/** Identity and counter changes unmount all operational state; server authority remains decisive. */
+/** Account changes unmount all operational state; server authority remains decisive. */
 export function RegistrationReview({ port = reviewPort, embedded = false }: { port?: ReviewPort; embedded?: boolean }) {
   const { state, refresh } = useAuth();
-  const counter = useCounterScope();
   if (state.kind !== "authenticated" || state.user.role !== "COUNTER_STAFF") return <StatusPanel kind="error" title="Counter Staff access required">Sign in with an authorized staff account.</StatusPanel>;
-  if (!counter || !state.user.counterIds.includes(counter)) return <StatusPanel kind="empty" title="No counter access">Ask the administrator to assign counter access.</StatusPanel>;
-  return <ReviewWorkspace key={`${state.user.id}:${counter}`} authority={state.user} counterId={counter} port={port} embedded={embedded} recheckSession={refresh} />;
+  if (!state.user.staffAccessEnabled) return <StatusPanel kind="empty" title="Staff access disabled">Ask the administrator to enable staff access.</StatusPanel>;
+  return <ReviewWorkspace key={state.user.id} authority={state.user} port={port} embedded={embedded} recheckSession={refresh} />;
 }
 
 /** Poll bounded queue metadata; audited full fields are fetched when the staff member opens a modal. */
-function ReviewWorkspace({ authority, counterId, port, embedded, recheckSession }: {
-  authority: SessionUser; counterId: string; port: ReviewPort; embedded: boolean; recheckSession: () => void;
+function ReviewWorkspace({ authority, port, embedded, recheckSession }: {
+  authority: SessionUser; port: ReviewPort; embedded: boolean; recheckSession: () => void;
 }) {
   const [category, setCategory] = useState<Category | "ALL">("ALL"), [status, setStatus] = useState<Status | "ALL">("SUBMITTED");
   const [page, setPage] = useState(0), [search, setSearch] = useState("");
@@ -48,15 +46,15 @@ function ReviewWorkspace({ authority, counterId, port, embedded, recheckSession 
     const seq = ++queueGeneration.current; queueAbort.current?.abort();
     const controller = new AbortController(); queueAbort.current = controller; setQueueBusy(true);
     try {
-      const value = await port.list({ counterId, category, status, page, pageSize: 10 }, controller.signal);
+      const value = await port.list({ category, status, page, pageSize: 10 }, controller.signal);
       if (!alive.current || seq !== queueGeneration.current) return;
-      if (value.page !== page || value.pageSize !== 10 || value.items.some(item => item.counterId !== counterId)) throw new ClientError("invalid-response");
+      if (value.page !== page || value.pageSize !== 10) throw new ClientError("invalid-response");
       setQueue(value); setQueueError("");
     } catch (error) {
       if (!alive.current || seq !== queueGeneration.current || controller.signal.aborted) return;
       setQueueError(safeError(error)); clearFields(); if (lifecycleAccessLost(error)) deny();
     } finally { if (alive.current && seq === queueGeneration.current) setQueueBusy(false); }
-  }, [counterId, category, status, page, port, deny, clearFields]);
+  }, [category, status, page, port, deny, clearFields]);
 
   const loadDetail = useCallback(async (id: string) => {
     if (accessLost.current) return;
@@ -66,7 +64,7 @@ function ReviewWorkspace({ authority, counterId, port, embedded, recheckSession 
     try {
       const value = await port.detail(id, controller.signal);
       if (!alive.current || seq !== detailGeneration.current) return;
-      if (value.id !== id || value.counterId !== counterId) throw new ClientError("invalid-response");
+      if (value.id !== id) throw new ClientError("invalid-response");
       setDetail(value);
       if (!port.reviewFields) throw new Error("Staff comparison is unavailable");
       const comparison = await port.reviewFields(id, value.version, controller.signal);
@@ -77,7 +75,7 @@ function ReviewWorkspace({ authority, counterId, port, embedded, recheckSession 
       if (!alive.current || seq !== detailGeneration.current || controller.signal.aborted) return;
       setFields(null); setDetailError(safeError(error)); if (lifecycleAccessLost(error)) deny();
     } finally { if (alive.current && seq === detailGeneration.current) setDetailBusy(false); }
-  }, [counterId, port, clearFields, deny]);
+  }, [port, clearFields, deny]);
 
   /** These refs hold the latest requests, rather than DOM nodes captured by an effect. */
   const cancelReads = useCallback(() => {

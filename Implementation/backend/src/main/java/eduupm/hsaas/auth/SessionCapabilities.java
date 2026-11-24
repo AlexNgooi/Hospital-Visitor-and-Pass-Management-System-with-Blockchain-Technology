@@ -136,7 +136,7 @@ public class SessionCapabilities {
         });
     }
 
-    /** Checks the current browser without trusting its cached role or counter list. */
+    /** Checks the current browser without trusting its cached role or permissions. */
     public Accounts.Account requireHuman(String bindingId, String contextId, Long generation, String login) {
         var actor=requireCredentialSession(bindingId,contextId,generation,login);
         if(actor.passwordChangeRequired()) throw new ApiFailure(403,"PASSWORD_CHANGE_REQUIRED","Set your own password before accessing this workspace.");
@@ -159,17 +159,13 @@ public class SessionCapabilities {
         });
     }
 
-    /** Provides M02 with a transaction-participating prefix: user -> counter -> binding -> context. */
-    public void lockOwners(Collection<OwnerUse> uses, String anonymousBindingId) {
+    /** Provides M02 with a transaction-participating prefix: user -> binding -> context. */
+    public void lockOwners(Collection<String> ownerIds, String anonymousBindingId) {
         if (!TransactionSynchronizationManager.isActualTransactionActive()) {
             throw new IllegalStateException("Owner guards require the caller's domain transaction");
         }
-        var contexts=uses.stream().map(use -> findContext(use.contextId(), false)).distinct().toList();
+        var contexts=ownerIds.stream().map(id -> findContext(id, false)).distinct().toList();
         contexts.stream().map(Context::actor).distinct().sorted().forEach(accounts::lock);
-        uses.stream().map(OwnerUse::counterId).distinct().sorted().forEach(id -> {
-            var active=jdbc.query("SELECT active FROM counters WHERE id=? FOR UPDATE", (rs,n)->rs.getBoolean(1), id);
-            if (active.isEmpty() || !active.getFirst()) { throw new ApiFailure(410,"REGISTRATION_ENTRY_REVOKED","Please scan again."); }
-        });
         var bindingIds=new ArrayList<>(contexts.stream().map(Context::bindingId).toList());
         if (anonymousBindingId != null) { bindingIds.add(anonymousBindingId); }
         bindingIds.stream().distinct().sorted().forEach(id -> findBinding(id,true));
@@ -177,14 +173,10 @@ public class SessionCapabilities {
             var current=findContext(old.id(),true); var actor=accounts.lock(current.actor());
             var binding=findBinding(current.bindingId(),false);
             checkActive(binding,current,actor,metadata.byPrimaryId(binding.primary()),current.generation());
-        });
-        for (OwnerUse use : uses) {
-            var context=findContext(use.contextId(),false);
-            var allowed=jdbc.queryForObject("SELECT COUNT(*) FROM user_counter_permissions WHERE user_id=? AND counter_id=? AND active=TRUE", Integer.class,context.actor(),use.counterId());
-            if (allowed == null || allowed != 1 || !accounts.lock(context.actor()).role().equals("COUNTER_STAFF")) {
+            if (!actor.canHandleVisitors()) {
                 throw new ApiFailure(410,"REGISTRATION_ENTRY_REVOKED","Please scan again.");
             }
-        }
+        });
         if (anonymousBindingId != null) { var binding=findBinding(anonymousBindingId,false); checkAnonymous(binding,metadata.byPrimaryId(binding.primary())); }
     }
 
@@ -264,6 +256,4 @@ public class SessionCapabilities {
     public record Binding(String id,String primary,String scope,Instant anonymousDeadline,String owner,long generation,boolean invalidated) { }
     /** Immutable discovered capability coordinates; all authority is re-read while locked. */
     public record Context(String id,String bindingId,long actor,long epoch,long generation,Instant absolute,Instant activation,Instant confirmed,String state) { }
-    /** Server-resolved owner/counter pairs used by the QR module's outer transaction. */
-    public record OwnerUse(String contextId,long counterId) { }
 }

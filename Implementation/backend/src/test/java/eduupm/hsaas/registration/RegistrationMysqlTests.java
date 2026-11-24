@@ -75,14 +75,13 @@ class RegistrationMysqlTests {
         jdbc.update("UPDATE registration_entry_grants SET replaces_grant_id=NULL,replaces_binding_version=NULL");
         for(String table:List.of("registration_entry_grants","registration_qr_challenges","registration_qr_sessions")) { jdbc.update("DELETE FROM "+table); }
         jdbc.update("UPDATE app_session_bindings SET current_owner_context_id=NULL");
-        for(String table:List.of("auth_session_contexts","app_session_bindings","SPRING_SESSION_ATTRIBUTES","SPRING_SESSION","idempotency_records","audit_events","user_counter_permissions","users","counters","destinations","visitor_categories")) { jdbc.update("DELETE FROM "+table); }
+        for(String table:List.of("auth_session_contexts","app_session_bindings","SPRING_SESSION_ATTRIBUTES","SPRING_SESSION","idempotency_records","audit_events","users","destinations","visitor_categories")) { jdbc.update("DELETE FROM "+table); }
         String password=passwords.encode(PASSWORD);
         for(String role:List.of("COUNTER_STAFF","ADMIN")) {
             jdbc.update("INSERT INTO users(login,password_hash,role,active,created_at,updated_at) VALUES(?,?,?,TRUE,?,?)",role.equals("ADMIN")?"admin_qr":"staff_qr",password,role,DatabaseTime.sql(now),DatabaseTime.sql(now));
         }
         staffId=jdbc.queryForObject("SELECT id FROM users WHERE login='staff_qr'",Long.class);adminId=jdbc.queryForObject("SELECT id FROM users WHERE login='admin_qr'",Long.class);
-        jdbc.update("INSERT INTO counters(id,code,name) VALUES(1,'QR_SYNTHETIC_1','Synthetic counter one'),(2,'QR_SYNTHETIC_2','Synthetic counter two')");
-        jdbc.update("INSERT INTO user_counter_permissions(user_id,counter_id) VALUES(?,1),(?,2)",staffId,staffId);
+        jdbc.update("UPDATE users SET staff_access_enabled=TRUE WHERE id=?",staffId);
         jdbc.update("INSERT INTO visitor_categories(id,code,name) VALUES(1,'PENJAGA','Synthetic Penjaga'),(2,'VENDOR','Synthetic Vendor'),(3,'EXECUTIVE','Synthetic Executive'),(4,'CONTRACTOR','Synthetic Contractor')");
         jdbc.update("INSERT INTO destinations(id,code,name) VALUES(1,'DEMO_WARD','Synthetic ward'),(2,'DEMO_OFFICE','Synthetic office'),(3,'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA','Unselectable long code')");
     }
@@ -90,7 +89,7 @@ class RegistrationMysqlTests {
     /** Four real servlet submissions persist one independent synthetic root/ack/grant/audit/command each, exposing only a reference. */
     @Test void fourCategoriesValidPrivacyAndMinimalReceipt() throws Exception {
         for(String category:List.of("PENJAGA","EXECUTIVE","VENDOR","CONTRACTOR")) {
-            Visitor visitor=visitor("1",null);String body=body(visitor,category);
+            Visitor visitor=visitor(null);String body=body(visitor,category);
             var response=visitor.browser().submit(body,UUID.randomUUID().toString(),true);
             assertThat(response.statusCode()).isEqualTo(201);
             var result=json.readTree(response.body());
@@ -110,7 +109,7 @@ class RegistrationMysqlTests {
 
     /** Bootstrap, staff identity, missing CSRF and another anonymous binding cannot authorize schema or root mutation. */
     @Test void schemaScopeCsrfAndInvalidBodiesRemainUnconsumed() throws Exception {
-        Visitor visitor=visitor("1","1");
+        Visitor visitor=visitor("1");
         var response=visitor.browser().post("/api/public/registration-schema",Map.of("formContext",visitor.entry().formContext()),true);
         assertThat(response.statusCode()).isEqualTo(200);
         var schema=json.readTree(response.body());
@@ -135,7 +134,7 @@ class RegistrationMysqlTests {
 
     /** A consumed/expired/revoked grant may recover its original command only while its anonymous framework authority remains valid. */
     @Test void originalReplayChangedBodyAndOtherKey() throws Exception {
-        Visitor visitor=visitor("1",null);String body=body(visitor,"VENDOR").replace("Demo Visitor","a\u0306\u0301".repeat(100)),key=UUID.randomUUID().toString();
+        Visitor visitor=visitor(null);String body=body(visitor,"VENDOR").replace("Demo Visitor","a\u0306\u0301".repeat(100)),key=UUID.randomUUID().toString();
         var first=visitor.browser().submit(body,key,true);assertThat(first.statusCode()).isEqualTo(201);
         entries.revoke(visitor.staff().owner(),visitor.display());advance(1201);
         var replay=visitor.browser().submit(body,key,true);
@@ -151,11 +150,11 @@ class RegistrationMysqlTests {
 
     /** Competing exact commands recover one winner; a second key cannot create another parent for the consumed grant. */
     @Test void concurrentExactCommandsAndDifferentKeys() throws Exception {
-        Visitor visitor=visitor("1",null);String body=body(visitor,"CONTRACTOR"),key=UUID.randomUUID().toString(),binding=visitor.browser().binding();
+        Visitor visitor=visitor(null);String body=body(visitor,"CONTRACTOR"),key=UUID.randomUUID().toString(),binding=visitor.browser().binding();
         var results=race(()->registrations.submit(binding,key,body),()->registrations.submit(binding,key,body));
         assertThat(results).allMatch(RegistrationService.Receipt.class::isInstance);
         assertThat(((RegistrationService.Receipt)results.get(0)).publicReference()).isEqualTo(((RegistrationService.Receipt)results.get(1)).publicReference());
-        Visitor second=visitor("1",null);String secondBody=body(second,"EXECUTIVE"),secondBinding=second.browser().binding();
+        Visitor second=visitor(null);String secondBody=body(second,"EXECUTIVE"),secondBinding=second.browser().binding();
         var competing=race(()->registrations.submit(secondBinding,UUID.randomUUID().toString(),secondBody),
                 ()->registrations.submit(secondBinding,UUID.randomUUID().toString(),secondBody));
         assertThat(competing.stream().filter(RegistrationService.Receipt.class::isInstance).count()).isEqualTo(1);
@@ -167,7 +166,7 @@ class RegistrationMysqlTests {
 
     /** A late audit failure rolls back parent, acknowledgement, consumption and idempotency; retry remains one original command. */
     @Test void auditFailureFullRollbackAndRealForeignKey() throws Exception {
-        Visitor visitor=visitor("1",null);String body=body(visitor,"PENJAGA"),key=UUID.randomUUID().toString();
+        Visitor visitor=visitor(null);String body=body(visitor,"PENJAGA"),key=UUID.randomUUID().toString();
         jdbc.execute("CREATE TRIGGER registration_audit_failure BEFORE INSERT ON audit_events FOR EACH ROW SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='Synthetic audit failure'");
         // The shared foundation safely maps a database write failure to SERVICE_UNAVAILABLE.
         assertThat(visitor.browser().submit(body,key,true).statusCode()).isEqualTo(503);
@@ -183,7 +182,7 @@ class RegistrationMysqlTests {
 
     /** Mock feedback has no patient data and never verifies a registration; only its digest and contextual keyed fingerprint persist. */
     @Test void mrnBoundFeedbackDigestAndManualDeferral() throws Exception {
-        Visitor visitor=visitor("1",null);
+        Visitor visitor=visitor(null);
         var feedback=registrations.validateMrn(visitor.browser().binding(),json.writeValueAsString(Map.of("formContext",visitor.entry().formContext(),"mrn","DEMO-MRN-4821","wardCode","DEMO_WARD")));
         assertThat(feedback.feedback()).isEqualTo("MATCH");assertThat(feedback.toString()).isEqualTo("FeedbackReply[redacted]");
         assertThat(Instant.parse(feedback.expiresAt())).isEqualTo(now.plusSeconds(300));
@@ -191,7 +190,7 @@ class RegistrationMysqlTests {
         assertThat(jdbc.queryForObject("SELECT OCTET_LENGTH(mrn_fingerprint) FROM mrn_validation_records",Integer.class)).isEqualTo(32);
         String base=body(visitor,"PENJAGA"),withToken=base.substring(0,base.length()-1)+",\"mrnValidationToken\":\""+feedback.validationToken()+"\"}";
         assertThat(visitor.browser().submit(withToken.replace("DEMO-MRN-4821","DEMO-MRN-9999"),UUID.randomUUID().toString(),true).statusCode()).isEqualTo(409);
-        Visitor other=visitor("1",null);
+        Visitor other=visitor(null);
         String otherBody=body(other,"PENJAGA");otherBody=otherBody.substring(0,otherBody.length()-1)+",\"mrnValidationToken\":\""+feedback.validationToken()+"\"}";
         assertThat(other.browser().submit(otherBody,UUID.randomUUID().toString(),true).statusCode()).isEqualTo(409);
         assertThat(visitor.browser().submit(withToken,UUID.randomUUID().toString(),true).statusCode()).isEqualTo(201);
@@ -202,7 +201,7 @@ class RegistrationMysqlTests {
 
     /** Expired temporary feedback can be discarded for manual review; bounded cleanup never removes permanent history. */
     @Test void mrnTimeoutExpiryAndCleanup() throws Exception {
-        Visitor visitor=visitor("1",null);
+        Visitor visitor=visitor(null);
         var feedback=registrations.validateMrn(visitor.browser().binding(),json.writeValueAsString(Map.of("formContext",visitor.entry().formContext(),"mrn","DEMO-MRN-TIMEOUT","wardCode","DEMO_WARD")));
         assertThat(feedback.feedback()).isEqualTo("TIMEOUT");
         advance(300);String base=body(visitor,"PENJAGA").replace("DEMO-MRN-4821","DEMO-MRN-TIMEOUT");
@@ -216,7 +215,7 @@ class RegistrationMysqlTests {
 
     /** Suspended/stale grant and root/read receipts must fail before any JDBC interaction; outer resumption retains authority. */
     @Test void actualReceiptFencesBeforeSqlAndResume() throws Exception {
-        Visitor visitor=visitor("1",null);String binding=visitor.browser().binding(),owner=visitor.staff().owner();
+        Visitor visitor=visitor(null);String binding=visitor.browser().binding(),owner=visitor.staff().owner();
         var inner=new TransactionTemplate(Objects.requireNonNull(tx.getTransactionManager()));
         inner.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRES_NEW);
         inner.setIsolationLevel(TransactionDefinition.ISOLATION_READ_COMMITTED);
@@ -233,7 +232,7 @@ class RegistrationMysqlTests {
         });
         String id=rootId();
         tx.executeWithoutResult(outer->{
-            var read=store.captureReadScope(owner,"1");
+            var read=store.captureReadScope(owner);
             var locked=store.lock(store.discover(id));
             inner.executeWithoutResult(unused->{
                 clearInvocations(jdbc);
@@ -248,51 +247,50 @@ class RegistrationMysqlTests {
             assertThatThrownBy(()->store.recordDecision(locked,1,owner,new RegistrationReviewPort.Rejected("INFORMATION_INCOMPLETE"))).isInstanceOf(IllegalStateException.class);
             verifyNoInteractions(jdbc);
         });
-        assertThatThrownBy(()->store.captureReadScope(owner,"1")).isInstanceOf(IllegalStateException.class);
+        assertThatThrownBy(()->store.captureReadScope(owner)).isInstanceOf(IllegalStateException.class);
     }
 
-    /** Current single-counter authority guards masked historical reads and server review metadata, including inactive locations. */
+    /** Current staff authority guards masked historical reads and server review metadata, including inactive locations. */
     @Test void maskedQueueDetailRoleCounterAndManualDecision() throws Exception {
-        Visitor visitor=visitor("1",null);assertThat(visitor.browser().submit(body(visitor,"PENJAGA"),UUID.randomUUID().toString(),true).statusCode()).isEqualTo(201);
+        Visitor visitor=visitor(null);assertThat(visitor.browser().submit(body(visitor,"PENJAGA"),UUID.randomUUID().toString(),true).statusCode()).isEqualTo(201);
         String id=rootId(),owner=visitor.staff().owner();
         jdbc.update("UPDATE destinations SET active=FALSE WHERE id=1");
-        var queue=tx.execute(status->store.readMaskedQueue(store.captureReadScope(owner,"1"),new RegistrationReadPort.ReadQuery(null,null,0,10)));
+        var queue=tx.execute(status->store.readMaskedQueue(store.captureReadScope(owner),new RegistrationReadPort.ReadQuery(null,null,0,10)));
         assertThat(queue.total()).isEqualTo(1);assertThat(queue.items().getFirst().destinationLabel()).isEqualTo("Synthetic ward");
-        var detail=tx.execute(status->store.readMaskedDetail(store.captureReadScope(owner,"1"),id));
+        var detail=tx.execute(status->store.readMaskedDetail(store.captureReadScope(owner),id));
         String wire=json.writeValueAsString(detail);
         assertThat(wire).doesNotContain("Demo Visitor","DEMO-VISITOR01","+60123456789","DEMO-MRN-4821","formData");
         assertThat(detail.maskedVisitorName()).isEqualTo("D***");assertThat(detail.review()).isNull();
-        assertThatThrownBy(()->tx.execute(status->store.readMaskedDetail(store.captureReadScope(owner,"2"),id))).isInstanceOfSatisfying(ApiFailure.class,f->assertThat(f.status()).isEqualTo(404));
         Browser admin=new Browser();admin.login("admin_qr");String adminOwner=admin.owner();
-        assertThatThrownBy(()->tx.execute(status->store.captureReadScope(adminOwner,"1"))).isInstanceOfSatisfying(ApiFailure.class,f->assertThat(f.status()).isEqualTo(403));
+        assertThatThrownBy(()->tx.execute(status->store.captureReadScope(adminOwner))).isInstanceOfSatisfying(ApiFailure.class,f->assertThat(f.status()).isEqualTo(404));
         var verified=new RegistrationReviewPort.Verified(true,true,true,new ManualEvidence("SYNTHETIC_RECORD_COMPARISON",List.of("IDENTITY_MATCH_CONFIRMED","MRN_MATCH_CONFIRMED","WARD_MATCH_CONFIRMED")));
         tx.executeWithoutResult(status->{
-            capabilities.lockOwners(List.of(new SessionCapabilities.OwnerUse(owner,1)),null);
+            capabilities.lockOwners(List.of(owner),null);
             var result=store.recordDecision(store.lock(store.discover(id)),0,owner,verified);
             assertThat(result.status()).isEqualTo("VERIFIED");assertThat(result.version()).isEqualTo(1);
         });
-        var reviewed=tx.execute(status->store.readMaskedDetail(store.captureReadScope(owner,"1"),id));
+        var reviewed=tx.execute(status->store.readMaskedDetail(store.captureReadScope(owner),id));
         assertThat(reviewed.review().actorId()).isEqualTo(Long.toString(staffId));
         assertThat(reviewed.review().source()).isEqualTo("SYNTHETIC_MANUAL");
-        assertThatThrownBy(()->tx.execute(status->{capabilities.lockOwners(List.of(new SessionCapabilities.OwnerUse(owner,1)),null);return store.recordDecision(store.lock(store.discover(id)),1,owner,verified);}))
+        assertThatThrownBy(()->tx.execute(status->{capabilities.lockOwners(List.of(owner),null);return store.recordDecision(store.lock(store.discover(id)),1,owner,verified);}))
                 .isInstanceOfSatisfying(ApiFailure.class,f->assertThat(f.code()).isEqualTo("REGISTRATION_STATE_CONFLICT"));
-        jdbc.update("UPDATE user_counter_permissions SET active=FALSE WHERE user_id=? AND counter_id=1",staffId);
-        assertThatThrownBy(()->tx.execute(status->store.captureReadScope(owner,"1"))).isInstanceOfSatisfying(ApiFailure.class,f->assertThat(f.status()).isEqualTo(404));
+        jdbc.update("UPDATE users SET staff_access_enabled=FALSE WHERE id=?",staffId);
+        assertThatThrownBy(()->tx.execute(status->store.captureReadScope(owner))).isInstanceOfSatisfying(ApiFailure.class,f->assertThat(f.status()).isEqualTo(404));
         // Internal authority reads persisted EXPIRY_TIME, not the framework's last-access convenience timestamp.
         jdbc.update("UPDATE SPRING_SESSION SET LAST_ACCESS_TIME=1,EXPIRY_TIME=1 WHERE SESSION_ID=?",visitor.staff().sessionId());
-        assertThatThrownBy(()->tx.execute(status->store.captureReadScope(owner,"2"))).isInstanceOfSatisfying(ApiFailure.class,f->assertThat(f.status()).isEqualTo(401));
+        assertThatThrownBy(()->tx.execute(status->store.captureReadScope(owner))).isInstanceOfSatisfying(ApiFailure.class,f->assertThat(f.status()).isEqualTo(401));
     }
 
     /** Active reference sharing serializes with deactivation without adding a reference-to-grant reverse lock path. */
     @Test void referenceDeactivationSerializesWithNewSubmission() throws Exception {
-        Visitor visitor=visitor("1",null);String binding=visitor.browser().binding(),body=body(visitor,"EXECUTIVE");
+        Visitor visitor=visitor(null);String binding=visitor.browser().binding(),body=body(visitor,"EXECUTIVE");
         var results=race(()->registrations.submit(binding,UUID.randomUUID().toString(),body),
                 ()->tx.execute(status->jdbc.update("UPDATE destinations SET active=FALSE WHERE id=2")));
         assertThat(results.get(1)).isInstanceOf(Integer.class);
         assertThat(results.get(0)).isInstanceOfAny(RegistrationService.Receipt.class,ApiFailure.class);
         assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM visitor_registrations",Integer.class))
                 .isEqualTo(results.get(0) instanceof RegistrationService.Receipt?1:0);
-        Visitor later=visitor("1",null);
+        Visitor later=visitor(null);
         assertThat(later.browser().submit(body(later,"EXECUTIVE"),UUID.randomUUID().toString(),true).statusCode()).isEqualTo(400);
         jdbc.update("UPDATE visitor_categories SET active=FALSE WHERE code='PENJAGA'");
         assertThat(later.browser().submit(body(later,"PENJAGA"),UUID.randomUUID().toString(),true).statusCode()).isEqualTo(400);
@@ -300,7 +298,7 @@ class RegistrationMysqlTests {
 
     /** Public operations on a staff-owned cookie cannot extend the human owner's confirmed idle deadline. */
     @Test void publicOperationsDoNotRenewStaffOwner() throws Exception {
-        Browser staff=staff();String display=staff.create("1",null);
+        Browser staff=staff();String display=staff.create(null);
         var exchanged=staff.exchange(token(staff.get("/api/staff/registration-qr-sessions/"+display+"/current")));
         var entry=json.readValue(exchanged.body(),QrEntryService.Entry.class);String owner=staff.owner();
         LocalDateTime before=jdbc.queryForObject("SELECT confirmed_idle_expires_at FROM auth_session_contexts WHERE id=?",LocalDateTime.class,owner);
@@ -327,8 +325,8 @@ class RegistrationMysqlTests {
         return json.writeValueAsString(Map.of("formContext",visitor.entry().formContext(),"categoryCode",category,"fieldSchemaVersion",RegistrationFields.VERSION,"formData",form(category),
                 "privacyAcknowledgement",Map.of("acknowledged",true,"policyVersion",RegistrationFields.PRIVACY_VERSION)));
     }
-    private Visitor visitor(String counter,String category) throws Exception {
-        Browser staff=staff();String display=staff.create(counter,category);Browser browser=new Browser();browser.csrf();
+    private Visitor visitor(String category) throws Exception {
+        Browser staff=staff();String display=staff.create(category);Browser browser=new Browser();browser.csrf();
         var response=browser.exchange(token(staff.get("/api/staff/registration-qr-sessions/"+display+"/current")));
         assertThat(response.statusCode()).isEqualTo(200);
         return new Visitor(browser,json.readValue(response.body(),QrEntryService.Entry.class),staff,display);
@@ -367,7 +365,7 @@ class RegistrationMysqlTests {
         }
         void csrf() throws Exception { csrf=json.readTree(get("/api/public/csrf").body()).path("token").asString(); }
         void login(String login) throws Exception { csrf();assertThat(post("/api/auth/login",Map.of("login",login,"password",PASSWORD),true).statusCode()).isEqualTo(200);csrf(); }
-        String create(String counter,String category) throws Exception { var body=new HashMap<String,Object>();body.put("counterId",counter);body.put("categoryScope",category);var response=post("/api/staff/registration-qr-sessions",body,true);assertThat(response.statusCode()).isEqualTo(201);return json.readTree(response.body()).path("displaySessionId").asString(); }
+        String create(String category) throws Exception { var body=new HashMap<String,Object>();body.put("categoryScope",category);var response=post("/api/staff/registration-qr-sessions",body,true);assertThat(response.statusCode()).isEqualTo(201);return json.readTree(response.body()).path("displaySessionId").asString(); }
         HttpResponse<String> exchange(String token) throws Exception { return post("/api/public/registration-entry/exchange",Map.of("entryToken",token),true); }
         HttpResponse<String> confirm(String token,FormContext old) throws Exception { return post("/api/public/registration-entry/exchange",Map.of("entryToken",token,"restartConfirmed",true,"expectedFormContext",old),true); }
         String binding() {

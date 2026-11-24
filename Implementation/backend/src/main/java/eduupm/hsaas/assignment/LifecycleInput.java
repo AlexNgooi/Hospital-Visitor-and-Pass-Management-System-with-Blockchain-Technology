@@ -18,7 +18,7 @@ final class LifecycleInput {
 
     static LifecycleInput parse(JsonMapper json,String operation,String body) {
         List<String> fields=switch(operation) {
-            case "SCAN_START" -> List.of("counterId","purpose","targetId");
+            case "SCAN_START" -> List.of("purpose","targetId");
             case "SCAN_SIMULATE" -> List.of("nonce","leaseToken","sampleCode");
             case "SCAN_CANCEL" -> List.of();
             case "MARK_LOST","DISABLE" -> List.of("expectedVersion","reasonCode");
@@ -63,7 +63,7 @@ final class LifecycleInput {
             else if(value.isIntegralNumber()) encoded.add(RequestEncoding.Field.integer(name,value.asLong()));
             else encoded.add(RequestEncoding.Field.text(name,text(name)));
         }
-        return RequestEncoding.encode(json,scope,operation,target,1,encoded);
+        return RequestEncoding.encode(json,scope,operation,target,operation.equals("SCAN_START")?2:1,encoded);
     }
     static String uuid(String value) {
         if(value==null || !value.matches("[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}")) throw invalid();

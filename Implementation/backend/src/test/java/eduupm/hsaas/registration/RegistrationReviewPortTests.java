@@ -111,7 +111,7 @@ class RegistrationReviewPortTests {
         private long version;
         private int sqlReads;
 
-        @Override public ReviewCoordinates discover(String id) { return new ReviewCoordinates(id, "1"); }
+        @Override public ReviewCoordinates discover(String id) { return new ReviewCoordinates(id); }
         @Override public LockedRegistration lock(ReviewCoordinates coordinates) {
             return LockedRegistration.capture(coordinates, "PENJAGA", state, version, "test");
         }

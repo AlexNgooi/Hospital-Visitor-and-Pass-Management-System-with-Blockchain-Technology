@@ -25,7 +25,7 @@ export async function startFixture(port = 0) {
       id: "9007199254740993",
       login: role === "ADMIN" ? "fixture_admin" : "fixture_staff",
       role,
-      counterIds: role === "ADMIN" ? [] : ["01", "02"],
+      staffAccessEnabled: role === "COUNTER_STAFF",
     });
     const path = new URL(request.url, "http://127.0.0.1").pathname;
     if (path === "/api/public/csrf" && request.method === "GET")

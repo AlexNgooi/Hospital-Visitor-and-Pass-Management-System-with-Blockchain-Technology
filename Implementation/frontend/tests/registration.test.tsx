@@ -9,7 +9,7 @@ import { ApiClient } from "../src/lib/api-client";
 import { ClientError } from "../src/lib/errors";
 const date = (n: number) => new Date(n).toISOString().replace(/\.([0-9]{3})Z$/, ".$1000Z");
 const entry: EntryGrant = { formContext:{grantReference:"synthetic_grant_1",bindingVersion:1},
-  scope:{environment:"test",counterId:"1",categoryScope:null},serverNow:date(Date.now()),grantExpiresAt:date(Date.now()+1200000) };
+  scope:{environment:"test",categoryScope:null},serverNow:date(Date.now()),grantExpiresAt:date(Date.now()+1200000) };
 const receipt = { publicReference:"R-" + "A".repeat(22) };
 /** Typed synthetic metadata exercises the actual generic form, with no real visitor or provider records. */
 function field(name: FieldSpec["name"], label: string, rule: FieldSpec["rule"]="TEXT",kind: FieldSpec["kind"]="TEXT",maxLength=100): FieldSpec {
@@ -19,19 +19,20 @@ function field(name: FieldSpec["name"], label: string, rule: FieldSpec["rule"]="
 function schema(): RegistrationSchema {
   const shared = [field("fullName","Nama penuh"),field("identificationType","Jenis dokumen","ENUM","SELECT",7),
     field("identificationNumber","Nombor dokumen","DEMO_ID","TEXT",29),field("phone","Telefon","PHONE","PHONE",16)];
-  return { formContext:entry.formContext,fieldSchemaVersion:"synthetic-registration-v1",source:"SYNTHETIC",notificationStatus:"NOT_ENABLED",
+  return { formContext:entry.formContext,fieldSchemaVersion:"manual-registration-v3",source:"SYNTHETIC",notificationStatus:"NOT_ENABLED",
     privacy:{policyVersion:"synthetic-privacy-v1",text:"Demo sahaja. Gunakan data sintetik. WhatsApp belum diaktifkan."},
+    terms:{policyVersion:"penjaga-pass-terms-v1",text:"Synthetic pass terms."},
     categories:(["PENJAGA","EXECUTIVE","VENDOR","CONTRACTOR"] as const).map((code,index)=>({id:String(index+1),code,label:code,
       fields:[...shared,...(code==="PENJAGA"?[field("mrn","MRN demo","DEMO_MRN","TEXT",25),field("wardCode","Wad","REFERENCE","DESTINATION",32),field("relationship","Hubungan","ENUM","SELECT",16)]
         :[field(code==="EXECUTIVE"?"organisation":"company",code==="EXECUTIVE"?"Organisasi":"Syarikat","TEXT","TEXT",120),
           field("contactPerson","Pegawai dihubungi"),field("destinationCode","Lokasi","REFERENCE","DESTINATION",32),
           field(code==="EXECUTIVE"?"visitPurpose":code==="VENDOR"?"deliveryPurpose":"workPurpose","Tujuan","TEXT","TEXT",500)])]})),
-    destinations:[{code:"DEMO_WARD",label:"Wad demo"}] };
+    destinations:[{code:"DEMO_WARD",label:"Wad demo",kind:"WARD"}] };
 }
 function apiFailure(code: string,status: number) {return new ClientError("api",{timestamp:date(Date.now()),status,code,message:"untrusted",correlationId:"synthetic",fieldErrors:[]});}
 function setup(schemaFailure=false) {
   const metadata=schema(),execute=vi.fn(async()=>receipt);
-  const port:RegistrationPort={schema:vi.fn(async()=>metadata),feedback:vi.fn(async()=>({feedback:"MATCH" as const,mode:"mock" as const,source:"SYNTHETIC" as const,validationToken:"A".repeat(43),expiresAt:date(Date.now()+300000)})),
+  const port:RegistrationPort={schema:vi.fn(async()=>metadata),feedback:vi.fn(async()=>({feedback:"MATCH" as const,mode:"mock" as const,source:"SYNTHETIC" as const,validationToken:"A".repeat(43),expiresAt:date(Date.now()+300000),patient:{patientName:"Demo Patient",wardCode:"DEMO_WARD",wardLabel:"Wad demo",bed:"001"}})),
     submission:vi.fn(()=>({key:"499f48f8-fcc6-440a-9d29-81a3b7a9c515",execute}))};
   const qr:QrPort={capabilities:vi.fn(async()=>({enabled:true})),bootstrap:vi.fn(async()=>{}),entry:vi.fn(async()=>entry),
     exchange:vi.fn(async()=>entry),create:vi.fn(async()=>({displaySessionId:"35faef23-7bb2-45dc-88db-eae7ad344427"})),
@@ -181,7 +182,7 @@ describe("wire and exact recovery transport",()=>{
       if(calls.length===1) throw new Error("Owned synthetic network failure");
       return new Response(JSON.stringify(receipt),{status:201,headers:{"content-type":"application/json"}});
     });
-    const body:Submission={formContext:{...entry.formContext},categoryCode:"VENDOR",fieldSchemaVersion:"synthetic-registration-v1",
+    const body:Submission={formContext:{...entry.formContext},categoryCode:"VENDOR",fieldSchemaVersion:"manual-registration-v3",
       formData:{fullName:"Demo Original"},privacyAcknowledgement:{acknowledged:true,policyVersion:"synthetic-privacy-v1"}};
     const command=createRegistrationPort(new ApiClient(fetcher as typeof fetch)).submission(body);
     await expect(command.execute()).rejects.toBeInstanceOf(ClientError);

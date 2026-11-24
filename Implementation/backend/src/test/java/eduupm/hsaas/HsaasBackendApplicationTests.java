@@ -91,10 +91,11 @@ class HsaasBackendApplicationTests {
         reset(sessions,accountLoader,capabilityHooks);
         ((Map<?,?>)ReflectionTestUtils.getField(limiter,"buckets")).clear();
         jdbc.update("UPDATE app_session_bindings SET current_owner_context_id=NULL");
-        for(String table:List.of("auth_session_contexts","app_session_bindings","SPRING_SESSION_ATTRIBUTES","SPRING_SESSION","idempotency_records","audit_events","user_counter_permissions","users","counters")) {
+        for(String table:List.of("auth_session_contexts","app_session_bindings","SPRING_SESSION_ATTRIBUTES","SPRING_SESSION","idempotency_records","audit_events","users")) {
             jdbc.update("DELETE FROM "+table);
         }
         jdbc.update("UPDATE bootstrap_state SET completed=FALSE");
+        jdbc.update("DELETE FROM destinations WHERE id IN (50,51,52)");
         String hash=passwords.encode(FIXTURE_PASSWORD);
         for(String role:List.of("ADMIN","COUNTER_STAFF")) {
             String login=role.equals("ADMIN")?"admin_test":"staff_test";
@@ -102,8 +103,7 @@ class HsaasBackendApplicationTests {
         }
         adminId=jdbc.queryForObject("SELECT id FROM users WHERE login='admin_test'",Long.class);
         staffId=jdbc.queryForObject("SELECT id FROM users WHERE login='staff_test'",Long.class);
-        jdbc.update("INSERT INTO counters(id,code,name) VALUES(1,'SYNTHETIC_1','Synthetic counter')");
-        jdbc.update("INSERT INTO user_counter_permissions(user_id,counter_id) VALUES(?,1)",staffId);
+        jdbc.update("UPDATE users SET staff_access_enabled=TRUE WHERE id=?",staffId);
     }
 
     /** Proves clean migration history and readiness against actual MySQL. */
@@ -113,7 +113,7 @@ class HsaasBackendApplicationTests {
         assertThat(response.body()).contains("UP");
         // V4-V9 add QR, registration, lifecycle, administration and manual forms/pass handling without rewriting V1-V3.
         // This expected count is maintained for future native MySQL runs; it is not a current executed migration result.
-        assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM flyway_schema_history WHERE success=TRUE",Integer.class)).isEqualTo(9);
+        assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM flyway_schema_history WHERE success=TRUE AND version IS NOT NULL",Integer.class)).isEqualTo(12);
         assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM users",Integer.class)).isEqualTo(2);
     }
 
@@ -124,7 +124,7 @@ class HsaasBackendApplicationTests {
         assertThat(login.statusCode()).isEqualTo(200);
         Map<String,Object> body=body(login);
         assertThat(body.get("id")).isEqualTo(Long.toString(staffId));
-        assertThat(body.get("counterIds")).isEqualTo(List.of("1"));
+        assertThat(body.get("staffAccessEnabled")).isEqualTo(true);
         assertThat(browser.sessionId().equals(oldId)).isFalse();
         assertThat(browser.get("/api/auth/me").statusCode()).isEqualTo(200);
         browser.token=oldToken;
@@ -188,13 +188,13 @@ class HsaasBackendApplicationTests {
         assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM auth_session_contexts WHERE state='ACTIVE'",Integer.class)).isEqualTo(1);
     }
 
-    /** Epoch changes revoke cached role/counter claims and block old saves even if the framework row remains. */
+    /** Epoch changes revoke cached role and staff access claims and block old saves even if the framework row remains. */
     @Test void permissionRevocationAndLastAdministrator() throws Exception {
         Browser admin=new Browser(),staff=new Browser(); admin.login("admin_test"); staff.login("staff_test");
         Session stale=sessions.findById(staff.sessionId());
         var proof=proof(admin,"admin_test");
         assertThatThrownBy(()->changes.update(proof,adminId,0,"COUNTER_STAFF",true)).isInstanceOf(ApiFailure.class);
-        changes.counterPermission(proof,staffId,1,0,false);
+        changes.staffAccess(proof,staffId,0,false);
         assertThat(staff.get("/api/auth/me").statusCode()).isEqualTo(401);
         assertThatThrownBy(()->sessions.save(stale)).isInstanceOf(ApiFailure.class);
         assertThat(admin.get("/api/auth/me").statusCode()).isEqualTo(200);
@@ -245,18 +245,18 @@ class HsaasBackendApplicationTests {
         assertThat(browser.get("/api/auth/me").statusCode()).isEqualTo(401);
     }
 
-    /** Owner use holds the same principal/counter/binding/context prefix as logout, without refreshing owner expiry. */
+    /** Owner use holds the same principal/binding/context prefix as logout, without refreshing owner expiry. */
     @Test void ownerGuardAndLogoutCompetition() throws Exception {
         Browser browser=new Browser(); browser.login("staff_test");
         String context=jdbc.queryForObject("SELECT id FROM auth_session_contexts WHERE actor_id=?",String.class,staffId);
         String sessionId=browser.sessionId(); var entered=new CountDownLatch(1); var release=new CountDownLatch(1);
         try(var pool=Executors.newFixedThreadPool(2)) {
-            var use=pool.submit(()->tx.execute(status->{ capabilities.lockOwners(List.of(new SessionCapabilities.OwnerUse(context,1)),null); entered.countDown(); await(release); return true; }));
+            var use=pool.submit(()->tx.execute(status->{ capabilities.lockOwners(List.of(context),null); entered.countDown(); await(release); return true; }));
             assertThat(entered.await(5,TimeUnit.SECONDS)).isTrue();
             var logout=pool.submit(()->{ capabilities.revokeSession(sessionId); return true; });
             assertThat(logout.isDone()).isFalse(); release.countDown();
             assertThat(use.get(5,TimeUnit.SECONDS)).isTrue(); assertThat(logout.get(5,TimeUnit.SECONDS)).isTrue();
-            assertThatThrownBy(()->tx.execute(status->{ capabilities.lockOwners(List.of(new SessionCapabilities.OwnerUse(context,1)),null); return null; })).isInstanceOf(ApiFailure.class);
+            assertThatThrownBy(()->tx.execute(status->{ capabilities.lockOwners(List.of(context),null); return null; })).isInstanceOf(ApiFailure.class);
         }
     }
 
@@ -303,19 +303,19 @@ class HsaasBackendApplicationTests {
             Long jdbcConnection=jdbc.queryForObject("SELECT CONNECTION_ID()",Long.class);
             assertThat(entityConnection.longValue()).isEqualTo(jdbcConnection);
             assertThat(jdbc.queryForObject("SELECT @@transaction_isolation",String.class)).isEqualTo("READ-COMMITTED");
-            entities.persist(new CounterTransactionProbe(50)); entities.flush();
-            audit.append(LocalAuditPort.Action.ADMIN_CHANGED,"COUNTER","50",staffId,new LocalAuditPort.Snapshot(null,"ACTIVE",null,0L,"LOCAL"));
+            entities.persist(new DestinationTransactionProbe(50)); entities.flush();
+            audit.append(LocalAuditPort.Action.ADMIN_CHANGED,"DESTINATION","50",staffId,new LocalAuditPort.Snapshot(null,"ACTIVE",null,0L,"LOCAL"));
             commands.success(namespace,encoding,200,new IdempotencyPort.SafeResult("50","SYNTHETIC_JPA","VERIFIED",0));
         });
-        assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM counters WHERE id=50",Integer.class)).isEqualTo(1);
+        assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM destinations WHERE id=50",Integer.class)).isEqualTo(1);
         assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM audit_events",Integer.class)).isEqualTo(1);
         assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM idempotency_records",Integer.class)).isEqualTo(1);
         assertThatThrownBy(()->tx.execute(status->{
-            accountLoader.lock(staffId); entities.persist(new CounterTransactionProbe(51)); entities.flush();
-            audit.append(LocalAuditPort.Action.ADMIN_CHANGED,"COUNTER","51",staffId,new LocalAuditPort.Snapshot(null,"ACTIVE",null,0L,"LOCAL"));
+            accountLoader.lock(staffId); entities.persist(new DestinationTransactionProbe(51)); entities.flush();
+            audit.append(LocalAuditPort.Action.ADMIN_CHANGED,"DESTINATION","51",staffId,new LocalAuditPort.Snapshot(null,"ACTIVE",null,0L,"LOCAL"));
             throw new IllegalStateException("Synthetic failure after flush");
         })).isInstanceOf(IllegalStateException.class);
-        assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM counters WHERE id=51",Integer.class)).isZero();
+        assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM destinations WHERE id=51",Integer.class)).isZero();
         assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM audit_events",Integer.class)).isEqualTo(1);
     }
 
@@ -327,20 +327,20 @@ class HsaasBackendApplicationTests {
         jdbc.execute("CREATE TRIGGER synthetic_audit_failure BEFORE INSERT ON audit_events FOR EACH ROW SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='SYNTHETIC_AUDIT_FAILURE'");
         try {
             assertThatThrownBy(()->tx.execute(status->{
-                accountLoader.lock(staffId); entities.persist(new CounterTransactionProbe(52)); entities.flush();
+                accountLoader.lock(staffId); entities.persist(new DestinationTransactionProbe(52)); entities.flush();
                 commands.success(namespace,encoding,200,new IdempotencyPort.SafeResult("52","SYNTHETIC_JPA","VERIFIED",0));
-                audit.append(LocalAuditPort.Action.ADMIN_CHANGED,"COUNTER","52",staffId,new LocalAuditPort.Snapshot(null,"ACTIVE",null,0L,"LOCAL"));
+                audit.append(LocalAuditPort.Action.ADMIN_CHANGED,"DESTINATION","52",staffId,new LocalAuditPort.Snapshot(null,"ACTIVE",null,0L,"LOCAL"));
                 return null;
             })).isInstanceOf(org.springframework.dao.DataAccessException.class);
         } finally { jdbc.execute("DROP TRIGGER synthetic_audit_failure"); }
-        assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM counters WHERE id=52",Integer.class)).isZero();
+        assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM destinations WHERE id=52",Integer.class)).isZero();
         assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM audit_events",Integer.class)).isZero();
         assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM idempotency_records",Integer.class)).isZero();
     }
 
     /** Bootstrap is only tested against an empty disposable database, never invoked for a real administrator. */
     @Test void bootstrapIsSingleUse() {
-        jdbc.update("DELETE FROM user_counter_permissions"); jdbc.update("DELETE FROM users");
+        jdbc.update("DELETE FROM users");
         long id=bootstrap.initialize(" SYNTHETIC_ADMIN ",FIXTURE_PASSWORD.toCharArray());
         assertThat(id).isPositive();
         assertThatThrownBy(()->bootstrap.initialize("another_admin",FIXTURE_PASSWORD.toCharArray())).isInstanceOf(ApiFailure.class);
@@ -348,25 +348,26 @@ class HsaasBackendApplicationTests {
         assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM audit_events",Integer.class)).isEqualTo(1);
     }
 
-    /** V1 data survives all current forward migrations inside a second independently owned native test schema. */
+    /** A V11 database upgrades both enabled and denied staff without keeping either counter table. */
     @Test void cleanAndUpgradeMigration() throws Exception {
         try (var probe = eduupm.hsaas.testing.LocalMysql.create()) {
             String url = probe.getJdbcUrl();
-            var first = Flyway.configure().dataSource(url, probe.getUsername(), probe.getPassword()).target("1").load();
-            assertThat(first.info().applied()).isEmpty(); assertThat(first.migrate().migrationsExecuted).isEqualTo(1);
+            var old = Flyway.configure().dataSource(url, probe.getUsername(), probe.getPassword()).target("11").load();
+            assertThat(old.info().applied()).isEmpty(); old.migrate();
             try (var connection = java.sql.DriverManager.getConnection(url, probe.getUsername(), probe.getPassword());
                  var statement = connection.createStatement()) {
-                statement.execute("INSERT INTO counters(code,name) VALUES('UPGRADE_FIXTURE','Synthetic upgrade fixture')");
+                statement.execute("INSERT INTO counters(id,code,name,active) VALUES(1,'LEGACY_A','First',TRUE),(2,'LEGACY_B','Second',TRUE),(3,'RETIRED','Retired',FALSE)");
+                statement.execute("INSERT INTO users(id,login,password_hash,role,created_at,updated_at) VALUES(101,'upgrade_a','fixture','COUNTER_STAFF',UTC_TIMESTAMP(6),UTC_TIMESTAMP(6)),(102,'upgrade_b','fixture','COUNTER_STAFF',UTC_TIMESTAMP(6),UTC_TIMESTAMP(6)),(103,'upgrade_denied','fixture','COUNTER_STAFF',UTC_TIMESTAMP(6),UTC_TIMESTAMP(6)),(104,'upgrade_admin','fixture','ADMIN',UTC_TIMESTAMP(6),UTC_TIMESTAMP(6))");
+                statement.execute("INSERT INTO user_counter_permissions(user_id,counter_id,active) VALUES(101,1,TRUE),(102,2,TRUE),(103,1,FALSE),(103,3,TRUE),(104,2,TRUE)");
             }
             var latest = Flyway.configure().dataSource(url, probe.getUsername(), probe.getPassword()).load();
-            // V2 through V9 follow the preserved V1 fixture; validation and repeat migration must remain safe.
-            assertThat(latest.migrate().migrationsExecuted).isEqualTo(8); latest.validate();
+            assertThat(latest.migrate().migrationsExecuted).isEqualTo(1); latest.validate();
             assertThat(latest.migrate().migrationsExecuted).isZero();
-            try (var connection = java.sql.DriverManager.getConnection(url, probe.getUsername(), probe.getPassword());
-                 var statement = connection.createStatement();
-                 var result = statement.executeQuery("SELECT COUNT(*) FROM counters WHERE code='UPGRADE_FIXTURE'")) {
-                assertThat(result.next()).isTrue(); assertThat(result.getInt(1)).isEqualTo(1);
-            }
+            var database = new JdbcTemplate(new org.springframework.jdbc.datasource.DriverManagerDataSource(url,probe.getUsername(),probe.getPassword()));
+            assertThat(database.queryForList("SELECT staff_access_enabled FROM users ORDER BY id",Boolean.class))
+                    .containsExactly(true,true,false,false);
+            assertThat(database.queryForObject("SELECT COUNT(*) FROM information_schema.tables WHERE table_schema=DATABASE() AND table_name IN ('counters','user_counter_permissions')",Integer.class)).isZero();
+            assertThat(database.queryForObject("SELECT COUNT(*) FROM information_schema.columns WHERE table_schema=DATABASE() AND column_name IN ('counter_id','issue_counter_id','return_counter_id')",Integer.class)).isZero();
         }
     }
 
@@ -600,7 +601,7 @@ class HsaasBackendApplicationTests {
 
     /** Two concurrent bootstraps can create only one account and one audit event. */
     @Test void bootstrapCompetitionCreatesOneAdministrator() throws Exception {
-        jdbc.update("DELETE FROM user_counter_permissions"); jdbc.update("DELETE FROM users");
+        jdbc.update("DELETE FROM users");
         var start=new CountDownLatch(1);
         try(var pool=Executors.newFixedThreadPool(2)) {
             java.util.concurrent.Callable<Boolean> create=()->{ await(start); try { bootstrap.initialize("fixture_admin",FIXTURE_PASSWORD.toCharArray()); return true; } catch(ApiFailure closed) { return false; } };
@@ -620,18 +621,18 @@ class HsaasBackendApplicationTests {
         var start=new CountDownLatch(1);
         try(var pool=Executors.newFixedThreadPool(2)) {
             java.util.concurrent.Callable<Long> command=()->{ await(start); return tx.execute(status->{
-                capabilities.lockOwners(List.of(new SessionCapabilities.OwnerUse(context,1)),null);
+                capabilities.lockOwners(List.of(context),null);
                 var previous=commands.replay(namespace,encoded); if(previous.isPresent()) { return previous.get().result().version(); }
-                long version=jdbc.queryForObject("SELECT version FROM counters WHERE id=1",Long.class);
+                long version=jdbc.queryForObject("SELECT version FROM users WHERE id=?",Long.class,staffId);
                 if(version!=0) { throw new ApiFailure(409,"VERSION_CONFLICT","Synthetic probe version conflict."); }
-                jdbc.update("UPDATE counters SET version=version+1 WHERE id=1");
-                audit.append(LocalAuditPort.Action.ADMIN_CHANGED,"COUNTER","1",staffId,new LocalAuditPort.Snapshot("ACTIVE","ACTIVE",0L,1L,"LOCAL"));
+                jdbc.update("UPDATE users SET version=version+1 WHERE id=?",staffId);
+                audit.append(LocalAuditPort.Action.ADMIN_CHANGED,"USER",Long.toString(staffId),staffId,new LocalAuditPort.Snapshot("ACTIVE","ACTIVE",0L,1L,"LOCAL"));
                 commands.success(namespace,encoded,200,new IdempotencyPort.SafeResult("1","SYNTHETIC_PROBE","VERIFIED",1)); return 1L;
             }); };
             var first=pool.submit(command); var second=pool.submit(command); start.countDown();
             assertThat(first.get(5,TimeUnit.SECONDS)).isEqualTo(1L); assertThat(second.get(5,TimeUnit.SECONDS)).isEqualTo(1L);
             assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM audit_events",Integer.class)).isEqualTo(1);
-            assertThat(jdbc.queryForObject("SELECT version FROM counters WHERE id=1",Long.class)).isEqualTo(1L);
+            assertThat(jdbc.queryForObject("SELECT version FROM users WHERE id=?",Long.class,staffId)).isEqualTo(1L);
             assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM idempotency_records",Integer.class)).isEqualTo(1);
         }
     }

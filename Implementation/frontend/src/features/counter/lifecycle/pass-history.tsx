@@ -23,14 +23,14 @@ function preset(period: Exclude<Period, "custom">): Range {
 }
 
 /** History is mounted only on explicit request; closing cancels reads and removes its visitor data from memory. */
-export function PassHistoryDialog({ counterId, close, deny, restoreFocus }: { counterId: string; close: () => void; deny: () => void; restoreFocus: () => void }) {
+export function PassHistoryDialog({ close, deny, restoreFocus }: { close: () => void; deny: () => void; restoreFocus: () => void }) {
   const [period, setPeriod] = useState<Period>("month");
   const [range, setRange] = useState<Range>(() => preset("month"));
   const [draft, setDraft] = useState<Range>(() => preset("month"));
   const [category, setCategory] = useState<PassFilters["category"]>("ALL");
   const [rangeError, setRangeError] = useState(""), [exportError, setExportError] = useState(""), [exporting, setExporting] = useState(false);
   const search = usePassSearch();
-  const filters = useMemo<PassFilters>(() => ({ counterId, history: true, status: "ALL", category, search: search.search, ...range }), [counterId, category, search.search, range]);
+  const filters = useMemo<PassFilters>(() => ({ history: true, status: "ALL", category, search: search.search, ...range }), [category, search.search, range]);
   const feed = usePassFeed(filters, deny), scroll = useRef<HTMLDivElement>(null);
   const alive = useRef(true), exportRequest = useRef<AbortController | null>(null);
   const cancelExport = useCallback(() => exportRequest.current?.abort(), []);

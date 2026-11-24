@@ -18,7 +18,7 @@ public interface RegistrationLifecyclePort {
     Contact lifecycleContact(Access access);
 
     /** Bounded read-only visitor labels/search results for currently authorized staff pass lists. */
-    default java.util.Map<String, PassVisitor> passVisitors(String owner, String counterId,
+    default java.util.Map<String, PassVisitor> passVisitors(String owner,
             java.util.List<String> registrationIds, String search) {
         throw new IllegalStateException("Staff pass visitor projection is unavailable");
     }

@@ -45,7 +45,7 @@ public final class ReviewService {
         return execute(context, registrationId, key, "REJECT", body);
     }
 
-    /** No caller transaction may invert the user/counter prefix by retaining requireHuman's binding locks. */
+    /** No caller transaction may invert the user/session prefix by retaining requireHuman's binding locks. */
     private IdempotencyPort.SafeResult execute(StaffContext context, String id, String key, String operation, String body) {
         if (TransactionSynchronizationManager.isActualTransactionActive()) {
             throw new IllegalStateException("Begin review orchestration outside a domain transaction");
@@ -61,9 +61,9 @@ public final class ReviewService {
             boolean recoveryOnly = attempt > 0;
             try {
                 return transaction.execute(status -> {
-                    // User is the first lock. Its current role is checked before QR-specific owner/counter checks.
+                    // User is the first lock. Its current role is checked before QR-specific owner checks.
                     requireStaff(accounts.lock(actor.id()));
-                    try { capabilities.lockOwners(List.of(new SessionCapabilities.OwnerUse(context.ownerContextId(), Long.parseLong(coordinates.counterId()))), null); }
+                    try { capabilities.lockOwners(List.of(context.ownerContextId()), null); }
                     catch (ApiFailure failure) {
                         if (failure.status() == 410 && "REGISTRATION_ENTRY_REVOKED".equals(failure.code())) throw unavailable();
                         throw failure;
@@ -112,6 +112,7 @@ public final class ReviewService {
     private void requireStaff(Accounts.Account actor) {
         if (actor == null || !actor.active()) throw ApiFailure.unauthenticated();
         if (!"COUNTER_STAFF".equals(actor.role())) throw new ApiFailure(403, "ACCESS_DENIED", "Counter Staff access is required.");
+        if (!actor.canHandleVisitors()) throw new ApiFailure(403, "ACCESS_DENIED", "Staff access is disabled.");
     }
     private ApiFailure unavailable() { return new ApiFailure(404, "NOT_FOUND", "This registration is not available."); }
 

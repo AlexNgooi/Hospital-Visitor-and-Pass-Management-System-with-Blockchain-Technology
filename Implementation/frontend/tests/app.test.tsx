@@ -29,7 +29,7 @@ function fixture(role: Role = "COUNTER_STAFF"): SessionUser {
     id: "1",
     login: "synthetic_staff",
     role,
-    counterIds: role === "ADMIN" ? [] : ["01", "02"],
+    staffAccessEnabled: role === "COUNTER_STAFF",
   };
 }
 function anonymous(): ClientError {
@@ -160,11 +160,11 @@ describe("shell auth and role interactions", () => {
     await user.click(screen.getByRole("button", { name: "Show password" }));
     expect(screen.getByLabelText("Password").getAttribute("type")).toBe("text");
     await user.click(screen.getByRole("button", { name: "Sign in" }));
-    await screen.findByRole("heading", { name: "Your workspace, ready." });
+    await screen.findByRole("heading", { name: "Overview" });
     expect(port.login).toHaveBeenCalledWith("staff_01", " synthetic password ");
-    expect(
-      screen.getByRole("combobox", { name: "Counter access" }).children,
-    ).toHaveLength(2);
+    await user.click(screen.getByRole("button", { name: "Open navigation" }));
+    expect(screen.queryByRole("combobox", { name: "Counter" })).toBeNull();
+    expect(screen.getByRole("navigation", { name: "Counter navigation" })).toBeTruthy();
   });
   it("clears password after a failed login and uses safe failure copy", async () => {
     const { port } = mockPort();
@@ -202,7 +202,7 @@ describe("shell auth and role interactions", () => {
   it("shows ADMIN-only navigation without granting counter permissions", async () => {
     const { port } = mockPort("ADMIN");
     mount("/admin", port);
-    await screen.findByRole("heading", { name: "Your workspace, ready." });
+    await screen.findByRole("heading", { name: "Overview" });
     expect(
       screen.getByRole("navigation", { name: "Administrator navigation" }),
     ).toBeTruthy();
@@ -275,7 +275,7 @@ describe("shell auth and role interactions", () => {
   it("signs out and unmounts protected shell", async () => {
     const { port } = mockPort("COUNTER_STAFF");
     mount("/staff", port);
-    await screen.findByRole("heading", { name: "Your workspace, ready." });
+    await screen.findByRole("heading", { name: "Overview" });
     await userEvent
       .setup()
       .click(screen.getByRole("button", { name: "Sign out" }));
@@ -288,7 +288,7 @@ describe("shell auth and role interactions", () => {
   it("opens mobile navigation, closes on Escape and restores trigger focus", async () => {
     const { port } = mockPort("COUNTER_STAFF");
     mount("/staff", port);
-    await screen.findByRole("heading", { name: "Your workspace, ready." });
+    await screen.findByRole("heading", { name: "Overview" });
     const user = userEvent.setup();
     const trigger = screen.getByRole("button", { name: "Open navigation" });
     await user.click(trigger);
@@ -516,7 +516,7 @@ describe("review regressions: local logout and explicit unknown-login recovery",
       }),
     );
     mount("/staff", port);
-    await screen.findByRole("heading", { name: "Your workspace, ready." });
+    await screen.findByRole("heading", { name: "Overview" });
     await userEvent
       .setup()
       .click(screen.getByRole("button", { name: "Sign out" }));
@@ -650,7 +650,7 @@ describe("review regressions: local logout and explicit unknown-login recovery",
       await user.click(
         screen.getByRole("button", { name: "Check current session" }),
       );
-      await screen.findByRole("heading", { name: "Your workspace, ready." });
+      await screen.findByRole("heading", { name: "Overview" });
       expect(fetcher.mock.calls.at(-1)?.[0]).toBe("/api/auth/me");
       expect(
         fetcher.mock.calls.filter(([path]) => path === "/api/auth/login"),

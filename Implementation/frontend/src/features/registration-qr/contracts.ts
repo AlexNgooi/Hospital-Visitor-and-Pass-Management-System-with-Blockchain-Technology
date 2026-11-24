@@ -20,7 +20,7 @@ export type EntryGrant = z.infer<typeof entrySchema>;
 export function createQrPort(client: ApiClient = apiClient) {
   return {
     capabilities: (signal?: AbortSignal) => client.get("/api/public/registration-entry/capabilities", capabilitiesSchema, { signal }),
-    create: (counterId: string) => client.post("/api/staff/registration-qr-sessions", { counterId, categoryScope: null }, z.object({ displaySessionId: z.uuid() }).strict(), { authRequired: true }),
+    create: () => client.post("/api/staff/registration-qr-sessions", { categoryScope: null }, z.object({ displaySessionId: z.uuid() }).strict(), { authRequired: true }),
     current: (id: string, signal?: AbortSignal) => client.get(`/api/staff/registration-qr-sessions/${id}/current`, currentSchema, { signal, authRequired: true }),
     revoke: (id: string) => client.post<void>(`/api/staff/registration-qr-sessions/${id}/revoke`, {}, undefined, { authRequired: true }),
     bootstrap: () => client.bootstrapCsrf(),

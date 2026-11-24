@@ -9,13 +9,13 @@ import eduupm.hsaas.common.ApiFailure;
 
 /** The read facet of the single M03 root; HTTP supplies server owner context, never a caller-authored authority list. */
 public interface RegistrationReadPort {
-    /** Requires RC before SQL, then current role and the M00 account/counter/binding/owner prefix. */
-    ReadScope captureReadScope(String serverOwnerContextId, String counterId);
+    /** Requires RC before SQL, then current role and the M00 account/binding/owner prefix. */
+    ReadScope captureReadScope(String serverOwnerContextId);
 
-    /** One scope operation includes both count and items, with SQL filtering the guarded single counter. */
+    /** One scope operation includes both count and items, with SQL filtering the current environment. */
     QueuePage readMaskedQueue(ReadScope scope, ReadQuery query);
 
-    /** Exact-scope validation precedes any SQL; missing and cross-counter IDs share the same 404 response. */
+    /** Exact-scope validation precedes any SQL; missing and out-of-environment IDs share the same 404 response. */
     Detail readMaskedDetail(ReadScope scope, String registrationId);
 
     /** Explicit CSRF-protected audited staff comparison, separate from the masked default projection. */
@@ -55,18 +55,18 @@ public interface RegistrationReadPort {
     }
 
     /** Authorized queues include a bounded staff name preview, never the complete form or identifiers. */
-    record QueueItem(String id, String publicReference, String counterId, String categoryCode,
+    record QueueItem(String id, String publicReference, String categoryCode,
             String maskedVisitorName, String destinationLabel, String status, long version, String submittedAt, String visitorDisplayName) {
         /** Older injected read adapters keep their masked fallback while the current root supplies the preview. */
-        public QueueItem(String id, String publicReference, String counterId, String categoryCode,
+        public QueueItem(String id, String publicReference, String categoryCode,
                 String maskedVisitorName, String destinationLabel, String status, long version, String submittedAt) {
-            this(id, publicReference, counterId, categoryCode, maskedVisitorName, destinationLabel, status, version, submittedAt, maskedVisitorName);
+            this(id, publicReference, categoryCode, maskedVisitorName, destinationLabel, status, version, submittedAt, maskedVisitorName);
         }
         @Override public String toString() { return "QueueItem[REDACTED]"; }
     }
 
     /** Required nullable MRN/review properties stay explicit null, without raw form JSON or a reveal path. */
-    record Detail(String id, String publicReference, String counterId, String categoryCode,
+    record Detail(String id, String publicReference, String categoryCode,
             String maskedVisitorName, String destinationLabel, String status, long version, String submittedAt,
             String maskedIdentification, String maskedPhone, String maskedMrn, String mrnMode, String mrnFeedback,
             String environment, String source, ReviewMetadata review) { }
@@ -81,25 +81,14 @@ public interface RegistrationReadPort {
     @tools.jackson.databind.annotation.JsonSerialize(using = ScopeSerializer.class)
     @tools.jackson.databind.annotation.JsonDeserialize(using = ScopeDeserializer.class)
     final class ReadScope {
-        private final String ownerContextId, counterId;
-        private final long actorId;
         private final TransactionSynchronization marker;
 
-        /** The adapter derives actor/coordinates from guarded database state, not JSON or the query filter. */
-        static ReadScope capture(String ownerContextId, long actorId, String counterId) {
+        static ReadScope capture() {
             requireTransaction();
-            return new ReadScope(ownerContextId, actorId, counterId);
+            return new ReadScope();
         }
 
-        private ReadScope(String ownerContextId, long actorId, String counterId) {
-            if (ownerContextId == null || actorId <= 0 || counterId == null
-                    || !counterId.matches("[1-9][0-9]{0,18}")) {
-                throw new IllegalArgumentException("Invalid internal read scope");
-            }
-            Long.parseLong(counterId);
-            this.ownerContextId = ownerContextId;
-            this.actorId = actorId;
-            this.counterId = counterId;
+        private ReadScope() {
             this.marker = new TransactionSynchronization() {
                 /** Completion makes even an unused read scope unusable in a later transaction. */
                 @Override public void afterCompletion(int status) {
@@ -120,7 +109,7 @@ public interface RegistrationReadPort {
             TransactionSynchronizationManager.unbindResource(this);
         }
 
-        /** This is also the factory's first action; never retain binding locks then discover an earlier counter. */
+        /** This is also the factory's first action; never use the receipt in a different transaction. */
         static void requireTransaction() {
             if (!TransactionSynchronizationManager.isActualTransactionActive()
                     || !TransactionSynchronizationManager.isSynchronizationActive()
@@ -130,10 +119,6 @@ public interface RegistrationReadPort {
             }
         }
 
-        /** Package-only coordinates are for SQL filtering, not a serializable authorization token. */
-        String ownerContextId() { return ownerContextId; }
-        long actorId() { return actorId; }
-        String counterId() { return counterId; }
         @Override public String toString() { return "ReadScope[REDACTED]"; }
     }
 

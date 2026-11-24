@@ -13,7 +13,7 @@ import { canonicalLogin } from "../lib/contracts";
 import { ClientError, safeError } from "../lib/errors";
 import { useAuth } from "./auth-context";
 
-/** Staff-only login; role and counters come exclusively from the server response. */
+/** Staff-only login; role and staff access come exclusively from the server response. */
 export function LoginPage() {
   const auth = useAuth();
   const navigate = useNavigate();

@@ -30,10 +30,9 @@ class ManualDemoSeed {
                         insert.executeUpdate();
                     }
                 }
-                statement.executeUpdate("INSERT INTO counters(id,code,name) VALUES(1,'DEMO_ONE','Demonstration counter 1'),(2,'DEMO_TWO','Demonstration counter 2')");
-                statement.executeUpdate("INSERT INTO user_counter_permissions(user_id,counter_id) VALUES(201,1),(202,1),(203,2)");
+                statement.executeUpdate("UPDATE users SET staff_access_enabled=TRUE WHERE id IN (201,202,203)");
                 statement.executeUpdate("INSERT INTO visitor_categories(id,code,name) VALUES(1,'EXECUTIVE','Executive'),(2,'PENJAGA','Penjaga'),(3,'VENDOR','Vendor'),(4,'CONTRACTOR','Contractor')");
-                statement.executeUpdate("INSERT INTO destinations(id,code,name) VALUES(1,'DEMO_WARD','Synthetic Ward'),(2,'DEMO_OFFICE','Synthetic Office')");
+                statement.executeUpdate("INSERT INTO destinations(id,code,name,destination_kind) VALUES(1,'DEMO_WARD','Synthetic Ward','WARD'),(2,'DEMO_OFFICE','Synthetic Office','OTHER')");
                 // Mark the dedicated seed complete so no bootstrap account command can claim this demonstration database.
                 statement.executeUpdate("UPDATE bootstrap_state SET completed=TRUE WHERE id=1");
                 connection.commit();

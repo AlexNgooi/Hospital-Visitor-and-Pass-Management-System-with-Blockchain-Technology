@@ -46,11 +46,11 @@ public final class ReviewReadService {
         var coordinates = roots.discover(id);
         if (coordinates == null || !Objects.equals(id,coordinates.id())) throw unavailable();
         return transaction.execute(status -> {
-            guard(context,actor.id(),coordinates.counterId());
+            guard(context,actor.id());
             // Hold the root version stable through its reveal and audit, following the current authority prefix.
             var locked = roots.lock(coordinates);
             if (locked.version()!=expectedVersion) throw new ApiFailure(409,"VERSION_CONFLICT","Refresh the registration before reviewing.");
-            var result = reads.readReviewFields(reads.captureReadScope(context.ownerContextId(),coordinates.counterId()),id,expectedVersion);
+            var result = reads.readReviewFields(reads.captureReadScope(context.ownerContextId()),id,expectedVersion);
             if (result == null || !id.equals(result.id()) || result.version()!=expectedVersion) throw unavailable();
             audit.append(LocalAuditPort.Action.REGISTRATION_REVIEW_FIELDS_VIEWED,"REGISTRATION",id,actor.id(),
                     new LocalAuditPort.Snapshot(locked.status(),locked.status(),expectedVersion,expectedVersion,"SYNTHETIC_MANUAL"));
@@ -58,43 +58,42 @@ public final class ReviewReadService {
         });
     }
 
-    /** A query counter narrows one selected view; it is not passed to the root until the complete current prefix holds. */
+    /** The complete current staff authority is held through the masked queue read. */
     public RegistrationReadPort.QueuePage queue(ReviewService.StaffContext context, Map<String, List<String>> parameters) {
         var actor = currentActor(context);
         var selection = ReviewQueries.queue(parameters);
         return transaction.execute(status -> {
-            guard(context, actor.id(), selection.counterId());
-            var scope = reads.captureReadScope(context.ownerContextId(), selection.counterId());
+            guard(context, actor.id());
+            var scope = reads.captureReadScope(context.ownerContextId());
             var result = reads.readMaskedQueue(scope, new RegistrationReadPort.ReadQuery(
                     selection.category(), selection.status(), selection.page(), selection.pageSize()));
             // Fail closed on an adapter contract violation without attempting another scope/read or leaking its body.
-            if (result == null || result.page() != selection.page() || result.pageSize() != selection.pageSize()
-                    || result.items().stream().anyMatch(item -> !selection.counterId().equals(item.counterId()))) {
-                throw new IllegalStateException("Masked queue violates its selected-counter contract");
+            if (result == null || result.page() != selection.page() || result.pageSize() != selection.pageSize()) {
+                throw new IllegalStateException("Masked queue violates its selected page contract");
             }
             return result;
         });
     }
 
-    /** Discovery is internal, not existence authorization; absence and inaccessible counters share the same safe failure. */
+    /** Discovery is internal, not existence authorization; absent and out-of-environment records share the same safe failure. */
     public RegistrationReadPort.Detail detail(ReviewService.StaffContext context, String id, Map<String, List<String>> parameters) {
         var actor = currentActor(context);
         if (parameters == null || !parameters.isEmpty()) throw new ApiFailure(400, "VALIDATION_FAILED", "Check the registration detail request.");
         var coordinates = roots.discover(id);
         if (coordinates == null || !Objects.equals(id, coordinates.id())) throw unavailable();
         return transaction.execute(status -> {
-            guard(context, actor.id(), coordinates.counterId());
-            var scope = reads.captureReadScope(context.ownerContextId(), coordinates.counterId());
+            guard(context, actor.id());
+            var scope = reads.captureReadScope(context.ownerContextId());
             var result = reads.readMaskedDetail(scope, id);
             if (result == null) throw unavailable();
-            if (!id.equals(result.id()) || !coordinates.counterId().equals(result.counterId())) {
+            if (!id.equals(result.id())) {
                 throw new IllegalStateException("Masked detail violates its authorized coordinates");
             }
             return result;
         });
     }
 
-    /** Binding/context pre-read locks end before the selected counter enters the outer ordered authorization transaction. */
+    /** Binding/context pre-read locks end before entering the outer ordered authorization transaction. */
     private Accounts.Account currentActor(ReviewService.StaffContext context) {
         if (TransactionSynchronizationManager.isActualTransactionActive()) {
             throw new IllegalStateException("Begin review reads outside a domain transaction");
@@ -103,10 +102,10 @@ public final class ReviewReadService {
         var actor = capabilities.requireHuman(context.bindingId(), context.ownerContextId(), context.generation(), context.login());
         requireStaff(actor); return actor;
     }
-    /** User -> counter -> binding/context guards remain held through the complete root count/items or detail operation. */
-    private void guard(ReviewService.StaffContext context, long actorId, String counterId) {
+    /** User -> binding/context guards remain held through the complete root count/items or detail operation. */
+    private void guard(ReviewService.StaffContext context, long actorId) {
         requireStaff(accounts.lock(actorId));
-        try { capabilities.lockOwners(List.of(new SessionCapabilities.OwnerUse(context.ownerContextId(), Long.parseLong(counterId))), null); }
+        try { capabilities.lockOwners(List.of(context.ownerContextId()), null); }
         catch (ApiFailure failure) {
             if (failure.status() == 410 && "REGISTRATION_ENTRY_REVOKED".equals(failure.code())) throw unavailable();
             throw failure;
@@ -115,6 +114,7 @@ public final class ReviewReadService {
     private void requireStaff(Accounts.Account actor) {
         if (actor == null || !actor.active()) throw ApiFailure.unauthenticated();
         if (!"COUNTER_STAFF".equals(actor.role())) throw new ApiFailure(403, "ACCESS_DENIED", "Counter Staff access is required.");
+        if (!actor.canHandleVisitors()) throw new ApiFailure(403, "ACCESS_DENIED", "Staff access is disabled.");
     }
     private ApiFailure unavailable() { return new ApiFailure(404, "NOT_FOUND", "This registration is not available."); }
 }

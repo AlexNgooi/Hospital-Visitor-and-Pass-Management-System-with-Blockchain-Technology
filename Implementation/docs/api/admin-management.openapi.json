@@ -2,8 +2,8 @@
   "openapi": "3.1.0",
   "info": {
     "title": "HSAAS administration redesign increment",
-    "version": "2026-11-17",
-    "description": "Current authorized increment for codex/admin-management-redesign. Supplements the frozen foundation mirror; does not claim complete application OpenAPI coverage. ADMIN does not inherit counter staff authority. All writes use same-origin CSRF. Visitor management is excluded. V11 adds Ward/Other destinations, unbound manual stock, registration-scoped loans and explicitly audited visitor-name report views/exports. Dynamic visitor-type/field management remains excluded."
+    "version": "2026-11-24",
+    "description": "Current authorized increment for codex/admin-management-redesign. Supplements the frozen foundation mirror; does not claim complete application OpenAPI coverage. ADMIN does not inherit counter staff authority. All writes use same-origin CSRF. Visitor management is excluded. V11 adds Ward/Other destinations, unbound manual stock, registration-scoped loans and explicitly audited visitor-name report views/exports. Dynamic visitor-type/field management remains excluded. V12 removes counter records and uses an account-level staff access setting."
   },
   "servers": [
     {
@@ -895,6 +895,76 @@
           }
         ]
       }
+    },
+    "/api/admin/users/{id}/staff-access": {
+      "patch": {
+        "summary": "Enable or disable a staff account's visitor and pass operations and invalidate its sessions.",
+        "security": [
+          {
+            "sessionCookie": [],
+            "csrfHeader": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[1-9][0-9]{0,18}$"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "active": {
+                    "type": "boolean"
+                  },
+                  "version": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 9007199254740990
+                  }
+                },
+                "required": [
+                  "active",
+                  "version"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Access saved.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Saved"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input."
+          },
+          "401": {
+            "description": "Authentication required."
+          },
+          "403": {
+            "description": "Administrator role and CSRF are required."
+          },
+          "409": {
+            "description": "Account no longer counter staff or stale account version."
+          }
+        }
+      }
     }
   },
   "components": {
@@ -1038,31 +1108,8 @@
               "UNKNOWN"
             ]
           },
-          "permissions": {
-            "type": "array",
-            "items": {
-              "type": "object",
-              "additionalProperties": false,
-              "properties": {
-                "counterId": {
-                  "type": "string",
-                  "pattern": "^[1-9][0-9]{0,18}$"
-                },
-                "active": {
-                  "type": "boolean"
-                },
-                "version": {
-                  "type": "integer",
-                  "minimum": 0,
-                  "maximum": 9007199254740990
-                }
-              },
-              "required": [
-                "counterId",
-                "active",
-                "version"
-              ]
-            }
+          "staffAccessEnabled": {
+            "type": "boolean"
           }
         },
         "required": [
@@ -1075,7 +1122,7 @@
           "email",
           "passwordChangeRequired",
           "onboardingDelivery",
-          "permissions"
+          "staffAccessEnabled"
         ]
       },
       "EmailReadiness": {
@@ -1257,7 +1304,7 @@
           "id",
           "login",
           "role",
-          "counterIds",
+          "staffAccessEnabled",
           "passwordChangeRequired"
         ],
         "properties": {
@@ -1277,17 +1324,10 @@
               "COUNTER_STAFF"
             ]
           },
-          "counterIds": {
-            "type": "array",
-            "items": {
-              "type": "string",
-              "pattern": "^[0-9]+$",
-              "description": "Server database ID serialized as a decimal string."
-            },
-            "uniqueItems": true,
-            "description": "Current active staff counter grants; ADMIN has an empty list."
-          },
           "passwordChangeRequired": {
+            "type": "boolean"
+          },
+          "staffAccessEnabled": {
             "type": "boolean"
           }
         },

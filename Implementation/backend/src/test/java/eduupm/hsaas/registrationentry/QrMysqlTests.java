@@ -68,14 +68,13 @@ class QrMysqlTests {
         jdbc.update("UPDATE registration_entry_grants SET replaces_grant_id=NULL,replaces_binding_version=NULL");
         for(String table:List.of("registration_entry_grants","registration_qr_challenges","registration_qr_sessions")) { jdbc.update("DELETE FROM "+table); }
         jdbc.update("UPDATE app_session_bindings SET current_owner_context_id=NULL");
-        for(String table:List.of("auth_session_contexts","app_session_bindings","SPRING_SESSION_ATTRIBUTES","SPRING_SESSION","idempotency_records","audit_events","user_counter_permissions","users","counters","destinations","visitor_categories")) { jdbc.update("DELETE FROM "+table); }
+        for(String table:List.of("auth_session_contexts","app_session_bindings","SPRING_SESSION_ATTRIBUTES","SPRING_SESSION","idempotency_records","audit_events","users","destinations","visitor_categories")) { jdbc.update("DELETE FROM "+table); }
         String password=passwords.encode(PASSWORD);
         for(String role:List.of("COUNTER_STAFF","ADMIN")) {
             jdbc.update("INSERT INTO users(login,password_hash,role,active,created_at,updated_at) VALUES(?,?,?,TRUE,?,?)",role.equals("ADMIN")?"admin_qr":"staff_qr",password,role,DatabaseTime.sql(now),DatabaseTime.sql(now));
         }
         staffId=jdbc.queryForObject("SELECT id FROM users WHERE login='staff_qr'",Long.class);adminId=jdbc.queryForObject("SELECT id FROM users WHERE login='admin_qr'",Long.class);
-        jdbc.update("INSERT INTO counters(id,code,name) VALUES(1,'QR_SYNTHETIC_1','Synthetic counter one'),(2,'QR_SYNTHETIC_2','Synthetic counter two')");
-        jdbc.update("INSERT INTO user_counter_permissions(user_id,counter_id) VALUES(?,1),(?,2)",staffId,staffId);
+        jdbc.update("UPDATE users SET staff_access_enabled=TRUE WHERE id=?",staffId);
         jdbc.update("INSERT INTO visitor_categories(id,code,name) VALUES(1,'PENJAGA','Synthetic Penjaga'),(2,'VENDOR','Synthetic Vendor')");
         jdbc.update("INSERT INTO destinations(id,code,name) VALUES(1,'DEMO_WARD','Synthetic ward')");
     }
@@ -83,12 +82,12 @@ class QrMysqlTests {
     @Test void servletRolesCsrfAndPrivacy() throws Exception {
         Browser publicBrowser=new Browser();publicBrowser.csrf();
         assertThat(publicBrowser.get("/api/public/registration-entry").statusCode()).isEqualTo(403);
-        assertThat(publicBrowser.post("/api/staff/registration-qr-sessions",Map.of("counterId","1"),true).statusCode()).isEqualTo(401);
+        assertThat(publicBrowser.post("/api/staff/registration-qr-sessions",Map.of(),true).statusCode()).isEqualTo(401);
         Browser staff=staff();Browser admin=new Browser();admin.login("admin_qr");
-        assertThat(admin.post("/api/staff/registration-qr-sessions",Map.of("counterId","1"),true).statusCode()).isEqualTo(403);
-        assertThat(staff.post("/api/staff/registration-qr-sessions",Map.of("counterId","1"),false).statusCode()).isEqualTo(403);
-        assertThat(staff.post("/api/staff/registration-qr-sessions",Map.of("counterId","1","categoryScope","PENJAGA"),true).statusCode()).isEqualTo(400);
-        String id=staff.create("1",null);HttpResponse<String> current=staff.get("/api/staff/registration-qr-sessions/"+id+"/current");
+        assertThat(admin.post("/api/staff/registration-qr-sessions",Map.of(),true).statusCode()).isEqualTo(403);
+        assertThat(staff.post("/api/staff/registration-qr-sessions",Map.of(),false).statusCode()).isEqualTo(403);
+        assertThat(staff.post("/api/staff/registration-qr-sessions",Map.of("categoryScope","PENJAGA"),true).statusCode()).isEqualTo(400);
+        String id=staff.create(null);HttpResponse<String> current=staff.get("/api/staff/registration-qr-sessions/"+id+"/current");
         assertThat(current.statusCode()).isEqualTo(200);assertThat(current.headers().firstValue("cache-control").orElse("")).isEqualTo("no-store");
         assertThat(current.headers().firstValue("referrer-policy").orElse("")).isEqualTo("no-referrer");
         String token=token(current);assertThat(publicBrowser.post("/api/public/registration-entry/exchange",Map.of("entryToken",token),false).statusCode()).isEqualTo(403);
@@ -99,7 +98,7 @@ class QrMysqlTests {
     }
     /** Two real server slots change payload, overlap for fifteen seconds, and never extend the old screenshot. */
     @Test void rotationExpiryAndIndependentVisitors() throws Exception {
-        Browser staff=staff();String id=staff.create("1",null);String owner=staff.owner();
+        Browser staff=staff();String id=staff.create(null);String owner=staff.owner();
         var first=entries.current(owner,id);var again=entries.current(owner,id);assertThat(first.entryUrl().equals(again.entryUrl())).isTrue();
         String token=first.entryUrl().split("#entry=")[1];Browser one=new Browser();one.csrf();Browser two=new Browser();two.csrf();
         QrEntryService.Entry a=json.readValue(one.exchange(token).body(),QrEntryService.Entry.class);
@@ -113,7 +112,7 @@ class QrMysqlTests {
     }
     /** Cancel, invalid replacement and unknown-network confirmation recovery keep the correct source and context. */
     @Test void confirmationLinkageAndCrossDisplayScope() throws Exception {
-        Browser staff=staff();String firstId=staff.create("1",null),sameId=staff.create("1",null),secondId=staff.create("2","1");
+        Browser staff=staff();String firstId=staff.create(null),sameId=staff.create(null),secondId=staff.create("1");
         String first=token(staff.get("/api/staff/registration-qr-sessions/"+firstId+"/current"));
         String same=token(staff.get("/api/staff/registration-qr-sessions/"+sameId+"/current"));
         String second=token(staff.get("/api/staff/registration-qr-sessions/"+secondId+"/current"));
@@ -135,7 +134,7 @@ class QrMysqlTests {
     }
     /** A grant survives QR expiry, but its own twenty-minute boundary never depends on cleanup. */
     @Test void absoluteGrantBoundary() throws Exception {
-        Browser staff=staff();String id=staff.create("1",null);Browser visitor=new Browser();visitor.csrf();
+        Browser staff=staff();String id=staff.create(null);Browser visitor=new Browser();visitor.csrf();
         var value=json.readValue(visitor.exchange(token(staff.get("/api/staff/registration-qr-sessions/"+id+"/current"))).body(),QrEntryService.Entry.class);
         now=Instant.parse(value.grantExpiresAt()).minusNanos(1000);doReturn(now).when(clock).instant();
         assertThat(entries.entry(visitor.binding()).formContext()).isEqualTo(value.formContext());
@@ -144,7 +143,7 @@ class QrMysqlTests {
     }
     /** No independent consumption transaction is permitted; an outer business failure restores pointer and grant. */
     @Test void consumptionRollbackReceiptFenceAndExactlyOnce() throws Exception {
-        Browser staff=staff();String id=staff.create("1",null);Browser visitor=new Browser();visitor.csrf();
+        Browser staff=staff();String id=staff.create(null);Browser visitor=new Browser();visitor.csrf();
         var value=json.readValue(visitor.exchange(token(staff.get("/api/staff/registration-qr-sessions/"+id+"/current"))).body(),QrEntryService.Entry.class);
         assertThatThrownBy(()->entries.lockGrant(visitor.binding(),value.formContext())).isInstanceOf(IllegalStateException.class);
         var stale=tx.execute(status->entries.lockGrant(visitor.binding(),value.formContext()));
@@ -157,7 +156,7 @@ class QrMysqlTests {
     }
     /** Suspending the outer transaction cannot lend its receipt to REQUIRES_NEW; resumption preserves rollback/commit. */
     @Test void suspendedOuterReceiptRejectsRequiresNewBeforeSqlAndResumes() throws Exception {
-        Browser staff=staff();String display=staff.create("1",null);Browser visitor=new Browser();visitor.csrf();
+        Browser staff=staff();String display=staff.create(null);Browser visitor=new Browser();visitor.csrf();
         var value=json.readValue(visitor.exchange(token(staff.get("/api/staff/registration-qr-sessions/"+display+"/current"))).body(),QrEntryService.Entry.class);
         String binding=visitor.binding();
         var independent=new TransactionTemplate(Objects.requireNonNull(tx.getTransactionManager()));
@@ -189,7 +188,7 @@ class QrMysqlTests {
     }
     /** Initial pointer uniqueness and replacement CAS are exercised with real competing MySQL transactions. */
     @Test void concurrentFirstExchangeAndReplace() throws Exception {
-        Browser staff=staff();String id=staff.create("1",null),nextId=staff.create("2",null);
+        Browser staff=staff();String id=staff.create(null),nextId=staff.create("1");
         String token=token(staff.get("/api/staff/registration-qr-sessions/"+id+"/current"));
         String next=token(staff.get("/api/staff/registration-qr-sessions/"+nextId+"/current"));
         Browser visitor=new Browser();visitor.csrf();String binding=visitor.binding();
@@ -204,28 +203,28 @@ class QrMysqlTests {
     }
     /** Revocation and consumption serialize through the full prefix/display/context graph and do not deadlock. */
     @Test void revokeVersusConsumeAndLogout() throws Exception {
-        Browser staff=staff();String id=staff.create("1",null);Browser visitor=new Browser();visitor.csrf();
+        Browser staff=staff();String id=staff.create(null);Browser visitor=new Browser();visitor.csrf();
         String token=token(staff.get("/api/staff/registration-qr-sessions/"+id+"/current"));
         var entry=json.readValue(visitor.exchange(token).body(),QrEntryService.Entry.class);String binding=visitor.binding(),owner=staff.owner();
         var results=race(()->{entries.revoke(owner,id);return true;},()->tx.execute(status->{var access=entries.lockGrant(binding,entry.formContext());consumeWithParent(access,111);return true;}));
         assertThat(results.stream().noneMatch(result->result instanceof org.springframework.dao.CannotAcquireLockException)).isTrue();
         assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM registration_entry_grants WHERE consumed_at IS NOT NULL",Integer.class)).isLessThanOrEqualTo(1);
-        String another=staff.create("1",null);String challenge=token(staff.get("/api/staff/registration-qr-sessions/"+another+"/current"));
+        String another=staff.create(null);String challenge=token(staff.get("/api/staff/registration-qr-sessions/"+another+"/current"));
         Browser second=new Browser();second.csrf();second.exchange(challenge);staff.post("/api/auth/logout",Map.of(),true);
         assertThat(second.get("/api/public/registration-entry").statusCode()).isEqualTo(410);
         assertThat(second.exchange(challenge).statusCode()).isEqualTo(410);
     }
-    /** Counter closure and account/permission epochs invalidate grants at use time without a Session event. */
+    /** Staff access changes invalidate grants at use time without a Session event. */
     @Test void counterAndPermissionRevocation() throws Exception {
-        Browser staff=staff(),admin=new Browser();admin.login("admin_qr");String id=staff.create("1",null);Browser visitor=new Browser();visitor.csrf();
+        Browser staff=staff(),admin=new Browser();admin.login("admin_qr");String id=staff.create(null);Browser visitor=new Browser();visitor.csrf();
         visitor.exchange(token(staff.get("/api/staff/registration-qr-sessions/"+id+"/current")));
         var proof=new AccountChanges.Proof(admin.binding(),admin.owner(),1L,"admin_qr");
-        changes.counterPermission(proof,staffId,1,0,false);
+        changes.staffAccess(proof,staffId,0,false);
         assertThat(visitor.get("/api/public/registration-entry").statusCode()).isEqualTo(410);
     }
     /** Expired owner metadata and early key removal fail closed, while legitimate natural key retirement preserves a form. */
     @Test void ownerExpiryAndRetainedKeyGate() throws Exception {
-        Browser staff=staff();String id=staff.create("1",null);Browser visitor=new Browser();visitor.csrf();
+        Browser staff=staff();String id=staff.create(null);Browser visitor=new Browser();visitor.csrf();
         visitor.exchange(token(staff.get("/api/staff/registration-qr-sessions/"+id+"/current")));
         var foundation=new eduupm.hsaas.config.FoundationProperties("test","disabled","manual","disabled","disabled",false,Duration.ofMinutes(30),Duration.ofHours(8),Duration.ofHours(24),Duration.ofMinutes(1),"fixture","",Map.of());
         var keys=new QrProperties(true,"https://entry.example.test","new",Map.of("new",Base64.getEncoder().encodeToString(new byte[32])));
@@ -238,7 +237,7 @@ class QrMysqlTests {
     }
     /** A new expired challenge cannot discard the confirmed old pending form. */
     @Test void expiredConfirmationPreservesOriginalAndWrongTransitionIsRejected() throws Exception {
-        Browser staff=staff();String oldId=staff.create("1",null),newId=staff.create("2",null);
+        Browser staff=staff();String oldId=staff.create(null),newId=staff.create("1");
         Browser visitor=new Browser();visitor.csrf();var old=json.readValue(visitor.exchange(token(staff.get("/api/staff/registration-qr-sessions/"+oldId+"/current"))).body(),QrEntryService.Entry.class);
         String next=token(staff.get("/api/staff/registration-qr-sessions/"+newId+"/current"));
         assertThat(visitor.exchange(next).statusCode()).isEqualTo(409);advance(45);
@@ -252,14 +251,14 @@ class QrMysqlTests {
     }
     /** Replacement and M03 consumption compete through the same pointer; exactly one original transition wins. */
     @Test void replaceVersusConsumeAndExchangeVersusRevoke() throws Exception {
-        Browser staff=staff();String oldId=staff.create("1",null),newId=staff.create("2",null);String owner=staff.owner();
+        Browser staff=staff();String oldId=staff.create(null),newId=staff.create("1");String owner=staff.owner();
         Browser visitor=new Browser();visitor.csrf();String binding=visitor.binding();
         var old=json.readValue(visitor.exchange(token(staff.get("/api/staff/registration-qr-sessions/"+oldId+"/current"))).body(),QrEntryService.Entry.class);
         String next=token(staff.get("/api/staff/registration-qr-sessions/"+newId+"/current"));
         var results=race(()->entries.exchange(binding,new QrEntryService.ExchangeRequest(next,true,old.formContext())),
                 ()->tx.execute(status->{var access=entries.lockGrant(binding,old.formContext());consumeWithParent(access,121);return true;}));
         assertThat(results.stream().filter(ApiFailure.class::isInstance).count()).isEqualTo(1);
-        String thirdId=staff.create("1",null);String thirdToken=token(staff.get("/api/staff/registration-qr-sessions/"+thirdId+"/current"));
+        String thirdId=staff.create(null);String thirdToken=token(staff.get("/api/staff/registration-qr-sessions/"+thirdId+"/current"));
         Browser another=new Browser();another.csrf();String anotherBinding=another.binding();
         race(()->entries.exchange(anotherBinding,new QrEntryService.ExchangeRequest(thirdToken,null,null)),()->{entries.revoke(owner,thirdId);return true;});
         assertThatThrownBy(()->entries.entry(anotherBinding)).isInstanceOf(ApiFailure.class);
@@ -267,19 +266,20 @@ class QrMysqlTests {
     }
     /** Permission mutation and logout do not use a reverse lock order against exchange. */
     @Test void permissionAndLogoutVersusExchange() throws Exception {
-        Browser staff=staff(),admin=new Browser();admin.login("admin_qr");String id=staff.create("1",null);
+        Browser staff=staff(),admin=new Browser();admin.login("admin_qr");String id=staff.create(null);
         Browser visitor=new Browser();visitor.csrf();String binding=visitor.binding(),token=token(staff.get("/api/staff/registration-qr-sessions/"+id+"/current"));
         var proof=new AccountChanges.Proof(admin.binding(),admin.owner(),1L,"admin_qr");
-        race(()->entries.exchange(binding,new QrEntryService.ExchangeRequest(token,null,null)),()->{changes.counterPermission(proof,staffId,1,0,false);return true;});
+        race(()->entries.exchange(binding,new QrEntryService.ExchangeRequest(token,null,null)),()->{changes.staffAccess(proof,staffId,0,false);return true;});
         assertThatThrownBy(()->entries.entry(binding)).isInstanceOf(ApiFailure.class);
-        // A fresh login captures the new epoch and can use the still-authorized second counter.
-        staff.login("staff_qr");String next=staff.create("2",null);String nextToken=token(staff.get("/api/staff/registration-qr-sessions/"+next+"/current"));
+        // Re-enable staff access before testing the separate logout race.
+        changes.staffAccess(proof,staffId,1,true);
+        staff.login("staff_qr");String next=staff.create("1");String nextToken=token(staff.get("/api/staff/registration-qr-sessions/"+next+"/current"));
         race(()->entries.exchange(binding,new QrEntryService.ExchangeRequest(nextToken,null,null)),()->{capabilities.revokeSession(staff.sessionId());return true;});
         assertThatThrownBy(()->entries.entry(binding)).isInstanceOf(ApiFailure.class);
     }
     /** Real audit SQL failure rolls back consumption, pointer, and successful-command retention together. */
     @Test void auditFailureAndIdempotentSuccessAfterExpiry() throws Exception {
-        Browser staff=staff();String id=staff.create("1",null);Browser visitor=new Browser();visitor.csrf();String binding=visitor.binding();
+        Browser staff=staff();String id=staff.create(null);Browser visitor=new Browser();visitor.csrf();String binding=visitor.binding();
         var value=json.readValue(visitor.exchange(token(staff.get("/api/staff/registration-qr-sessions/"+id+"/current"))).body(),QrEntryService.Entry.class);
         var scope=new RequestEncoding.Scope(RequestEncoding.Kind.ANONYMOUS,entries.anonymous(binding).scope());
         var namespace=new IdempotencyPort.Namespace(scope,"REGISTER","REGISTER",UUID.randomUUID().toString());
@@ -304,7 +304,7 @@ class QrMysqlTests {
     }
     /** Even owner-bearing browser cookies cannot renew staff authority through public visitor requests. */
     @Test void publicEntryDoesNotRenewStaffOwner() throws Exception {
-        Browser staff=staff();String display=staff.create("1",null),owner=staff.owner();
+        Browser staff=staff();String display=staff.create(null),owner=staff.owner();
         String token=token(staff.get("/api/staff/registration-qr-sessions/"+display+"/current"));
         LocalDateTime before=jdbc.queryForObject("SELECT confirmed_idle_expires_at FROM auth_session_contexts WHERE id=?",LocalDateTime.class,owner);
         // Move the framework millisecond timestamp observably without altering any persisted deadline.
@@ -317,9 +317,9 @@ class QrMysqlTests {
     }
     /** Valid consumption probes insert the V5 synthetic parent in the same transaction; invalid receipt probes stay SQL-free. */
     private void consumeWithParent(QrEntryService.GrantAccess access,long registration) {
-        jdbc.update("INSERT INTO visitor_registrations(id,public_reference,entry_grant_id,anonymous_scope_id,counter_id,category_id,category_code,destination_id,field_schema_version,form_data,environment,data_origin,submitted_at) "
-                +"VALUES(?,?,?,(SELECT anonymous_scope_id FROM app_session_bindings WHERE id=?),?,1,'PENJAGA',1,'synthetic-registration-v1',?,'test','SYNTHETIC',?)",
-                registration,"R-QR-SYNTHETIC-"+registration,access.grantId(),access.bindingId(),access.scope().counterId(),
+        jdbc.update("INSERT INTO visitor_registrations(id,public_reference,entry_grant_id,anonymous_scope_id,category_id,category_code,destination_id,field_schema_version,form_data,environment,data_origin,submitted_at) "
+                +"VALUES(?,?,?,(SELECT anonymous_scope_id FROM app_session_bindings WHERE id=?),1,'PENJAGA',1,'synthetic-registration-v1',?,'test','SYNTHETIC',?)",
+                registration,"R-QR-SYNTHETIC-"+registration,access.grantId(),access.bindingId(),
                 "{\"fullName\":\"Demo QR\",\"identificationType\":\"TEST_ID\",\"identificationNumber\":\"DEMO-QR01\",\"phone\":\"+60123456789\",\"mrn\":\"DEMO-MRN-4821\",\"wardCode\":\"DEMO_WARD\",\"relationship\":\"OTHER\"}",DatabaseTime.sql(now));
         entries.consume(access,registration);
     }
@@ -345,7 +345,7 @@ class QrMysqlTests {
         }
         void csrf() throws Exception { csrf=json.readTree(get("/api/public/csrf").body()).path("token").asString(); }
         void login(String login) throws Exception { csrf();assertThat(post("/api/auth/login",Map.of("login",login,"password",PASSWORD),true).statusCode()).isEqualTo(200);csrf(); }
-        String create(String counter,String category) throws Exception { var body=new HashMap<String,Object>();body.put("counterId",counter);body.put("categoryScope",category);var response=post("/api/staff/registration-qr-sessions",body,true);assertThat(response.statusCode()).isEqualTo(201);return json.readTree(response.body()).path("displaySessionId").asString(); }
+        String create(String category) throws Exception { var body=new HashMap<String,Object>();body.put("categoryScope",category);var response=post("/api/staff/registration-qr-sessions",body,true);assertThat(response.statusCode()).isEqualTo(201);return json.readTree(response.body()).path("displaySessionId").asString(); }
         HttpResponse<String> exchange(String token) throws Exception { return post("/api/public/registration-entry/exchange",Map.of("entryToken",token),true); }
         HttpResponse<String> confirm(String token,FormContext old) throws Exception { return post("/api/public/registration-entry/exchange",Map.of("entryToken",token,"restartConfirmed",true,"expectedFormContext",old),true); }
         String binding() {

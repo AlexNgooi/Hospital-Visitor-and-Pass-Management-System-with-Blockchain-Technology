@@ -20,7 +20,7 @@ final class ReviewHttp {
                 || !(session.getAttribute(SessionCapabilities.BINDING) instanceof String binding)
                 || !(session.getAttribute(SessionCapabilities.CONTEXT) instanceof String owner)
                 || !(session.getAttribute(SessionCapabilities.GENERATION) instanceof Long generation)) throw ApiFailure.unauthenticated();
-        // Services still revalidate actual persisted session metadata and current role/counter before accessing the root.
+        // Services still revalidate actual persisted session metadata and current role and staff access before accessing the root.
         return new ReviewService.StaffContext(binding, owner, generation, authentication.getName());
     }
     /** Set headers before resolving the context so transport-level denials retain the privacy policy. */

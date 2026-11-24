@@ -21,8 +21,7 @@ export function usePassFeed(filters: PassFilters, deny: () => void, enabled = tr
     try {
       const result = await lifecycleApi.passes(filters, cursor, controller.signal);
       if (!alive.current || generation !== epoch.current) return;
-      if (result.nextCursor === cursor || result.items.some(row => row.assignment.counterId !== filters.counterId
-        || (filters.history ? row.assignment.status !== "RETURNED" || !row.assignment.returnedAt : row.assignment.closedAt !== null))) throw new ClientError("invalid-response");
+      if (result.nextCursor === cursor || result.items.some(row => filters.history ? row.assignment.status !== "RETURNED" || !row.assignment.returnedAt : row.assignment.closedAt !== null)) throw new ClientError("invalid-response");
       setData(previous => {
         const retained = cursor && previous?.key === key ? previous.items : [];
         const ids = new Set(retained.map(row => row.assignment.id));

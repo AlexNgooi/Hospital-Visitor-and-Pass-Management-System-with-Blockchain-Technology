@@ -11,7 +11,7 @@ beforeEach(()=>{
 });
 for(const compact of [false,true]) {
   it("preserves authority, accessible copy and the offline fieldset in "+(compact?"compact":"default")+" entry",async()=>{
-    const entry:EntryGrant={formContext:{grantReference:"synthetic-layout-grant",bindingVersion:1},scope:{environment:"test",counterId:"1",categoryScope:null},
+    const entry:EntryGrant={formContext:{grantReference:"synthetic-layout-grant",bindingVersion:1},scope:{environment:"test",categoryScope:null},
       serverNow:date(Date.now()),grantExpiresAt:date(Date.now()+1200000)};
     const port:QrPort={capabilities:vi.fn(async()=>({enabled:true})),bootstrap:vi.fn(async()=>{}),entry:vi.fn(async()=>entry),exchange:vi.fn(async()=>entry),
       create:vi.fn(),current:vi.fn(),revoke:vi.fn()};

@@ -41,3 +41,7 @@ Staff management, Pass management and System audit now opt into the same >=800×
 ## 2026-11-17 destination increment
 
 Destination management is the fifth ADMIN drawer task and uses the existing compact viewport shell. New registration metadata is v3 (Executive bed and Ward kind), staff reveal accepts v1/v2/v3, stock enrollment and pass selection omit per-card destination. Overview details and CSV offer explicitly audited name-only visitor records; no patient/contact/identity data enters admin reports. Generated foundation files are unchanged. See docs/runbooks/MANUAL_DESTINATIONS.md from Implementation; V11 and user acceptance NOT_RUN.
+
+## Shared staff workspace
+
+The signed-in account controls staff access. The drawer no longer has a counter chooser, and registration QR, review and pass pages use the shared current-environment workspace. Workspace identity still fences previously loaded details and unresolved commands. The new backend session and API contracts require V12.

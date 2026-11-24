@@ -12,7 +12,7 @@ const user = {
   id: "9007199254740993",
   login: "staff_01",
   role: "COUNTER_STAFF",
-  counterIds: ["9007199254740995"],
+  staffAccessEnabled: true,
 };
 const csrf = { headerName: "X-CSRF-TOKEN", token: "synthetic-test-csrf" };
 const json = (body: unknown, status = 200) =>
@@ -359,12 +359,10 @@ describe("frozen transport boundaries", () => {
       currentFormContext: { grantReference: "synthetic", bindingVersion: 2 },
       currentScope: {
         environment: "SYNTHETIC",
-        counterId: "9007199254740993",
         categoryScope: null,
       },
       requestedScope: {
         environment: "SYNTHETIC",
-        counterId: "2",
         categoryScope: "3",
       },
       token: "discard",
@@ -388,14 +386,14 @@ describe("frozen transport boundaries", () => {
     }
   });
   it.each([
-    { counterId: 123, categoryScope: null, bindingVersion: 2 },
-    { counterId: "123", categoryScope: "PENJAGA", bindingVersion: 2 },
-    { counterId: "123", categoryScope: null, bindingVersion: 9007199254740992 },
-    { counterId: "123", categoryScope: null, bindingVersion: -1 },
+    { categoryScope: 123, bindingVersion: 2 },
+    { categoryScope: "PENJAGA", bindingVersion: 2 },
+    { categoryScope: null, bindingVersion: 9007199254740992 },
+    { categoryScope: null, bindingVersion: -1 },
   ])(
     "discards malformed restart details without reflecting them",
-    async ({ counterId, categoryScope, bindingVersion }) => {
-      const scope = { environment: "SYNTHETIC", counterId, categoryScope };
+    async ({ categoryScope, bindingVersion }) => {
+      const scope = { environment: "SYNTHETIC", categoryScope };
       const client = new ApiClient(
         vi.fn<typeof fetch>().mockResolvedValue(
           apiError("REGISTRATION_ENTRY_RESTART_REQUIRED", 409, {

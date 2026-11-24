@@ -35,7 +35,7 @@ public class ReviewController {
         ReviewHttp.noStore(response); return reads.detail(ReviewHttp.context(request), id, parameters);
     }
 
-    /** Explicit POST uses existing session/current counter checks and framework CSRF; no public reveal capability exists. */
+    /** Explicit POST uses existing current staff session and access checks and framework CSRF; no public reveal capability exists. */
     @PostMapping(value = "/api/staff/registrations/{id}/review-fields", consumes = "application/json")
     public RegistrationReadPort.ReviewFields reviewFields(@PathVariable String id, @RequestBody String body,
             HttpServletRequest request, HttpServletResponse response) {

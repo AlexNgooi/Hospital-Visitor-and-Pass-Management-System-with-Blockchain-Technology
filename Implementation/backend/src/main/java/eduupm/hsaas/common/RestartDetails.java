@@ -11,10 +11,9 @@ public record RestartDetails(FormContext currentFormContext,Scope currentScope,S
         }
     }
     /** Scope comes from the server challenge/display; no names, token, or original input are included. */
-    public record Scope(String environment,String counterId,String categoryScope) {
+    public record Scope(String environment,String categoryScope) {
         public Scope {
             if(!java.util.Set.of("production","development","synthetic","test").contains(environment)
-                    || counterId==null || !counterId.matches("[0-9]{1,20}")
                     || (categoryScope!=null && !categoryScope.matches("[0-9]{1,20}"))) {
                 throw new IllegalArgumentException("Invalid registration scope");
             }

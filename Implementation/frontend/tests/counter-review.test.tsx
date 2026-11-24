@@ -5,7 +5,6 @@ import axe from "axe-core";
 import { MemoryRouter } from "react-router-dom";
 import App from "../src/App";
 import { AuthContext, type AuthContextValue } from "../src/app/auth-context";
-import { CounterContext } from "../src/app/counter-context";
 import type { AuthPort } from "../src/lib/auth";
 import { ApiClient } from "../src/lib/api-client";
 import { ClientError } from "../src/lib/errors";
@@ -16,15 +15,15 @@ import { detailSchema, queueSchema, type Detail, type Queue, type ReviewPort, ty
 const TIME = "2026-10-09T10:00:00.000000Z";
 const KEY = "09fbd5b9-6312-478e-ba27-f85056c9875d";
 /** Every fixture is masked and synthetic; no mock implementation is imported by the production feature. */
-function record(id = "1", counterId = "1"): Detail {
-  return { id, publicReference: `R-TEST-00${id}`, counterId, categoryCode: "PENJAGA", maskedVisitorName: "S*** V***",
+function record(id = "1"): Detail {
+  return { id, publicReference: `R-TEST-00${id}`, categoryCode: "PENJAGA", maskedVisitorName: "S*** V***",
     destinationLabel: "Test Ward A", status: "SUBMITTED", version: 0, submittedAt: TIME,
     maskedIdentification: "DEMO-****0021", maskedPhone: "+60 **** 0021", maskedMrn: "MRN-****0021",
     mrnMode: "mock", mrnFeedback: "MATCH", environment: "test", source: "SYNTHETIC", review: null };
 }
 function queueFor(items: Detail[], query: { page: number; pageSize: number }): Queue {
-  return { items: items.map(({ id, publicReference, counterId, categoryCode, maskedVisitorName, destinationLabel, status, version, submittedAt }) =>
-    ({ id, publicReference, counterId, categoryCode, maskedVisitorName, destinationLabel, status, version, submittedAt })), total: items.length, page: query.page, pageSize: query.pageSize, serverNow: TIME };
+  return { items: items.map(({ id, publicReference, categoryCode, maskedVisitorName, destinationLabel, status, version, submittedAt }) =>
+    ({ id, publicReference, categoryCode, maskedVisitorName, destinationLabel, status, version, submittedAt })), total: items.length, page: query.page, pageSize: query.pageSize, serverNow: TIME };
 }
 function failure(status: number, code: string): ClientError {
   return new ClientError("api", { timestamp: TIME, status, code, message: "unsafe backend message must stay hidden", correlationId: "synthetic-review", fieldErrors: [] });
@@ -35,7 +34,7 @@ function result(item = record(), status: ReviewResult["status"] = "VERIFIED"): R
 /** Pure test transport allows adversarial delays without manufacturing a real transaction success. */
 function fixture(items = [record()]) {
   const port: ReviewPort = {
-    list: vi.fn(async (query) => queueFor(items.filter((item) => item.counterId === query.counterId && (query.status === "ALL" || item.status === query.status)
+    list: vi.fn(async (query) => queueFor(items.filter((item) => (query.status === "ALL" || item.status === query.status)
       && (query.category === "ALL" || item.categoryCode === query.category)), query)),
     detail: vi.fn(async (id) => structuredClone(items.find((item) => item.id === id)!)),
     verify: vi.fn((id) => ({ key: KEY, execute: vi.fn(async () => result(items.find((item) => item.id === id)!)) })),
@@ -43,12 +42,12 @@ function fixture(items = [record()]) {
   };
   return { port, items };
 }
-function auth(role: "COUNTER_STAFF" | "ADMIN" = "COUNTER_STAFF"): AuthContextValue {
-  return { state: { kind: "authenticated", user: { id: "7", login: "synthetic_staff", role, counterIds: role === "ADMIN" ? [] : ["1", "2"] } },
+function auth(role: "COUNTER_STAFF" | "ADMIN" = "COUNTER_STAFF", id = "7"): AuthContextValue {
+  return { state: { kind: "authenticated", user: { id, login: "synthetic_staff", role, staffAccessEnabled: role === "COUNTER_STAFF" } },
     logoutState: { kind: "idle" }, mutationPending: false, refresh: vi.fn(), login: vi.fn(), logout: vi.fn() };
 }
-function element(port: ReviewPort, counter = "1", value = auth()) {
-  return <AuthContext.Provider value={value}><CounterContext.Provider value={counter}><RegistrationReview port={port} /></CounterContext.Provider></AuthContext.Provider>;
+function element(port: ReviewPort, value = auth()) {
+  return <AuthContext.Provider value={value}><RegistrationReview port={port} /></AuthContext.Provider>;
 }
 async function select(id = "1") {
   fireEvent.click(await screen.findByRole("button", { name: new RegExp(`R-TEST-00${id}`) }));
@@ -193,14 +192,14 @@ describe("masked counter review and explicit staff evidence", () => {
     },
   );
   /** Current access loss removes cached data; remounting another scope cannot execute the previous workspace's unresolved handle. */
-  it("UNKNOWN recovery access loss hides cached data and a new counter cannot execute its old handle", async () => {
-    const { port } = fixture([record(), record("2", "2")]);
+  it("UNKNOWN recovery access loss hides cached data and the next shift cannot execute its old handle", async () => {
+    const { port } = fixture([record(), record("2")]);
     const execute = vi.fn().mockRejectedValueOnce(new ClientError("timeout")).mockRejectedValue(failure(403, "ACCESS_DENIED"));
     vi.mocked(port.verify).mockReturnValue({ key: KEY, execute }); const mounted = render(element(port)); await select(); confirmPenjaga();
     fireEvent.click(screen.getByRole("button", { name: "Approve registration" })); await screen.findByRole("button", { name: "Retry original command" });
     fireEvent.click(screen.getByRole("button", { name: "Retry original command" })); await screen.findByText("Review access is no longer available");
     expect(screen.queryByText("DEMO-****0021")).toBeNull(); expect(screen.queryByRole("button", { name: "Retry original command" })).toBeNull();
-    mounted.rerender(element(port, "2")); await screen.findByRole("button", { name: /R-TEST-002/ });
+    mounted.rerender(element(port, auth("COUNTER_STAFF", "8"))); await screen.findByRole("button", { name: /R-TEST-002/ });
     expect(screen.queryByRole("button", { name: "Retry original command" })).toBeNull(); expect(execute).toHaveBeenCalledTimes(2);
     expect(port.verify).toHaveBeenCalledTimes(1);
   });
@@ -255,21 +254,21 @@ describe("masked counter review and explicit staff evidence", () => {
     expect(screen.queryByRole("heading", { name: "R-TEST-001" })).toBeNull();
   });
   it("access loss stops automatic reads and exposes an explicit session refresh", async () => {
-    const { port } = fixture(); const identity = auth(); render(element(port, "1", identity)); await select();
+    const { port } = fixture(); const identity = auth(); render(element(port, identity)); await select();
     vi.mocked(port.list).mockRejectedValue(failure(403, "ACCESS_DENIED")); fireEvent.click(screen.getByRole("button", { name: "Refresh queue" }));
     await screen.findByText("Review access is no longer available"); const count = vi.mocked(port.list).mock.calls.length;
     fireEvent(document, new Event("visibilitychange")); fireEvent(window, new Event("online"));
     await act(async () => {}); expect(port.list).toHaveBeenCalledTimes(count);
     fireEvent.click(screen.getByRole("button", { name: "Refresh staff session" })); expect(identity.refresh).toHaveBeenCalledTimes(1);
   });
-  it("counter switching clears evidence and blocks late cross-counter data", async () => {
-    const { port } = fixture([record(), record("2", "2")]); const mounted = render(element(port)); await select(); confirmPenjaga();
-    mounted.rerender(element(port, "2")); await screen.findByRole("button", { name: /R-TEST-002/ });
+  it("staff account switching clears prior review evidence", async () => {
+    const { port } = fixture([record(), record("2")]); const mounted = render(element(port)); await select(); confirmPenjaga();
+    mounted.rerender(element(port, auth("COUNTER_STAFF", "8"))); await screen.findByRole("button", { name: /R-TEST-002/ });
     expect(screen.queryByRole("heading", { name: "R-TEST-001" })).toBeNull(); expect(screen.queryAllByRole("checkbox")).toHaveLength(0);
     await select("2"); expect(screen.getAllByRole("checkbox").every((item) => !(item as HTMLInputElement).checked)).toBe(true);
   });
   it("Admin cannot acquire review access through client feature injection", async () => {
-    const { port } = fixture(); render(element(port, "1", auth("ADMIN"))); await screen.findByText("Counter Staff access required");
+    const { port } = fixture(); render(element(port, auth("ADMIN"))); await screen.findByText("Counter Staff access required");
     expect(port.list).not.toHaveBeenCalled(); expect(port.detail).not.toHaveBeenCalled();
   });
   it("FeatureSlot injection works without changing shared routing", async () => {

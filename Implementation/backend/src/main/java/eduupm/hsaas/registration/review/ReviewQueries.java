@@ -5,9 +5,9 @@ import java.util.Map;
 import java.util.Set;
 import eduupm.hsaas.common.ApiFailure;
 
-/** Parses bounded review selections only; a caller counter ID never grants authorization to the root read port. */
+/** Parses bounded review filters independently of staff authority. */
 public final class ReviewQueries {
-    private static final Set<String> FIELDS = Set.of("counterId", "category", "status", "page", "pageSize");
+    private static final Set<String> FIELDS = Set.of("category", "status", "page", "pageSize");
     private static final Set<String> CATEGORIES = Set.of("EXECUTIVE", "PENJAGA", "VENDOR", "CONTRACTOR");
     private static final Set<String> STATUSES = Set.of("SUBMITTED", "VERIFIED", "REJECTED", "CANCELLED");
     private ReviewQueries() { }
@@ -19,15 +19,13 @@ public final class ReviewQueries {
             if (entry.getValue() == null || entry.getValue().size() != 1
                     || entry.getValue().getFirst() == null || entry.getValue().getFirst().length() > 64) throw invalid();
         }
-        String counterId = single(values, "counterId");
-        requireId(counterId);
         String category = single(values, "category"), status = single(values, "status");
         if (category != null && !CATEGORIES.contains(category) || status != null && !STATUSES.contains(status)) throw invalid();
         int page = number(single(values, "page"), 0);
         int size = number(single(values, "pageSize"), 10);
         // Bound multiplication before the root SQL limit/offset conversion, including extreme numeric caller input.
         if (size < 1 || size > 50 || (long) page * size > Integer.MAX_VALUE) throw invalid();
-        return new QueueSelection(counterId, category, status, page, size);
+        return new QueueSelection(category, status, page, size);
     }
 
     /** Decimal identities are wire selections; permission is checked using the current server session in another layer. */
@@ -48,6 +46,6 @@ public final class ReviewQueries {
     }
     private static ApiFailure invalid() { return new ApiFailure(400, "VALIDATION_FAILED", "Check the registration queue filters."); }
 
-    /** This immutable validated filter still carries no role/counter capability and cannot be a root authority receipt. */
-    public record QueueSelection(String counterId, String category, String status, int page, int pageSize) { }
+    /** This immutable validated filter still carries no staff capability and cannot be a root authority receipt. */
+    public record QueueSelection(String category, String status, int page, int pageSize) { }
 }

@@ -8,7 +8,6 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.support.GeneratedKeyHolder;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.json.JsonMapper;
-import eduupm.hsaas.auth.Accounts;
 import eduupm.hsaas.auth.SessionCapabilities;
 import eduupm.hsaas.common.*;
 import eduupm.hsaas.common.IdempotencyPort.SafeResult;
@@ -18,17 +17,15 @@ import eduupm.hsaas.registrationentry.QrEntryService.GrantAccess;
 public final class RegistrationStore implements RegistrationReviewPort, RegistrationReadPort, RegistrationLifecyclePort, RegistrationReportingPort {
     private static final java.time.format.DateTimeFormatter TIME = new DateTimeFormatterBuilder().appendInstant(6).toFormatter();
     private static final String ROW = "SELECT r.*,(SELECT rd.destination_name FROM registration_destinations rd WHERE rd.registration_id=r.id AND rd.destination_id=r.destination_id) AS destination_label FROM visitor_registrations r JOIN destinations d ON d.id=r.destination_id ";
-    private static final String SCOPED = ROW + "JOIN user_counter_permissions p ON p.counter_id=r.counter_id AND p.user_id=? AND p.active=TRUE "
-            + "JOIN users u ON u.id=p.user_id AND u.active=TRUE AND u.role='COUNTER_STAFF' "
-            + "JOIN counters c ON c.id=r.counter_id AND c.active=TRUE WHERE r.counter_id=? ";
+    private static final String SCOPED = ROW + "WHERE r.environment=? ";
     private final JdbcTemplate jdbc;
     private final JsonMapper json;
     private final Clock clock;
-    private final Accounts accounts;
+    private final String environment;
     private final SessionCapabilities capabilities;
 
-    public RegistrationStore(JdbcTemplate jdbc, JsonMapper json, Clock clock, Accounts accounts, SessionCapabilities capabilities) {
-        this.jdbc = jdbc; this.json = json; this.clock = clock; this.accounts = accounts; this.capabilities = capabilities;
+    public RegistrationStore(JdbcTemplate jdbc, JsonMapper json, Clock clock, SessionCapabilities capabilities, String environment) {
+        this.jdbc = jdbc; this.json = json; this.clock = clock; this.environment = environment; this.capabilities = capabilities;
     }
 
     /** M05 reuses this root and its authority prefix; no second registration entity or status writer is introduced. */
@@ -42,10 +39,7 @@ public final class RegistrationStore implements RegistrationReviewPort, Registra
         var actor=capabilities.requireHuman((String)context[0],owner,(Long)context[1],(String)context[2]);
         boolean staff=actor.role().equals("COUNTER_STAFF");
         if(!staff && !actor.role().equals("ADMIN")) throw new ApiFailure(403,"ACCESS_DENIED","Staff access is required.");
-        if(staff) {
-            try { capabilities.lockOwners(List.of(new SessionCapabilities.OwnerUse(owner,id(coordinates.counterId()))),null); }
-            catch(ApiFailure denied) { if(denied.status()==410) throw notFound(); throw denied; }
-        }
+        if(staff && !actor.canHandleVisitors()) throw notFound();
         // Discover immutable references, then lock category -> sorted numeric destinations BEFORE the root.
         var reference = lifecycleReferences(coordinates.id());
         var categoryActive = jdbc.query("SELECT active FROM visitor_categories WHERE id=? FOR SHARE", (rs,n)->rs.getBoolean(1), reference.category());
@@ -73,12 +67,12 @@ public final class RegistrationStore implements RegistrationReviewPort, Registra
     }
 
     /** Visitor names remain root-owned and only bounded labels/search booleans leave this read facet. */
-    @Override public Map<String, RegistrationLifecyclePort.PassVisitor> passVisitors(String owner, String counterId,
+    @Override public Map<String, RegistrationLifecyclePort.PassVisitor> passVisitors(String owner,
             List<String> registrationIds, String search) {
-        var scope = captureReadScope(owner, counterId); scope.consume();
+        var scope = captureReadScope(owner); scope.consume();
         if (registrationIds.isEmpty()) return Map.of();
         if (registrationIds.size() > 200) throw new IllegalArgumentException("Visitor projection batch is too large");
-        var args = new ArrayList<Object>(List.of(scope.actorId(), id(counterId)));
+        var args = new ArrayList<Object>(List.of(environment));
         registrationIds.forEach(value -> args.add(id(value)));
         var rows = jdbc.query(SCOPED + " AND r.id IN (" + String.join(",", Collections.nCopies(registrationIds.size(), "?")) + ")",
                 this::row, args.toArray());
@@ -136,15 +130,15 @@ public final class RegistrationStore implements RegistrationReviewPort, Registra
         return new RegistrationLifecyclePort.Contact(phone);
     }
 
-    /** The already-locked grant supplies all counter/environment authority; form data is an approved normalized whitelist. */
+    /** The already-locked grant supplies the protected registration environment; form data is an approved normalized whitelist. */
     long create(GrantAccess access, String anonymousScope, Category category, Destination destination,
             Map<String, ?> form, String mode, String feedback) {
         assertGrantReceipt(access);
         boolean penjaga = category.code().equals("PENJAGA");
-        String sql = "INSERT INTO visitor_registrations(public_reference,entry_grant_id,anonymous_scope_id,counter_id,category_id,category_code,"
+        String sql = "INSERT INTO visitor_registrations(public_reference,entry_grant_id,anonymous_scope_id,category_id,category_code,"
                 + "destination_id,field_schema_version,form_data,environment,data_origin,status,version,mrn_mode,mrn_feedback,mrn_verified,ward_verified,submitted_at)"
-                + " VALUES(?,?,?,?,?,?,?,?,?,?,'SYNTHETIC','SUBMITTED',0,?,?,?,?,?)";
-        Object[] values = { PublicReferences.next(), access.grantId(), anonymousScope, id(access.scope().counterId()), category.id(),
+                + " VALUES(?,?,?,?,?,?,?,?,?,'SYNTHETIC','SUBMITTED',0,?,?,?,?,?)";
+        Object[] values = { PublicReferences.next(), access.grantId(), anonymousScope, category.id(),
                 category.code(), destination.id(), RegistrationFields.VERSION, json.writeValueAsString(form), access.scope().environment(),
                 penjaga ? mode : null, penjaga ? feedback : null, penjaga ? false : null, penjaga ? false : null, DatabaseTime.sql(clock.instant()) };
         var key = new GeneratedKeyHolder();
@@ -222,8 +216,8 @@ public final class RegistrationStore implements RegistrationReviewPort, Registra
 
     /** Internal non-locking discovery cannot authorize reads or distinguish a hidden object's state. */
     @Override public ReviewCoordinates discover(String registrationId) {
-        var rows = jdbc.query("SELECT id,counter_id FROM visitor_registrations WHERE id=?",
-                (rs, n) -> new ReviewCoordinates(Long.toString(rs.getLong(1)), Long.toString(rs.getLong(2))), id(registrationId));
+        var rows = jdbc.query("SELECT id FROM visitor_registrations WHERE id=? AND environment=?",
+                (rs, n) -> new ReviewCoordinates(Long.toString(rs.getLong(1))), id(registrationId), environment);
         if (rows.isEmpty()) { throw notFound(); } return rows.getFirst();
     }
 
@@ -231,12 +225,11 @@ public final class RegistrationStore implements RegistrationReviewPort, Registra
     @Override public LockedRegistration lock(ReviewCoordinates coordinates) {
         RegistrationReadPort.ReadScope.requireTransaction();
         // Lock only the registration root; a joined FOR UPDATE would also lock destination rows out of order.
-        var rows = jdbc.query("SELECT id,counter_id,category_code,status,version,environment FROM visitor_registrations WHERE id=? FOR UPDATE",
-                (rs, n) -> new LockedProjection(rs.getLong("id"), rs.getLong("counter_id"), rs.getString("category_code"),
-                        rs.getString("status"), rs.getLong("version"), rs.getString("environment")), id(coordinates.id()));
+        var rows = jdbc.query("SELECT id,category_code,status,version,environment FROM visitor_registrations WHERE id=? AND environment=? FOR UPDATE",
+                (rs, n) -> new LockedProjection(rs.getLong("id"), rs.getString("category_code"),
+                        rs.getString("status"), rs.getLong("version"), rs.getString("environment")), id(coordinates.id()), environment);
         if (rows.isEmpty()) { throw notFound(); }
         var value = rows.getFirst();
-        if (!coordinates.counterId().equals(Long.toString(value.counter()))) { throw new ApiFailure(409, "VERSION_CONFLICT", "Registration coordinates changed."); }
         return LockedRegistration.capture(coordinates, value.category(), value.status(), value.version(), value.environment());
     }
 
@@ -247,18 +240,16 @@ public final class RegistrationStore implements RegistrationReviewPort, Registra
         var rows = jdbc.query(ROW + "WHERE r.id=?", this::row, id(receipt.coordinates().id()));
         if (rows.isEmpty()) { throw notFound(); }
         var value = rows.getFirst();
-        if (!receipt.coordinates().counterId().equals(Long.toString(value.counter()))) { throw notFound(); }
         // The caller already holds the complete prefix. These are current projections, not late reverse-order locks.
-        var actors = jdbc.query("SELECT a.actor_id,u.role,u.active FROM auth_session_contexts a JOIN users u ON u.id=a.actor_id "
+        var actors = jdbc.query("SELECT a.actor_id,u.role,u.active,u.staff_access_enabled,u.password_change_required FROM auth_session_contexts a JOIN users u ON u.id=a.actor_id "
                         + "JOIN app_session_bindings b ON b.id=a.binding_id WHERE a.id=? AND a.state='ACTIVE' "
                         + "AND b.current_owner_context_id=a.id AND b.generation=a.generation AND b.invalidated_at IS NULL "
                         + "AND a.captured_security_epoch=u.security_epoch AND a.absolute_expires_at>? AND a.confirmed_idle_expires_at>?",
-                (rs, n) -> new Actor(rs.getLong(1), rs.getString(2), rs.getBoolean(3)), owner, DatabaseTime.sql(clock.instant()), DatabaseTime.sql(clock.instant()));
+                (rs, n) -> new Actor(rs.getLong(1), rs.getString(2), rs.getBoolean(3), rs.getBoolean(4), rs.getBoolean(5)), owner, DatabaseTime.sql(clock.instant()), DatabaseTime.sql(clock.instant()));
         if (actors.isEmpty() || !actors.getFirst().active()) { throw ApiFailure.unauthenticated(); }
         Actor actor = actors.getFirst();
         if (!actor.role().equals("COUNTER_STAFF")) { throw new ApiFailure(403, "ACCESS_DENIED", "Counter Staff access is required."); }
-        if (jdbc.queryForObject("SELECT COUNT(*) FROM user_counter_permissions p JOIN counters c ON c.id=p.counter_id "
-                + "WHERE p.user_id=? AND p.counter_id=? AND p.active=TRUE AND c.active=TRUE", Integer.class, actor.id(), value.counter()) != 1) { throw notFound(); }
+        if (!actor.access() || actor.setupRequired() || !environment.equals(value.environment())) { throw notFound(); }
         if (!value.source().equals("SYNTHETIC") || !Set.of("development", "synthetic", "test").contains(value.environment())) { throw new ApiFailure(409, "INTEGRATION_DISABLED", "Only synthetic review is enabled."); }
         var change = RegistrationDecisions.apply(value.category(), value.status(), value.version(), expectedVersion, decision);
         boolean verify = change.status().equals("VERIFIED"), penjaga = value.category().equals("PENJAGA");
@@ -271,30 +262,24 @@ public final class RegistrationStore implements RegistrationReviewPort, Registra
         return new SafeResult(Long.toString(value.id()), value.reference(), change.status(), change.version());
     }
 
-    /** The factory is independently guarded and safely re-enters only M04's exact already-held account/counter prefix. */
-    @Override public ReadScope captureReadScope(String owner, String counterId) {
+    /** Capture current staff authority in the same transaction as the masked read. */
+    @Override public ReadScope captureReadScope(String owner) {
         ReadScope.requireTransaction();
-        long counter = id(counterId);
-        var actors = jdbc.query("SELECT actor_id FROM auth_session_contexts WHERE id=?", (rs, n) -> rs.getLong(1), owner);
-        if (actors.isEmpty()) { throw ApiFailure.unauthenticated(); }
-        var actor = accounts.lock(actors.getFirst());
-        if (!actor.active()) { throw ApiFailure.unauthenticated(); }
-        if (!actor.role().equals("COUNTER_STAFF")) { throw new ApiFailure(403, "ACCESS_DENIED", "Counter Staff access is required."); }
-        try { capabilities.lockOwners(List.of(new SessionCapabilities.OwnerUse(owner, counter)), null); }
+        try { capabilities.lockOwners(List.of(owner), null); }
         catch (ApiFailure denied) { if (denied.status() == 410) { throw notFound(); } throw denied; }
-        return ReadScope.capture(owner, actor.id(), counterId);
+        return ReadScope.capture();
     }
 
-    /** Permission joins and the bound single counter are part of both count and items SQL; inactive destinations remain historical labels. */
+    /** Inactive destinations remain available as historical labels. */
     @Override public QueuePage readMaskedQueue(ReadScope scope, ReadQuery query) {
         if (scope == null) { throw new IllegalStateException("Capture the read scope before querying"); }
         scope.consume();
-        var parameters = new ArrayList<Object>(List.of(scope.actorId(), id(scope.counterId())));
-        String conditions = "";
+        var parameters = new ArrayList<Object>(List.of(environment));
+        String conditions = "WHERE r.environment=?";
         if (query.category() != null) { conditions += " AND r.category_code=?"; parameters.add(query.category()); }
         if (query.status() != null) { conditions += " AND r.status=?"; parameters.add(query.status()); }
-        String querySql = SCOPED + conditions;
-        Long total = jdbc.queryForObject("SELECT COUNT(*) FROM (" + querySql + ") matched", Long.class, parameters.toArray());
+        String querySql = ROW + conditions;
+        Long total = jdbc.queryForObject("SELECT COUNT(*) FROM visitor_registrations r " + conditions, Long.class, parameters.toArray());
         parameters.add(query.pageSize()); parameters.add((long) query.page() * query.pageSize());
         var items = jdbc.query(querySql + " ORDER BY r.submitted_at DESC,r.id DESC LIMIT ? OFFSET ?", this::row, parameters.toArray())
                 .stream().map(this::item).toList();
@@ -303,10 +288,10 @@ public final class RegistrationStore implements RegistrationReviewPort, Registra
     @Override public Detail readMaskedDetail(ReadScope scope, String registrationId) {
         if (scope == null) { throw new IllegalStateException("Capture the read scope before querying"); }
         scope.consume();
-        var rows = jdbc.query(SCOPED + " AND r.id=?", this::row, scope.actorId(), id(scope.counterId()), id(registrationId));
+        var rows = jdbc.query(SCOPED + " AND r.id=?", this::row, environment, id(registrationId));
         if (rows.isEmpty()) { throw notFound(); }
         var value = rows.getFirst(); var base = item(value); boolean penjaga = value.category().equals("PENJAGA");
-        return new Detail(base.id(), base.publicReference(), base.counterId(), base.categoryCode(), base.maskedVisitorName(), base.destinationLabel(),
+        return new Detail(base.id(), base.publicReference(), base.categoryCode(), base.maskedVisitorName(), base.destinationLabel(),
                 base.status(), base.version(), base.submittedAt(), RegistrationMasking.identification(text(value.form(), "identificationNumber")),
                 RegistrationMasking.phone(text(value.form(), "phone")), penjaga ? RegistrationMasking.identification(text(value.form(), "mrn")) : null,
                 penjaga ? allowed(value.mode(), Set.of("mock", "manual")) : null,
@@ -318,7 +303,7 @@ public final class RegistrationStore implements RegistrationReviewPort, Registra
     @Override public ReviewFields readReviewFields(ReadScope scope, String registrationId, long expectedVersion) {
         if (scope == null) throw new IllegalStateException("Capture the staff scope before revealing review fields");
         scope.consume();
-        var rows = jdbc.query(SCOPED + " AND r.id=?", this::row,scope.actorId(),id(scope.counterId()),id(registrationId));
+        var rows = jdbc.query(SCOPED + " AND r.id=?", this::row,environment,id(registrationId));
         if (rows.isEmpty()) throw notFound();
         var value = rows.getFirst();
         if (value.version()!=expectedVersion) throw new ApiFailure(409,"VERSION_CONFLICT","Registration changed. Refresh before reviewing.");
@@ -347,7 +332,7 @@ public final class RegistrationStore implements RegistrationReviewPort, Registra
     }
 
     private QueueItem item(RootRow value) {
-        return new QueueItem(Long.toString(value.id()), value.reference(), Long.toString(value.counter()), allowed(value.category(), RegistrationFields.CATEGORIES),
+        return new QueueItem(Long.toString(value.id()), value.reference(), allowed(value.category(), RegistrationFields.CATEGORIES),
                 RegistrationMasking.name(text(value.form(), "fullName")), RegistrationMasking.destination(value.destination()),
                 allowed(value.status(), Set.of("SUBMITTED", "VERIFIED", "REJECTED", "CANCELLED")), RegistrationVersions.checked(value.version()), TIME.format(value.submitted()),
                 RegistrationMasking.displayName(text(value.form(), "fullName")));
@@ -366,7 +351,7 @@ public final class RegistrationStore implements RegistrationReviewPort, Registra
     private RootRow row(ResultSet rs, int n) throws SQLException {
         long reviewer = rs.getLong("reviewer_id"); Long actor = rs.wasNull() ? null : reviewer;
         String evidence = rs.getString("review_evidence");
-        return new RootRow(rs.getLong("id"), rs.getString("public_reference"), rs.getLong("counter_id"), rs.getString("category_code"),
+        return new RootRow(rs.getLong("id"), rs.getString("public_reference"), rs.getString("category_code"),
                 rs.getString("status"), rs.getLong("version"), rs.getString("environment"), rs.getString("data_origin"),
                 rs.getString("destination_label"), json.readTree(rs.getString("form_data")), rs.getString("mrn_mode"), rs.getString("mrn_feedback"),
                 instant(rs, "submitted_at"), actor, instant(rs, "reviewed_at"), rs.getString("review_source"),
@@ -392,10 +377,10 @@ public final class RegistrationStore implements RegistrationReviewPort, Registra
     /** Public metadata does not include form/contact data. */
     public record Category(long id, String code, String label) { }
     public record Destination(long id, String code, String label, String kind) { }
-    private record Actor(long id, String role, boolean active) { }
-    private record LockedProjection(long id, long counter, String category, String status, long version, String environment) { }
+    private record Actor(long id, String role, boolean active, boolean access, boolean setupRequired) { }
+    private record LockedProjection(long id, String category, String status, long version, String environment) { }
     /** Internal persistence projection is never serialized or formatted as a diagnostic. */
-    private record RootRow(long id, String reference, long counter, String category, String status, long version, String environment,
+    private record RootRow(long id, String reference, String category, String status, long version, String environment,
             String source, String destination, JsonNode form, String mode, String feedback, Instant submitted,
             Long reviewer, Instant reviewed, String reviewSource, JsonNode evidence, String reason) {
         @Override public String toString() { return "RootRow[REDACTED]"; }

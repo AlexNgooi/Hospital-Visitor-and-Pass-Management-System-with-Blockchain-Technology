@@ -3,7 +3,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import QRCode from "qrcode";
 import { Copy, QrCode, ShieldCheck, WifiOff, X } from "lucide-react";
 import * as Dialog from "@radix-ui/react-dialog";
-import { useCounterScope } from "../../app/counter-context";
+import { useAuth } from "../../app/auth-context";
 import { Button, StatusPanel } from "../../components/ui/primitives";
 import { preserveToastInteraction } from "../../components/ui/dialog-feedback";
 import { safeError } from "../../lib/errors";
@@ -12,11 +12,18 @@ import { anchor, displayFresh, safeEntryUrl, serverTime, type ServerAnchor } fro
 import "./registration-qr.css";
 
 interface DisplayValue { current: CurrentQr; anchor: ServerAnchor; image: string }
-interface DisplayReference { id: string; counter: string }
+interface DisplayReference { id: string }
 
 /** Staff display fences stale async results and hides authority before any offline/resume recovery begins. */
 export function RegistrationQrDisplay({ port = qrPort, compact = false }: { port?: QrPort; compact?: boolean }) {
-  const counter = useCounterScope();
+  const { state } = useAuth();
+  if (state.kind !== "authenticated" || !state.user.staffAccessEnabled) {
+    return <StatusPanel kind="empty" title="Staff access required">Ask the administrator to enable staff access.</StatusPanel>;
+  }
+  return <QrWorkspace key={state.user.id} port={port} compact={compact} />;
+}
+
+function QrWorkspace({ port, compact }: { port: QrPort; compact: boolean }) {
   const [enabled, setEnabled] = useState<boolean | null>(null);
   const [display, setDisplay] = useState<DisplayReference | null>(null);
   const [revocation, setRevocation] = useState<(DisplayReference & { status: "pending" | "unknown" }) | null>(null);
@@ -30,7 +37,7 @@ export function RegistrationQrDisplay({ port = qrPort, compact = false }: { port
   const generation = useRef(0);
   const panel = useRef<HTMLDivElement>(null);
   const copyButton = useRef<HTMLButtonElement>(null);
-  const autoStarted = useRef(new Set<string>());
+  const autoStarted = useRef(false);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -43,7 +50,7 @@ export function RegistrationQrDisplay({ port = qrPort, compact = false }: { port
   }, [port, capabilityAttempt]);
 
   useEffect(() => {
-    if (!display || display.counter !== counter) return;
+    if (!display) return;
     let alive = true, fetching = false;
     let latest: DisplayValue | null = null;
     let controller: AbortController | null = null;
@@ -90,47 +97,47 @@ export function RegistrationQrDisplay({ port = qrPort, compact = false }: { port
       window.removeEventListener("offline", hide); window.removeEventListener("online", resume);
       document.removeEventListener("visibilitychange", resume); window.removeEventListener("pageshow", resume);
     };
-  }, [display, counter, port]);
+  }, [display, port]);
 
   /** Setup runs once automatically; failed/unknown mutations require an explicit retry. */
   const create = useCallback(async () => {
-    if (!counter || busy || display || revocation) return;
+    if (busy || display || revocation) return;
     const sequence = ++generation.current; setBusy(true); setValue(null); setMessage("");
     try {
-      const result = await port.create(counter);
-      if (sequence === generation.current) setDisplay({ id: result.displaySessionId, counter });
+      const result = await port.create();
+      if (sequence === generation.current) setDisplay({ id: result.displaySessionId });
     } catch (error) { if (sequence === generation.current) setMessage(safeError(error)); }
     finally { if (sequence === generation.current) setBusy(false); }
-  }, [counter, busy, display, revocation, port]);
+  }, [busy, display, revocation, port]);
   useEffect(() => {
     let active = true;
     // Deferral prevents StrictMode's discarded effect from creating a second display session.
     queueMicrotask(() => {
-      if (active && enabled && counter && !display && !revocation && !autoStarted.current.has(counter)) {
-        autoStarted.current.add(counter); void create();
+      if (active && enabled && !display && !revocation && !autoStarted.current) {
+        autoStarted.current = true; void create();
       }
     });
     return () => { active = false; };
-  }, [enabled, counter, display, revocation, create]);
+  }, [enabled, display, revocation, create]);
   const revoke = async () => {
     const old = revocation ?? display;
     if (!old || busy) return;
     const sequence = ++generation.current; setBusy(true); setValue(null); setMessage("");
     // Stop polling/rendering immediately, while retaining the original source for an explicit uncertain-result retry.
-    setRevocation({ id: old.id, counter: old.counter, status: "pending" }); setDisplay(null);
+    setRevocation({ id: old.id, status: "pending" }); setDisplay(null);
     try {
       await port.revoke(old.id);
-      if (sequence === generation.current) { setRevocation(null); setMessage(`This display was revoked. Counter ${old.counter}: unsubmitted forms from it are no longer valid.`); }
+      if (sequence === generation.current) { setRevocation(null); setMessage("This display was revoked. Unsubmitted forms from it are no longer valid."); }
     } catch (error) {
       if (sequence === generation.current) {
-        setRevocation({ id: old.id, counter: old.counter, status: "unknown" });
+        setRevocation({ id: old.id, status: "unknown" });
         setMessage(`${safeError(error)} Revocation is unconfirmed; the code remains hidden.`);
       }
     }
     finally { if (sequence === generation.current) setBusy(false); }
   };
   useEffect(() => () => { generation.current++; }, []);
-  const visible = value && display?.counter === counter;
+  const visible = value && display;
 
   /** Copy only the currently validated rotating capability, with a manual fallback for clipboard restrictions. */
   const copyLink = async () => {
@@ -164,15 +171,14 @@ export function RegistrationQrDisplay({ port = qrPort, compact = false }: { port
   return <div className={`qr-feature qr-display-feature${compact ? " qr-display-compact" : ""}`}>
     <header className="qr-intro">{compact ? <h2>Visitor registration QR</h2> : <h1>Visitor registration QR</h1>}<p className="muted">{compact ? "Multiple visitors · No account required" : "Scan to register · No account required"}</p></header>
     {enabled === false ? <StatusPanel kind="empty" title="Registration QR is not enabled">Contact the administrator to enable the controlled registration entry.</StatusPanel> : <>
-      <div className="qr-toolbar"><span className="qr-counter">Counter {counter ?? "not selected"}</span><span className="qr-category">All categories</span>
-        {!display && !revocation && message && enabled && <Button busy={busy} disabled={!counter} onClick={() => void create()}>Retry QR setup</Button>}
+      <div className="qr-toolbar"><span className="qr-category">All categories</span>
+        {!display && !revocation && message && enabled && <Button busy={busy} onClick={() => void create()}>Retry QR setup</Button>}
       </div>
-      {display && display.counter !== counter && <ToastNotice tone="info">The live display belongs to counter {display.counter}. Revoke it before starting a display for the selected counter.</ToastNotice>}
       <div className="qr-display-layout">
         {revocation ? <section className="qr-revocation" aria-label="Display revocation recovery" aria-busy={revocation.status === "pending"}>
           {/* Recovery replaces the empty QR card so its original-source action stays near the heading. */}
           <h2>{revocation.status === "pending" ? "Revoking the original display" : "Display revocation is unconfirmed"}</h2>
-          <p>Original counter {revocation.counter}</p><ToastNotice tone={revocation.status === "pending" ? "info" : "error"}>{message || "The original code remains hidden while the server confirms revocation."}</ToastNotice>
+          <ToastNotice tone={revocation.status === "pending" ? "info" : "error"}>{message || "The original code remains hidden while the server confirms revocation."}</ToastNotice>
           {revocation.status === "unknown" && <Button variant="secondary" busy={busy} onClick={() => void revoke()}>Retry revoke</Button>}
         </section> : <div className="qr-display-card" ref={panel}>
           <div className="qr-display-heading"><QrCode size={20} aria-hidden="true" /><h2>Scan or copy link / Imbas atau salin pautan</h2></div>
@@ -209,7 +215,7 @@ export function RegistrationQrDisplay({ port = qrPort, compact = false }: { port
             <Dialog.Trigger asChild><Button variant="ghost"><ShieldCheck size={18} aria-hidden="true" />Entry limits and help</Button></Dialog.Trigger>
             <Dialog.Portal><Dialog.Overlay className="dialog-overlay" /><Dialog.Content className="dialog-content qr-help-dialog" onInteractOutside={preserveToastInteraction}>
               <div className="qr-help-heading"><Dialog.Title>Registration entry help</Dialog.Title><Dialog.Close asChild><Button variant="ghost" aria-label="Close entry help"><X size={20} aria-hidden="true" /></Button></Dialog.Close></div>
-              <Dialog.Description>Entry limits and connection guidance for this counter.</Dialog.Description>{guidance}
+              <Dialog.Description>Entry limits and connection guidance for this display.</Dialog.Description>{guidance}
             </Dialog.Content></Dialog.Portal>
           </Dialog.Root> : <details><summary><ShieldCheck size={18} aria-hidden="true" />Entry limits and connection help</summary>{guidance}</details>}
         </aside>

@@ -74,10 +74,10 @@ class FoundationContractTests {
         Object timestamp=json.readValue(response.getContentAsString(),Map.class).get("timestamp");
         assertThat(timestamp).isInstanceOf(String.class); assertThat(java.time.Instant.parse((String)timestamp)).isNotNull();
         var context=new RestartDetails.FormContext("fixture_grant",1);
-        var scope=new RestartDetails.Scope("test","1",null);
+        var scope=new RestartDetails.Scope("test",null);
         var failure=new ApiFailure(409,"REGISTRATION_ENTRY_RESTART_REQUIRED","Confirm restart.",List.of(),new RestartDetails(context,scope,scope));
         response=new MockHttpServletResponse(); errors.write(request,response,failure);
-        assertThat(response.getContentAsString()).contains("\"details\":","\"counterId\":\"1\"","\"categoryScope\":null");
+        assertThat(response.getContentAsString()).contains("\"details\":","\"categoryScope\":null");
         assertThatThrownBy(()->new RestartDetails.FormContext("fixture_grant",9007199254740992L)).isInstanceOf(IllegalArgumentException.class);
         assertThatThrownBy(()->new ApiFailure(400,"VALIDATION_FAILED","Safe",List.of(),failure.details())).isInstanceOf(IllegalArgumentException.class);
     }

@@ -33,3 +33,7 @@ must not be silently relabelled as complete coverage of the new application.
 ## 2026-11-17 destinations and personal report increment
 
 The incremental admin OpenAPI now covers Ward/Other catalogue commands and audited tables/table-exports; compiled-exports becomes a pass-history compatibility endpoint. Fresh registration metadata is manual-registration-v3 and includes destination kind and Executive bed. Manual enroll submits cardCode/categoryCode; new pass selections submit cardId/expectedVersion/dueAt without destinationId. Legacy shape/HMAC replay is retained server-side. Assignment destination IDs may be null for registration-scoped loans while labels contain the complete captured set. Generated foundation artifacts remain historical and untouched. Full rules, V11 rollout and NOT_RUN cases: [MANUAL_DESTINATIONS](../runbooks/MANUAL_DESTINATIONS.md).
+
+## Shared staff workspace
+
+The current [administrator contract](admin-management.openapi.json) includes account-level staff access and the updated session response. The current [QR contract](registration-entry.openapi.json) retains category and environment scope. staffAccessEnabled replaces counterIds on login and me. Staff review and pass list filters no longer take a counter. The historical foundation mirror and its generated frontend declarations are retained for the unchanged CSRF and error shapes.

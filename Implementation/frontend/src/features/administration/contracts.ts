@@ -6,7 +6,7 @@ export const version = z.number().int().min(0).max(Number.MAX_SAFE_INTEGER);
 export const referenceSchema = z.object({ id, code: z.string(), name: z.string(), active: z.boolean(), version, kind: z.enum(["WARD", "OTHER"]).nullable() });
 export const referencesSchema = z.array(referenceSchema);
 export type Reference = z.infer<typeof referenceSchema>;
-export const usersSchema = z.array(z.object({ id, login: z.string(), role: z.enum(["ADMIN", "COUNTER_STAFF"]), active: z.boolean(), version, fullName: z.string(), email: z.string().nullable(), passwordChangeRequired: z.boolean(), onboardingDelivery: z.enum(["NOT_REQUIRED", "PENDING", "ACCEPTED", "UNKNOWN"]), permissions: z.array(z.object({ counterId: id, active: z.boolean(), version })) }));
+export const usersSchema = z.array(z.object({ id, login: z.string(), role: z.enum(["ADMIN", "COUNTER_STAFF"]), active: z.boolean(), version, fullName: z.string(), email: z.string().nullable(), passwordChangeRequired: z.boolean(), onboardingDelivery: z.enum(["NOT_REQUIRED", "PENDING", "ACCEPTED", "UNKNOWN"]), staffAccessEnabled: z.boolean() }));
 export type User = z.infer<typeof usersSchema>[number];
 /** Null is an explicit default without a deadline; zero and placeholder dates are never accepted. */
 export const settingsSchema = z.array(z.object({ id, key: z.string(), value: z.number().int().min(1).max(720).nullable(), version }));

@@ -9,3 +9,7 @@
 ## 2026-11-16 staff onboarding increment
 
 V10 adds staff metadata, required initial-password change, expiry and email status without changing existing credentials. Accounts.Me includes passwordChangeRequired. requireCredentialSession is restricted to auth identity/password operations; requireHuman rejects pending setup for every business owner. InitialPasswordController verifies the temporary secret and confirmation under account/session locks, updates hash/epoch/version and invalidates the session. StaffOnboardingMail uses explicit disabled-by-default STARTTLS settings and only deliberate create/resend commands; it stores no plaintext, logs no mail body and treats transport exceptions as UNKNOWN. Last-admin protection counts active admins whose password setup is complete. No email/configuration was used or sent during implementation; live acceptance remains NOT_RUN.
+
+## V12 staff access
+
+Current staff operations require the account's staff_access_enabled as well as role and session. Account and session locks protect the decision through the transaction. Changing staff access increments the account version and security epoch and audits the change. QR owner locking still orders accounts, bindings and contexts globally before domain work.

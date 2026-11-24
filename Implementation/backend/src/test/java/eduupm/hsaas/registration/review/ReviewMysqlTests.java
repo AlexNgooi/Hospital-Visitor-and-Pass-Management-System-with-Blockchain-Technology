@@ -109,31 +109,30 @@ class ReviewMysqlTests {
         }
         jdbc.update("UPDATE app_session_bindings SET current_owner_context_id=NULL");
         for (String table : List.of("auth_session_contexts", "app_session_bindings", "SPRING_SESSION_ATTRIBUTES", "SPRING_SESSION",
-                "user_counter_permissions", "users", "counters", "visitor_categories", "destinations")) jdbc.update("DELETE FROM " + table);
+                "users", "visitor_categories", "destinations")) jdbc.update("DELETE FROM " + table);
         String password = passwords.encode(PASSWORD);
         for (String login : List.of("review_a", "review_b", "review_hidden", "review_admin")) {
             jdbc.update("INSERT INTO users(login,password_hash,role,created_at,updated_at) VALUES(?,?,?,UTC_TIMESTAMP(6),UTC_TIMESTAMP(6))",
                     login, password, login.equals("review_admin") ? "ADMIN" : "COUNTER_STAFF");
         }
-        jdbc.update("INSERT INTO counters(id,code,name) VALUES(1,'M04_ONE','Review test one'),(2,'M04_TWO','Review test two')");
         jdbc.update("INSERT INTO destinations(id,code,name) VALUES(1,'M04_WARD','Synthetic Ward'),(2,'M04_OFFICE','Synthetic Office')");
         for (int index = 0; index < CATEGORIES.size(); index++) {
             jdbc.update("INSERT INTO visitor_categories(id,code,name) VALUES(?,?,?)", index + 1, CATEGORIES.get(index), "Synthetic " + CATEGORIES.get(index));
         }
-        jdbc.update("INSERT INTO user_counter_permissions(user_id,counter_id) SELECT id,IF(login='review_hidden',2,1) FROM users WHERE role='COUNTER_STAFF'");
+        jdbc.update("UPDATE users SET staff_access_enabled=TRUE WHERE login IN ('review_a','review_b')");
         clearInvocations(root, idempotency, audit);
     }
 
     /** Four public submissions produce exact scoped masks, descending tie order, stable pages and nullable non-Penjaga fields. */
     @Test void fourCategoryRegistrationToMaskedQueueAndDetail() throws Exception {
         Browser staff = staff("review_a"); List<Registration> registrations = new ArrayList<>();
-        for (String category : CATEGORIES) registrations.add(register(staff, "1", category, false));
-        var response = staff.get("/api/staff/registrations?counterId=1&pageSize=2"); status(response, 200); privateResponse(response);
+        for (String category : CATEGORIES) registrations.add(register(staff, category, false));
+        var response = staff.get("/api/staff/registrations?pageSize=2"); status(response, 200); privateResponse(response);
         var page = tree(response); assertThat(page.path("total").asLong()).isEqualTo(4); assertThat(page.path("pageSize").asInt()).isEqualTo(2);
         assertThat(page.path("items").get(0).path("id").asString()).isEqualTo(registrations.get(3).id());
-        var next = tree(staff.get("/api/staff/registrations?counterId=1&page=1&pageSize=2"));
+        var next = tree(staff.get("/api/staff/registrations?page=1&pageSize=2"));
         assertThat(next.path("items").get(0).path("id").asString()).isEqualTo(registrations.get(1).id());
-        var filtered = tree(staff.get("/api/staff/registrations?counterId=1&category=PENJAGA&status=SUBMITTED"));
+        var filtered = tree(staff.get("/api/staff/registrations?category=PENJAGA&status=SUBMITTED"));
         assertThat(filtered.path("total").asLong()).isEqualTo(1);
         for (var registration : registrations) {
             var detail = staff.get("/api/staff/registrations/" + registration.id()); status(detail, 200); privateResponse(detail);
@@ -146,27 +145,28 @@ class ReviewMysqlTests {
     /** Duplicate keys, unknown selectors, blank values and offset overflow are real servlet 400s, never broadened reads. */
     @Test void invalidGetQueriesAreRejectedOverActualHttp() throws Exception {
         Browser staff = staff("review_a");
-        for (String query : List.of("counterId=1&counterId=1", "counterId=1&actorId=9", "counterId=1&category=ALL", "counterId=1&status=",
-                "counterId=1&page=-1", "counterId=1&page=9007199254740992", "counterId=1&page=2147483647&pageSize=50", "counterId=1&pageSize=51")) {
+        for (String query : List.of("counterId=1&counterId=1", "actorId=9", "category=ALL", "status=",
+                "page=-1", "page=9007199254740992", "page=2147483647&pageSize=50", "pageSize=51")) {
             status(staff.get("/api/staff/registrations?" + query), 400);
         }
     }
 
-    /** Public references and current cached counter UI confer no staff capability; ADMIN is not Counter Staff. */
-    @Test void anonymousAdminAndInvisibleCounterHaveSafeBoundaries() throws Exception {
-        Browser one = staff("review_a"), hidden = staff("review_hidden"); var inaccessible = register(hidden, "2", "VENDOR", false);
-        status(new Browser().get("/api/staff/registrations?counterId=1"), 401);
-        status(staff("review_admin").get("/api/staff/registrations?counterId=1"), 403);
-        var wrongCounter = one.get("/api/staff/registrations/" + inaccessible.id()); status(wrongCounter, 404);
-        var missing = one.get("/api/staff/registrations/9223372036854775807"); status(missing, 404);
-        assertThat(tree(wrongCounter).path("code").asString()).isEqualTo("NOT_FOUND");
-        assertThat(tree(wrongCounter).path("message").asString()).isEqualTo(tree(missing).path("message").asString());
-        status(one.get("/api/staff/registrations?counterId=2"), 404);
+    /** Both authorized shifts see the same registration while users without access cannot read it. */
+    @Test void sharedQueueAcrossStaffShiftsKeepsRoleBoundaries() throws Exception {
+        Browser first = staff("review_a"), second = staff("review_b");
+        var registration = register(first, "VENDOR", false);
+        status(new Browser().get("/api/staff/registrations"), 401);
+        status(staff("review_admin").get("/api/staff/registrations"), 403);
+        status(staff("review_hidden").get("/api/staff/registrations/" + registration.id()), 403);
+        status(second.get("/api/staff/registrations/" + registration.id()), 200);
+        assertThat(tree(second.get("/api/staff/registrations")).path("items").get(0).path("id").asString())
+                .isEqualTo(registration.id());
+        status(second.get("/api/staff/registrations/9223372036854775807"), 404);
     }
 
     /** Real CSRF and strict raw JSON parsing precede mutation; no root/evidence/audit/result can survive invalid commands. */
     @Test void csrfUnknownDuplicateTrailingAndUnsafeVersionCannotReview() throws Exception {
-        Browser staff = staff("review_a"); var registration = register(staff, "1", "VENDOR", false); String key = key();
+        Browser staff = staff("review_a"); var registration = register(staff, "VENDOR", false); String key = key();
         status(staff.post(path(registration, "verify"), verify(registration.category()), key, false), 403);
         for (String body : List.of("{\"expectedVersion\":0,\"identityConfirmed\":true,\"actorId\":9}",
                 "{\"expectedVersion\":0,\"expectedVersion\":0}", "{} {}", "{\"expectedVersion\":9007199254740992}")) {
@@ -177,7 +177,7 @@ class ReviewMysqlTests {
 
     /** Mock MATCH remains feedback only; the persisted synthetic staff checks must be complete and server attributed. */
     @Test void penjagaMatchRequiresAllHumanSimulationChecks() throws Exception {
-        Browser staff = staff("review_a"); var registration = register(staff, "1", "PENJAGA", true);
+        Browser staff = staff("review_a"); var registration = register(staff, "PENJAGA", true);
         assertThat(tree(staff.get("/api/staff/registrations/" + registration.id())).path("mrnFeedback").asString()).isEqualTo("MATCH");
         status(staff.post(path(registration, "verify"), Map.of("expectedVersion", 0, "identityConfirmed", true), key(), true), 400);
         unchanged(registration);
@@ -192,7 +192,7 @@ class ReviewMysqlTests {
     @Test void adverseMockFeedbackDoesNotDiscardOrAutomaticallyVerifyRegistration() throws Exception {
         Browser staff = staff("review_a");
         for (String mrn : List.of("DEMO-MRN-TIMEOUT", "DEMO-MRN-UNAVAILABLE", "DEMO-MRN-NOMATCH")) {
-            var registration = register(staff, "1", "PENJAGA", mrn);
+            var registration = register(staff, "PENJAGA", mrn);
             unchanged(registration); assertThat(reviewAudits(registration)).isZero();
             status(staff.post(path(registration, "verify"), Map.of("expectedVersion", 0, "identityConfirmed", true), key(), true), 400);
             status(staff.post(path(registration, "verify"), verify("PENJAGA"), key(), true), 200);
@@ -201,7 +201,7 @@ class ReviewMysqlTests {
 
     /** Approval commits one root/version/audit/result and never creates a pass, assignment or external job table. */
     @Test void successfulReviewPersistsOnceAndDoesNotAssignAnything() throws Exception {
-        Browser staff = staff("review_a"); var registration = register(staff, "1", "EXECUTIVE", false);
+        Browser staff = staff("review_a"); var registration = register(staff, "EXECUTIVE", false);
         var result = staff.post(path(registration, "verify"), verify("EXECUTIVE"), key(), true); status(result, 200);
         assertThat(tree(result).path("reference").asString()).isEqualTo(registration.reference());
         assertThat(tree(result).path("version").asLong()).isEqualTo(1);
@@ -212,7 +212,7 @@ class ReviewMysqlTests {
 
     /** The same original key/version/evidence replays; a changed body cannot reuse the successful namespace. */
     @Test void replayAndChangedBodyHavePersistedSingleOutcome() throws Exception {
-        Browser staff = staff("review_a"); var registration = register(staff, "1", "VENDOR", false); String key = key();
+        Browser staff = staff("review_a"); var registration = register(staff, "VENDOR", false); String key = key();
         var first = staff.post(path(registration, "verify"), verify("VENDOR"), key, true); status(first, 200);
         var replay = staff.post(path(registration, "verify"), verify("VENDOR"), key, true); status(replay, 200);
         assertThat(tree(replay)).isEqualTo(tree(first));
@@ -223,7 +223,7 @@ class ReviewMysqlTests {
 
     /** Rejection needs a category-valid safe reason, persists local metadata and is replayable without a second audit. */
     @Test void rejectionRequiresReasonAndPersistsOnlySafeLocalMetadata() throws Exception {
-        Browser staff = staff("review_a"); var registration = register(staff, "1", "CONTRACTOR", false); String key = key();
+        Browser staff = staff("review_a"); var registration = register(staff, "CONTRACTOR", false); String key = key();
         status(staff.post(path(registration, "reject"), Map.of("expectedVersion", 0), key, true), 400);
         status(staff.post(path(registration, "reject"), Map.of("expectedVersion", 0, "reasonCode", "MRN_WARD_NOT_CONFIRMED"), key, true), 400);
         var body = Map.of("expectedVersion", 0, "reasonCode", "INFORMATION_INCOMPLETE");
@@ -235,36 +235,27 @@ class ReviewMysqlTests {
         assertThat(reviewAudits(registration)).isEqualTo(1); assertThat(reviewResults(registration)).isEqualTo(1);
     }
 
-    /** Out-of-band fixture permission removal leaves the cached session epoch intact so current counter 404 is tested directly. */
+    /** Out-of-band permission removal isolates current staff access from epoch revocation. */
     @Test void permissionRemovalBlocksReadsAndSuccessfulReplay() throws Exception {
-        Browser staff = staff("review_a"); var registration = register(staff, "1", "VENDOR", false); String key = key();
+        Browser staff = staff("review_a"); var registration = register(staff, "VENDOR", false); String key = key();
         status(staff.post(path(registration, "verify"), verify("VENDOR"), key, true), 200);
-        jdbc.update("UPDATE user_counter_permissions SET active=FALSE WHERE user_id=? AND counter_id=1", actor("review_a"));
-        status(staff.get("/api/staff/registrations?counterId=1"), 404); status(staff.get("/api/staff/registrations/" + registration.id()), 404);
-        status(staff.post(path(registration, "verify"), verify("VENDOR"), key, true), 404); assertThat(reviewAudits(registration)).isEqualTo(1);
-    }
-
-    /** Counter closure is checked even for a retained successful command; current root masks cannot be read afterward. */
-    @Test void inactiveCounterBlocksSuccessfulReplay() throws Exception {
-        Browser staff = staff("review_a"); var registration = register(staff, "1", "VENDOR", false); String key = key();
-        status(staff.post(path(registration, "verify"), verify("VENDOR"), key, true), 200);
-        jdbc.update("UPDATE counters SET active=FALSE WHERE id=1");
-        status(staff.post(path(registration, "verify"), verify("VENDOR"), key, true), 404);
-        status(staff.get("/api/staff/registrations/" + registration.id()), 404); assertThat(reviewResults(registration)).isEqualTo(1);
+        jdbc.update("UPDATE users SET staff_access_enabled=FALSE WHERE id=?", actor("review_a"));
+        status(staff.get("/api/staff/registrations"), 403); status(staff.get("/api/staff/registrations/" + registration.id()), 403);
+        status(staff.post(path(registration, "verify"), verify("VENDOR"), key, true), 403); assertThat(reviewAudits(registration)).isEqualTo(1);
     }
 
     /** A current role change without epoch invalidation deliberately isolates the service's 403 role boundary from session 401. */
     @Test void currentRoleChangeBlocksRetainedSuccess() throws Exception {
-        Browser staff = staff("review_a"); var registration = register(staff, "1", "VENDOR", false); String key = key();
+        Browser staff = staff("review_a"); var registration = register(staff, "VENDOR", false); String key = key();
         status(staff.post(path(registration, "verify"), verify("VENDOR"), key, true), 200);
         jdbc.update("UPDATE users SET role='ADMIN' WHERE id=?", actor("review_a"));
         status(staff.post(path(registration, "verify"), verify("VENDOR"), key, true), 403);
-        status(staff.get("/api/staff/registrations?counterId=1"), 403); assertThat(reviewAudits(registration)).isEqualTo(1);
+        status(staff.get("/api/staff/registrations"), 403); assertThat(reviewAudits(registration)).isEqualTo(1);
     }
 
     /** An actual saved owner deadline cannot be extended by replaying a previously successful business command. */
     @Test void expiredSessionBlocksRetainedSuccess() throws Exception {
-        Browser staff = staff("review_a"); var registration = register(staff, "1", "VENDOR", false); String key = key();
+        Browser staff = staff("review_a"); var registration = register(staff, "VENDOR", false); String key = key();
         status(staff.post(path(registration, "verify"), verify("VENDOR"), key, true), 200);
         doReturn(now.plus(Duration.ofHours(9))).when(clock).instant();
         status(staff.post(path(registration, "verify"), verify("VENDOR"), key, true), 401);
@@ -273,7 +264,7 @@ class ReviewMysqlTests {
 
     /** Actual M00 logout/revocation, rather than a fixture fake response, prevents replay from restoring the old browser. */
     @Test void logoutBlocksRetainedSuccess() throws Exception {
-        Browser staff = staff("review_a"); var registration = register(staff, "1", "VENDOR", false); String key = key();
+        Browser staff = staff("review_a"); var registration = register(staff, "VENDOR", false); String key = key();
         status(staff.post(path(registration, "verify"), verify("VENDOR"), key, true), 200);
         status(staff.post("/api/auth/logout", Map.of(), null, true), 204);
         // A new anonymous CSRF bootstrap proves denial is authentication, not merely a stale CSRF token.
@@ -283,7 +274,7 @@ class ReviewMysqlTests {
 
     /** Two saved contexts of the same USER/key/body converge to one result after the real root lock and second replay. */
     @Test void concurrentSameKeyHasOnePersistedDecision() throws Exception {
-        Browser one = staff("review_a"), two = staff("review_a"); var registration = register(one, "1", "VENDOR", false); String key = key();
+        Browser one = staff("review_a"), two = staff("review_a"); var registration = register(one, "VENDOR", false); String key = key();
         var responses = race(() -> one.post(path(registration, "verify"), verify("VENDOR"), key, true),
                 () -> two.post(path(registration, "verify"), verify("VENDOR"), key, true));
         assertThat(responses.stream().map(HttpResponse::statusCode)).containsExactlyInAnyOrder(200, 200);
@@ -293,7 +284,7 @@ class ReviewMysqlTests {
 
     /** Different actor/key verify-versus-reject competition has exactly one terminal transition and one audit. */
     @Test void concurrentDifferentKeyVerifyRejectHasOneWinner() throws Exception {
-        Browser one = staff("review_a"), two = staff("review_b"); var registration = register(one, "1", "VENDOR", false);
+        Browser one = staff("review_a"), two = staff("review_b"); var registration = register(one, "VENDOR", false);
         var responses = race(() -> one.post(path(registration, "verify"), verify("VENDOR"), key(), true),
                 () -> two.post(path(registration, "reject"), Map.of("expectedVersion", 0, "reasonCode", "INFORMATION_INCOMPLETE"), key(), true));
         assertThat(responses.stream().map(HttpResponse::statusCode)).containsExactlyInAnyOrder(200, 409);
@@ -303,7 +294,7 @@ class ReviewMysqlTests {
 
     /** An actual audit trigger fails after root mutation; status/version/metadata/audit/idempotency all roll back together. */
     @Test void actualAuditSqlFailureRollsBackEveryReviewWrite() throws Exception {
-        Browser staff = staff("review_a"); var registration = register(staff, "1", "VENDOR", false); String key = key();
+        Browser staff = staff("review_a"); var registration = register(staff, "VENDOR", false); String key = key();
         jdbc.execute("CREATE TRIGGER m04_audit_failure BEFORE INSERT ON audit_events FOR EACH ROW BEGIN IF NEW.action IN ('REGISTRATION_VERIFIED','REGISTRATION_REJECTED') THEN SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='M04_DISPOSABLE_AUDIT_FAULT'; END IF; END");
         try { status(staff.post(path(registration, "verify"), verify("VENDOR"), key, true), 503); }
         finally { jdbc.execute("DROP TRIGGER m04_audit_failure"); }
@@ -314,7 +305,7 @@ class ReviewMysqlTests {
 
     /** A controlled real 1062 fault tests rollback/new-transaction replay-only MISS; it is not a claimed natural root-lock race. */
     @Test void actualDuplicateKeyMissRecoveryNeverReappliesRoot() throws Exception {
-        Browser staff = staff("review_a"); var registration = register(staff, "1", "VENDOR", false);
+        Browser staff = staff("review_a"); var registration = register(staff, "VENDOR", false);
         clearInvocations(root, audit, idempotency);
         jdbc.execute("CREATE TRIGGER m04_unique_failure BEFORE INSERT ON idempotency_records FOR EACH ROW BEGIN IF NEW.operation='VERIFY' THEN SIGNAL SQLSTATE '23000' SET MYSQL_ERRNO=1062,MESSAGE_TEXT='M04_DISPOSABLE_UNIQUE_FAULT'; END IF; END");
         try { status(staff.post(path(registration, "verify"), verify("VENDOR"), key(), true), 409); }
@@ -336,7 +327,7 @@ class ReviewMysqlTests {
 
     /** Revocation wins before the service's fresh actor read; actual M00 policy/epoch mutation denies the waiting review. */
     @Test void concurrentPermissionRevocationBeforeReviewGuardPreventsDecision() throws Exception {
-        Browser staff = staff("review_a"), admin = staff("review_admin"); var registration = register(staff, "1", "VENDOR", false);
+        Browser staff = staff("review_a"), admin = staff("review_admin"); var registration = register(staff, "VENDOR", false);
         String owner = staff.owner(); var proof = admin.proof();
         var entered = new CountDownLatch(1); var release = new CountDownLatch(1); var readsBeforePrefix = new java.util.concurrent.atomic.AtomicInteger();
         doAnswer(call -> {
@@ -348,7 +339,7 @@ class ReviewMysqlTests {
             var pending = pool.submit(() -> staff.post(path(registration, "verify"), verify("VENDOR"), key(), true));
             try {
                 assertThat(entered.await(10, TimeUnit.SECONDS)).isTrue();
-                changes.counterPermission(proof, actor("review_a"), 1, 0, false);
+                changes.staffAccess(proof, actor("review_a"), 0, false);
             } finally { release.countDown(); }
             status(pending.get(20, TimeUnit.SECONDS), 401);
         }
@@ -357,7 +348,7 @@ class ReviewMysqlTests {
 
     /** A serialized review may commit before revocation; late framework-save denial yields an UNKNOWN acknowledgement, not business rollback. */
     @Test void concurrentRevocationAfterReviewPrefixPreservesSerializedWinner() throws Exception {
-        Browser staff = staff("review_a"), admin = staff("review_admin"); var registration = register(staff, "1", "VENDOR", false);
+        Browser staff = staff("review_a"), admin = staff("review_admin"); var registration = register(staff, "VENDOR", false);
         var proof = admin.proof(); long target = actor("review_a"); String commandKey = key();
         var inDecision = new CountDownLatch(1); var releaseDecision = new CountDownLatch(1); var adminWaiting = new CountDownLatch(1);
         var adminThread = new java.util.concurrent.atomic.AtomicReference<Thread>();
@@ -369,7 +360,7 @@ class ReviewMysqlTests {
         try (var pool = Executors.newFixedThreadPool(2)) {
             var review = pool.submit(() -> staff.post(path(registration, "verify"), verify("VENDOR"), commandKey, true));
             assertThat(inDecision.await(10, TimeUnit.SECONDS)).isTrue();
-            var revoked = pool.submit(() -> { adminThread.set(Thread.currentThread()); changes.counterPermission(proof, target, 1, 0, false); return true; });
+            var revoked = pool.submit(() -> { adminThread.set(Thread.currentThread()); changes.staffAccess(proof, target, 0, false); return true; });
             try { assertThat(adminWaiting.await(10, TimeUnit.SECONDS)).isTrue(); assertThat(revoked.isDone()).isFalse(); }
             finally { releaseDecision.countDown(); }
             acknowledgement = review.get(20, TimeUnit.SECONDS); assertThat(revoked.get(20, TimeUnit.SECONDS)).isTrue();
@@ -388,7 +379,7 @@ class ReviewMysqlTests {
 
     /** Controlled SQL 1062 occurs only on the loser's held connection; the independently authorized HTTP contender is wholly real. */
     private void winnerRecovery(boolean differentBody) throws Exception {
-        Browser loser = staff("review_a"), winner = staff("review_a"); var registration = register(loser, "1", "VENDOR", false);
+        Browser loser = staff("review_a"), winner = staff("review_a"); var registration = register(loser, "VENDOR", false);
         String commandKey = key(), operation = differentBody ? "REJECT" : "VERIFY", action = differentBody ? "reject" : "verify";
         Object original = differentBody ? Map.of("expectedVersion", 0, "reasonCode", "INFORMATION_INCOMPLETE") : verify("VENDOR");
         Object winning = differentBody ? Map.of("expectedVersion", 0, "reasonCode", "INFORMATION_NOT_CONFIRMED") : verify("VENDOR");
@@ -441,18 +432,18 @@ class ReviewMysqlTests {
     /** Actual adapter transaction fencing must precede even an owner discovery query, not merely reject after reading it. */
     @Test void readScopeFactoryOutsideRcRejectsBeforeAnySql() throws Exception {
         Browser staff = staff("review_a"); String owner = staff.owner(); clearInvocations(jdbc);
-        assertThatThrownBy(() -> reads.captureReadScope(owner, "1")).isInstanceOf(IllegalStateException.class);
+        assertThatThrownBy(() -> reads.captureReadScope(owner)).isInstanceOf(IllegalStateException.class);
         noSqlCalls();
     }
 
     /** Actual JDBC observations distinguish suspended/completed/double-use rejection from a successful original count/items operation. */
     @Test void actualReadScopeSuspensionOneUseAndCompletionAreFencedBeforeSql() throws Exception {
-        Browser staff = staff("review_a"); var registration = register(staff, "1", "VENDOR", false); String owner = staff.owner();
+        Browser staff = staff("review_a"); var registration = register(staff, "VENDOR", false); String owner = staff.owner();
         var original = new TransactionTemplate(transaction.getTransactionManager()); original.setIsolationLevel(TransactionDefinition.ISOLATION_READ_COMMITTED);
         var nested = new TransactionTemplate(transaction.getTransactionManager()); nested.setIsolationLevel(TransactionDefinition.ISOLATION_READ_COMMITTED);
         nested.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRES_NEW);
         var scope = original.execute(status -> {
-            var captured = reads.captureReadScope(owner, "1");
+            var captured = reads.captureReadScope(owner);
             nested.executeWithoutResult(inner -> {
                 clearInvocations(jdbc);
                 assertThatThrownBy(() -> reads.readMaskedDetail(captured, registration.id())).isInstanceOf(IllegalStateException.class);
@@ -476,12 +467,12 @@ class ReviewMysqlTests {
     }
 
     /** The frozen public shape is supplied from schema; no M03 private helper/constant or registration INSERT is used. */
-    private Registration register(Browser staff, String counter, String category, boolean feedback) throws Exception {
-        return register(staff, counter, category, feedback ? RAW_MRN : null);
+    private Registration register(Browser staff, String category, boolean feedback) throws Exception {
+        return register(staff, category, feedback ? RAW_MRN : null);
     }
     /** A missing feedback token stays missing; transient synthetic feedback is not turned into an invented capability. */
-    private Registration register(Browser staff, String counter, String category, String feedbackMrn) throws Exception {
-        var created = staff.post("/api/staff/registration-qr-sessions", Map.of("counterId", counter), null, true); status(created, 201);
+    private Registration register(Browser staff, String category, String feedbackMrn) throws Exception {
+        var created = staff.post("/api/staff/registration-qr-sessions", Map.of(), null, true); status(created, 201);
         String display = tree(created).path("displaySessionId").asString();
         var current = staff.get("/api/staff/registration-qr-sessions/" + display + "/current"); status(current, 200);
         String entry = tree(current).path("entryUrl").asString().split("#entry=")[1];
@@ -501,7 +492,7 @@ class ReviewMysqlTests {
         var submitted = visitor.post("/api/public/registrations", body, key(), true); status(submitted, 201);
         String reference = tree(submitted).path("publicReference").asString();
         // Resolve the operational ID via the authorized real queue, never through a public PII lookup or root fixture query.
-        var items = tree(staff.get("/api/staff/registrations?counterId=" + counter + "&pageSize=50")).path("items");
+        var items = tree(staff.get("/api/staff/registrations?pageSize=50")).path("items");
         for (var item : items) if (reference.equals(item.path("publicReference").asString())) return new Registration(item.path("id").asString(), reference, category);
         throw new IllegalStateException("Submitted synthetic reference absent from authorized queue");
     }

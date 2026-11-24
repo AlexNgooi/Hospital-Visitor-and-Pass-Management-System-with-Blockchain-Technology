@@ -19,7 +19,6 @@ const masking = (value: string) => (value.match(/\*/g)?.length ?? 0) >= 3;
 export const queueItemSchema = z.object({
   id: idSchema,
   publicReference: z.string().regex(/^R-[A-Za-z0-9_-]{1,126}$/),
-  counterId: idSchema,
   categoryCode: categorySchema,
   maskedVisitorName: z.string().min(3).max(120).regex(/^[\p{L}\p{M}* .'-]+$/u).refine(masking),
   // Optional during backend rollout; the staff preview is bounded by Unicode characters, not UTF-16 units.
@@ -98,7 +97,7 @@ export type Detail = z.infer<typeof detailSchema>;
 export type ReviewResult = z.infer<typeof resultSchema>;
 export type Verify = z.infer<typeof verifySchema>;
 export type Reject = z.infer<typeof rejectSchema>;
-export interface QueueQuery { counterId: string; category: Category | "ALL"; status: Status | "ALL"; page: number; pageSize: number; }
+export interface QueueQuery { category: Category | "ALL"; status: Status | "ALL"; page: number; pageSize: number; }
 
 /** Production always calls the real transport; tests inject a separate explicit synthetic port. */
 export interface ReviewPort {

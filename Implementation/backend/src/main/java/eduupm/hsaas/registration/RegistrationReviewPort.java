@@ -11,7 +11,7 @@ public interface RegistrationReviewPort {
     /** Internal non-locking discovery supplies coordinates for the ordered security prefix, never HTTP authorization. */
     ReviewCoordinates discover(String registrationId);
 
-    /** After the complete staff/counter prefix, locks the root in the caller's READ_COMMITTED transaction. */
+    /** After the complete staff authority prefix, locks the root in the caller's READ_COMMITTED transaction. */
     LockedRegistration lock(ReviewCoordinates coordinates);
 
     /** Checks the exact receipt before any SQL, then records a CAS decision without independent commit/audit/idempotency. */
@@ -19,11 +19,10 @@ public interface RegistrationReviewPort {
             String serverOwnerContextId, Decision decision);
 
     /** Safe decimal-string identities avoid numeric precision loss in downstream browser DTOs. */
-    record ReviewCoordinates(String id, String counterId) {
+    record ReviewCoordinates(String id) {
         /** Coordinates are validated but do not carry authority; the adapter must re-read their immutable mapping. */
         public ReviewCoordinates {
             requireId(id);
-            requireId(counterId);
         }
 
         private static void requireId(String value) {

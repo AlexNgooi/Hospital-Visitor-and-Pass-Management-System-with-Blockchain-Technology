@@ -39,21 +39,21 @@ public class QrEntryService {
         if(!tokens.keyIds().containsAll(live)) { throw new IllegalStateException("Retain QR keys until their last live challenge expires"); }
     }
 
-    /** Creates a display only for the current actor's guarded counter and enabled category. */
+    /** Creates a display only for the current staff session and enabled category. */
     public Created create(String owner,String binding,CreateRequest request) {
-        long counter=id(request.counterId()); Long category=request.categoryScope()==null?null:id(request.categoryScope());
+        Long category=request.categoryScope()==null?null:id(request.categoryScope());
         return tx.execute(status->{
-            try { capabilities.lockOwners(List.of(new SessionCapabilities.OwnerUse(owner,counter)),null); }
+            try { capabilities.lockOwners(List.of(owner),null); }
             catch(ApiFailure denied) {
-                // Staff object discovery hides unauthorized/closed counters; public grants retain their 410 boundary.
-                if(denied.status()==410) { throw new ApiFailure(404,"NOT_FOUND","Counter not found."); }throw denied;
+                if(denied.status()==410) throw new ApiFailure(403,"ACCESS_DENIED","Staff access is required.");
+                throw denied;
             }
             var coordinates=jdbc.queryForMap("SELECT actor_id,binding_id FROM auth_session_contexts WHERE id=?",owner);
             if(!binding.equals(coordinates.get("binding_id"))) { throw ApiFailure.unauthenticated(); }
             category(category);
             String display=UUID.randomUUID().toString(); Instant now=clock.instant();
-            jdbc.update("INSERT INTO registration_qr_sessions(id,actor_id,owner_context_id,counter_id,category_scope,environment,created_at) VALUES(?,?,?,?,?,?,?)",
-                    display,coordinates.get("actor_id"),owner,counter,category,environment,DatabaseTime.sql(now));
+            jdbc.update("INSERT INTO registration_qr_sessions(id,actor_id,owner_context_id,category_scope,environment,created_at) VALUES(?,?,?,?,?,?)",
+                    display,coordinates.get("actor_id"),owner,category,environment,DatabaseTime.sql(now));
             return new Created(display);
         });
     }
@@ -128,8 +128,8 @@ public class QrEntryService {
             }
             String replaced=Boolean.TRUE.equals(request.restartConfirmed()) && old!=null?old.id():null;
             Long replacedVersion=replaced==null?null:request.expectedFormContext().bindingVersion();
-            jdbc.update("INSERT INTO registration_entry_grants(id,grant_reference,binding_version,anonymous_session_binding,anonymous_scope_id,challenge_id,display_session_id,counter_id,category_scope,environment,issued_at,expires_at,replaces_grant_id,replaces_binding_version) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
-                    identifier,identifier,version,binding,anonymous.scope(),fresh.id(),target.id(),target.counter(),target.category(),environment,
+            jdbc.update("INSERT INTO registration_entry_grants(id,grant_reference,binding_version,anonymous_session_binding,anonymous_scope_id,challenge_id,display_session_id,category_scope,environment,issued_at,expires_at,replaces_grant_id,replaces_binding_version) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)",
+                    identifier,identifier,version,binding,anonymous.scope(),fresh.id(),target.id(),target.category(),environment,
                     DatabaseTime.sql(now),DatabaseTime.sql(now.plusSeconds(1200)),replaced,replacedVersion);
             int updated=jdbc.update("UPDATE registration_entry_contexts SET current_grant_id=?,binding_version=?,updated_at=? WHERE anonymous_scope_id=? AND binding_version=?",
                     identifier,version,DatabaseTime.sql(now),anonymous.scope(),context.version());
@@ -219,11 +219,12 @@ public class QrEntryService {
         Grant value=grant(observed.id(),true);
         if(!value.binding().equals(anonymous.id()) || !value.anonymous().equals(anonymous.scope())
                 || (expected!=null && !expected.equals(value.form()))) { throw changed(); }
-        requireDisplay(source);requireGrant(value);category(source.category());return value;
+        Display currentSource=display(source.id(),false);
+        requireDisplay(currentSource);requireGrant(value);category(currentSource.category());return value;
     }
     /** M00 owns framework metadata checks; owner expiry is mapped to a safe public QR boundary. */
     private void guard(List<Display> displays,String anonymous) {
-        try { capabilities.lockOwners(displays.stream().map(d->new SessionCapabilities.OwnerUse(d.owner(),d.counter())).distinct().toList(),anonymous); }
+        try { capabilities.lockOwners(displays.stream().map(Display::owner).distinct().toList(),anonymous); }
         catch(ApiFailure denied) { if(denied.status()==401) { throw entryRevoked(); } throw denied; }
     }
     private void lockDisplays(List<Display> values) { values.stream().map(Display::id).distinct().sorted().forEach(id->display(id,true)); }
@@ -274,7 +275,7 @@ public class QrEntryService {
     }
     private long next(long value) { if(value>=MAX_VERSION) { throw changed(); } return value+1; }
     private void requireTransaction() { if(!TransactionSynchronizationManager.isActualTransactionActive()) { throw new IllegalStateException("Grant port must join the caller transaction"); } }
-    private Scope scope(Display value) { return new Scope(value.environment(),Long.toString(value.counter()),value.category()==null?null:Long.toString(value.category())); }
+    private Scope scope(Display value) { return new Scope(value.environment(),value.category()==null?null:Long.toString(value.category())); }
     private Entry response(Grant value) { return new Entry(value.form(),value.scope(),TIME.format(clock.instant()),TIME.format(value.expires())); }
     private ApiFailure invalid() { return new ApiFailure(400,"VALIDATION_FAILED","Check the entry request."); }
     private ApiFailure invalidToken() { return new ApiFailure(400,"QR_ENTRY_INVALID","Please scan a fresh QR."); }
@@ -289,12 +290,12 @@ public class QrEntryService {
     private Pointer pointer(String scope,boolean lock) { var rows=jdbc.query("SELECT current_grant_id,binding_version FROM registration_entry_contexts WHERE anonymous_scope_id=?"+(lock?" FOR UPDATE":""),(rs,n)->new Pointer(rs.getString(1),rs.getLong(2)),scope);return rows.isEmpty()?null:rows.getFirst(); }
     private Instant instant(ResultSet rs,String name) throws SQLException { return DatabaseTime.instant(rs.getObject(name,LocalDateTime.class)); }
     private Long nullableLong(ResultSet rs,String name) throws SQLException { long value=rs.getLong(name);return rs.wasNull()?null:value; }
-    private Display display(ResultSet rs,int row) throws SQLException { return new Display(rs.getString("id"),rs.getString("owner_context_id"),rs.getLong("counter_id"),nullableLong(rs,"category_scope"),rs.getString("environment"),instant(rs,"created_at"),instant(rs,"revoked_at")!=null); }
+    private Display display(ResultSet rs,int row) throws SQLException { return new Display(rs.getString("id"),rs.getString("owner_context_id"),nullableLong(rs,"category_scope"),rs.getString("environment"),instant(rs,"created_at"),instant(rs,"revoked_at")!=null); }
     private Challenge challenge(ResultSet rs,int row) throws SQLException { return new Challenge(rs.getString("id"),rs.getString("display_session_id"),rs.getLong("rotation_slot"),rs.getString("nonce"),rs.getString("key_version"),instant(rs,"issued_at"),instant(rs,"rotate_at"),instant(rs,"expires_at"),instant(rs,"revoked_at")!=null); }
-    private Grant grant(ResultSet rs,int row) throws SQLException { return new Grant(rs.getString("id"),rs.getString("grant_reference"),rs.getLong("binding_version"),rs.getString("anonymous_session_binding"),rs.getString("anonymous_scope_id"),rs.getString("challenge_id"),rs.getString("display_session_id"),new Scope(rs.getString("environment"),Long.toString(rs.getLong("counter_id")),nullableLong(rs,"category_scope")==null?null:Long.toString(rs.getLong("category_scope"))),instant(rs,"expires_at"),instant(rs,"consumed_at"),instant(rs,"revoked_at")!=null,rs.getString("replaces_grant_id"),nullableLong(rs,"replaces_binding_version")); }
+    private Grant grant(ResultSet rs,int row) throws SQLException { return new Grant(rs.getString("id"),rs.getString("grant_reference"),rs.getLong("binding_version"),rs.getString("anonymous_session_binding"),rs.getString("anonymous_scope_id"),rs.getString("challenge_id"),rs.getString("display_session_id"),new Scope(rs.getString("environment"),nullableLong(rs,"category_scope")==null?null:Long.toString(rs.getLong("category_scope"))),instant(rs,"expires_at"),instant(rs,"consumed_at"),instant(rs,"revoked_at")!=null,rs.getString("replaces_grant_id"),nullableLong(rs,"replaces_binding_version")); }
 
     /** Wire IDs remain opaque strings; only bindingVersion is a safe JSON integer. */
-    public record CreateRequest(String counterId,String categoryScope) { }
+    public record CreateRequest(String categoryScope) { }
     public record Created(String displaySessionId) { }
     public record Current(String displaySessionId,String entryUrl,Scope scope,String serverNow,String rotateAt,String expiresAt) { }
     /** Suppresses token-bearing request diagnostics even if a caller formats this object. */
@@ -313,7 +314,7 @@ public class QrEntryService {
         public Scope scope() { return scope; }
         public FormContext formContext() { return formContext; }
     }
-    private record Display(String id,String owner,long counter,Long category,String environment,Instant epoch,boolean revoked) { }
+    private record Display(String id,String owner,Long category,String environment,Instant epoch,boolean revoked) { }
     private record Challenge(String id,String display,long slot,String nonce,String key,Instant issued,Instant rotate,Instant expires,boolean revoked) { }
     private record Pointer(String grant,long version) { }
     private record Grant(String id,String reference,long version,String binding,String anonymous,String challenge,String display,Scope scope,Instant expires,Instant consumed,boolean revoked,String replaces,Long replacedVersion) { FormContext form() { return new FormContext(reference,version); } }

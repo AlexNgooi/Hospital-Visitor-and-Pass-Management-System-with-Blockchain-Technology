@@ -18,7 +18,7 @@ const keys: string[] = [];
 const now = () => new Date().toISOString();
 /** All records are deliberately synthetic and masked, including metadata used in screenshots. */
 const records: Detail[] = Array.from({ length: 12 }, (_, index) => ({
-  id: String(index + 1), publicReference: `R-TEST-${String(index + 1).padStart(3, "0")}`, counterId: "1",
+  id: String(index + 1), publicReference: `R-TEST-${String(index + 1).padStart(3, "0")}`,
   categoryCode: index % 2 === 0 ? "PENJAGA" : "VENDOR", maskedVisitorName: "S*** V***", destinationLabel: "Test Ward A",
   status: "SUBMITTED", version: 0, submittedAt: now(), maskedIdentification: "DEMO-****0021", maskedPhone: "+60 **** 0021",
   maskedMrn: index % 2 === 0 ? "MRN-****0021" : null, mrnMode: index % 2 === 0 ? "mock" : null,
@@ -38,11 +38,11 @@ const port: ReviewPort = {
   async list(query) {
     if (fault === "forbidden") throw denied(403, "ACCESS_DENIED");
     if (fault === "queue-offline") throw new ClientError("network");
-    const filtered = records.filter((record) => record.counterId === query.counterId && (query.category === "ALL" || record.categoryCode === query.category)
+    const filtered = records.filter((record) => (query.category === "ALL" || record.categoryCode === query.category)
       && (query.status === "ALL" || record.status === query.status));
     const items: QueueItem[] = filtered.slice(query.page * query.pageSize, (query.page + 1) * query.pageSize)
-      .map(({ id, publicReference, counterId, categoryCode, maskedVisitorName, destinationLabel, status, version, submittedAt }) =>
-        ({ id, publicReference, counterId, categoryCode, maskedVisitorName, destinationLabel, status, version, submittedAt }));
+      .map(({ id, publicReference, categoryCode, maskedVisitorName, destinationLabel, status, version, submittedAt }) =>
+        ({ id, publicReference, categoryCode, maskedVisitorName, destinationLabel, status, version, submittedAt }));
     return { items, total: filtered.length, page: query.page, pageSize: query.pageSize, serverNow: now() };
   },
   async detail(id) {
@@ -73,7 +73,7 @@ function command(id: string, status: ReviewResult["status"], expectedVersion: nu
     return structuredClone(saved);
   } };
 }
-const identity = { id: "7", login: "synthetic_staff", role: "COUNTER_STAFF" as const, counterIds: ["1"] };
+const identity = { id: "7", login: "synthetic_staff", role: "COUNTER_STAFF" as const, staffAccessEnabled: true };
 const auth: AuthPort = { me: async () => identity, login: async () => identity, logout: async () => {}, onExpired: () => () => {} };
 // Test HTML is a dedicated opt-in route; the real main.tsx never imports these explicit fixtures.
 createRoot(document.getElementById("root")!).render(<MemoryRouter initialEntries={["/staff/registrations"]}>

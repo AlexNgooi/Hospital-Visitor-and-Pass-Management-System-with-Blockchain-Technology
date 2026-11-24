@@ -7,7 +7,7 @@ export function createReviewPort(client: ApiClient = apiClient): ReviewPort {
   return {
     list(query, signal) {
       // Counter selection narrows a view; the backend still intersects current authorized scope.
-      const search = new URLSearchParams({ counterId: query.counterId, page: String(query.page), pageSize: String(query.pageSize) });
+      const search = new URLSearchParams({ page: String(query.page), pageSize: String(query.pageSize) });
       if (query.category !== "ALL") search.set("category", query.category);
       if (query.status !== "ALL") search.set("status", query.status);
       return client.get(`/api/staff/registrations?${search}`, queueSchema, { signal, authRequired: true });

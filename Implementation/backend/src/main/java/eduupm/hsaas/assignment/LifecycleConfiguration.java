@@ -21,13 +21,13 @@ import eduupm.hsaas.registration.*;
 @ConditionalOnProperty(name="hsaas.lifecycle.enabled",havingValue="true")
 @EnableScheduling
 public class LifecycleConfiguration {
-    @Bean public LifecycleService lifecycleService(JdbcTemplate jdbc,Accounts accounts,SessionCapabilities capabilities,
+    @Bean public LifecycleService lifecycleService(JdbcTemplate jdbc,SessionCapabilities capabilities,
             RegistrationLifecyclePort roots,RegistrationReviewPort reviewRoots,IdempotencyPort idem,LocalAuditPort audit,
             JsonMapper json,Clock clock,FoundationProperties properties,PlatformTransactionManager manager) {
         if(!Set.of("synthetic","test").contains(properties.environment())) {
             throw new IllegalStateException("Lifecycle requires an explicit synthetic/test environment");
         }
-        return new LifecycleService(new LifecycleStore(jdbc),accounts,capabilities,roots,reviewRoots,new SyntheticReader(),idem,audit,json,clock,properties,manager);
+        return new LifecycleService(new LifecycleStore(jdbc),capabilities,roots,reviewRoots,new SyntheticReader(),idem,audit,json,clock,properties,manager);
     }
     @Bean public OverdueMonitor overdueMonitor(LifecycleService service) { return new OverdueMonitor(service); }
 }

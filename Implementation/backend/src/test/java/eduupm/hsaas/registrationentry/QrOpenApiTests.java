@@ -14,7 +14,7 @@ import static org.assertj.core.api.Assertions.*;
 /** Generates the module-only OpenAPI from implemented controller mappings and record DTOs; M00's spec is immutable. */
 class QrOpenApiTests {
     private final Map<String,Object> schemas=new TreeMap<>();
-    /** Normal verify validates the checked artifact; explicit generation rewrites only this module's evidence spec. */
+    /** Normal verify validates the checked artifact; explicit generation rewrites only the current QR specification. */
     @Test void moduleContractMatchesControllers() throws Exception {
         var json=new FoundationConfig().jsonMapper();
         var paths=new TreeMap<String,Object>();
@@ -50,7 +50,7 @@ class QrOpenApiTests {
         schemas.put("FieldError",foundation.path("components").path("schemas").path("FieldError"));
         var document=Map.of("openapi","3.1.0","info",Map.of("title","HSAAS M02 Dynamic Registration Entry API","version","1.0.0","description","Generated from implemented controllers/records. Entry references are not bearer authorization; scope is server-resolved. Enabled state is explicit. No M03 registration submission implementation."),
                 "servers",List.of(Map.of("url","/")),"paths",paths,"components",Map.of("schemas",schemas,"securitySchemes",Map.of("SessionCookie",Map.of("type","apiKey","in","cookie","name","HSAAS_SESSION"),"CsrfHeader",Map.of("type","apiKey","in","header","name","X-CSRF-TOKEN"))));
-        Path output=Path.of("../docs/evidence/modules/M02/openapi.json");
+        Path output=Path.of("../docs/api/registration-entry.openapi.json");
         if(Boolean.getBoolean("m02.generateOpenApi")) { Files.createDirectories(output.getParent());Files.writeString(output,json.writerWithDefaultPrettyPrinter().writeValueAsString(document)+"\n"); }
         assertThat(paths).hasSize(6);assertThat(Files.exists(output)).isTrue();
         assertThat(json.readTree(output)).isEqualTo(json.valueToTree(document));
@@ -69,7 +69,7 @@ class QrOpenApiTests {
                 if(name.equals("bindingVersion")) { throw new IllegalStateException("Wire version must remain numeric"); }
                 if(name.endsWith("At") || name.equals("serverNow")) { attributes.put("format","date-time");attributes.put("pattern","^.*\\.[0-9]{6}Z$"); }
                 if(name.equals("entryToken")) { attributes.put("maxLength",2048); }
-                if(name.equals("counterId") || name.equals("categoryScope")) { attributes.put("pattern","^[0-9]{1,20}$"); }
+                if(name.equals("categoryScope")) { attributes.put("pattern","^[0-9]{1,20}$"); }
                 if(name.equals("displaySessionId")) { attributes.put("format","uuid"); }
                 if(name.equals("grantReference")) { attributes.put("maxLength",128);attributes.put("pattern","^[A-Za-z0-9_-]{1,128}$"); }
                 shape=attributes;

@@ -23,10 +23,6 @@ public class LifecycleController {
     public List<ReaderPort.Sample> samples(HttpServletRequest request,HttpServletResponse response) {
         noStore(response); return service.samples(context(request),admin(request));
     }
-    @GetMapping("/api/admin/lifecycle/counters")
-    public List<LifecycleService.CounterView> counters(HttpServletRequest request,HttpServletResponse response) {
-        noStore(response); return service.counters(context(request));
-    }
     @PostMapping(value={"/api/staff/scan-jobs","/api/admin/scan-jobs"},consumes="application/json")
     public SafeResult start(@RequestBody String body,@RequestHeader(name="Idempotency-Key",required=false) String key,HttpServletRequest request,HttpServletResponse response) {
         return write(request,response,"SCAN_START","REGISTER",key,body);
@@ -76,9 +72,9 @@ public class LifecycleController {
         return write(request,response,"RESTORE",id,key,body);
     }
     @GetMapping({"/api/staff/card-assignments","/api/staff/overdue"})
-    public Page<AssignmentView> assignments(@RequestParam String counterId,@RequestParam(defaultValue="0") String page,
+    public Page<AssignmentView> assignments(@RequestParam(defaultValue="0") String page,
             @RequestParam(required=false) String registrationId,HttpServletRequest request,HttpServletResponse response) {
-        noStore(response); return service.assignments(context(request),LifecycleInput.decimal(counterId),page(page),request.getServletPath().equals("/api/staff/overdue"),
+        noStore(response); return service.assignments(context(request),page(page),request.getServletPath().equals("/api/staff/overdue"),
                 registrationId==null?null:LifecycleInput.decimal(registrationId));
     }
     /** Keyset continuation is consumed by scrolling, without a user-facing page-number workflow. */
@@ -141,7 +137,7 @@ public class LifecycleController {
     private static void noStore(HttpServletResponse response) {
         response.setHeader("Cache-Control","no-store"); response.setHeader("Referrer-Policy","no-referrer");
     }
-    /** Framework authentication is only a coordinate source; service revalidates real persisted session/epoch/counter. */
+    /** Framework authentication is only a coordinate source; service revalidates real persisted session, epoch and staff access. */
     private static LifecycleSecurity.Context context(HttpServletRequest request) {
         var session=request.getSession(false); var auth=SecurityContextHolder.getContext().getAuthentication();
         if(session==null || auth==null || !auth.isAuthenticated() || auth instanceof AnonymousAuthenticationToken

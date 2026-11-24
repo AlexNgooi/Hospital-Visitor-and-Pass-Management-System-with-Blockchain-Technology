@@ -35,11 +35,18 @@ public class AdministrationService {
         this.accounts=accounts;this.changes=changes;this.access=access;this.passwords=passwords;this.audit=audit;this.clock=clock;this.json=json;this.mail=mail;
     }
 
-    /** Credentials and security epochs are excluded by SQL projection, even for administrators. */
+    /** Credentials and security epochs are excluded from the staff directory. */
     public List<UserView> users(Proof proof) {
-        return tx.execute(status->{ access.require(proof); return jdbc.query("SELECT id,login,role,active,version,COALESCE(full_name,login),email,password_change_required,onboarding_delivery FROM users ORDER BY id",(rs,n)->
-            new UserView(Long.toString(rs.getLong(1)),rs.getString(2),rs.getString(3),rs.getBoolean(4),rs.getLong(5),
-                jdbc.query("SELECT counter_id,active,version FROM user_counter_permissions WHERE user_id=? ORDER BY counter_id",(p,i)->new Permission(Long.toString(p.getLong(1)),p.getBoolean(2),p.getLong(3)),rs.getLong(1)),rs.getString(6),rs.getString(7),rs.getBoolean(8),rs.getString(9))); });
+        return tx.execute(status->{
+            access.require(proof);
+            return jdbc.query("""
+                    SELECT id,login,role,active,version,COALESCE(full_name,login),email,
+                           password_change_required,onboarding_delivery,staff_access_enabled
+                    FROM users ORDER BY id
+                    """,(rs,n)->new UserView(Long.toString(rs.getLong(1)),rs.getString(2),rs.getString(3),
+                    rs.getBoolean(4),rs.getLong(5),rs.getBoolean(10),
+                    rs.getString(6),rs.getString(7),rs.getBoolean(8),rs.getString(9)));
+        });
     }
 
     /** The account commits before SMTP; only its hash is stored and an uncertain send is never retried automatically. */
@@ -124,12 +131,17 @@ public class AdministrationService {
         catch(DuplicateKeyException conflict) { throw new ApiFailure(409,"LOGIN_UNAVAILABLE","That login or email is already in use."); }
     }
 
-    /** Permission version zero means no existing grant; every change revokes the affected account's old sessions. */
-    public void permission(Proof proof,String id,String counterId,PermissionChange input) {
+    /** The account version fences both settings edits and staff access changes. */
+    public void staffAccess(Proof proof,String id,StaffAccessInput input) {
         if(input==null)throw AdminInputs.invalid();
-        long target=AdminInputs.id(id),counter=AdminInputs.id(counterId),version=AdminInputs.version(input.version());
-        String reason="ACCESS_REVIEW";boolean active=AdminInputs.active(input.active());
-        tx.executeWithoutResult(status->{var previous=snapshot("PERMISSION",id+":"+counterId);changes.counterPermission(proof,target,counter,version,active);history("PERMISSION",id+":"+counterId,version,version+1,reason,accounts.find(proof.login()).id(),previous);});
+        long target=AdminInputs.id(id),version=AdminInputs.version(input.version());
+        boolean active=AdminInputs.active(input.active());
+        tx.executeWithoutResult(status->{
+            var change=changes.staffAccess(proof,target,version,active);
+            String previous=json.writeValueAsString(Map.of("role","COUNTER_STAFF","active",change.accountActive(),
+                    "staff_access_enabled",change.previousActive()));
+            history("USER",Long.toString(target),version,version+1,"ACCESS_REVIEW",change.actorId(),previous);
+        });
     }
 
     /** Historical references are retained; reference code is immutable after insertion and no delete command exists. */
@@ -138,20 +150,18 @@ public class AdministrationService {
         return tx.execute(status->{access.require(proof);return jdbc.query("SELECT id,code,name,active,version,"+(kind.equals("destinations")?"destination_kind":"NULL")+" FROM "+table+" ORDER BY id",(rs,n)->new Reference(Long.toString(rs.getLong(1)),rs.getString(2),rs.getString(3),rs.getBoolean(4),rs.getLong(5),rs.getString(6)));});
     }
 
-    /** Four form categories are fixed by M03; wards and counters can be added without inventing a fifth form schema. */
-    public void createReference(Proof proof,String kind,ReferenceCreate input) {
+    /** Destinations can be added independently of the fixed visitor form categories. */
+    public void createReference(Proof proof,ReferenceCreate input) {
         if(input==null)throw AdminInputs.invalid();
-        String table=table(kind); if(kind.equals("categories")) throw AdminInputs.invalid();
         String code=AdminInputs.code(input.code()),name=AdminInputs.name(input.name()),reason=AdminInputs.reason(input.reason());
-        String destinationKind=kind.equals("destinations")?destinationKind(input.kind()):null;
-        if(kind.equals("destinations") && code.length()>32)throw AdminInputs.invalid();
+        String destinationKind=destinationKind(input.kind());
+        if(code.length()>32)throw AdminInputs.invalid();
         try {tx.executeWithoutResult(status->{
             accounts.lock(accounts.find(proof.login()).id());var actor=access.require(proof);
-            if(kind.equals("destinations")) jdbc.update("INSERT INTO destinations(code,name,active,destination_kind) VALUES(?,?,TRUE,?)",code,name,destinationKind);
-            else jdbc.update("INSERT INTO "+table+"(code,name,active) VALUES(?,?,TRUE)",code,name);
-            long id=jdbc.queryForObject("SELECT id FROM "+table+" WHERE code=?",Long.class,code);
-            audit.append(LocalAuditPort.Action.ADMIN_CHANGED,target(kind),Long.toString(id),actor.id(),new LocalAuditPort.Snapshot(null,"ACTIVE",null,0L,"LOCAL"));
-            history(target(kind),Long.toString(id),null,0L,reason,actor.id());
+            jdbc.update("INSERT INTO destinations(code,name,active,destination_kind) VALUES(?,?,TRUE,?)",code,name,destinationKind);
+            long id=jdbc.queryForObject("SELECT id FROM destinations WHERE code=?",Long.class,code);
+            audit.append(LocalAuditPort.Action.ADMIN_CHANGED,"DESTINATION",Long.toString(id),actor.id(),new LocalAuditPort.Snapshot(null,"ACTIVE",null,0L,"LOCAL"));
+            history("DESTINATION",Long.toString(id),null,0L,reason,actor.id());
         });}catch(DuplicateKeyException conflict){throw new ApiFailure(409,"CODE_UNAVAILABLE","This code is unavailable.");}
     }
 
@@ -162,18 +172,13 @@ public class AdministrationService {
         tx.executeWithoutResult(status->{
             accounts.lock(accounts.find(proof.login()).id());
             var previous=snapshot(target(kind),id);
-            // Counter changes retain M00's counter-before-capability prefix; other references follow capability-before-reference.
-            if(kind.equals("counters")) changes.counterActive(proof,targetId,version,active);
             var actor=access.require(proof);
             var rows=jdbc.query("SELECT active,version FROM "+table+" WHERE id=? FOR UPDATE",(rs,n)->new Object[]{rs.getBoolean(1),rs.getLong(2)},targetId);
             if(rows.isEmpty())throw new ApiFailure(404,"NOT_FOUND","Reference not found.");
-            if((long)rows.getFirst()[1]!=(kind.equals("counters")?version+1:version))throw new ApiFailure(409,"VERSION_CONFLICT","Reload this reference.");
-            if(kind.equals("counters")) jdbc.update("UPDATE counters SET name=? WHERE id=?",name,targetId);
-            else {
-                if(kind.equals("destinations")) jdbc.update("UPDATE destinations SET name=?,active=?,destination_kind=?,version=version+1 WHERE id=?",name,active,destinationKind(input.kind()),targetId);
-                else jdbc.update("UPDATE "+table+" SET name=?,active=?,version=version+1 WHERE id=?",name,active,targetId);
-                audit.append(LocalAuditPort.Action.ADMIN_CHANGED,target(kind),id,actor.id(),new LocalAuditPort.Snapshot((boolean)rows.getFirst()[0]?"ACTIVE":"INACTIVE",active?"ACTIVE":"INACTIVE",version,version+1,"LOCAL"));
-            }
+            if((long)rows.getFirst()[1]!=version)throw new ApiFailure(409,"VERSION_CONFLICT","Reload this reference.");
+            if(kind.equals("destinations")) jdbc.update("UPDATE destinations SET name=?,active=?,destination_kind=?,version=version+1 WHERE id=?",name,active,destinationKind(input.kind()),targetId);
+            else jdbc.update("UPDATE "+table+" SET name=?,active=?,version=version+1 WHERE id=?",name,active,targetId);
+            audit.append(LocalAuditPort.Action.ADMIN_CHANGED,target(kind),id,actor.id(),new LocalAuditPort.Snapshot((boolean)rows.getFirst()[0]?"ACTIVE":"INACTIVE",active?"ACTIVE":"INACTIVE",version,version+1,"LOCAL"));
             history(target(kind),id,version,version+1,reason,actor.id(),previous);
         });
     }
@@ -217,25 +222,20 @@ public class AdministrationService {
     }
     /** Nonlocking discovery before a port mutation is validated by that port's expected version before any history can commit. */
     private String snapshot(String kind,String id) {
-        List<Map<String,Object>> values;
-        if(kind.equals("PERMISSION")) {var ids=id.split(":");values=jdbc.queryForList("SELECT active FROM user_counter_permissions WHERE user_id=? AND counter_id=?",AdminInputs.id(ids[0]),AdminInputs.id(ids[1]));}
-        else {
-            String query=switch(kind){case "USER"->"SELECT role,active FROM users";case "CATEGORY"->"SELECT code,name,active FROM visitor_categories";case "DESTINATION"->"SELECT code,name,active,destination_kind FROM destinations";case "COUNTER"->"SELECT code,name,active FROM counters";case "SETTING"->"SELECT setting_key,value_int FROM system_settings";default->throw AdminInputs.invalid();};
-            values=jdbc.queryForList(query+" WHERE id=?",AdminInputs.id(id));
-        }
+        String query=switch(kind){case "USER"->"SELECT role,active,staff_access_enabled FROM users";case "CATEGORY"->"SELECT code,name,active FROM visitor_categories";case "DESTINATION"->"SELECT code,name,active,destination_kind FROM destinations";case "SETTING"->"SELECT setting_key,value_int FROM system_settings";default->throw AdminInputs.invalid();};
+        var values=jdbc.queryForList(query+" WHERE id=?",AdminInputs.id(id));
         return values.isEmpty()?null:json.writeValueAsString(values.getFirst());
     }
     /** SQL identifiers come exclusively from this allowlist, never interpolated request values. */
-    private static String table(String kind){return switch(kind){case "categories"->"visitor_categories";case "destinations"->"destinations";case "counters"->"counters";default->throw AdminInputs.invalid();};}
-    private static String target(String kind){return switch(kind){case "categories"->"CATEGORY";case "destinations"->"DESTINATION";case "counters"->"COUNTER";default->throw AdminInputs.invalid();};}
-    public record Permission(String counterId,boolean active,long version){}
-    public record UserView(String id,String login,String role,boolean active,long version,List<Permission> permissions,String fullName,String email,boolean passwordChangeRequired,String onboardingDelivery){}
+    private static String table(String kind){return switch(kind){case "categories"->"visitor_categories";case "destinations"->"destinations";default->throw AdminInputs.invalid();};}
+    private static String target(String kind){return switch(kind){case "categories"->"CATEGORY";case "destinations"->"DESTINATION";default->throw AdminInputs.invalid();};}
+    public record UserView(String id,String login,String role,boolean active,long version,boolean staffAccessEnabled,String fullName,String email,boolean passwordChangeRequired,String onboardingDelivery){}
     /** Onboarding metadata is redacted from diagnostics; a password is never accepted from the client. */
     public record CreateUser(String login,String fullName,String email,String role){@Override public String toString(){return "CreateUser[REDACTED]";}}
     public record UserChange(Long version,String role,Boolean active,String fullName,String email){}
     public record Resend(Long version){}
     public record Delivery(boolean saved,String id,String emailStatus){}
-    public record PermissionChange(Long version,Boolean active,String reason){}
+    public record StaffAccessInput(Long version,Boolean active){}
     /** Only wards are eligible for Executive/Penjaga; other visitor types may select either kind. */
     private static String destinationKind(String kind){if(!Set.of("WARD","OTHER").contains(kind==null?"":kind))throw AdminInputs.invalid();return kind;}
     public record Reference(String id,String code,String name,boolean active,long version,String kind){}

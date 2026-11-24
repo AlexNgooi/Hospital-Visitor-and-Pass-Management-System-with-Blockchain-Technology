@@ -20,12 +20,12 @@ import eduupm.hsaas.registrationentry.QrEntryService;
 @org.springframework.scheduling.annotation.EnableScheduling
 public class RegistrationConfiguration {
     @Bean @DependsOnDatabaseInitialization
-    public RegistrationStore registrations(JdbcTemplate jdbc, JsonMapper json, Clock clock, Accounts accounts,
+    public RegistrationStore registrations(JdbcTemplate jdbc, JsonMapper json, Clock clock,
             SessionCapabilities capabilities, FoundationProperties properties) {
         if (!Set.of("development", "synthetic", "test").contains(properties.environment())) {
             throw new IllegalStateException("Production registration requires a future approved hospital schema and privacy policy");
         }
-        return new RegistrationStore(jdbc, json, clock, accounts, capabilities);
+        return new RegistrationStore(jdbc, json, clock, capabilities, properties.environment());
     }
     /** The adapter is local synthetic/manual only and has no network/client-selected live mode. */
     @Bean public HospitalVerificationPort hospitalFeedback(FoundationProperties properties) {

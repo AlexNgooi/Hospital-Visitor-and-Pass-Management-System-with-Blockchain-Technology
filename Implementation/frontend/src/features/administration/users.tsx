@@ -6,7 +6,7 @@ import { preserveToastInteraction } from "../../components/ui/dialog-feedback";
 import { useAuth } from "../../app/auth-context";
 import { Button, InputField } from "../../components/ui/primitives";
 import { apiClient } from "../../lib/api-client";
-import { referencesSchema, savedSchema, usersSchema, staffEmailSchema, deliverySchema, type User } from "./contracts";
+import { savedSchema, usersSchema, staffEmailSchema, deliverySchema, type User } from "./contracts";
 import { LoadNotice } from "./data";
 import { useRemote, useSave } from "./hooks";
 import { AdminFilterDialog } from "./filter-dialog";
@@ -18,12 +18,12 @@ export function AccountPage() {
   return <AccountWorkspace key={state.user.id} currentUserId={state.user.id} />;
 }
 function AccountWorkspace({ currentUserId }: { currentUserId: string }) {
-  const users = useRemote("/api/admin/users", usersSchema), counters = useRemote("/api/admin/counters", referencesSchema);
+  const users = useRemote("/api/admin/users", usersSchema);
   const email = useRemote("/api/admin/staff-email", staffEmailSchema);
   const save = useSave(users.reload);
   const [editing, setEditing] = useState<User | "new" | null>(null), [grantUser, setGrantUser] = useState<User | null>(null);
   const [search, setSearch] = useState(""), [role, setRole] = useState(""), [status, setStatus] = useState("");
-  const [counterId, setCounterId] = useState(""), [grant, setGrant] = useState(true), [delivery, setDelivery] = useState("");
+  const [delivery, setDelivery] = useState("");
   const createButton = useRef<HTMLButtonElement>(null), heading = useRef<HTMLHeadingElement>(null);
   const opener = useRef<HTMLButtonElement | null>(null), restoreFocus = useRef(false);
   useEffect(() => {
@@ -34,7 +34,7 @@ function AccountWorkspace({ currentUserId }: { currentUserId: string }) {
   }, [editing, grantUser, save.busy, users.busy]);
   const activeAdmins = users.data?.filter(user => user.role === "ADMIN" && user.active && !user.passwordChangeRequired).length;
   const rows = users.data?.filter(user => `${user.fullName} ${user.login}`.toLocaleLowerCase().includes(search.toLocaleLowerCase()) && (!role || user.role === role) && (!status || String(user.active) === status));
-  const permission = grantUser?.permissions.find(entry => entry.counterId === counterId);
+  const accessEnabled = grantUser?.staffAccessEnabled === true;
   const blocked = save.busy || users.busy || Boolean(users.error);
   /** Radix closes after its focus scope unmounts; restore immediately unless another dialog is opening. */
   function restoreAccountFocus(event: Event) {
@@ -52,8 +52,8 @@ function AccountWorkspace({ currentUserId }: { currentUserId: string }) {
     <header className="admin-heading"><div><h1 ref={heading} tabIndex={-1}>Staff management</h1><p>Manage staff accounts and access.</p></div><div className="admin-actions">
       <AdminFilterDialog title="Filter staff" description="Search staff names or logins and choose an account type and status." disabled={save.busy}>
         {close => <StaffFilters search={search} role={role} status={status} onCancel={close} onApply={value => { setSearch(value.search); setRole(value.role); setStatus(value.status); close(); }} />}
-      </AdminFilterDialog><Button variant="secondary" disabled={save.busy || users.busy} onClick={() => { users.reload(); counters.reload(); email.reload(); }}><RefreshCw size={17} aria-hidden="true" />Refresh</Button><Button ref={createButton} disabled={blocked} onClick={event => { opener.current = event.currentTarget; setDelivery(""); setEditing("new"); }}><Plus size={18} aria-hidden="true" />Create account</Button></div></header>
-    <LoadNotice busy={users.busy || counters.busy || email.busy} error={users.error || counters.error || email.error} reload={() => { users.reload(); counters.reload(); email.reload(); }} />
+      </AdminFilterDialog><Button variant="secondary" disabled={save.busy || users.busy} onClick={() => { users.reload(); email.reload(); }}><RefreshCw size={17} aria-hidden="true" />Refresh</Button><Button ref={createButton} disabled={blocked} onClick={event => { opener.current = event.currentTarget; setDelivery(""); setEditing("new"); }}><Plus size={18} aria-hidden="true" />Create account</Button></div></header>
+    <LoadNotice busy={users.busy || email.busy} error={users.error || email.error} reload={() => { users.reload(); email.reload(); }} />
     {save.message && <ToastNotice tone={save.tone}>{save.message}</ToastNotice>}
     {delivery && <div className="admin-notice" role="status">{delivery}</div>}
     <p className="admin-applied-summary">{search ? `Search: ${search}` : "All names"} · {role === "ADMIN" ? "Administrator" : role === "COUNTER_STAFF" ? "Counter staff" : "All account types"} · {status === "true" ? "Active" : status === "false" ? "Inactive" : "All statuses"}</p>
@@ -73,7 +73,12 @@ function AccountWorkspace({ currentUserId }: { currentUserId: string }) {
           }, () => setEditing(null));
         }} />}
         {editing && editing !== "new" && <div className="admin-account-access">
-          {editing.role === "COUNTER_STAFF" && <><h3>Counter access</h3><ul>{editing.permissions.map(item => <li key={item.counterId}>{counters.data?.find(counter => counter.id === item.counterId)?.name ?? `Counter ${item.counterId}`} · {item.active ? "Granted" : "Revoked"}</li>)}</ul>{!editing.permissions.length && <p>No counter access assigned.</p>}<Button variant="secondary" disabled={blocked || counters.busy || Boolean(counters.error)} onClick={() => { setGrantUser(editing); setEditing(null); setCounterId(""); }}>Manage counter access</Button></>}
+          {editing.role === "COUNTER_STAFF" && <><h3>Staff access</h3>
+            <p>{editing.staffAccessEnabled ? "Enabled" : "Disabled"}</p>
+            <Button variant="secondary" disabled={blocked} onClick={() => { setGrantUser(editing); setEditing(null); }}>
+              {editing.staffAccessEnabled ? "Disable staff access" : "Enable staff access"}
+            </Button>
+          </>}
           {editing.passwordChangeRequired && <><h3>Initial password email</h3><p>{editing.email ?? "No email set"} · {editing.onboardingDelivery === "ACCEPTED" ? "Accepted by mail server" : editing.onboardingDelivery === "PENDING" ? "Sending or interrupted; inspect before sending again" : "Delivery unknown"}</p><Button variant="secondary" disabled={blocked || !editing.active || !email.data?.configured || Boolean(email.error) || !editing.email} onClick={() => {
             if (!window.confirm("Generate and email a replacement temporary password? The previous temporary password and sessions will stop working.")) return;
             void save.run(async () => sent(await apiClient.post(`/api/admin/users/${editing.id}/initial-email`, { version: editing.version }, deliverySchema, { authRequired: true })), () => setEditing(null));
@@ -82,11 +87,19 @@ function AccountWorkspace({ currentUserId }: { currentUserId: string }) {
         {save.message && <p className="admin-inline-error" role="status">{save.message}</p>}
       </Dialog.Content></Dialog.Portal></Dialog.Root>
     <Dialog.Root open={grantUser !== null} onOpenChange={open => { if (!open && !save.busy) setGrantUser(null); }}><Dialog.Portal><Dialog.Overlay className="dialog-overlay" /><Dialog.Content className="dialog-content admin-dialog" onCloseAutoFocus={restoreAccountFocus} onInteractOutside={preserveToastInteraction} onEscapeKeyDown={event => { if (save.busy) event.preventDefault(); }} onPointerDownOutside={event => { if (save.busy) event.preventDefault(); }}>
-      <Dialog.Title>Counter access · {grantUser?.fullName}</Dialog.Title><Dialog.Description>Changes revoke this staff member’s existing sessions.</Dialog.Description>
-      <form onSubmit={event => { event.preventDefault(); if (!grantUser || !counterId) return; void save.run(() => apiClient.command(`/api/admin/users/${grantUser.id}/counters/${counterId}`, { version: permission?.version ?? 0, active: grant, reason: "ACCESS_REVIEW" }, savedSchema, { method: "PATCH", authRequired: true }).execute(), () => setGrantUser(null)); }}>
-        <label className="admin-field">Counter<select required disabled={save.busy} value={counterId} onChange={event => setCounterId(event.target.value)}><option value="">Select counter</option>{counters.data?.map(counter => <option key={counter.id} value={counter.id}>{counter.name}{!counter.active && " (inactive)"}</option>)}</select></label>
-        <label className="admin-field">Permission<select disabled={save.busy} value={String(grant)} onChange={event => setGrant(event.target.value === "true")}><option value="true">Grant</option><option value="false">Revoke</option></select></label>
-        {save.message && <p role="status">{save.message}</p>}<div className="dialog-actions"><Button variant="secondary" disabled={save.busy} onClick={() => setGrantUser(null)}>Cancel</Button><Button type="submit" busy={save.busy} disabled={!counterId || Boolean(counters.error)}>Confirm access change</Button></div>
+      <Dialog.Title>{accessEnabled ? "Disable" : "Enable"} staff access</Dialog.Title>
+      <Dialog.Description>Confirm this access change for {grantUser?.fullName}. Existing sessions will end.</Dialog.Description>
+      <form onSubmit={event => {
+        event.preventDefault();
+        if (!grantUser) return;
+        const body = { version: grantUser.version, active: !accessEnabled };
+        void save.run(() => apiClient.command(`/api/admin/users/${grantUser.id}/staff-access`, body, savedSchema, { method: "PATCH", authRequired: true }).execute(), () => setGrantUser(null));
+      }}>
+        {save.message && <p role="status">{save.message}</p>}
+        <div className="dialog-actions">
+          <Button variant="secondary" disabled={save.busy} onClick={() => setGrantUser(null)}>Cancel</Button>
+          <Button type="submit" busy={save.busy} disabled={!grantUser}>{accessEnabled ? "Disable access" : "Enable access"}</Button>
+        </div>
       </form></Dialog.Content></Dialog.Portal></Dialog.Root>
   </div>;
 }

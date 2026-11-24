@@ -2,7 +2,6 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import * as Dialog from "@radix-ui/react-dialog";
 import { History as HistoryIcon, RefreshCw, X } from "lucide-react";
 import { useAuth } from "../../../app/auth-context";
-import { useCounterScope } from "../../../app/counter-context";
 import { Button, StatusPanel } from "../../../components/ui/primitives";
 import { preserveToastInteraction } from "../../../components/ui/dialog-feedback";
 import { ClientError } from "../../../lib/errors";
@@ -20,17 +19,17 @@ import "./lifecycle.css";
 import "./passes.css";
 
 type ReturnDetail = { assignment: Assignment; fields: ReviewFields };
-/** One hospital counter is implicit in the UI; the server still checks the current authorized scope. */
+/** Only the active staff account can open the shared pass workspace. */
 export function StaffLifecycle() {
-  const { state, refresh } = useAuth(); const counter = useCounterScope();
-  if (state.kind !== "authenticated" || state.user.role !== "COUNTER_STAFF" || !counter || !state.user.counterIds.includes(counter)) {
+  const { state, refresh } = useAuth();
+  if (state.kind !== "authenticated" || state.user.role !== "COUNTER_STAFF" || !state.user.staffAccessEnabled) {
     return <StatusPanel kind="empty" title="Counter Staff access required">Ask the administrator to assign access.</StatusPanel>;
   }
-  return <StaffPassWorkspace key={`${state.user.id}:${counter}`} counterId={counter} authority={state.user} recheck={refresh} />;
+  return <StaffPassWorkspace key={state.user.id} authority={state.user} recheck={refresh} />;
 }
 
 /** Active loans, return confirmation and completed history remain separate, memory-only views. */
-function StaffPassWorkspace({ counterId, authority, recheck }: { counterId: string; authority: SessionUser; recheck: () => void }) {
+function StaffPassWorkspace({ authority, recheck }: { authority: SessionUser; recheck: () => void }) {
   const [denied, setDenied] = useState(false), [historyOpen, setHistoryOpen] = useState(false);
   const [category, setCategory] = useState<PassFilters["category"]>("ALL"), [status, setStatus] = useState<PassFilters["status"]>("ALL");
   const search = usePassSearch();
@@ -43,7 +42,7 @@ function StaffPassWorkspace({ counterId, authority, recheck }: { counterId: stri
   const deny = useCallback(() => { clearDetails(); setSelected(null); setHistoryOpen(false); setDenied(true); }, [clearDetails]);
   const conflict = useCallback(() => { clearDetails(); setDetailError("This pass changed. Refresh its details before continuing."); }, [clearDetails]);
   const commands = useLifecycleCommands(deny, conflict);
-  const filters = useMemo<PassFilters>(() => ({ counterId, history: false, category, status, search: search.search }), [counterId, category, status, search.search]);
+  const filters = useMemo<PassFilters>(() => ({ history: false, category, status, search: search.search }), [category, status, search.search]);
   const feed = usePassFeed(filters, deny, !denied);
   const cancelReads = useCallback(() => { generation.current++; detailRequest.current?.abort(); }, []);
   useEffect(() => { alive.current = true; return () => { alive.current = false; cancelReads(); }; }, [cancelReads]);
@@ -59,9 +58,9 @@ function StaffPassWorkspace({ counterId, authority, recheck }: { counterId: stri
     try {
       const pass = await lifecycleApi.assignment(row.assignment.id, controller.signal);
       if (!alive.current || sequence !== generation.current) return;
-      if (pass.id !== row.assignment.id || pass.counterId !== counterId || pass.registrationId !== row.assignment.registrationId) throw new ClientError("invalid-response");
+      if (pass.id !== row.assignment.id || pass.registrationId !== row.assignment.registrationId) throw new ClientError("invalid-response");
       const registration = await reviewPort.detail(pass.registrationId, controller.signal);
-      if (registration.counterId !== counterId || registration.id !== pass.registrationId) throw new ClientError("invalid-response");
+      if (registration.id !== pass.registrationId) throw new ClientError("invalid-response");
       const fields = await reviewPort.reviewFields!(registration.id, registration.version, controller.signal);
       if (!alive.current || sequence !== generation.current) return;
       if (fields.id !== registration.id || fields.version !== registration.version) throw new ClientError("invalid-response");
@@ -103,7 +102,7 @@ function StaffPassWorkspace({ counterId, authority, recheck }: { counterId: stri
       <PassTable feed={feed} scrollRef={scroll} disabled={commands.locked} onReturn={openReturn} />
       <footer className="pass-list-footer"><span>{feed.ready ? `${feed.items.length} ${feed.nextCursor ? "loaded" : "outstanding"} passes` : "Checking issued passes"}</span><small className="muted">{feed.serverNow ? `Updated ${formatMyt(feed.serverNow)} MYT` : ""}</small></footer>
     </section>
-    {historyOpen && <PassHistoryDialog counterId={counterId} deny={deny} close={() => setHistoryOpen(false)} restoreFocus={() => historyButton.current?.focus()} />}
+    {historyOpen && <PassHistoryDialog deny={deny} close={() => setHistoryOpen(false)} restoreFocus={() => historyButton.current?.focus()} />}
     <Dialog.Root open={selected !== null} onOpenChange={open => { if (!open && !commands.locked) closeReturn(); }}><Dialog.Portal><Dialog.Overlay className="dialog-overlay" />
       <Dialog.Content className="dialog-content pass-return-dialog" onInteractOutside={preserveToastInteraction}
         onEscapeKeyDown={event => { if (commands.locked) event.preventDefault(); }} onPointerDownOutside={event => { if (commands.locked) event.preventDefault(); }}

@@ -35,15 +35,15 @@ final class StaffPassReadService {
     PassPage list(LifecycleSecurity.Context context,String body) {
         security.preflight(context,false);
         // Search text stays in a CSRF-protected POST body rather than request URLs or cursor metadata.
-        var node=parse(body,Set.of("counterId","history","category","status","search","from","to","cursor"));
-        for(String name:List.of("counterId","category","status","search")) if(!node.path(name).isString()) throw invalid();
+        var node=parse(body,Set.of("history","category","status","search","from","to","cursor"));
+        for(String name:List.of("category","status","search")) if(!node.path(name).isString()) throw invalid();
         if(!node.path("history").isBoolean()) throw invalid();
         for(String name:List.of("from","to","cursor")) if(node.has(name) && !node.path(name).isString()) throw invalid();
-        var filter=filter(node.path("counterId").asString(),node.path("history").asBoolean(),node.path("category").asString(),
+        var filter=filter(node.path("history").asBoolean(),node.path("category").asString(),
                 node.path("status").asString(),node.path("search").asString(),optional(node,"from"),optional(node,"to"));
         var before=cursor(optional(node,"cursor"));
         return tx.execute(status->{
-            security.lock(context,false,List.of(filter.counter()));
+            security.lock(context,false);
             return scan(context,filter,before,clock.instant());
         });
     }
@@ -66,16 +66,16 @@ final class StaffPassReadService {
         security.preflight(context,false);
         Filter filter;
         try {
-            var fields=Set.of("counterId","category","search","from","to");
+            var fields=Set.of("category","search","from","to");
             var node=parse(body,fields);
             if(node.size()!=fields.size()) throw invalid();
             for(String name:fields) if(!node.path(name).isString()) throw invalid();
-            filter=filter(node.path("counterId").asString(),true,node.path("category").asString(),"ALL",
+            filter=filter(true,node.path("category").asString(),"ALL",
                     node.path("search").asString(),node.path("from").asString(),node.path("to").asString());
         } catch(ApiFailure failure) { throw failure; }
         catch(RuntimeException failure) { throw invalid(); }
         return tx.execute(status->{
-            var actor=security.lock(context,false,List.of(filter.counter()));
+            var actor=security.lock(context,false);
             Instant now=clock.instant(); Cursor before=null; int count=0;
             var csv=new StringBuilder(CsvSafety.row("Visitor name","Category","Pass ID","Destination","Status","Issued (MYT)","Returned (MYT)"));
             do {
@@ -101,10 +101,9 @@ final class StaffPassReadService {
     private PassPage scan(LifecycleSecurity.Context context,Filter filter,Cursor before,Instant now) {
         var matches=new ArrayList<PassRow>(); Cursor last=before; int scanned=0;
         while(scanned<10000) {
-            var args=new ArrayList<Object>(List.of(filter.counter(),filter.counter(),environment));
+            var args=new ArrayList<Object>(List.of(environment));
             String sort=filter.history()?"a.returned_at":"a.issued_at";
-            String where=" FROM card_assignments a JOIN cards c ON c.id=a.card_id WHERE a.issue_counter_id=? AND a.return_counter_id=?"
-                    +" AND a.environment=? AND c.environment=a.environment AND "+CARD_SOURCE+" AND "+ASSIGNMENT_SOURCE;
+            String where=" FROM card_assignments a JOIN cards c ON c.id=a.card_id WHERE a.environment=? AND c.environment=a.environment AND "+CARD_SOURCE+" AND "+ASSIGNMENT_SOURCE;
             if(filter.history()) {
                 where+=" AND a.closure_reason='RETURNED' AND a.returned_at IS NOT NULL AND a.returned_at>=? AND a.returned_at<?";
                 args.add(DatabaseTime.sql(filter.start())); args.add(DatabaseTime.sql(filter.end()));
@@ -121,7 +120,7 @@ final class StaffPassReadService {
                     (rs,n)->view(store.assignmentRow(rs),rs.getString("card_code"),rs.getString("card_status"),now),args.toArray());
             if(batch.isEmpty()) return new PassPage(List.copyOf(matches),null,now);
             var ids=batch.stream().map(AssignmentView::registrationId).distinct().toList();
-            var visitors=roots.passVisitors(context.owner(),Long.toString(filter.counter()),ids,filter.search());
+            var visitors=roots.passVisitors(context.owner(),ids,filter.search());
             for(var pass:batch) {
                 scanned++; last=new Cursor(filter.history()?pass.returnedAt():pass.issuedAt(),pass.id());
                 var visitor=visitors.get(pass.registrationId());
@@ -138,8 +137,7 @@ final class StaffPassReadService {
         return new PassPage(List.copyOf(matches),encode(last),now);
     }
 
-    private Filter filter(String counter,boolean history,String category,String state,String search,String from,String to) {
-        long counterId=LifecycleInput.decimal(counter);
+    private Filter filter(boolean history,String category,String state,String search,String from,String to) {
         if(category==null || !Set.of("ALL","EXECUTIVE","PENJAGA","VENDOR","CONTRACTOR").contains(category)
                 || state==null || !Set.of("ALL","ISSUED","OVERDUE").contains(state)
                 || search==null || search.length()>100 || search.codePoints().anyMatch(value->Character.isISOControl(value)||Character.getType(value)==Character.FORMAT)) throw invalid();
@@ -152,7 +150,7 @@ final class StaffPassReadService {
                 start=first.atStartOfDay(MYT).toInstant(); end=last.plusDays(1).atStartOfDay(MYT).toInstant();
             } catch(RuntimeException failure) { throw invalid(); }
         } else if(from!=null || to!=null) throw invalid();
-        return new Filter(counterId,history,category,state,search.strip().toLowerCase(Locale.ROOT),first,last,start,end);
+        return new Filter(history,category,state,search.strip().toLowerCase(Locale.ROOT),first,last,start,end);
     }
     private Cursor cursor(String value) {
         if(value==null || value.isEmpty()) return null;
@@ -170,7 +168,7 @@ final class StaffPassReadService {
     }
     private ApiFailure invalid() { return new ApiFailure(400,"VALIDATION_FAILED","Check the pass filters and date range."); }
     private ApiFailure tooLarge() { return new ApiFailure(413,"EXPORT_TOO_LARGE","Narrow the history filters before exporting."); }
-    private record Filter(long counter,boolean history,String category,String state,String search,LocalDate from,LocalDate to,Instant start,Instant end) {
+    private record Filter(boolean history,String category,String state,String search,LocalDate from,LocalDate to,Instant start,Instant end) {
         @Override public String toString() { return "StaffPassFilter[REDACTED]"; }
     }
     private record Cursor(Instant time,String id) { }
