@@ -69,7 +69,7 @@ class ReviewManualMysqlTests {
         Browser visitor = new Browser(); visitor.csrf(); var exchanged = visitor.post("/api/public/registration-entry/exchange", Map.of("entryToken", entry), null); status(exchanged, 200);
         Object context = json.convertValue(tree(exchanged).path("formContext"), Object.class);
         var schema = visitor.post("/api/public/registration-schema", Map.of("formContext", context), null); status(schema, 200);
-        var feedback = visitor.post("/api/public/mrn-validations", Map.of("formContext", context, "mrn", "DEMO-MRN-MANUAL1", "wardCode", "M04_MANUAL"), null); status(feedback, 200);
+        var feedback = visitor.post("/api/public/mrn-validations", Map.of("formContext", context, "mrn", "DEMO-MRN-MANUAL1"), null); status(feedback, 200);
         assertThat(tree(feedback).path("mode").asString()).isEqualTo("manual"); assertThat(tree(feedback).path("feedback").asString()).isEqualTo("UNAVAILABLE");
         assertThat(tree(feedback).path("validationToken").isNull()).isTrue(); assertThat(tree(feedback).path("expiresAt").isNull()).isTrue();
         var submitted = visitor.post("/api/public/registrations", Map.of("formContext", context, "categoryCode", "PENJAGA",
@@ -95,6 +95,8 @@ class ReviewManualMysqlTests {
         status(staff.post("/api/staff/card-assignments", Map.of("registrationId",id,"expectedVersion",1,
                 "handoverConfirmed",true,"passes",List.of(pass)), UUID.randomUUID().toString()), 200);
 
+        // End the issuing shift before a different account opens the shared pass list.
+        status(staff.post("/api/auth/logout", Map.of(), null), 204);
         Browser nextShift = signIn("next_shift");
         var feed = nextShift.post("/api/staff/passes/search", Map.of("history",false,"category","ALL","status","ALL","search",""), null);
         status(feed,200);
