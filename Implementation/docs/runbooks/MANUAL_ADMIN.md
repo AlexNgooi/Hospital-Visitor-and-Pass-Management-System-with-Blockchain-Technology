@@ -113,3 +113,18 @@ The remaining three admin tasks now match Overview's compact header/control/spac
 Staff has Filter/Refresh/Create account controls, a scrollable directory and fixed count/protection footer. Inventory has Filter/Settings/Refresh/Add pass in its header, compact stock metrics, a scrollable table and visible pagination. Existing enrollment/card-action dialogs retain their exact confirmation/version/UNKNOWN handling. Audit lists have sticky headers/internal scrolling; selected safe details scroll independently beside the table at desktop/tablet widths, while smaller screens stack naturally. Existing audit tabs and Previous/Next/Refresh remain visible outside the table region. The shared filter modal handles first-field focus and safe focus return when a refresh temporarily disables its trigger.
 
 Checks: frontend build/lint, planning and diff checks PASS; existing Vite chunk-size notice remains. No backend/database changes, migration, service restart or business commands. Browser/modal/focus/viewport/business acceptance NOT_RUN. User checks should include all three pages at 1480×667 and 920×667, enough rows to require scrolling, sticky headers/footer controls, Apply vs Cancel/reset-on-reopen, selected long audit records, inventory pagination reset, and existing create/edit/grant/enroll/lost/disable/restore/UNKNOWN flows. Overview and its filtered details/export behavior are retained.
+
+## 2026-11-24 single Active/Inactive status
+
+This increment supersedes the earlier counter-grant/staff-access controls above. Staff management has one Account status selector. Active COUNTER_STAFF can sign in and manage visitors and passes after password setup; Inactive cannot sign in or use existing sessions. ADMIN keeps its administrator permissions. Saving remains versioned, audited and revokes old sessions; the last ready administrator remains protected.
+
+The separate staff-access endpoint is removed. The session's staffAccessEnabled field is derived from account status, role and completed password setup. The immutable V12 migration and its unused legacy column remain for compatibility; no new migration or account data rewrite is required. All currently active staff, including accounts whose old staff access was disabled, receive operational access under the new rule. Review account statuses before deliberately switching to the new release. Build frontend and backend together; an already running version does not change automatically.
+
+User-run checks (NOT_RUN):
+
+1. In Staff management, verify only Active/Inactive appears and the separate Enable/Disable staff access action is absent.
+2. Deactivate a signed-in staff account. Verify old tabs cannot use QR, review, issue or return; fresh sign-in fails.
+3. Reactivate the account. Verify fresh sign-in can manage visitors/passes, including a new staff account after password setup, without an extra access grant.
+4. Verify pending password setup still restricts business APIs, ADMIN cannot handle visitors, the last ready admin cannot be deactivated/demoted, and concurrent stale account edits require reload.
+
+No application/database/service was started or restarted, no email sent and no migration executed for this increment. Check results are recorded in planning/10_BASELINE_REVIEW.md.

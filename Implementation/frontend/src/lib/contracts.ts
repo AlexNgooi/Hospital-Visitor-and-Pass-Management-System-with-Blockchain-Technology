@@ -1,7 +1,7 @@
 import { z } from "zod";
 import type { components } from "../generated/api";
 
-/** Session IDs stay opaque strings and staff access comes from the current server response. */
+/** Session IDs stay opaque; staffAccessEnabled is derived from active status, role and password setup. */
 export const roleSchema = z.enum(["COUNTER_STAFF", "ADMIN"]);
 export type Role = z.infer<typeof roleSchema>;
 export const sessionSchema = z.object({

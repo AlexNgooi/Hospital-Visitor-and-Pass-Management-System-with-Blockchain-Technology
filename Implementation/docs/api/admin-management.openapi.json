@@ -3,7 +3,7 @@
   "info": {
     "title": "HSAAS administration redesign increment",
     "version": "2026-11-24",
-    "description": "Current authorized increment for codex/admin-management-redesign. Supplements the frozen foundation mirror; does not claim complete application OpenAPI coverage. ADMIN does not inherit counter staff authority. All writes use same-origin CSRF. Visitor management is excluded. V11 adds Ward/Other destinations, unbound manual stock, registration-scoped loans and explicitly audited visitor-name report views/exports. Dynamic visitor-type/field management remains excluded. V12 removes counter records and uses an account-level staff access setting."
+    "description": "Current authorized increment for codex/admin-management-redesign. Supplements the frozen foundation mirror; does not claim complete application OpenAPI coverage. ADMIN does not inherit counter staff authority. All writes use same-origin CSRF. Visitor management is excluded. V11 adds Ward/Other destinations, unbound manual stock, registration-scoped loans and explicitly audited visitor-name report views/exports. Dynamic visitor-type/field management remains excluded. V12 removes counter records. Account active status now controls both sign-in and role operations; there is no separate staff-access setting."
   },
   "servers": [
     {
@@ -895,76 +895,6 @@
           }
         ]
       }
-    },
-    "/api/admin/users/{id}/staff-access": {
-      "patch": {
-        "summary": "Enable or disable a staff account's visitor and pass operations and invalidate its sessions.",
-        "security": [
-          {
-            "sessionCookie": [],
-            "csrfHeader": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "pattern": "^[1-9][0-9]{0,18}$"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "active": {
-                    "type": "boolean"
-                  },
-                  "version": {
-                    "type": "integer",
-                    "minimum": 0,
-                    "maximum": 9007199254740990
-                  }
-                },
-                "required": [
-                  "active",
-                  "version"
-                ]
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Access saved.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Saved"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Invalid input."
-          },
-          "401": {
-            "description": "Authentication required."
-          },
-          "403": {
-            "description": "Administrator role and CSRF are required."
-          },
-          "409": {
-            "description": "Account no longer counter staff or stale account version."
-          }
-        }
-      }
     }
   },
   "components": {
@@ -1080,7 +1010,8 @@
             ]
           },
           "active": {
-            "type": "boolean"
+            "type": "boolean",
+            "description": "Single account switch: inactive prevents sign-in and existing-session use; active counter staff can manage visitors and passes after password setup."
           },
           "version": {
             "type": "integer",
@@ -1107,9 +1038,6 @@
               "ACCEPTED",
               "UNKNOWN"
             ]
-          },
-          "staffAccessEnabled": {
-            "type": "boolean"
           }
         },
         "required": [
@@ -1121,8 +1049,7 @@
           "fullName",
           "email",
           "passwordChangeRequired",
-          "onboardingDelivery",
-          "staffAccessEnabled"
+          "onboardingDelivery"
         ]
       },
       "EmailReadiness": {
@@ -1328,7 +1255,8 @@
             "type": "boolean"
           },
           "staffAccessEnabled": {
-            "type": "boolean"
+            "type": "boolean",
+            "description": "Derived from active account status, COUNTER_STAFF role and completed password setup; never independently editable."
           }
         },
         "description": "Minimal current authenticated staff projection."

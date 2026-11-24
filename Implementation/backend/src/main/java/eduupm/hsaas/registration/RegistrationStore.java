@@ -241,15 +241,16 @@ public final class RegistrationStore implements RegistrationReviewPort, Registra
         if (rows.isEmpty()) { throw notFound(); }
         var value = rows.getFirst();
         // The caller already holds the complete prefix. These are current projections, not late reverse-order locks.
-        var actors = jdbc.query("SELECT a.actor_id,u.role,u.active,u.staff_access_enabled,u.password_change_required FROM auth_session_contexts a JOIN users u ON u.id=a.actor_id "
+        var actors = jdbc.query("SELECT a.actor_id,u.role,u.active,u.password_change_required FROM auth_session_contexts a JOIN users u ON u.id=a.actor_id "
                         + "JOIN app_session_bindings b ON b.id=a.binding_id WHERE a.id=? AND a.state='ACTIVE' "
                         + "AND b.current_owner_context_id=a.id AND b.generation=a.generation AND b.invalidated_at IS NULL "
                         + "AND a.captured_security_epoch=u.security_epoch AND a.absolute_expires_at>? AND a.confirmed_idle_expires_at>?",
-                (rs, n) -> new Actor(rs.getLong(1), rs.getString(2), rs.getBoolean(3), rs.getBoolean(4), rs.getBoolean(5)), owner, DatabaseTime.sql(clock.instant()), DatabaseTime.sql(clock.instant()));
+                (rs, n) -> new Actor(rs.getLong(1), rs.getString(2), rs.getBoolean(3), rs.getBoolean(4)), owner, DatabaseTime.sql(clock.instant()), DatabaseTime.sql(clock.instant()));
         if (actors.isEmpty() || !actors.getFirst().active()) { throw ApiFailure.unauthenticated(); }
         Actor actor = actors.getFirst();
         if (!actor.role().equals("COUNTER_STAFF")) { throw new ApiFailure(403, "ACCESS_DENIED", "Counter Staff access is required."); }
-        if (!actor.access() || actor.setupRequired() || !environment.equals(value.environment())) { throw notFound(); }
+        // Account status is the single access switch; password setup and environment remain mandatory.
+        if (actor.setupRequired() || !environment.equals(value.environment())) { throw notFound(); }
         if (!value.source().equals("SYNTHETIC") || !Set.of("development", "synthetic", "test").contains(value.environment())) { throw new ApiFailure(409, "INTEGRATION_DISABLED", "Only synthetic review is enabled."); }
         var change = RegistrationDecisions.apply(value.category(), value.status(), value.version(), expectedVersion, decision);
         boolean verify = change.status().equals("VERIFIED"), penjaga = value.category().equals("PENJAGA");
@@ -377,7 +378,7 @@ public final class RegistrationStore implements RegistrationReviewPort, Registra
     /** Public metadata does not include form/contact data. */
     public record Category(long id, String code, String label) { }
     public record Destination(long id, String code, String label, String kind) { }
-    private record Actor(long id, String role, boolean active, boolean access, boolean setupRequired) { }
+    private record Actor(long id, String role, boolean active, boolean setupRequired) { }
     private record LockedProjection(long id, String category, String status, long version, String environment) { }
     /** Internal persistence projection is never serialized or formatted as a diagnostic. */
     private record RootRow(long id, String reference, String category, String status, long version, String environment,

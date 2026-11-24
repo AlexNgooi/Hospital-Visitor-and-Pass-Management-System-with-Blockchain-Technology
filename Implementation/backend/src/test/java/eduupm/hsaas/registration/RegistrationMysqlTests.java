@@ -81,7 +81,6 @@ class RegistrationMysqlTests {
             jdbc.update("INSERT INTO users(login,password_hash,role,active,created_at,updated_at) VALUES(?,?,?,TRUE,?,?)",role.equals("ADMIN")?"admin_qr":"staff_qr",password,role,DatabaseTime.sql(now),DatabaseTime.sql(now));
         }
         staffId=jdbc.queryForObject("SELECT id FROM users WHERE login='staff_qr'",Long.class);adminId=jdbc.queryForObject("SELECT id FROM users WHERE login='admin_qr'",Long.class);
-        jdbc.update("UPDATE users SET staff_access_enabled=TRUE WHERE id=?",staffId);
         jdbc.update("INSERT INTO visitor_categories(id,code,name) VALUES(1,'PENJAGA','Synthetic Penjaga'),(2,'VENDOR','Synthetic Vendor'),(3,'EXECUTIVE','Synthetic Executive'),(4,'CONTRACTOR','Synthetic Contractor')");
         jdbc.update("INSERT INTO destinations(id,code,name) VALUES(1,'DEMO_WARD','Synthetic ward'),(2,'DEMO_OFFICE','Synthetic office'),(3,'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA','Unselectable long code')");
     }
@@ -274,8 +273,8 @@ class RegistrationMysqlTests {
         assertThat(reviewed.review().source()).isEqualTo("SYNTHETIC_MANUAL");
         assertThatThrownBy(()->tx.execute(status->{capabilities.lockOwners(List.of(owner),null);return store.recordDecision(store.lock(store.discover(id)),1,owner,verified);}))
                 .isInstanceOfSatisfying(ApiFailure.class,f->assertThat(f.code()).isEqualTo("REGISTRATION_STATE_CONFLICT"));
-        jdbc.update("UPDATE users SET staff_access_enabled=FALSE WHERE id=?",staffId);
-        assertThatThrownBy(()->tx.execute(status->store.captureReadScope(owner))).isInstanceOfSatisfying(ApiFailure.class,f->assertThat(f.status()).isEqualTo(404));
+        jdbc.update("UPDATE users SET active=FALSE WHERE id=?",staffId);
+        assertThatThrownBy(()->tx.execute(status->store.captureReadScope(owner))).isInstanceOfSatisfying(ApiFailure.class,f->assertThat(f.status()).isEqualTo(401));
         // Internal authority reads persisted EXPIRY_TIME, not the framework's last-access convenience timestamp.
         jdbc.update("UPDATE SPRING_SESSION SET LAST_ACCESS_TIME=1,EXPIRY_TIME=1 WHERE SESSION_ID=?",visitor.staff().sessionId());
         assertThatThrownBy(()->tx.execute(status->store.captureReadScope(owner))).isInstanceOfSatisfying(ApiFailure.class,f->assertThat(f.status()).isEqualTo(401));

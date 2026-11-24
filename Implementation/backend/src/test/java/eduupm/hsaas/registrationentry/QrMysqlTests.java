@@ -74,7 +74,6 @@ class QrMysqlTests {
             jdbc.update("INSERT INTO users(login,password_hash,role,active,created_at,updated_at) VALUES(?,?,?,TRUE,?,?)",role.equals("ADMIN")?"admin_qr":"staff_qr",password,role,DatabaseTime.sql(now),DatabaseTime.sql(now));
         }
         staffId=jdbc.queryForObject("SELECT id FROM users WHERE login='staff_qr'",Long.class);adminId=jdbc.queryForObject("SELECT id FROM users WHERE login='admin_qr'",Long.class);
-        jdbc.update("UPDATE users SET staff_access_enabled=TRUE WHERE id=?",staffId);
         jdbc.update("INSERT INTO visitor_categories(id,code,name) VALUES(1,'PENJAGA','Synthetic Penjaga'),(2,'VENDOR','Synthetic Vendor')");
         jdbc.update("INSERT INTO destinations(id,code,name) VALUES(1,'DEMO_WARD','Synthetic ward')");
     }
@@ -214,12 +213,12 @@ class QrMysqlTests {
         assertThat(second.get("/api/public/registration-entry").statusCode()).isEqualTo(410);
         assertThat(second.exchange(challenge).statusCode()).isEqualTo(410);
     }
-    /** Staff access changes invalidate grants at use time without a Session event. */
-    @Test void counterAndPermissionRevocation() throws Exception {
+    /** Account deactivation invalidates grants at use time without a Session event. */
+    @Test void accountDeactivationRevokesEntry() throws Exception {
         Browser staff=staff(),admin=new Browser();admin.login("admin_qr");String id=staff.create(null);Browser visitor=new Browser();visitor.csrf();
         visitor.exchange(token(staff.get("/api/staff/registration-qr-sessions/"+id+"/current")));
         var proof=new AccountChanges.Proof(admin.binding(),admin.owner(),1L,"admin_qr");
-        changes.staffAccess(proof,staffId,0,false);
+        changes.update(proof,staffId,0,"COUNTER_STAFF",false);
         assertThat(visitor.get("/api/public/registration-entry").statusCode()).isEqualTo(410);
     }
     /** Expired owner metadata and early key removal fail closed, while legitimate natural key retirement preserves a form. */
@@ -269,10 +268,10 @@ class QrMysqlTests {
         Browser staff=staff(),admin=new Browser();admin.login("admin_qr");String id=staff.create(null);
         Browser visitor=new Browser();visitor.csrf();String binding=visitor.binding(),token=token(staff.get("/api/staff/registration-qr-sessions/"+id+"/current"));
         var proof=new AccountChanges.Proof(admin.binding(),admin.owner(),1L,"admin_qr");
-        race(()->entries.exchange(binding,new QrEntryService.ExchangeRequest(token,null,null)),()->{changes.staffAccess(proof,staffId,0,false);return true;});
+        race(()->entries.exchange(binding,new QrEntryService.ExchangeRequest(token,null,null)),()->{changes.update(proof,staffId,0,"COUNTER_STAFF",false);return true;});
         assertThatThrownBy(()->entries.entry(binding)).isInstanceOf(ApiFailure.class);
         // Re-enable staff access before testing the separate logout race.
-        changes.staffAccess(proof,staffId,1,true);
+        changes.update(proof,staffId,1,"COUNTER_STAFF",true);
         staff.login("staff_qr");String next=staff.create("1");String nextToken=token(staff.get("/api/staff/registration-qr-sessions/"+next+"/current"));
         race(()->entries.exchange(binding,new QrEntryService.ExchangeRequest(nextToken,null,null)),()->{capabilities.revokeSession(staff.sessionId());return true;});
         assertThatThrownBy(()->entries.entry(binding)).isInstanceOf(ApiFailure.class);

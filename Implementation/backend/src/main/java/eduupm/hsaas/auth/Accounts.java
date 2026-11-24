@@ -8,7 +8,7 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 import eduupm.hsaas.common.ApiFailure;
 
-/** Loads real staff credentials and supplies the authoritative role and staff access projection. */
+/** Loads staff credentials; account status and role determine operational access. */
 @Service
 public class Accounts implements UserDetailsService {
     private final JdbcTemplate jdbc;
@@ -24,7 +24,7 @@ public class Accounts implements UserDetailsService {
     public Account find(String login) {
         var rows = jdbc.query("SELECT * FROM users WHERE login=?", (rs, n) -> new Account(
                 rs.getLong("id"), rs.getString("login"), rs.getString("password_hash"),
-                rs.getString("role"), rs.getBoolean("active"), rs.getLong("security_epoch"), rs.getBoolean("password_change_required"), rs.getBoolean("staff_access_enabled"),
+                rs.getString("role"), rs.getBoolean("active"), rs.getLong("security_epoch"), rs.getBoolean("password_change_required"),
                 eduupm.hsaas.common.DatabaseTime.instant(rs.getObject("temporary_password_expires_at",java.time.LocalDateTime.class))), login);
         if (rows.isEmpty()) { throw new UsernameNotFoundException("Invalid credentials"); }
         return rows.getFirst();
@@ -34,7 +34,7 @@ public class Accounts implements UserDetailsService {
     public Account lock(long id) {
         var rows = jdbc.query("SELECT * FROM users WHERE id=? FOR UPDATE", (rs, n) -> new Account(
                 rs.getLong("id"), rs.getString("login"), rs.getString("password_hash"),
-                rs.getString("role"), rs.getBoolean("active"), rs.getLong("security_epoch"), rs.getBoolean("password_change_required"), rs.getBoolean("staff_access_enabled"),
+                rs.getString("role"), rs.getBoolean("active"), rs.getLong("security_epoch"), rs.getBoolean("password_change_required"),
                 eduupm.hsaas.common.DatabaseTime.instant(rs.getObject("temporary_password_expires_at",java.time.LocalDateTime.class))), id);
         if (rows.isEmpty()) { throw ApiFailure.unauthenticated(); }
         return rows.getFirst();
@@ -46,11 +46,11 @@ public class Accounts implements UserDetailsService {
     }
 
     /** Credential-bearing objects stay internal and are never controller responses. */
-    public record Account(long id, String login, String passwordHash, String role, boolean active, long epoch, boolean passwordChangeRequired, boolean staffAccessEnabled, java.time.Instant temporaryPasswordExpiresAt) {
+    public record Account(long id, String login, String passwordHash, String role, boolean active, long epoch, boolean passwordChangeRequired, java.time.Instant temporaryPasswordExpiresAt) {
         /** Keeps internal fixtures and bootstrap callers source compatible with established accounts. */
-        public Account(long id,String login,String hash,String role,boolean active,long epoch) { this(id,login,hash,role,active,epoch,false,role.equals("COUNTER_STAFF"),null); }
-        /** Role, account status and explicit staff access must all permit a business action. */
-        public boolean canHandleVisitors() { return active && role.equals("COUNTER_STAFF") && staffAccessEnabled && !passwordChangeRequired; }
+        public Account(long id,String login,String hash,String role,boolean active,long epoch) { this(id,login,hash,role,active,epoch,false,null); }
+        /** Active staff can handle visitors after password setup; administrators retain their own role. */
+        public boolean canHandleVisitors() { return active && role.equals("COUNTER_STAFF") && !passwordChangeRequired; }
         /** Internal credentials are redacted even during accidental diagnostic formatting. */
         @Override public String toString() { return "Account[id="+id+", credentials=REDACTED]"; }
     }
@@ -67,6 +67,6 @@ public class Accounts implements UserDetailsService {
         public long actorId() { return actorId; }
         public long securityEpoch() { return securityEpoch; }
     }
-    /** Minimal authenticated session projection. */
+    /** staffAccessEnabled is a derived capability for existing clients, never a separate account setting. */
     public record Me(String id, String login, String role, boolean staffAccessEnabled, boolean passwordChangeRequired) {}
 }

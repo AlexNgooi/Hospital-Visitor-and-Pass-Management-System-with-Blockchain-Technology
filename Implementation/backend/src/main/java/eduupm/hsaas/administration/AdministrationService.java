@@ -41,10 +41,10 @@ public class AdministrationService {
             access.require(proof);
             return jdbc.query("""
                     SELECT id,login,role,active,version,COALESCE(full_name,login),email,
-                           password_change_required,onboarding_delivery,staff_access_enabled
+                           password_change_required,onboarding_delivery
                     FROM users ORDER BY id
                     """,(rs,n)->new UserView(Long.toString(rs.getLong(1)),rs.getString(2),rs.getString(3),
-                    rs.getBoolean(4),rs.getLong(5),rs.getBoolean(10),
+                    rs.getBoolean(4),rs.getLong(5),
                     rs.getString(6),rs.getString(7),rs.getBoolean(8),rs.getString(9)));
         });
     }
@@ -131,19 +131,6 @@ public class AdministrationService {
         catch(DuplicateKeyException conflict) { throw new ApiFailure(409,"LOGIN_UNAVAILABLE","That login or email is already in use."); }
     }
 
-    /** The account version fences both settings edits and staff access changes. */
-    public void staffAccess(Proof proof,String id,StaffAccessInput input) {
-        if(input==null)throw AdminInputs.invalid();
-        long target=AdminInputs.id(id),version=AdminInputs.version(input.version());
-        boolean active=AdminInputs.active(input.active());
-        tx.executeWithoutResult(status->{
-            var change=changes.staffAccess(proof,target,version,active);
-            String previous=json.writeValueAsString(Map.of("role","COUNTER_STAFF","active",change.accountActive(),
-                    "staff_access_enabled",change.previousActive()));
-            history("USER",Long.toString(target),version,version+1,"ACCESS_REVIEW",change.actorId(),previous);
-        });
-    }
-
     /** Historical references are retained; reference code is immutable after insertion and no delete command exists. */
     public List<Reference> references(Proof proof,String kind) {
         String table=table(kind);
@@ -222,20 +209,19 @@ public class AdministrationService {
     }
     /** Nonlocking discovery before a port mutation is validated by that port's expected version before any history can commit. */
     private String snapshot(String kind,String id) {
-        String query=switch(kind){case "USER"->"SELECT role,active,staff_access_enabled FROM users";case "CATEGORY"->"SELECT code,name,active FROM visitor_categories";case "DESTINATION"->"SELECT code,name,active,destination_kind FROM destinations";case "SETTING"->"SELECT setting_key,value_int FROM system_settings";default->throw AdminInputs.invalid();};
+        String query=switch(kind){case "USER"->"SELECT role,active FROM users";case "CATEGORY"->"SELECT code,name,active FROM visitor_categories";case "DESTINATION"->"SELECT code,name,active,destination_kind FROM destinations";case "SETTING"->"SELECT setting_key,value_int FROM system_settings";default->throw AdminInputs.invalid();};
         var values=jdbc.queryForList(query+" WHERE id=?",AdminInputs.id(id));
         return values.isEmpty()?null:json.writeValueAsString(values.getFirst());
     }
     /** SQL identifiers come exclusively from this allowlist, never interpolated request values. */
     private static String table(String kind){return switch(kind){case "categories"->"visitor_categories";case "destinations"->"destinations";default->throw AdminInputs.invalid();};}
     private static String target(String kind){return switch(kind){case "categories"->"CATEGORY";case "destinations"->"DESTINATION";default->throw AdminInputs.invalid();};}
-    public record UserView(String id,String login,String role,boolean active,long version,boolean staffAccessEnabled,String fullName,String email,boolean passwordChangeRequired,String onboardingDelivery){}
+    public record UserView(String id,String login,String role,boolean active,long version,String fullName,String email,boolean passwordChangeRequired,String onboardingDelivery){}
     /** Onboarding metadata is redacted from diagnostics; a password is never accepted from the client. */
     public record CreateUser(String login,String fullName,String email,String role){@Override public String toString(){return "CreateUser[REDACTED]";}}
     public record UserChange(Long version,String role,Boolean active,String fullName,String email){}
     public record Resend(Long version){}
     public record Delivery(boolean saved,String id,String emailStatus){}
-    public record StaffAccessInput(Long version,Boolean active){}
     /** Only wards are eligible for Executive/Penjaga; other visitor types may select either kind. */
     private static String destinationKind(String kind){if(!Set.of("WARD","OTHER").contains(kind==null?"":kind))throw AdminInputs.invalid();return kind;}
     public record Reference(String id,String code,String name,boolean active,long version,String kind){}

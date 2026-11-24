@@ -17,7 +17,7 @@ import "./review.css";
 export function RegistrationReview({ port = reviewPort, embedded = false }: { port?: ReviewPort; embedded?: boolean }) {
   const { state, refresh } = useAuth();
   if (state.kind !== "authenticated" || state.user.role !== "COUNTER_STAFF") return <StatusPanel kind="error" title="Counter Staff access required">Sign in with an authorized staff account.</StatusPanel>;
-  if (!state.user.staffAccessEnabled) return <StatusPanel kind="empty" title="Staff access disabled">Ask the administrator to enable staff access.</StatusPanel>;
+  if (!state.user.staffAccessEnabled) return <StatusPanel kind="empty" title="Active staff account required">Sign in with an active counter staff account and complete password setup.</StatusPanel>;
   return <ReviewWorkspace key={state.user.id} authority={state.user} port={port} embedded={embedded} recheckSession={refresh} />;
 }
 

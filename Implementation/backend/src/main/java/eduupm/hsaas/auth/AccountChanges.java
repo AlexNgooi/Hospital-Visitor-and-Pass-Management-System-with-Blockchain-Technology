@@ -7,7 +7,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.support.TransactionTemplate;
 import eduupm.hsaas.common.*;
 
-/** Supplies M06 with guarded account/permission mutations and the last-admin invariant. */
+/** Supplies M06 with guarded account mutations and the last-admin invariant. */
 @Service
 public class AccountChanges {
     private final JdbcTemplate jdbc;
@@ -40,28 +40,6 @@ public class AccountChanges {
                     new LocalAuditPort.Snapshot(target.active()?"ACTIVE":"INACTIVE",active?"ACTIVE":"INACTIVE",expectedVersion,expectedVersion+1,"LOCAL"));
         });
     }
-
-    /** Access changes serialize on the same account row as staff operations and invalidate old sessions. */
-    public StaffAccessChange staffAccess(Proof proof,long targetId,long expectedVersion,boolean active) {
-        long actorId=accounts.find(proof.login()).id();
-        return tx.execute(status -> {
-            Stream.of(actorId,targetId).distinct().sorted().forEach(accounts::lock);
-            var actor=requireAdmin(proof);
-            var target=accounts.lock(targetId);
-            if(!target.role().equals("COUNTER_STAFF"))
-                throw new ApiFailure(409,"STAFF_ROLE_REQUIRED","This account is no longer counter staff.");
-            int updated=jdbc.update("""
-                    UPDATE users SET staff_access_enabled=?,version=version+1,security_epoch=security_epoch+1,updated_at=?
-                    WHERE id=? AND version=?
-                    """,active,DatabaseTime.sql(clock.instant()),targetId,expectedVersion);
-            if(updated!=1) throw new ApiFailure(409,"VERSION_CONFLICT","Account changed. Reload it.");
-            audit.append(LocalAuditPort.Action.ADMIN_CHANGED,"USER",Long.toString(targetId),actor.id(),
-                    new LocalAuditPort.Snapshot(target.staffAccessEnabled()?"ENABLED":"DISABLED",active?"ENABLED":"DISABLED",
-                            expectedVersion,expectedVersion+1,"LOCAL"));
-            return new StaffAccessChange(actor.id(),target.active(),target.staffAccessEnabled());
-        });
-    }
-    public record StaffAccessChange(long actorId,boolean accountActive,boolean previousActive) {}
 
     /** Cached roles cannot authorize an administration command after epoch or session revocation. */
     private Accounts.Account requireAdmin(Proof proof) {

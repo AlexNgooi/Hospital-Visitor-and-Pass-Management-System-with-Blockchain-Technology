@@ -58,8 +58,7 @@ class ReviewManualMysqlTests {
         jdbc.update("INSERT INTO users(id,login,password_hash,role,created_at,updated_at) VALUES(1,'manual_review',?,'COUNTER_STAFF',UTC_TIMESTAMP(6),UTC_TIMESTAMP(6))", passwords.encode(PASSWORD));
         jdbc.update("INSERT INTO visitor_categories(id,code,name) VALUES(1,'PENJAGA','Synthetic Penjaga')");
         jdbc.update("INSERT INTO destinations(id,code,name,destination_kind) VALUES(1,'M04_MANUAL','Synthetic manual ward','WARD')");
-        jdbc.update("UPDATE users SET staff_access_enabled=TRUE WHERE id=1");
-        jdbc.update("INSERT INTO users(id,login,password_hash,role,staff_access_enabled,created_at,updated_at) VALUES(2,'next_shift',?,'COUNTER_STAFF',TRUE,UTC_TIMESTAMP(6),UTC_TIMESTAMP(6))", passwords.encode(PASSWORD));
+        jdbc.update("INSERT INTO users(id,login,password_hash,role,active,created_at,updated_at) VALUES(2,'next_shift',?,'COUNTER_STAFF',TRUE,UTC_TIMESTAMP(6),UTC_TIMESTAMP(6))", passwords.encode(PASSWORD));
         String cardId = UUID.randomUUID().toString();
         jdbc.update("INSERT INTO cards(id,card_code,category_id,category_code,status,enrolled_by,enrolled_at,data_origin,environment,enrollment_method) VALUES(?,'penj-1',1,'PENJAGA','AVAILABLE',1,UTC_TIMESTAMP(6),'SYNTHETIC','test','MANUAL')", cardId);
         Browser staff = signIn("manual_review");

@@ -103,7 +103,6 @@ class HsaasBackendApplicationTests {
         }
         adminId=jdbc.queryForObject("SELECT id FROM users WHERE login='admin_test'",Long.class);
         staffId=jdbc.queryForObject("SELECT id FROM users WHERE login='staff_test'",Long.class);
-        jdbc.update("UPDATE users SET staff_access_enabled=TRUE WHERE id=?",staffId);
     }
 
     /** Proves clean migration history and readiness against actual MySQL. */
@@ -194,7 +193,7 @@ class HsaasBackendApplicationTests {
         Session stale=sessions.findById(staff.sessionId());
         var proof=proof(admin,"admin_test");
         assertThatThrownBy(()->changes.update(proof,adminId,0,"COUNTER_STAFF",true)).isInstanceOf(ApiFailure.class);
-        changes.staffAccess(proof,staffId,0,false);
+        changes.update(proof,staffId,0,"COUNTER_STAFF",false);
         assertThat(staff.get("/api/auth/me").statusCode()).isEqualTo(401);
         assertThatThrownBy(()->sessions.save(stale)).isInstanceOf(ApiFailure.class);
         assertThat(admin.get("/api/auth/me").statusCode()).isEqualTo(200);

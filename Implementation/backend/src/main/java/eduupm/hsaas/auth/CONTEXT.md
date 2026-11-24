@@ -12,4 +12,4 @@ V10 adds staff metadata, required initial-password change, expiry and email stat
 
 ## V12 staff access
 
-Current staff operations require the account's staff_access_enabled as well as role and session. Account and session locks protect the decision through the transaction. Changing staff access increments the account version and security epoch and audits the change. QR owner locking still orders accounts, bindings and contexts globally before domain work.
+Superseded on 2026-11-24: active is the single account access switch. Active COUNTER_STAFF accounts can handle visitors/passes after password setup; inactive accounts cannot authenticate or use existing sessions. staffAccessEnabled in Me is a derived capability only. The V12 staff_access_enabled column remains unused for migration compatibility. The separate staff-access mutation port is removed; versioned account changes retain the security epoch, last-admin protection, audit and account/binding/context lock order.

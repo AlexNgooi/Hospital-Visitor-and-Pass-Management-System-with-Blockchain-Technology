@@ -41,3 +41,7 @@ Staff management and System audit share Overview's compact task frame. Filters m
 ## 2026-11-17 destinations and readable visitor records
 
 Five visible tasks now include Destination management (Ward/Other, create/edit modal, filter modal, version/status/history preservation) in the existing hidden drawer/compact shell. Overview details provides explicit, audited visitor-name registration/loan/activity views with per-registration timeline. CSV uses a type modal and one row grain per file; chart PNG stays separate. No dynamic visitor-type/field builder. Default aggregate Overview polling stays free of personal names. Source checks do not imply SQL/browser/business acceptance; coordinated V11 is still NOT_RUN.
+
+## 2026-11-24 single account status
+
+Staff management exposes one Active/Inactive account status with explicit sign-in and visitor/pass consequences. The independent staff access section/dialog/API is removed. Confirmation, expected version, existing-session revocation, onboarding and last-ready-admin protection remain. Active staff must still complete password setup; ADMIN does not gain staff operations. Session staffAccessEnabled remains a server-derived capability, not an editable setting. Build/lint are recorded in planning/10; browser/business acceptance is user-run / NOT_RUN.

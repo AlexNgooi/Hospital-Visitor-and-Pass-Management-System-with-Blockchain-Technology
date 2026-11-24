@@ -18,7 +18,7 @@ interface DisplayReference { id: string }
 export function RegistrationQrDisplay({ port = qrPort, compact = false }: { port?: QrPort; compact?: boolean }) {
   const { state } = useAuth();
   if (state.kind !== "authenticated" || !state.user.staffAccessEnabled) {
-    return <StatusPanel kind="empty" title="Staff access required">Ask the administrator to enable staff access.</StatusPanel>;
+    return <StatusPanel kind="empty" title="Staff access required">Sign in with an active counter staff account and complete password setup.</StatusPanel>;
   }
   return <QrWorkspace key={state.user.id} port={port} compact={compact} />;
 }

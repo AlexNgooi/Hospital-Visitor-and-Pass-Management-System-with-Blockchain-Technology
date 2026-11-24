@@ -19,3 +19,7 @@
 ## 2026-11-16 account and audit increment
 
 User projections include fullName/email/passwordChangeRequired/onboardingDelivery, never credentials. Create generates a temporary password and stores only its hash in the V10 columns; SMTP occurs after commit and has explicit ACCEPTED/UNKNOWN states. Missing staff email configuration rejects before creation. Versioned initial-email recovery rotates credentials, revokes sessions and prevents immediate replacement of a pending send. Pending email correction expires the old secret. Staff reason fields are no longer user input; creation uses STAFF_ONBOARDING, edits/grants ACCESS_REVIEW. Profile values remain outside immutable security snapshots. Audit module filters are fixed predicates; No pass and new auth/email actions are readable. Settings/reference reason requirements are unchanged.
+
+## 2026-11-24 single account status
+
+Account active status is the only editable access switch. UserView and new administration_history snapshots omit staff_access_enabled; historical rows remain unchanged. The /users/{id}/staff-access endpoint and mutation port are removed. Existing versioned /users/{id} updates govern login and all role operations, with epoch revocation and last-ready-admin protection. V12 remains immutable; its old flag is unused and no new migration is required.

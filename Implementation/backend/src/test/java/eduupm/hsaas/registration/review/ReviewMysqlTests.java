@@ -119,7 +119,6 @@ class ReviewMysqlTests {
         for (int index = 0; index < CATEGORIES.size(); index++) {
             jdbc.update("INSERT INTO visitor_categories(id,code,name) VALUES(?,?,?)", index + 1, CATEGORIES.get(index), "Synthetic " + CATEGORIES.get(index));
         }
-        jdbc.update("UPDATE users SET staff_access_enabled=TRUE WHERE login IN ('review_a','review_b')");
         clearInvocations(root, idempotency, audit);
     }
 
@@ -235,13 +234,13 @@ class ReviewMysqlTests {
         assertThat(reviewAudits(registration)).isEqualTo(1); assertThat(reviewResults(registration)).isEqualTo(1);
     }
 
-    /** Out-of-band permission removal isolates current staff access from epoch revocation. */
-    @Test void permissionRemovalBlocksReadsAndSuccessfulReplay() throws Exception {
+    /** An inactive account cannot read or replay a completed command, even without an epoch change. */
+    @Test void inactiveAccountBlocksReadsAndSuccessfulReplay() throws Exception {
         Browser staff = staff("review_a"); var registration = register(staff, "VENDOR", false); String key = key();
         status(staff.post(path(registration, "verify"), verify("VENDOR"), key, true), 200);
-        jdbc.update("UPDATE users SET staff_access_enabled=FALSE WHERE id=?", actor("review_a"));
-        status(staff.get("/api/staff/registrations"), 403); status(staff.get("/api/staff/registrations/" + registration.id()), 403);
-        status(staff.post(path(registration, "verify"), verify("VENDOR"), key, true), 403); assertThat(reviewAudits(registration)).isEqualTo(1);
+        jdbc.update("UPDATE users SET active=FALSE WHERE id=?", actor("review_a"));
+        status(staff.get("/api/staff/registrations"), 401); status(staff.get("/api/staff/registrations/" + registration.id()), 401);
+        status(staff.post(path(registration, "verify"), verify("VENDOR"), key, true), 401); assertThat(reviewAudits(registration)).isEqualTo(1);
     }
 
     /** A current role change without epoch invalidation deliberately isolates the service's 403 role boundary from session 401. */
@@ -339,7 +338,7 @@ class ReviewMysqlTests {
             var pending = pool.submit(() -> staff.post(path(registration, "verify"), verify("VENDOR"), key(), true));
             try {
                 assertThat(entered.await(10, TimeUnit.SECONDS)).isTrue();
-                changes.staffAccess(proof, actor("review_a"), 0, false);
+                changes.update(proof,actor("review_a"),0,"COUNTER_STAFF",false);
             } finally { release.countDown(); }
             status(pending.get(20, TimeUnit.SECONDS), 401);
         }
@@ -360,7 +359,7 @@ class ReviewMysqlTests {
         try (var pool = Executors.newFixedThreadPool(2)) {
             var review = pool.submit(() -> staff.post(path(registration, "verify"), verify("VENDOR"), commandKey, true));
             assertThat(inDecision.await(10, TimeUnit.SECONDS)).isTrue();
-            var revoked = pool.submit(() -> { adminThread.set(Thread.currentThread()); changes.staffAccess(proof, target, 0, false); return true; });
+            var revoked = pool.submit(() -> { adminThread.set(Thread.currentThread()); changes.update(proof,target,0,"COUNTER_STAFF",false); return true; });
             try { assertThat(adminWaiting.await(10, TimeUnit.SECONDS)).isTrue(); assertThat(revoked.isDone()).isFalse(); }
             finally { releaseDecision.countDown(); }
             acknowledgement = review.get(20, TimeUnit.SECONDS); assertThat(revoked.get(20, TimeUnit.SECONDS)).isTrue();

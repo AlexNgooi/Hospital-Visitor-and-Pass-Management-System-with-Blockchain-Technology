@@ -30,7 +30,7 @@ class ManualDemoSeed {
                         insert.executeUpdate();
                     }
                 }
-                statement.executeUpdate("UPDATE users SET staff_access_enabled=TRUE WHERE id IN (201,202,203)");
+                // Active staff accounts receive visitor/pass access after password setup.
                 statement.executeUpdate("INSERT INTO visitor_categories(id,code,name) VALUES(1,'EXECUTIVE','Executive'),(2,'PENJAGA','Penjaga'),(3,'VENDOR','Vendor'),(4,'CONTRACTOR','Contractor')");
                 statement.executeUpdate("INSERT INTO destinations(id,code,name,destination_kind) VALUES(1,'DEMO_WARD','Synthetic Ward','WARD'),(2,'DEMO_OFFICE','Synthetic Office','OTHER')");
                 // Mark the dedicated seed complete so no bootstrap account command can claim this demonstration database.

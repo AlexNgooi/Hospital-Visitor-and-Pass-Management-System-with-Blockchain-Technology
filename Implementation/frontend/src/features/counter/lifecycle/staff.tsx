@@ -23,7 +23,7 @@ type ReturnDetail = { assignment: Assignment; fields: ReviewFields };
 export function StaffLifecycle() {
   const { state, refresh } = useAuth();
   if (state.kind !== "authenticated" || state.user.role !== "COUNTER_STAFF" || !state.user.staffAccessEnabled) {
-    return <StatusPanel kind="empty" title="Counter Staff access required">Ask the administrator to assign access.</StatusPanel>;
+    return <StatusPanel kind="empty" title="Counter Staff access required">Sign in with an active counter staff account and complete password setup.</StatusPanel>;
   }
   return <StaffPassWorkspace key={state.user.id} authority={state.user} recheck={refresh} />;
 }
