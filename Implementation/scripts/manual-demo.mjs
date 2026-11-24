@@ -227,6 +227,12 @@ try {
   else {
     await configure();
     if (args.length === 1 && args[0] === 'check') { await preflight(); console.log('Java, prepared files, native MySQL and ports checked. No services started or data changed.'); }
+    else if (args.length === 1 && args[0] === 'schema-version') {
+      // Report only the dedicated database name, latest version and migration success state.
+      stage = 'native schema version check';
+      const result = await sql("SELECT DATABASE(),version,success FROM flyway_schema_history WHERE version IS NOT NULL ORDER BY installed_rank DESC LIMIT 1");
+      console.log(result.stdout.trim().replaceAll('\t', ' '));
+    }
     else if ((args[0] === 'start' && (args.length === 1 || args.length === 2 && args[1] === '--initialize' || args.length === 3 && args[1] === '--restore'))
       || args.length === 1 && args[0] === 'resume') {
       for (const signal of ['SIGINT', 'SIGTERM']) process.on(signal, () => {
@@ -234,7 +240,7 @@ try {
         if (accepting) void cleanup().then(() => process.exit(0), () => process.exit(1));
       });
       await start(args[1] === '--initialize', args[1] === '--restore' ? args[2] : undefined);
-    } else throw new Error('Use check, start [--initialize | --restore directory], resume, backup, or stop');
+    } else throw new Error('Use check, schema-version, start [--initialize | --restore directory], resume, backup, or stop');
   }
 } catch {
   console.error(`Manual demonstration failed during ${stage}. See MANUAL_NATIVE.md and ignored logs; credentials are never printed.`);

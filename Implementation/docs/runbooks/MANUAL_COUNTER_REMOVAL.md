@@ -22,6 +22,16 @@ node Implementation/scripts/manual-demo.mjs start --runtime-root 'C:/Users/alexy
 4. Verify V12 in Flyway history. Compare registrations, open/returned Pass counts and staff access against the backup. Retain the pre-upgrade backup if historical counter locations are needed. MySQL DDL commits independently. If migration fails partway, stop the application and inspect the Flyway history and schema before retrying. Restoring the old release requires the V11-compatible backup.
 5. On a staff account, open the current QR, submit a fresh synthetic registration, complete review and issue a Pass. Sign out and sign in as a second authorized staff member. Confirm the Pass appears in their list and return it. Verify the issue and return staff IDs in admin history. Confirm a staff account with access disabled cannot list, review, issue, return or create a QR, and that disabling access invalidates its existing session.
 
+## PowerShell switch
+
+Run this from the new checkout root in a normal Windows PowerShell session while the old application is running. The script checks the exact V11 demo schema, backs up the owned application, verifies the returned backup bundle, stops the old processes and starts the prepared V12 release. Leave the terminal open after it prints READY.
+
+```powershell
+& './Implementation/scripts/switch-native-counter-removal.ps1' -RuntimeRoot 'C:/Users/alexy/Documents/FYP Dev/Implementation'
+```
+
+In a second PowerShell window, use the same runtime root with the launcher's schema-version command. Expected output is hsaas_manual_native 12 1. The switch itself does not run the manual acceptance workflow.
+
 ## Read-only upgrade verification
 
 Use the dedicated native database account and confirm the first query prints the expected schema before continuing. Capture these counts before starting V12 and again after startup, before creating acceptance records.
